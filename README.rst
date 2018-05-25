@@ -217,6 +217,10 @@ Project based on the `modified <https://github.com/vcalderon2009/cookiecutter-da
    :target: http://resolve_statistics.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation Status
 
+.. |License| image:: https://img.shields.io/badge/license-MIT-blue.svg
+    :target: https://github.com/MehnaazAsad/RESOLVE_Statistics/blob/master/LICENSE.rst
+    :alt: License
+
 
 
 
