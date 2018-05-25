@@ -1,0 +1,20 @@
+name: resolve_statistics
+
+channels:
+    - defaults
+    - conda-forge
+    - astropy
+
+dependencies:
+    - python>=3.6
+    - anaconda
+    - astropy
+    - seaborn
+    - sphinx >= 1.6
+    - pip
+    - pip:
+        - GitPython
+        - configparser
+        - sphinx-astropy
+        - sphinx_rtd_theme
+        
