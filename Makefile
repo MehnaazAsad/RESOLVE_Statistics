@@ -9,7 +9,6 @@ PROJECT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 BUCKET = [OPTIONAL] your-bucket-for-syncing-data (do not include 's3://')
 PROFILE = default
 PROJECT_NAME = resolve_statistics
-ENV_NAME = resolve_statistics
 PYTHON_INTERPRETER = python3
 ENVIRONMENT_FILE = environment.yml
 ENVIRONMENT_NAME = resolve_statistics
@@ -63,10 +62,15 @@ ifeq (True,$(HAS_CONDA))
 		@echo ">>> Detected conda, creating conda environment."
 		# conda config --add channels conda-forge
 		# conda env create -f $(ENVIRONMENT_FILE)
-		conda create --name $(ENV_NAME) python=3.6
-		source activate $(ENV_NAME)
-		pip install -r requirements_conda.txt
+		conda create --name $(ENVIRONMENT_NAME) python=3.6
+		# source activate $(ENVIRONMENT_NAME)
+		# pip install -r requirements_conda.txt
 endif
+
+## Post-creating environment
+environment_post:
+	# conda activate $(ENVIRONMENT_NAME)
+	pip install -r requirements_conda.txt
 
 ## Update python interpreter environment
 update_environment:
