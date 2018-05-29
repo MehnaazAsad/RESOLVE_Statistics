@@ -208,4 +208,3 @@ anim = animation.FuncAnimation(plt.gcf(), make_animation, frames = \
                                Mhalo_characteristic,init_func = init,\
                                interval=1000,blit=False)
 plt.show()
-'''
