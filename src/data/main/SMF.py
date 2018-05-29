@@ -38,14 +38,14 @@ resolve_dr2_2 = path_to_raw + 'RESOLVE_DR2_2.txt'
 
 
 dr11 = pd.read_csv(resolve_dr1_1,delimiter='\s+',header=None,\
-                           skiprows=79,usecols=[0,3,4,44],names=['Name','cz',
+                           skiprows=79,usecols=[0,3,4,44],names=['Name','cz',\
                                                'groupcz','logM*']) 
 
 dr21 = pd.read_csv(resolve_dr2_1,delimiter='\s+',header=None,\
-                           skiprows=45,names=['Name','RA','DEC','Tel','F21',
-                                              'e_F21','rms','limflag',
-                                              'confused','F21corr',
-                                              'eF21corr-rand','eF21corr-sys',
+                           skiprows=45,names=['Name','RA','DEC','Tel','F21',\
+                                              'e_F21','rms','limflag',\
+                                              'confused','F21corr',\
+                                              'eF21corr-rand','eF21corr-sys',\
                                               'deconf-mode'])   
 
 dr22 = pd.read_csv(resolve_dr2_2,delimiter='\s+',header=None,\
