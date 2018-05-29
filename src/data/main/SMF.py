@@ -20,14 +20,14 @@ import pandas as pd
 import numpy as np
 
 ### Paths
-path_to_raw = '/Users/asadm2/Documents/Grad_School/Research/Repositories/'\
-'resolve_statistics/data/raw/'
-path_to_interim = '/Users/asadm2/Documents/Grad_School/Research/Repositories/'\
-'resolve_statistics/data/interim/'
+#path_to_raw = '/Users/asadm2/Documents/Grad_School/Research/Repositories/'\
+#'resolve_statistics/data/raw/'
+#path_to_interim = '/Users/asadm2/Documents/Grad_School/Research/Repositories/'\
+#'resolve_statistics/data/interim/'
 
-#path_to_raw = '/fs1/masad/Research/Repositories/RESOLVE_Statistics/data/raw/'
-#path_to_interim = '/fs1/masad/Research/Repositories/RESOLVE_Statistics/data/'\
-#'interim/'
+path_to_raw = '/fs1/masad/Research/Repositories/RESOLVE_Statistics/data/raw/'
+path_to_interim = '/fs1/masad/Research/Repositories/RESOLVE_Statistics/data/'\
+'interim/'
 
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 rc('text', usetex=True)
@@ -38,14 +38,14 @@ resolve_dr2_2 = path_to_raw + 'RESOLVE_DR2_2.txt'
 
 
 dr11 = pd.read_csv(resolve_dr1_1,delimiter='\s+',header=None,\
-                           skiprows=79,usecols=[0,3,4,44],names=['Name','cz',\
+                           skiprows=79,usecols=[0,3,4,44],names=['Name','cz',
                                                'groupcz','logM*']) 
 
 dr21 = pd.read_csv(resolve_dr2_1,delimiter='\s+',header=None,\
-                           skiprows=45,names=['Name','RA','DEC','Tel','F21',\
-                                              'e_F21','rms','limflag',\
-                                              'confused','F21corr',\
-                                              'eF21corr-rand','eF21corr-sys',\
+                           skiprows=45,names=['Name','RA','DEC','Tel','F21',
+                                              'e_F21','rms','limflag',
+                                              'confused','F21corr',
+                                              'eF21corr-rand','eF21corr-sys',
                                               'deconf-mode'])   
 
 dr22 = pd.read_csv(resolve_dr2_2,delimiter='\s+',header=None,\
