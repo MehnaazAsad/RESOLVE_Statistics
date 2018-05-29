@@ -30,7 +30,7 @@ path_to_interim = '/Users/asadm2/Documents/Grad_School/Research/Repositories/'\
 #'interim/'
 
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
-rc('text', usetex=True,size=25)
+rc('text', usetex=True)
 
 resolve_dr1_1 = path_to_raw + 'RESOLVE_DR1_1.txt'
 resolve_dr2_1 = path_to_raw + 'RESOLVE_DR2_1.txt'
