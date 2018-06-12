@@ -33,7 +33,7 @@ halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/bolshoi/'\
 ###Formatting for plots and animation
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']},size=15)
 rc('text', usetex=True)
-plt.rcParams['animation.convert_path'] = '/fs1/masad/anaconda3/envs/resolve_statistics/bin/magick'
+#plt.rcParams['animation.convert_path'] = '/Users/asadm2/anaconda3/envs/resolve_statistics/bin/magick'
 #'{0}/magick'.format(os.path.dirname(which('python')))
 
 RESOLVE = pd.read_csv(path_to_interim + 'RESOLVE_formatted.txt',delimiter='\t')
@@ -100,16 +100,16 @@ def gals(Mhalo_value,Mstellar_value,Mlow_slope,Mhigh_slope,Mstellar_scatter):
                                          prim_haloprop_key='halo_mvir')
     
     ###Halocats
-    halocat1 = CachedHaloCatalog(fname=halo_catalog)
-    halocat2 = CachedHaloCatalog(fname=halo_catalog)
-    halocat3 = CachedHaloCatalog(fname=halo_catalog)
-    halocat4 = CachedHaloCatalog(fname=halo_catalog)
-    halocat5 = CachedHaloCatalog(fname=halo_catalog)
-#    halocat1 = FakeSim()
-#    halocat2 = FakeSim()
-#    halocat3 = FakeSim()
-#    halocat4 = FakeSim()
-#    halocat5 = FakeSim()
+#    halocat1 = CachedHaloCatalog(fname=halo_catalog)
+#    halocat2 = CachedHaloCatalog(fname=halo_catalog)
+#    halocat3 = CachedHaloCatalog(fname=halo_catalog)
+#    halocat4 = CachedHaloCatalog(fname=halo_catalog)
+#    halocat5 = CachedHaloCatalog(fname=halo_catalog)
+    halocat1 = FakeSim()
+    halocat2 = FakeSim()
+    halocat3 = FakeSim()
+    halocat4 = FakeSim()
+    halocat5 = FakeSim()
     
     ###Parameter values
     model1.param_dict['smhm_m1_0'] = Mhalo_value
@@ -270,7 +270,7 @@ anim = animation.FuncAnimation(plt.gcf(), make_animation, \
                                Mhalo_characteristic,init_func=init,\
                                fargs=(Mstellar_characteristic,Mlow_slope,\
                                       Mhigh_slope,Mstellar_scatter,),\
-                                      interval=1000,blit=False,repeat=True)
+                                      interval=10,blit=False,repeat=True)
 plt.tight_layout()
 print('Saving animation')
 #plt.show()
