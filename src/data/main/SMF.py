@@ -272,10 +272,12 @@ anim = animation.FuncAnimation(plt.gcf(), make_animation, \
                                       Mhigh_slope,Mstellar_scatter,),\
                                       interval=1000,blit=False,repeat=True)
 plt.tight_layout()
+print('Saving animation')
 #plt.show()
 #Writer = animation.writers['imagemagick']
 #writer = Writer(fps=15, bitrate=1800)
 #anim.save('SMF.html')
+animation.verbose.set_level('debug')
 os.chdir(path_to_figures)
 #writer = ImageMagickFileWriter()
 anim.save('SMF_5params.gif',writer='imagemagick',fps=1)
