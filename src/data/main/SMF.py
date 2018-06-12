@@ -100,16 +100,16 @@ def gals(Mhalo_value,Mstellar_value,Mlow_slope,Mhigh_slope,Mstellar_scatter):
                                          prim_haloprop_key='halo_mvir')
     
     ###Halocats
-#    halocat1 = CachedHaloCatalog(fname=halo_catalog)
-#    halocat2 = CachedHaloCatalog(fname=halo_catalog)
-#    halocat3 = CachedHaloCatalog(fname=halo_catalog)
-#    halocat4 = CachedHaloCatalog(fname=halo_catalog)
-#    halocat5 = CachedHaloCatalog(fname=halo_catalog)
-    halocat1 = FakeSim()
-    halocat2 = FakeSim()
-    halocat3 = FakeSim()
-    halocat4 = FakeSim()
-    halocat5 = FakeSim()
+    halocat1 = CachedHaloCatalog(fname=halo_catalog)
+    halocat2 = CachedHaloCatalog(fname=halo_catalog)
+    halocat3 = CachedHaloCatalog(fname=halo_catalog)
+    halocat4 = CachedHaloCatalog(fname=halo_catalog)
+    halocat5 = CachedHaloCatalog(fname=halo_catalog)
+#    halocat1 = FakeSim()
+#    halocat2 = FakeSim()
+#    halocat3 = FakeSim()
+#    halocat4 = FakeSim()
+#    halocat5 = FakeSim()
     
     ###Parameter values
     model1.param_dict['smhm_m1_0'] = Mhalo_value
