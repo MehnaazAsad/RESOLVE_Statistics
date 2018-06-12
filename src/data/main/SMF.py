@@ -197,6 +197,8 @@ def make_animation(i,j,k,l,m):
     ax5.legend([line5,SMF_RESOLVE],[r'$\xi=%4.3f$' % Mstellarscatter,'RESOLVE']\
                ,loc='lower left',prop={'size': 10})
     
+    print('Setting data')
+    print(counter)
     line1.set_data(ax1_Max,Phi1)
     line2.set_data(ax2_Max,Phi2)
     line3.set_data(ax3_Max,Phi3)
@@ -270,7 +272,7 @@ anim = animation.FuncAnimation(plt.gcf(), make_animation, \
                                Mhalo_characteristic,init_func=init,\
                                fargs=(Mstellar_characteristic,Mlow_slope,\
                                       Mhigh_slope,Mstellar_scatter,),\
-                                      interval=10,blit=False,repeat=True)
+                                      interval=1000,blit=False,repeat=True)
 plt.tight_layout()
 print('Saving animation')
 #plt.show()
@@ -280,4 +282,5 @@ print('Saving animation')
 #animation.verbose.set_level('helpful')
 os.chdir(path_to_figures)
 #writer = ImageMagickFileWriter()
-anim.save('SMF_5params.html')
+#anim.save('SMF_5params.gif',writer='imagemagick',fps=1)
+anim.save('SMF_5params.html',fps=1)
