@@ -11,6 +11,7 @@ Created on Mon May 28 16:22:17 2018
 #to the SMF from RESOVLE
 from halotools.empirical_models import PrebuiltSubhaloModelFactory
 from halotools.sim_manager import CachedHaloCatalog
+from halotools.sim_manager import FakeSim
 from cosmo_utils.utils import work_paths as cwpaths
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
@@ -32,8 +33,8 @@ halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/bolshoi/'\
 ###Formatting for plots and animation
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']},size=15)
 rc('text', usetex=True)
-plt.rcParams['animation.convert_path'] = '{0}/magick'.\
-format(os.path.dirname(which('python')))
+plt.rcParams['animation.convert_path'] = '/fs1/masad/anaconda3/envs/resolve_statistics/bin/magick'
+#'{0}/magick'.format(os.path.dirname(which('python')))
 
 RESOLVE = pd.read_csv(path_to_interim + 'RESOLVE_formatted.txt',delimiter='\t')
 
@@ -99,11 +100,16 @@ def gals(Mhalo_value,Mstellar_value,Mlow_slope,Mhigh_slope,Mstellar_scatter):
                                          prim_haloprop_key='halo_mvir')
     
     ###Halocats
-    halocat1 = CachedHaloCatalog(fname=halo_catalog)
-    halocat2 = CachedHaloCatalog(fname=halo_catalog)
-    halocat3 = CachedHaloCatalog(fname=halo_catalog)
-    halocat4 = CachedHaloCatalog(fname=halo_catalog)
-    halocat5 = CachedHaloCatalog(fname=halo_catalog)
+#    halocat1 = CachedHaloCatalog(fname=halo_catalog)
+#    halocat2 = CachedHaloCatalog(fname=halo_catalog)
+#    halocat3 = CachedHaloCatalog(fname=halo_catalog)
+#    halocat4 = CachedHaloCatalog(fname=halo_catalog)
+#    halocat5 = CachedHaloCatalog(fname=halo_catalog)
+    halocat1 = FakeSim()
+    halocat2 = FakeSim()
+    halocat3 = FakeSim()
+    halocat4 = FakeSim()
+    halocat5 = FakeSim()
     
     ###Parameter values
     model1.param_dict['smhm_m1_0'] = Mhalo_value
@@ -271,4 +277,5 @@ plt.tight_layout()
 #writer = Writer(fps=15, bitrate=1800)
 #anim.save('SMF.html')
 os.chdir(path_to_figures)
+#writer = ImageMagickFileWriter()
 anim.save('SMF_5params.gif',writer='imagemagick',fps=1)
