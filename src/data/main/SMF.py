@@ -29,9 +29,9 @@ path_to_figures = dict_of_paths['plot_dir']
 halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/bolshoi/'\
 'rockstar/bolshoi_test_v1.hdf5'
 
+###Formatting for plots and animation
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']},size=15)
 rc('text', usetex=True)
-
 plt.rcParams['animation.convert_path'] = '{0}/magick'.\
 format(os.path.dirname(which('python')))
 
