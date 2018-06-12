@@ -25,6 +25,7 @@ import os
 dict_of_paths = cwpaths.cookiecutter_paths()
 path_to_raw = dict_of_paths['raw_dir']
 path_to_interim = dict_of_paths['int_dir']
+path_to_figures = dict_of_paths['plot_dir']
 halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/bolshoi/'\
 'rockstar/bolshoi_test_v1.hdf5'
 
@@ -269,4 +270,5 @@ plt.tight_layout()
 #Writer = animation.writers['imagemagick']
 #writer = Writer(fps=15, bitrate=1800)
 #anim.save('SMF.html')
+os.chdir(path_to_figures)
 anim.save('SMF_5params.gif',writer='imagemagick',fps=1)
