@@ -33,7 +33,7 @@ halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/bolshoi/'\
 ###Formatting for plots and animation
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']},size=15)
 rc('text', usetex=True)
-#plt.rcParams['animation.convert_path'] = '/Users/asadm2/anaconda3/envs/resolve_statistics/bin/magick'
+plt.rcParams['animation.convert_path'] = '/fs1/masad/anaconda3/envs/resolve_statistics/bin/magick'
 #'{0}/magick'.format(os.path.dirname(which('python')))
 
 RESOLVE = pd.read_csv(path_to_interim + 'RESOLVE_formatted.txt',delimiter='\t')
@@ -282,5 +282,5 @@ print('Saving animation')
 #animation.verbose.set_level('helpful')
 os.chdir(path_to_figures)
 #writer = ImageMagickFileWriter()
-#anim.save('SMF_5params.gif',writer='imagemagick',fps=1)
-anim.save('SMF_5params.html',fps=1)
+anim.save('SMF_5params.gif',writer='imagemagick',fps=1)
+#anim.save('SMF_5params.html',fps=1)
