@@ -198,7 +198,7 @@ def make_animation(i,j,k,l,m):
                ,loc='lower left',prop={'size': 10})
     
     print('Setting data')
-    print(counter)
+    print('Frame {0}/{1}'.format(counter+1,15))
     line1.set_data(ax1_Max,Phi1)
     line2.set_data(ax2_Max,Phi2)
     line3.set_data(ax3_Max,Phi3)
