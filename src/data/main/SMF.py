@@ -84,7 +84,11 @@ Mstellar_characteristic = np.arange(9.5,11.0,0.1) #11.0 not included
 Mlow_slope = np.arange(0.35,0.50,0.01)[:-1] #0.5 included by default
 Mhigh_slope = np.arange(0.50,0.65,0.01)[:-1]
 Mstellar_scatter = np.arange(0.02,0.095,0.005)
-
+Mhalo_characteristic[:5]
+Mstellar_characteristic[:5]
+Mlow_slope[:5]
+Mhigh_slope[:5]
+Mstellar_scatter[:5]
 
 def gals(Mhalo_value,Mstellar_value,Mlow_slope,Mhigh_slope,Mstellar_scatter):   
     ###Models
@@ -198,7 +202,7 @@ def make_animation(i,j,k,l,m):
                ,loc='lower left',prop={'size': 20})
     
     print('Setting data')
-    print('Frame {0}/{1}'.format(counter+1,15))
+    print('Frame {0}/{1}'.format(counter+1,len(Mhalo_characteristic)))
     line1.set_data(ax1_Max,Phi1)
     line2.set_data(ax2_Max,Phi2)
     line3.set_data(ax3_Max,Phi3)
