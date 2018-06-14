@@ -84,11 +84,11 @@ Mstellar_characteristic = np.arange(9.5,11.0,0.1) #11.0 not included
 Mlow_slope = np.arange(0.35,0.50,0.01)[:-1] #0.5 included by default
 Mhigh_slope = np.arange(0.50,0.65,0.01)[:-1]
 Mstellar_scatter = np.arange(0.02,0.095,0.005)
-Mhalo_characteristic[:5]
-Mstellar_characteristic[:5]
-Mlow_slope[:5]
-Mhigh_slope[:5]
-Mstellar_scatter[:5]
+Mhalo_characteristic = Mhalo_characteristic[:2]
+Mstellar_characteristic = Mstellar_characteristic[:2]
+Mlow_slope = Mlow_slope[:2]
+Mhigh_slope = Mhigh_slope[:2]
+Mstellar_scatter = Mstellar_scatter[:2]
 
 def gals(Mhalo_value,Mstellar_value,Mlow_slope,Mhigh_slope,Mstellar_scatter):   
     ###Models
