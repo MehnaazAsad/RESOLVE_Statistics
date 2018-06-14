@@ -136,7 +136,7 @@ def make_animation(i):
     return line1, 
 
 #Setting up the figure, the axis, and the plot element we want to animate
-fig,ax1 = plt.subplots(figsize=(30,30))
+fig,ax1 = plt.subplots(figsize=(10,8))
 #ax1 = plt.subplot2grid(shape=(2,6), loc=(0,0), colspan=2)
 ax1_catalog = gals(Mhalo_characteristic[0])
 ax1_logM = np.log10(ax1_catalog['stellar_mass'])
