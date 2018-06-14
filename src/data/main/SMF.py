@@ -31,7 +31,7 @@ halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/bolshoi/'\
 'rockstar/bolshoi_test_v1.hdf5'
 
 ###Formatting for plots and animation
-rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']},size=15)
+rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']},size=20)
 rc('text', usetex=True)
 plt.rcParams['animation.convert_path'] = '/fs1/masad/anaconda3/envs/resolve_statistics/bin/magick'
 #'{0}/magick'.format(os.path.dirname(which('python')))
@@ -187,15 +187,15 @@ def make_animation(i,j,k,l,m):
     Phi5 = Phi5/(float(Volume_FK)*ax5_dM)
     
     ax1.legend([line1,SMF_RESOLVE],[r'$M_{h}=%4.2f$' % Mhalo,'RESOLVE'],\
-               loc='lower left',prop={'size': 10})
+               loc='lower left',prop={'size': 20})
     ax2.legend([line2,SMF_RESOLVE],[r'$M_{*}=%4.2f$' % Mstellar,'RESOLVE'],\
-               loc='lower left',prop={'size': 10})
+               loc='lower left',prop={'size': 20})
     ax3.legend([line3,SMF_RESOLVE],[r'$\beta=%4.2f$' % Mlowslope,'RESOLVE'],\
-               loc='lower left',prop={'size': 10})
+               loc='lower left',prop={'size': 20})
     ax4.legend([line4,SMF_RESOLVE],[r'$\delta=%4.2f$' % Mhighslope,'RESOLVE'],\
-               loc='lower left',prop={'size': 10})
+               loc='lower left',prop={'size': 20})
     ax5.legend([line5,SMF_RESOLVE],[r'$\xi=%4.3f$' % Mstellarscatter,'RESOLVE']\
-               ,loc='lower left',prop={'size': 10})
+               ,loc='lower left',prop={'size': 20})
     
     print('Setting data')
     print('Frame {0}/{1}'.format(counter+1,15))
@@ -210,7 +210,7 @@ def make_animation(i,j,k,l,m):
     return [line1,line2,line3,line4,line5]  
 
 #Setting up the figure, the axis, and the plot element we want to animate
-fig = plt.figure(figsize=(30,30))
+fig = plt.figure(figsize=(10,8))
 ax1 = plt.subplot2grid(shape=(2,6), loc=(0,0), colspan=2)
 ax2 = plt.subplot2grid((2,6), (0,2), colspan=2)
 ax3 = plt.subplot2grid((2,6), (0,4), colspan=2)
@@ -282,5 +282,5 @@ print('Saving animation')
 #animation.verbose.set_level('helpful')
 os.chdir(path_to_figures)
 #writer = ImageMagickFileWriter()
-anim.save('SMF_5params_haloprop_macc.gif',writer='imagemagick',fps=1)
+anim.save('SMF_5params_test.gif',writer='imagemagick',fps=1)
 #anim.save('SMF_5params.html',fps=1)
