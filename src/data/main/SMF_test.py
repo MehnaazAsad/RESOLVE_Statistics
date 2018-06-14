@@ -79,7 +79,7 @@ counter = 0
 nbins = 10
 Volume = 5.2e4  #Volume of RESOLVE Mpc^3
 Volume_FK = 250.**3
-Mhalo_characteristic = np.arange(11.5,13.0,0.1) #13.0 not included
+Mhalo_characteristic = np.arange(11.5,13.0,1.5) #13.0 not included
 
 
 def gals(Mhalo_value):   
@@ -125,10 +125,10 @@ def make_animation(i):
     Phi1 = Phi1/(float(Volume_FK)*ax1_dM)
     
     ax1.legend([line1,SMF_RESOLVE],[r'$M_{h}=%4.2f$' % Mhalo,'RESOLVE'],\
-               loc='lower left',prop={'size': 15})
+               loc='lower left',prop={'size': 20})
     
     print('Setting data')
-    print('Frame {0}/{1}'.format(counter+1,15))
+    print('Frame {0}/{1}'.format(counter+1,1))
     line1.set_data(ax1_Max,Phi1)
     
     counter+=1
