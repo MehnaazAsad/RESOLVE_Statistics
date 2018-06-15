@@ -31,11 +31,12 @@ halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/bolshoi/'\
 'rockstar/bolshoi_test_v1.hdf5'
 
 ###Formatting for plots and animation
-rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']},size=20)
+rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']},size=15)
 rc('text', usetex=True)
 plt.rcParams['animation.convert_path'] = '/fs1/masad/anaconda3/envs/resolve_statistics/bin/magick'
 #'{0}/magick'.format(os.path.dirname(which('python')))
-
+#%%
+#path_to_interim = '/Users/asadm2/Documents/Grad_School/Research/Repositories/resolve_statistics/data/interim/'
 RESOLVE = pd.read_csv(path_to_interim + 'RESOLVE_formatted.txt',delimiter='\t')
 
 M_HI = []
@@ -68,12 +69,13 @@ Phi_resolve = Phi_resolve/(V_resolve*dM_resolve)
 
 fig1 = plt.figure(figsize=(10,8))
 plt.yscale('log')
-plt.axvline(x=8.9, ls = '--', c = 'r')
-#plt.xlim(8.9,11.5)
+#plt.axvline(x=8.9, ls = '--', c = 'r')
+plt.xlim(8.9,11.5)
 plt.xlabel(r'$\log(M_\star\,/\,M_\odot)$')
 plt.ylabel(r'$\Phi\,/\,\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}$')
 plt.plot(Max_resolve,Phi_resolve)
 plt.title('Stellar mass function')
+#%%
 
 counter = 0
 nbins = 10
@@ -191,15 +193,15 @@ def make_animation(i,j,k,l,m):
     Phi5 = Phi5/(float(Volume_FK)*ax5_dM)
     
     ax1.legend([line1,SMF_RESOLVE],[r'$M_{h}=%4.2f$' % Mhalo,'RESOLVE'],\
-               loc='lower left',prop={'size': 20})
+               loc='lower left',prop={'size': 10})
     ax2.legend([line2,SMF_RESOLVE],[r'$M_{*}=%4.2f$' % Mstellar,'RESOLVE'],\
-               loc='lower left',prop={'size': 20})
+               loc='lower left',prop={'size': 10})
     ax3.legend([line3,SMF_RESOLVE],[r'$\beta=%4.2f$' % Mlowslope,'RESOLVE'],\
-               loc='lower left',prop={'size': 20})
+               loc='lower left',prop={'size': 10})
     ax4.legend([line4,SMF_RESOLVE],[r'$\delta=%4.2f$' % Mhighslope,'RESOLVE'],\
-               loc='lower left',prop={'size': 20})
+               loc='lower left',prop={'size': 10})
     ax5.legend([line5,SMF_RESOLVE],[r'$\xi=%4.3f$' % Mstellarscatter,'RESOLVE']\
-               ,loc='lower left',prop={'size': 20})
+               ,loc='lower left',prop={'size': 10})
     
     print('Setting data')
     print('Frame {0}/{1}'.format(counter+1,len(Mhalo_characteristic)))
@@ -288,3 +290,4 @@ os.chdir(path_to_figures)
 #writer = ImageMagickFileWriter()
 anim.save('SMF_5params_test.gif',writer='imagemagick',fps=1)
 #anim.save('SMF_5params.html',fps=1)
+
