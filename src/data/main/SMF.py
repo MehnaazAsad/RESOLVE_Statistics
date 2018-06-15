@@ -35,7 +35,7 @@ rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']},size=15)
 rc('text', usetex=True)
 plt.rcParams['animation.convert_path'] = '/fs1/masad/anaconda3/envs/resolve_statistics/bin/magick'
 #'{0}/magick'.format(os.path.dirname(which('python')))
-#%%
+
 #path_to_interim = '/Users/asadm2/Documents/Grad_School/Research/Repositories/resolve_statistics/data/interim/'
 RESOLVE = pd.read_csv(path_to_interim + 'RESOLVE_formatted.txt',delimiter='\t')
 
@@ -75,7 +75,7 @@ plt.xlabel(r'$\log(M_\star\,/\,M_\odot)$')
 plt.ylabel(r'$\Phi\,/\,\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}$')
 plt.plot(Max_resolve,Phi_resolve)
 plt.title('Stellar mass function')
-#%%
+
 
 counter = 0
 nbins = 10
@@ -95,15 +95,15 @@ Mstellar_scatter = np.arange(0.02,0.095,0.005)
 def gals(Mhalo_value,Mstellar_value,Mlow_slope,Mhigh_slope,Mstellar_scatter):   
     ###Models
     model1 = PrebuiltSubhaloModelFactory('behroozi10',redshift=0.0186,\
-                                         prim_haloprop_key='halo_macc')
+                                         prim_haloprop_key='halo_mvir')
     model2 = PrebuiltSubhaloModelFactory('behroozi10',redshift=0.0186,\
-                                         prim_haloprop_key='halo_macc')
+                                         prim_haloprop_key='halo_mvir')
     model3 = PrebuiltSubhaloModelFactory('behroozi10',redshift=0.0186,\
-                                         prim_haloprop_key='halo_macc')
+                                         prim_haloprop_key='halo_mvir')
     model4 = PrebuiltSubhaloModelFactory('behroozi10',redshift=0.0186,\
-                                         prim_haloprop_key='halo_macc')
+                                         prim_haloprop_key='halo_mvir')
     model5 = PrebuiltSubhaloModelFactory('behroozi10',redshift=0.0186,\
-                                         prim_haloprop_key='halo_macc')
+                                         prim_haloprop_key='halo_mvir')
     
     ###Halocats
     halocat1 = CachedHaloCatalog(fname=halo_catalog)
@@ -288,6 +288,6 @@ print('Saving animation')
 #animation.verbose.set_level('helpful')
 os.chdir(path_to_figures)
 #writer = ImageMagickFileWriter()
-anim.save('SMF_5params_test.gif',writer='imagemagick',fps=1)
+anim.save('SMF_mvir.gif',writer='imagemagick',fps=1)
 #anim.save('SMF_5params.html',fps=1)
 
