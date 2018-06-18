@@ -93,15 +93,15 @@ Mstellar_scatter = np.arange(0.02,0.095,0.005)
 def gals(Mhalo_value,Mstellar_value,Mlow_slope,Mhigh_slope,Mstellar_scatter):   
     ###Models
     model1 = PrebuiltSubhaloModelFactory('behroozi10',redshift=0.0186,\
-                                         prim_haloprop_key='halo_mvir')
+                                         prim_haloprop_key='halo_macc')
     model2 = PrebuiltSubhaloModelFactory('behroozi10',redshift=0.0186,\
-                                         prim_haloprop_key='halo_mvir')
+                                         prim_haloprop_key='halo_macc')
     model3 = PrebuiltSubhaloModelFactory('behroozi10',redshift=0.0186,\
-                                         prim_haloprop_key='halo_mvir')
+                                         prim_haloprop_key='halo_macc')
     model4 = PrebuiltSubhaloModelFactory('behroozi10',redshift=0.0186,\
-                                         prim_haloprop_key='halo_mvir')
+                                         prim_haloprop_key='halo_macc')
     model5 = PrebuiltSubhaloModelFactory('behroozi10',redshift=0.0186,\
-                                         prim_haloprop_key='halo_mvir')
+                                         prim_haloprop_key='halo_macc')
     
     ###Halocats
     halocat1 = CachedHaloCatalog(fname=halo_catalog)
@@ -268,5 +268,5 @@ anim = animation.FuncAnimation(plt.gcf(), make_animation, \
 plt.tight_layout()
 print('Saving animation')
 os.chdir(path_to_figures)
-anim.save('SMF_mvir.gif',writer='imagemagick',fps=1)
+anim.save('SMF_macc.gif',writer='imagemagick',fps=1)
 
