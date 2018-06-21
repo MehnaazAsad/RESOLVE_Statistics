@@ -89,48 +89,48 @@ plt.ylabel(r'$\Phi\,/\,\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}$')
 plt.title('Stellar mass function')
 ###############################################################################
 ###COSMIC VARIANCE
-eco = pd.read_csv(path_to_interim + 'ECO_DR1.txt',delimiter='\s+',header=None,usecols=\
-                            [0,1,2,3,4,5,13,15],\
-                            names=['ECOID','RA','DEC','velocity','M_r',\
-                                   'log_stellarmass','groupcz',\
-                                   'log_halogroupmass'])
-    
-dec_slices = np.arange(-1,49.85,2.5)
-minz_resB = np.min(RESOLVE_B.cz/(3*10**5))
-maxz_resB = np.max(RESOLVE_B.cz/(3*10**5))
-mincz_resB = 4500
-maxcz_resB = 7000
-H_0 = 70
-slice_area = 2.5*75 #deg^2
-deg2_in_sphere = 41252.96 #deg^2
-
-num_in_slice = []
-z = []
-for index,value in enumerate(dec_slices):
-    if index == 20:
-        break
-    counter = 0
-    for index2,galaxy in enumerate(eco.ECOID.values):
-        if 134.99 < eco.RA.values[index2] < 209.99:
-            if value < eco.DEC.values[index2] < dec_slices[index+1]:
-                if minz_resB < (eco.velocity.values[index2]/(3*10**5)) < maxz_resB:
-                    z.append(eco.velocity.values[index2]/(3*10**5))
-                    counter += 1
-    num_in_slice.append(counter)
-num_in_slice = np.array(num_in_slice)
-
-#med_z = np.median(z)
-#d = med_z*3*10**5/H_0 #Mpc
-#vol_sphere = (4/3)*np.pi*(d**3) #Mpc^3
-
-inner_vol = (4/3)*np.pi*((mincz_resB/H_0)**3)
-outer_vol = (4/3)*np.pi*((maxcz_resB/H_0)**3)
-vol_sphere = outer_vol-inner_vol #Mpc^3
-
-vol_slice = (slice_area/deg2_in_sphere)*vol_sphere
-gal_dens = num_in_slice/vol_slice
-cosmic_variance = (np.std(gal_dens)*100)
-print('Cosmic variance: {0}%'.format(np.round(cosmic_variance,2)))
+#eco = pd.read_csv(path_to_interim + 'ECO_DR1.txt',delimiter='\s+',header=None,usecols=\
+#                            [0,1,2,3,4,5,13,15],\
+#                            names=['ECOID','RA','DEC','velocity','M_r',\
+#                                   'log_stellarmass','groupcz',\
+#                                   'log_halogroupmass'])
+#    
+#dec_slices = np.arange(-1,49.85,2.5)
+#minz_resB = np.min(RESOLVE_B.cz/(3*10**5))
+#maxz_resB = np.max(RESOLVE_B.cz/(3*10**5))
+#mincz_resB = 4500
+#maxcz_resB = 7000
+#H_0 = 70
+#slice_area = 2.5*75 #deg^2
+#deg2_in_sphere = 41252.96 #deg^2
+#
+#num_in_slice = []
+#z = []
+#for index,value in enumerate(dec_slices):
+#    if index == 20:
+#        break
+#    counter = 0
+#    for index2,galaxy in enumerate(eco.ECOID.values):
+#        if 134.99 < eco.RA.values[index2] < 209.99:
+#            if value < eco.DEC.values[index2] < dec_slices[index+1]:
+#                if minz_resB < (eco.velocity.values[index2]/(3*10**5)) < maxz_resB:
+#                    z.append(eco.velocity.values[index2]/(3*10**5))
+#                    counter += 1
+#    num_in_slice.append(counter)
+#num_in_slice = np.array(num_in_slice)
+#
+##med_z = np.median(z)
+##d = med_z*3*10**5/H_0 #Mpc
+##vol_sphere = (4/3)*np.pi*(d**3) #Mpc^3
+#
+#inner_vol = (4/3)*np.pi*((mincz_resB/H_0)**3)
+#outer_vol = (4/3)*np.pi*((maxcz_resB/H_0)**3)
+#vol_sphere = outer_vol-inner_vol #Mpc^3
+#
+#vol_slice = (slice_area/deg2_in_sphere)*vol_sphere
+#gal_dens = num_in_slice/vol_slice
+#cosmic_variance = (np.std(gal_dens)*100)
+#print('Cosmic variance: {0}%'.format(np.round(cosmic_variance,2)))
 ###############################################################################
 
 #%%
