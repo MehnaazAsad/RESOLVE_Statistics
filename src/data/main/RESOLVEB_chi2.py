@@ -28,6 +28,7 @@ import numpy as np
 import matplotlib
 import os
 
+matplotlib.use('Agg')
 
 ### Paths
 dict_of_paths = cwpaths.cookiecutter_paths()
