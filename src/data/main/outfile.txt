@@ -1,0 +1,103 @@
+'''
+def gals(Mhalo_value,Mstellar_value):   
+    ###Models
+    model1 = PrebuiltSubhaloModelFactory('behroozi10',redshift=0.0186,\
+                                         prim_haloprop_key='halo_mvir')
+    
+    ###Halocats
+#    halocat1 = CachedHaloCatalog(fname=halo_catalog)
+    halocat1 = FakeSim()
+    ###Parameter values
+    model1.param_dict['smhm_m1_0'] = Mhalo_value
+    model1.param_dict['smhm_m0_0'] = Mstellar_value
+    
+    ###Populate mocks
+    model1.populate_mock(halocat1)
+    
+    #Applying RESOLVE-B stellar mass limit
+    sample_mask1 = model1.mock.galaxy_table['stellar_mass'] >= 10**8.7
+    
+    gals = model1.mock.galaxy_table[sample_mask1]
+    
+    return gals
+    
+def init():
+    
+    line1 = ax1.errorbar([],[],yerr=[],fmt="bs--",\
+                            linewidth=2,elinewidth=0.5,ecolor='k',capsize=2,\
+                            capthick=0.5)
+    
+    return line1
+
+def make_animation(i,j):
+    global counter
+    print(i,j) 
+    Mhalo, Mstellar = i,j[counter]
+    ax1_catalog = gals(Mhalo,Mstellar)
+    
+    ax1_logM = np.log10(ax1_catalog['stellar_mass'])
+    
+    Phi1,ax1_edg = np.histogram(ax1_logM,bins=nbins) 
+    
+    ax1_dM = ax1_edg[1] - ax1_edg[0] 
+    
+    ax1_Max = 0.5*(ax1_edg[1:]+ax1_edg[:-1])
+    
+    ax1_menStd = np.sqrt(Phi1)/(Volume_FK*ax1_dM)
+   
+    Phi1 = Phi1/(float(Volume_FK)*ax1_dM)
+    
+    ax1.clear()
+#    ax1.set_xlim(8.9,)
+    ax1.minorticks_on()
+    ax1.set_yscale('log')
+    ax1.set_xlabel(r'$\log(M_\star\,/\,M_\odot)$')
+    ax1.set_ylabel(r'$\Phi\,/\,\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}$')
+    
+    line1 = ax1.errorbar(ax1_Max,Phi1,yerr=ax1_menStd,fmt="bs--",\
+                            linewidth=2,elinewidth=0.5,ecolor='k',capsize=2,\
+                            capthick=1.5,markersize='3') 
+    SMF_RESOLVEB = ax1.errorbar(Max_resolveB,Phi_resolveB,yerr=err_tot_B,\
+                                  fmt="rs--",linewidth=2,elinewidth=0.5,\
+                                  ecolor='k',capsize=2,capthick=1.5,\
+                                  markersize='3')
+
+    
+    ax1.legend([line1,SMF_RESOLVEB],[r'$M_{h}=%4.2f$' % Mhalo,'RESOLVE'],\
+               loc='lower left',prop={'size': 10})
+    
+    print('Setting data')
+    print('Frame {0}/{1}'.format(counter+1,len(Mhalo_characteristic)))
+    
+    counter+=1
+        
+    return line1
+
+#Setting up the figure, the axis, and the plot element we want to animate
+fig,ax1 = plt.subplots(figsize=(10,8))
+#ax1 = plt.subplot2grid(shape=(2,6), loc=(0,0), colspan=2)
+#ax1_catalog = gals(Mhalo_characteristic[0],Mstellar_characteristic[0])
+#ax1_logM = np.log10(ax1_catalog['stellar_mass'])
+#ax1_Phi,ax1_edg = np.histogram(ax1_logM,bins=nbins) 
+#ax1_dM = ax1_edg[1] - ax1_edg[0]  
+#ax1_Max = 0.5*(ax1_edg[1:]+ax1_edg[:-1])
+#ax1_menStd = np.sqrt(ax1_Phi)/(Volume_FK*ax1_dM)
+#ax1_Phi = ax1_Phi/(float(Volume_FK)*ax1_dM)
+#
+#line1 = ax1.errorbar(ax1_Max,ax1_Phi,yerr=ax1_menStd,fmt="bs--",\
+#                            linewidth=2,elinewidth=0.5,ecolor='k',capsize=2,\
+#                            capthick=1.5,markersize='3') 
+
+
+
+anim = animation.FuncAnimation(plt.gcf(), make_animation, \
+                               Mhalo_characteristic,init_func=init,\
+                               fargs=(Mstellar_characteristic,),\
+                                      interval=1000,blit=False,repeat=True)
+plt.tight_layout()
+plt.show()
+
+#print('Saving animation')
+#os.chdir(path_to_figures)
+#anim.save('SMF_macc.gif',writer='imagemagick',fps=1)
+'''

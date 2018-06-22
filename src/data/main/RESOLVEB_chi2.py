@@ -176,7 +176,7 @@ for index,stellar_value in enumerate(Mstellar_characteristic):
         print('Calculating chi squared')
         chi2 = 0
         for i in range(nbins):
-            chi2_i = ((Phi_resolveB[i]-Phi[i])**2)/Phi[i]
+            chi2_i = ((Phi_resolveB[i]-Phi[i])**2)/((err_tot_B[i])**2)
             chi2 += chi2_i
         chi2_arr.append(chi2)
     chi2_arrs.append(chi2_arr)

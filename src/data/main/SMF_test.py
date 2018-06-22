@@ -88,9 +88,9 @@ def gals(Mhalo_value):
                                          prim_haloprop_key='halo_macc')
     
     ###Halocats
-    halocat1 = CachedHaloCatalog(fname=halo_catalog)
+#    halocat1 = CachedHaloCatalog(fname=halo_catalog)
 
-#    halocat1 = FakeSim()
+    halocat1 = FakeSim()
 #    halocat2 = FakeSim()
 #    halocat3 = FakeSim()
 #    halocat4 = FakeSim()
