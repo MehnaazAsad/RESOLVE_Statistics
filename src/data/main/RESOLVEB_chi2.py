@@ -21,14 +21,16 @@ from halotools.empirical_models import PrebuiltSubhaloModelFactory
 from halotools.sim_manager import CachedHaloCatalog
 from halotools.sim_manager import FakeSim
 from cosmo_utils.utils import work_paths as cwpaths
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+plt.ioff()
 from matplotlib import rc
 import pandas as pd
 import numpy as np
-import matplotlib
 import os
 
-matplotlib.use('Agg')
+
 
 ### Paths
 dict_of_paths = cwpaths.cookiecutter_paths()
