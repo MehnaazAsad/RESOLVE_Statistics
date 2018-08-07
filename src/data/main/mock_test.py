@@ -31,16 +31,17 @@ eco_obs_catalog = pd.read_csv(path_to_raw + 'gal_Lr_Mb_Re.txt',\
 
 def fit_func(M,phi_star,M_star,alpha):
     const = 0.4*np.log(10)*phi_star
-    first_exp_term = 10**(0.4*(alpha+1)*(M-M_star))
-    second_exp_term = np.exp(-10**(0.4*(M-M_star)))
+    first_exp_term = 10**(0.4*(alpha+1)*(M_star-M))
+    second_exp_term = np.exp(-10**(0.4*(M_star-M)))
     return const*first_exp_term*second_exp_term
 
 def cum_num_dens(data,nbins,volume,mag_bool):
     #Unnormalized histogram and bin edges
     freq,edg = np.histogram(data,bins=nbins)     
     bin_centers = 0.5*(edg[1:]+edg[:-1])
-    err_poiss = np.sqrt(freq)/volume
-    freq = freq/volume 
+    bin_widths = np.diff(edg)
+    err_poiss = np.sqrt(freq)/(volume*bin_widths)
+    freq = freq/(volume * bin_widths)
     if mag_bool:
         n = np.cumsum(freq) 
     else:
@@ -58,17 +59,17 @@ def num_bins(data_arr):
 
 v_eco = 442650.9037900876 #ECO without buffer
 
-##METHOD 1 using VC's method on unique M_r values
+###METHOD 1 using VC's method on unique M_r values
 Mr_unique = np.unique(eco_obs_catalog.M_r.values)
 Mr_all = eco_obs_catalog.M_r.values
-n_Mr = np.array([np.where(Mr_all < xx)[0].size + 1 for xx in Mr_unique])
-n_Mr = n_Mr/v_eco
+#n_Mr = np.array([np.where(Mr_all < xx)[0].size + 1 for xx in Mr_unique])
+#n_Mr = n_Mr/v_eco
 
 ##METHOD 2 my method but using unique M_r values for bins
-nbins = Mr_unique
-bin_centers,n_Mr_2,err_poiss = cum_num_dens(Mr_all,nbins,v_eco,mag_bool=True)
+#nbins = Mr_unique
+#bin_centers,n_Mr_2,err_poiss = cum_num_dens(Mr_all,nbins,v_eco,mag_bool=True)
 
-##METHOD 3 my method with my method of binning using num_bins function
+###METHOD 3 my method with my method of binning using num_bins function
 nbins = num_bins(Mr_all)
 bin_centers_2,n_Mr_3,err_poiss = cum_num_dens(Mr_all,nbins,v_eco,mag_bool=True)
 
@@ -76,12 +77,12 @@ bin_centers_2,n_Mr_3,err_poiss = cum_num_dens(Mr_all,nbins,v_eco,mag_bool=True)
 min_Mr = min(Mr_all)
 max_Mr = max(Mr_all)
 p0 = [10**-2,-22,-1.1] #initial guess for phi_star,M_star,alpha
-params_alldata = curve_fit(fit_func, bin_centers_2,n_Mr_3,p0,\
-                           maxfev=20000)
-fit_alldata = fit_func(np.linspace(min_Mr,max_Mr),\
-                       params_alldata[0][0],params_alldata[0][1],\
-                       params_alldata[0][2])
-
+#params_alldata = curve_fit(fit_func, bin_centers_2,n_Mr_3,p0,\
+#                           maxfev=20000,sigma=err_poiss)
+#fit_alldata = fit_func(np.linspace(min_Mr,max_Mr),\
+#                       params_alldata[0][0],params_alldata[0][1],\
+#                       params_alldata[0][2])
+#
 ### Using SF to fit data until -17.33 and extrapolating SF using the same 
 ### parameters until -17
 M_r_cut = [value for value in Mr_all if value <= -17.33]
@@ -89,8 +90,7 @@ max_M_r_cut = max(M_r_cut)
 nbins = num_bins(M_r_cut)
 bin_centers_cut,n_Mr_cut,err_poiss_cut = cum_num_dens(M_r_cut,nbins,v_eco,\
                                                       mag_bool=True)
-params_noextrap = curve_fit(fit_func,bin_centers_cut,n_Mr_cut,p0,\
-                            maxfev=20000)
+params_noextrap = curve_fit(fit_func,bin_centers_cut,n_Mr_cut,p0,maxfev=20000)
 fit_noextrap = fit_func(np.linspace(min_Mr,max_M_r_cut),\
                         params_noextrap[0][0],params_noextrap[0][1],\
                         params_noextrap[0][2])
@@ -101,21 +101,24 @@ fit_extrap = fit_func(np.linspace(max_Mr,max_M_r_cut),\
 
 fig1 = plt.figure(figsize=(10,8))
 plt.yscale('log')
-plt.axvline(-17.33,ls='--',c='k',label='ECO/RESOLVE-A')
+plt.axvline(-17.33,ls='--',c='g',label='ECO/RESOLVE-A')
 plt.axvline(-17,ls='--',c='r',label='RESOLVE-B')
 plt.gca().invert_xaxis()
 #plt.scatter(Mr_unique,n_Mr,c='r',s=5,label='unique bins')
-plt.scatter(bin_centers,n_Mr_2,c='g',s=5,label='cum sum with unique bins')
+#plt.scatter(bin_centers,n_Mr_2,c='g',s=5,label='cum sum with unique bins')
 #plt.scatter(bin_centers_2,n_Mr_3,c='b',s=5,label='cum sum with FD bins')
-plt.plot(np.linspace(min_Mr,max_Mr),fit_alldata,'--g',label='all data fit')
+plt.errorbar(bin_centers_cut,n_Mr_cut,yerr=err_poiss_cut,fmt="ks--",ls='None',\
+             elinewidth=0.5,ecolor='k',capsize=5,capthick=0.5,markersize=4,\
+             label='data until -17.33')
+#plt.plot(np.linspace(min_Mr,max_Mr),fit_alldata,'--g',label='all data fit')
 plt.plot(np.linspace(max_Mr,max_M_r_cut),fit_extrap,'--y',label='extrap')
 plt.plot(np.linspace(min_Mr,max_M_r_cut),fit_noextrap,'--k',\
          label='data fit until -17.33')
 plt.xlabel(r'$M_{r}$')
-plt.ylabel(r'$n(< M_{r})/\mathrm{Mpc}^{-3}$')
+plt.ylabel(r'$n(< M_{r})/\mathrm{Mpc}^{-3}\mathrm{mag}^{-1}$')
 plt.legend(loc='best')
 plt.show()
-
+'''
 ### Halo data
 halo_prop_table = pd.read_csv(path_to_interim + 'halo_vpeak.csv',header=None,\
                               names=['vpeak'])
@@ -159,3 +162,4 @@ plt.scatter(halo_vpeak_sham,Mr_all,s=5)
 plt.ylabel(r'$M_{r}$')
 plt.xlabel(r'$v_{peak} /\mathrm{km\ s^{-1}}$')
 plt.show()
+'''
