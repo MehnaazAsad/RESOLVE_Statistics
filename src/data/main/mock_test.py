@@ -41,10 +41,11 @@ def cum_num_dens(data,nbins,volume,mag_bool):
     bin_centers = 0.5*(edg[1:]+edg[:-1])
     bin_widths = np.diff(edg)
     err_poiss = np.sqrt(freq)/(volume*bin_widths)
-    freq = freq/(volume * bin_widths)
+    freq = freq/(volume*bin_widths)
     if mag_bool:
         n = np.cumsum(freq) 
     else:
+        print(freq)
         n = np.cumsum(np.flip(freq,0))
         n = np.flip(n,0)
     return bin_centers,n,err_poiss
@@ -57,76 +58,102 @@ def num_bins(data_arr):
     n_bins = math.ceil((max(data_arr)-min(data_arr))/h) #Round up number   
     return n_bins
 
-v_eco = 442650.9037900876 #ECO without buffer
-
-###METHOD 1 using VC's method on unique M_r values
-Mr_unique = np.unique(eco_obs_catalog.M_r.values)
 Mr_all = eco_obs_catalog.M_r.values
-#n_Mr = np.array([np.where(Mr_all < xx)[0].size + 1 for xx in Mr_unique])
-#n_Mr = n_Mr/v_eco
+Mr_unique = np.unique(eco_obs_catalog.M_r.values)
+v_eco = 442650.9037900876 #ECO without buffer
+min_Mr = min(Mr_all)
+max_Mr = max(Mr_all)
 
-##METHOD 2 my method but using unique M_r values for bins
+##METHOD 1 using VC's method on unique M_r values
+#n_Mr = np.array([np.where(Mr_all < xx)[0].size + 1 for xx in Mr_unique])
+#n_Mr = n_Mr/(v_eco*Mr_unique)
+
+#METHOD 2 my method but using unique M_r values for bins
 #nbins = Mr_unique
 #bin_centers,n_Mr_2,err_poiss = cum_num_dens(Mr_all,nbins,v_eco,mag_bool=True)
 
+
 ###METHOD 3 my method with my method of binning using num_bins function
-nbins = num_bins(Mr_all)
-bin_centers_2,n_Mr_3,err_poiss = cum_num_dens(Mr_all,nbins,v_eco,mag_bool=True)
+#nbins = num_bins(Mr_all)
+#bin_centers_2,n_Mr_3,err_poiss = cum_num_dens(Mr_all,nbins,v_eco,mag_bool=True)
 
 ### Using SF to fit all data until -17
-min_Mr = min(Mr_all)
-max_Mr = max(Mr_all)
 p0 = [10**-2,-22,-1.1] #initial guess for phi_star,M_star,alpha
 #params_alldata = curve_fit(fit_func, bin_centers_2,n_Mr_3,p0,\
 #                           maxfev=20000,sigma=err_poiss)
 #fit_alldata = fit_func(np.linspace(min_Mr,max_Mr),\
 #                       params_alldata[0][0],params_alldata[0][1],\
 #                       params_alldata[0][2])
-#
+
 ### Using SF to fit data until -17.33 and extrapolating SF using the same 
 ### parameters until -17
-M_r_cut = [value for value in Mr_all if value <= -17.33]
+M_r_cut = [value for value in Mr_all if value <= -17.33 and value >= -23]
 max_M_r_cut = max(M_r_cut)
+min_M_r_cut = min(M_r_cut)
 nbins = num_bins(M_r_cut)
 bin_centers_cut,n_Mr_cut,err_poiss_cut = cum_num_dens(M_r_cut,nbins,v_eco,\
                                                       mag_bool=True)
-params_noextrap = curve_fit(fit_func,bin_centers_cut,n_Mr_cut,p0,maxfev=20000)
-fit_noextrap = fit_func(np.linspace(min_Mr,max_M_r_cut),\
+params_noextrap = curve_fit(fit_func,bin_centers_cut,n_Mr_cut,p0,maxfev=20000,\
+                            method='lm')
+fit_noextrap = fit_func(np.linspace(min_M_r_cut,max_M_r_cut),\
                         params_noextrap[0][0],params_noextrap[0][1],\
                         params_noextrap[0][2])
 
-fit_extrap = fit_func(np.linspace(max_Mr,max_M_r_cut),\
+fit_extrap_dim = fit_func(np.linspace(max_M_r_cut,max_Mr),\
                       params_noextrap[0][0],params_noextrap[0][1],\
                       params_noextrap[0][2])
 
-fig1 = plt.figure(figsize=(10,8))
-plt.yscale('log')
-plt.axvline(-17.33,ls='--',c='g',label='ECO/RESOLVE-A')
-plt.axvline(-17,ls='--',c='r',label='RESOLVE-B')
-plt.gca().invert_xaxis()
+fit_extrap_bright = fit_func(np.linspace(min_Mr,min_M_r_cut),\
+                      params_noextrap[0][0],params_noextrap[0][1],\
+                      params_noextrap[0][2])
+
+data_fit_frac = []
+for index,value in enumerate(bin_centers_cut):
+    n_data = n_Mr_cut[index]
+    n_fit = fit_func(value,params_noextrap[0][0],params_noextrap[0][1],params_noextrap[0][2])
+    frac_diff = np.abs(((n_fit-n_data)/n_data)*100)
+    data_fit_frac.append(frac_diff)
+    
+fig,(ax1,ax2) = plt.subplots(2,1,sharex=True,sharey=False,figsize=(20,20),\
+     gridspec_kw = {'height_ratios':[8,2]})
+ax1.set_yscale('log')
+ax1.axvline(-17.33,ls='--',c='g',label='ECO/RESOLVE-A')
+ax1.axvline(-17,ls='--',c='r',label='RESOLVE-B')
+ax1.invert_xaxis()
 #plt.scatter(Mr_unique,n_Mr,c='r',s=5,label='unique bins')
 #plt.scatter(bin_centers,n_Mr_2,c='g',s=5,label='cum sum with unique bins')
 #plt.scatter(bin_centers_2,n_Mr_3,c='b',s=5,label='cum sum with FD bins')
-plt.errorbar(bin_centers_cut,n_Mr_cut,yerr=err_poiss_cut,fmt="ks--",ls='None',\
+ax1.errorbar(bin_centers_cut,n_Mr_cut,yerr=err_poiss_cut,fmt="ks--",ls='None',\
              elinewidth=0.5,ecolor='k',capsize=5,capthick=0.5,markersize=4,\
-             label='data until -17.33')
-#plt.plot(np.linspace(min_Mr,max_Mr),fit_alldata,'--g',label='all data fit')
-plt.plot(np.linspace(max_Mr,max_M_r_cut),fit_extrap,'--y',label='extrap')
-plt.plot(np.linspace(min_Mr,max_M_r_cut),fit_noextrap,'--k',\
-         label='data fit until -17.33')
-plt.xlabel(r'$M_{r}$')
-plt.ylabel(r'$n(< M_{r})/\mathrm{Mpc}^{-3}\mathrm{mag}^{-1}$')
-plt.legend(loc='best')
-plt.show()
+             label='data between -23 and -17.33')
+#plt.fill_between(bin_centers_cut,np.log10(n_Mr_cut-err_poiss_cut),\
+#                 np.log10(n_Mr_cut+err_poiss_cut),alpha=0.5,\
+#                 label='data until -17.33')
+##plt.plot(np.linspace(min_Mr,max_Mr),fit_alldata,'--g',label='all data fit')
+ax1.plot(np.linspace(max_M_r_cut,max_Mr),fit_extrap_dim,'--y',label='extrap')
+ax1.plot(np.linspace(min_Mr,min_M_r_cut),fit_extrap_bright,'--y')
+ax1.plot(np.linspace(min_M_r_cut,max_M_r_cut),fit_noextrap,'--k',\
+         label='data fit between -23 and -17.33')
+ax1.set_ylabel(r'$[\mathrm{dn/dmag}]/\mathrm{Mpc}^{-3}\mathrm{mag}^{-1}$')
+ax1.legend(loc='upper right', prop={'size': 12})
+
+ax2.scatter(bin_centers_cut,data_fit_frac,c='k')
+ax2.set_xlabel(r'$M_{r}$')
+ax2.set_ylabel(r'$[\frac{model-data}{data}] \%$')
+fig.tight_layout()
+fig.show()
+
+
 '''
 ### Halo data
 halo_prop_table = pd.read_csv(path_to_interim + 'halo_vpeak.csv',header=None,\
                               names=['vpeak'])
-v_sim = 130**3
+v_sim = (130/0.7)**3
 vpeak = halo_prop_table.vpeak.values
 nbins = num_bins(vpeak)
 bin_centers_vpeak,n_vpeak,err_poiss = cum_num_dens(vpeak,nbins,v_sim,\
                                                    mag_bool=False)
+
 f_h = interpolate.interp1d(bin_centers_vpeak,n_vpeak,fill_value="extrapolate",\
                            kind=3)
 x_h = np.linspace(min(vpeak),max(vpeak),num=200)
@@ -136,7 +163,7 @@ fig2 = plt.figure()
 plt.xscale('log')
 plt.yscale('log')
 plt.xlabel(r'$v_{peak} /\mathrm{km\ s^{-1}}$')
-plt.ylabel(r'$n(> v_{peak})/\mathrm{Mpc}^{-3}$')
+plt.ylabel(r'$n(> v_{peak})/\mathrm{Mpc}^{-3}\mathrm{{v}_{peak}}^{-1}$')
 plt.scatter(bin_centers_vpeak,n_vpeak,label='data',s=2)
 plt.plot(x_h,ynew_h,'--k',label='interp/exterp')
 plt.legend(loc='best')
@@ -147,7 +174,14 @@ f_h = interpolate.interp1d(n_vpeak,bin_centers_vpeak,fill_value="extrapolate")
 #                           kind=3)
 halo_vpeak_sham = []
 n_Mr_arr = []
+mbary_arr = []
+re_arr = []
 for mag_value in Mr_all:
+    mbary = eco_obs_catalog.loc[eco_obs_catalog['M_r'] == mag_value, 'logmbary']
+    mbary_arr.append(mbary)
+    re = eco_obs_catalog.loc[eco_obs_catalog['M_r'] == mag_value, 'Re']
+    re_arr.append(re)
+
     n_Mr = fit_func(mag_value,params_noextrap[0][0],params_noextrap[0][1],\
                     params_noextrap[0][2])
     n_Mr_arr.append(n_Mr)
