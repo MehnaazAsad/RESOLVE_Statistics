@@ -10,6 +10,7 @@ from cosmo_utils.utils import work_paths as cwpaths
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 from scipy import interpolate
+from scipy.optimize import least_squares
 from matplotlib import rc
 import pandas as pd
 import numpy as np
@@ -35,20 +36,21 @@ def fit_func(M,phi_star,M_star,alpha):
     second_exp_term = np.exp(-10**(0.4*(M_star-M)))
     return const*first_exp_term*second_exp_term
 
-def cum_num_dens(data,nbins,volume,mag_bool):
+def diff_num_dens(data,nbins,volume,mag_bool):
     #Unnormalized histogram and bin edges
     freq,edg = np.histogram(data,bins=nbins)     
     bin_centers = 0.5*(edg[1:]+edg[:-1])
     bin_widths = np.diff(edg)
+    print(freq)
     err_poiss = np.sqrt(freq)/(volume*bin_widths)
-    freq = freq/(volume*bin_widths)
+    n_diff = freq/(volume*bin_widths)
     if mag_bool:
-        n = np.cumsum(freq) 
+        n_diff = np.cumsum(n_diff) 
     else:
         print(freq)
-        n = np.cumsum(np.flip(freq,0))
-        n = np.flip(n,0)
-    return bin_centers,n,err_poiss
+        n_diff = np.cumsum(np.flip(n_diff,0))
+        n_diff = np.flip(n_diff,0)
+    return bin_centers,n_diff,err_poiss
 
 def num_bins(data_arr):
     q75, q25 = np.percentile(data_arr, [75 ,25])
@@ -78,7 +80,7 @@ max_Mr = max(Mr_all)
 #bin_centers_2,n_Mr_3,err_poiss = cum_num_dens(Mr_all,nbins,v_eco,mag_bool=True)
 
 ### Using SF to fit all data until -17
-p0 = [10**-2,-22,-1.1] #initial guess for phi_star,M_star,alpha
+p0 = [10**-2,-20,-1.2] #initial guess for phi_star,M_star,alpha
 #params_alldata = curve_fit(fit_func, bin_centers_2,n_Mr_3,p0,\
 #                           maxfev=20000,sigma=err_poiss)
 #fit_alldata = fit_func(np.linspace(min_Mr,max_Mr),\
@@ -91,26 +93,31 @@ M_r_cut = [value for value in Mr_all if value <= -17.33 and value >= -23]
 max_M_r_cut = max(M_r_cut)
 min_M_r_cut = min(M_r_cut)
 nbins = num_bins(M_r_cut)
-bin_centers_cut,n_Mr_cut,err_poiss_cut = cum_num_dens(M_r_cut,nbins,v_eco,\
+bin_centers_cut,n_Mr_cut,err_poiss_cut = diff_num_dens(M_r_cut,nbins,v_eco,\
                                                       mag_bool=True)
-params_noextrap = curve_fit(fit_func,bin_centers_cut,n_Mr_cut,p0,maxfev=20000,\
-                            method='lm')
+sigma=err_poiss_cut
+#sigma[[1,2,3,4]] = 0.00001
+params_noextrap,pcov = curve_fit(fit_func,bin_centers_cut,n_Mr_cut,p0,\
+                                 sigma=sigma,absolute_sigma=True,\
+                                 maxfev=20000,method='lm')
+
 fit_noextrap = fit_func(np.linspace(min_M_r_cut,max_M_r_cut),\
-                        params_noextrap[0][0],params_noextrap[0][1],\
-                        params_noextrap[0][2])
+                        params_noextrap[0],params_noextrap[1],\
+                        params_noextrap[2])
 
 fit_extrap_dim = fit_func(np.linspace(max_M_r_cut,max_Mr),\
-                      params_noextrap[0][0],params_noextrap[0][1],\
-                      params_noextrap[0][2])
+                      params_noextrap[0],params_noextrap[1],\
+                      params_noextrap[2])
 
 fit_extrap_bright = fit_func(np.linspace(min_Mr,min_M_r_cut),\
-                      params_noextrap[0][0],params_noextrap[0][1],\
-                      params_noextrap[0][2])
+                      params_noextrap[0],params_noextrap[1],\
+                      params_noextrap[2])
 
 data_fit_frac = []
 for index,value in enumerate(bin_centers_cut):
     n_data = n_Mr_cut[index]
-    n_fit = fit_func(value,params_noextrap[0][0],params_noextrap[0][1],params_noextrap[0][2])
+    n_fit = fit_func(value,params_noextrap[0],params_noextrap[1],\
+                     params_noextrap[2])
     frac_diff = np.abs(((n_fit-n_data)/n_data)*100)
     data_fit_frac.append(frac_diff)
     
