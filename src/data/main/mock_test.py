@@ -7,15 +7,17 @@ Created on Fri Aug  3 14:10:35 2018
 """
 
 from cosmo_utils.utils import work_paths as cwpaths
+from cosmo_utils.utils import file_readers as freader
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 from scipy import interpolate
 from matplotlib import rc
+from tqdm import tqdm
 import pandas as pd
 import numpy as np
 import sympy
 import math
-import tqdm
+
 
 
 ### Paths
@@ -36,19 +38,20 @@ def Schechter_func(M,phi_star,M_star,alpha):
     return const*first_exp_term*second_exp_term
 
 ## Differential method
-def diff_num_dens(data,nbins,volume,mag_bool):
-    #Unnormalized histogram and bin edges
-    freq,edg = np.histogram(data,bins=nbins)     
-    bin_centers = 0.5*(edg[1:]+edg[:-1])
-    bin_widths = np.diff(edg)
-    err_poiss = np.sqrt(freq)/(volume*bin_widths)
-    n_diff = freq/(volume*bin_widths)
-    if mag_bool:
-        n_diff = np.cumsum(n_diff) 
+def diff_num_dens(data,nbins,weights,volume,mag_bool):
+    if weights is None:
+        weights = np.ones(len(data))
     else:
-        n_diff = np.cumsum(np.flip(n_diff,0))
-        n_diff = np.flip(n_diff,0)
-    return bin_centers,n_diff,err_poiss
+        weights = np.array(weights)
+    #Unnormalized histogram and bin edges
+    freq,edg = np.histogram(data,bins=nbins,weights=weights)     
+    bin_centers = 0.5*(edg[1:]+edg[:-1])
+#    bin_widths = np.diff(edg)
+    bin_width = edg[1] - edg[0]
+    print(bin_width)
+    err_poiss = np.sqrt(freq)/(volume*bin_width)
+    n_diff = freq/(volume*bin_width)
+    return bin_centers,edg,n_diff,err_poiss
 
 ## Given data calculate how many bins should be used
 def num_bins(data_arr):
@@ -66,10 +69,18 @@ eco_obs_catalog = pd.read_csv(path_to_raw + 'gal_Lr_Mb_Re.txt',\
 
 Mr_all = eco_obs_catalog.M_r.values
 Mr_unique = np.unique(eco_obs_catalog.M_r.values)
-v_eco = 442650.9037900876 #Volume of ECO without buffer in Mpc^3
+v_eco = 151829.26 #442650.9037900876 #Volume of ECO without buffer in Mpc^3
 min_Mr = min(Mr_all)
 max_Mr = max(Mr_all)
 
+VC_data_filename = 'eco_wresa_050815.dat'
+VC_weights_filename = 'eco_wresa_050815_weightmuiso.dat'
+VC_data = pd.DataFrame(freader.IDL_read_file(path_to_raw + VC_data_filename))
+VC_weights = pd.DataFrame(freader.IDL_read_file(path_to_raw + \
+                                                VC_weights_filename))
+Mr_VC = np.array(VC_data['goodnewabsr'])
+weights_VC = np.array(VC_weights['corrvecinterp'])
+volume_VC = 192294.221932 #560624.5537376094 #Mpc^3
 ##############################################################################
 ##METHOD 1 using VC's method on unique M_r values
 #n_Mr = np.array([np.where(Mr_all < xx)[0].size + 1 for xx in Mr_unique])
@@ -91,14 +102,14 @@ max_Mr = max(Mr_all)
 #                       params_alldata[0][0],params_alldata[0][1],\
 #                       params_alldata[0][2])
 ##############################################################################
-
 ### Using SF to fit data between -17.33 and -22.5 and extrapolating both ends
-M_r_cut = [value for value in Mr_all if value <= -17.33 and value >= -22.5]
-max_M_r_cut = max(M_r_cut)
-min_M_r_cut = min(M_r_cut)
-nbins = num_bins(M_r_cut)
-bin_centers_cut,n_Mr_cut,err_poiss_cut = diff_num_dens(M_r_cut,nbins,v_eco,\
-                                                      mag_bool=True)
+Mr_cut = [value for value in Mr_all if value <= -17.33 and value >= -22.5]
+max_Mr_cut = max(Mr_cut)
+min_Mr_cut = min(Mr_cut)
+nbins = num_bins(Mr_cut)
+bin_centers_cut,bin_edges_cut,n_Mr_cut,err_poiss_cut = diff_num_dens(Mr_cut,nbins,\
+                                                       None,v_eco,\
+                                                       mag_bool=True)
 
 p0 = [10**-2,-20,-1.2] #initial guess for phi_star,M_star,alpha
 #sigma[[1,2,3,4]] = 0.00001
@@ -112,16 +123,16 @@ M_star_bestfit = params_noextrap[1]
 Alpha_bestfit = params_noextrap[2]
 
 ## Fitting data between -17.33 and -22.5
-fit_noextrap = Schechter_func(np.linspace(min_M_r_cut,max_M_r_cut),\
+fit_noextrap = Schechter_func(np.linspace(min_Mr_cut,max_Mr_cut),\
                         Phi_star_bestfit,M_star_bestfit,\
                         Alpha_bestfit)
 
 ## Extrapolations on both ends
-fit_extrap_dim = Schechter_func(np.linspace(max_M_r_cut,max_Mr),\
+fit_extrap_dim = Schechter_func(np.linspace(max_Mr_cut,max_Mr),\
                       Phi_star_bestfit,M_star_bestfit,\
                       Alpha_bestfit)
 
-fit_extrap_bright = Schechter_func(np.linspace(min_Mr,min_M_r_cut),\
+fit_extrap_bright = Schechter_func(np.linspace(min_Mr,min_Mr_cut),\
                       Phi_star_bestfit,M_star_bestfit,\
                       Alpha_bestfit)
 
@@ -147,6 +158,42 @@ chi2 = 0
 for i in range(len(bin_centers_cut)):
     chi2_i = ((n_Mr_cut[i]-model_fit[i])**2)/((err_poiss_cut[i])**2)
     chi2 += chi2_i
+###############################################################################
+## Using SF to fit VC's data and fit it
+## Applying same cut as VC
+Mr_cut_VC = [(index,value) for index,value in enumerate(Mr_VC) if \
+             value <= -17.33 and value >= -22.5]
+## Getting indices of values that fall between cuts
+Mr_cut_idx = [pair[0] for pair in Mr_cut_VC]
+## Getting values that fall between cuts
+Mr_cut_data = [pair[1] for pair in Mr_cut_VC]
+## Using indices to get weights for values that fall between cuts
+weights_VC = weights_VC[Mr_cut_idx]
+
+max_Mr_cut_VC = max(Mr_cut_data)
+min_Mr_cut_VC = min(Mr_cut_data)
+nbins_VC = 25#num_bins(Mr_cut_data)
+bin_centers_cut_VC,bin_edges_cut_VC,n_Mr_cut_VC,err_poiss_cut_VC = diff_num_dens(Mr_cut_data,\
+                                                                nbins_VC,\
+                                                                weights_VC,\
+                                                                volume_VC,\
+                                                                mag_bool=True)
+bin_edges_cut_VC = np.delete( bin_edges_cut_VC[::1], -1)
+params_VC,pcov_VC = curve_fit(Schechter_func,bin_centers_cut_VC,n_Mr_cut_VC,p0,\
+                                 sigma=err_poiss_cut_VC,absolute_sigma=True,\
+                                 maxfev=20000,method='lm')
+fit_VC = Schechter_func(np.linspace(min_Mr_cut_VC,max_Mr_cut_VC),\
+                        params_VC[0],params_VC[1],\
+                        params_VC[2])
+
+##Chi_squared 
+model_fit_VC = Schechter_func(bin_edges_cut_VC,\
+                        params_VC[0],params_VC[1],\
+                        params_VC[2])
+chi2_VC = 0
+for i in range(len(bin_edges_cut_VC)):
+    chi2_i = ((n_Mr_cut_VC[i]-model_fit_VC[i])**2)/((err_poiss_cut_VC[i])**2)
+    chi2_VC += chi2_i
 
 
 '''
@@ -187,7 +234,7 @@ for s1 in range(Phi_star_Steps):
                 chi2 += Residual**2
             dens_array = np.array(dens_array)
             Chi2_3D_array[s1, s2, s3] = chi2
-
+'''
 ## Plotting data + fit and extrapolation
 fig,(ax1,ax2) = plt.subplots(2,1,sharex=True,sharey=False,figsize=(20,20),\
      gridspec_kw = {'height_ratios':[8,2]})
@@ -198,16 +245,20 @@ ax1.invert_xaxis()
 ## Data + errorbars
 ax1.errorbar(bin_centers_cut,n_Mr_cut,yerr=err_poiss_cut,fmt="ks--",ls='None',\
              elinewidth=0.5,ecolor='k',capsize=5,capthick=0.5,markersize=4,\
-             label='data between {0} and -17.33'.format(np.round(min_M_r_cut,2)))
+             label='data between {0} and -17.33'.format(np.round(min_Mr_cut,2)))
 ## Data fit
-ax1.plot(np.linspace(min_M_r_cut,max_M_r_cut),fit_noextrap,'--k',\
+ax1.plot(np.linspace(min_Mr_cut,max_Mr_cut),fit_noextrap,'--k',\
          label=r'$\mathrm\chi^{2} = %s$' %(np.round(chi2,2)))
 ## Extrapolation on dim end
-ax1.plot(np.linspace(max_M_r_cut,max_Mr),fit_extrap_dim,'--y',label='extrap')
+ax1.plot(np.linspace(max_Mr_cut,max_Mr),fit_extrap_dim,'--y',label='extrap')
 ## Extrapolation on bright end
-ax1.plot(np.linspace(min_Mr,min_M_r_cut),fit_extrap_bright,'--y')
-## Extrapolation using VC's params and data range
-ax1.plot(np.linspace(-23.5,-17.5),fit_VC_params,'--b',label='VC params fit')
+ax1.plot(np.linspace(min_Mr,min_Mr_cut),fit_extrap_bright,'--y')
+## VC data and fit
+ax1.errorbar(bin_edges_cut_VC,n_Mr_cut_VC,yerr=err_poiss_cut_VC,fmt="gs--",\
+             ls='None',elinewidth=0.5,ecolor='g',capsize=5,capthick=0.5,markersize=4,\
+             label='VC data between {0} and -17.33'.format(np.round(min_Mr_cut_VC,1)))
+ax1.plot(np.linspace(min_Mr_cut_VC,max_Mr_cut_VC),fit_VC,'--g',\
+         label=r'$\mathrm\chi^{2} = %s$' %(np.round(chi2_VC,2)))
 
 ax1.set_ylabel(r'$[\mathrm{dn/dmag}]/\mathrm{Mpc}^{-3}\mathrm{mag}^{-1}$')
 ax1.legend(loc='upper right', prop={'size': 12})
@@ -254,11 +305,11 @@ plt.show()
 ### Halo data
 halo_prop_table = pd.read_csv(path_to_interim + 'halo_vpeak.csv',header=None,\
                               names=['vpeak'])
-v_sim = (130/0.7)**3
+v_sim = (130/0.7)**3 #Mpc^3
 vpeak = halo_prop_table.vpeak.values
 nbins = num_bins(vpeak)
-bin_centers_vpeak,n_vpeak,err_poiss = diff_num_dens(vpeak,nbins,v_sim,\
-                                                   mag_bool=False)
+bin_centers_vpeak,n_vpeak,err_poiss = diff_num_dens(vpeak,nbins,weights=None,\
+                                                    v_sim,mag_bool=False)
 
 f_h = interpolate.InterpolatedUnivariateSpline(bin_centers_vpeak,n_vpeak)
 #x_h = np.linspace(min(vpeak),max(vpeak),num=200)
@@ -284,8 +335,8 @@ halo_Mr_sham = [result_func(val,phi_star_num,M_star_num,alpha_num) for val in \
 #plt.ylabel(r'$M_{r}$')
 #plt.xlabel(r'$v_{peak} /\mathrm{km\ s^{-1}}$')
 #plt.show()
-
-
+'''
+##############################################################################
 #plt.scatter(Mr_unique,n_Mr,c='r',s=5,label='unique bins')
 #plt.scatter(bin_centers,n_Mr_2,c='g',s=5,label='cum sum with unique bins')
 #plt.scatter(bin_centers_2,n_Mr_3,c='b',s=5,label='cum sum with FD bins')
@@ -298,3 +349,9 @@ halo_Mr_sham = [result_func(val,phi_star_num,M_star_num,alpha_num) for val in \
 #    mbary_arr.append(mbary)
 #    re = eco_obs_catalog.loc[eco_obs_catalog['M_r'] == mag_value, 'Re']
 #    re_arr.append(re)
+
+#    if mag_bool:
+#        n_diff = np.cumsum(n_diff) 
+#    else:
+#        n_diff = np.cumsum(np.flip(n_diff,0))
+#        n_diff = np.flip(n_diff,0)
