@@ -9,10 +9,10 @@ Created on Fri Aug  3 14:10:35 2018
 from cosmo_utils.utils import work_paths as cwpaths
 from cosmo_utils.utils import file_readers as freader
 from scipy.optimize import curve_fit
+from progressbar import ProgressBar
 import matplotlib.pyplot as plt
 from scipy import interpolate
 from matplotlib import rc
-from tqdm import tqdm
 import pandas as pd
 import numpy as np
 import sympy
@@ -259,7 +259,7 @@ M_test = [result_func(val,phi_star_num,M_star_num,alpha_num) for val in n_num]
 halo_prop_table = pd.read_csv(path_to_interim + 'halo_vpeak.csv',header=None,\
                               names=['vpeak'])
 v_sim = 130**3 #(Mpc/h)^3
-vpeak = np.array(halo_prop_table.vpeak.values)
+vpeak = halo_prop_table.vpeak.values
 nbins = num_bins(vpeak)
 bin_centers_vpeak,bin_edges_vpeak,n_vpeak,err_poiss = diff_num_dens(vpeak,\
                                                                     nbins,\
@@ -270,15 +270,16 @@ bin_centers_vpeak,bin_edges_vpeak,n_vpeak,err_poiss = diff_num_dens(vpeak,\
 
 f_h = interpolate.InterpolatedUnivariateSpline(bin_centers_vpeak,n_vpeak)
 
-n_vpeak_arr = np.array([f_h(val) for val in vpeak])
-halo_Mr_sham = np.array([result_func(val,phi_star_num,M_star_num,alpha_num) \
-                         for val in tqdm(n_vpeak_arr)])
+pbar = ProgressBar(maxval=len(vpeak))
+n_vpeak_arr = [f_h(val) for val in pbar(vpeak)]
+pbar = ProgressBar(maxval=len(n_vpeak_arr))
+halo_Mr_sham = [result_func(val,phi_star_num,M_star_num,alpha_num) \
+                         for val in pbar(n_vpeak_arr)]
 halo_Mr_sham = np.ndarray.flatten(halo_Mr_sham)
 
 with open(path_to_interim + 'SHAM.csv', 'w') as f:
     writer = csv.writer(f, delimiter='\t')
     writer.writerows(zip(n_vpeak_arr,halo_Mr_sham))
-
 #fig3 = plt.figure()
 ##plt.xscale('log')
 #plt.gca().invert_yaxis()
@@ -357,3 +358,4 @@ for s1 in range(Phi_star_Steps):
 #plt.plot(x_h,ynew_h,'--k',label='interp/exterp')
 #plt.legend(loc='best')
 #plt.show()
+#print(ii/np.float(size),"/033[1A]")
