@@ -71,14 +71,14 @@ min_Mr = min(Mr_all)
 max_Mr = max(Mr_all)
 
 ### Data and weights from VC
-VC_data_filename = 'eco_wresa_050815.dat'
-VC_weights_filename = 'eco_wresa_050815_weightmuiso.dat'
-VC_data = pd.DataFrame(freader.IDL_read_file(path_to_raw + VC_data_filename))
-VC_weights = pd.DataFrame(freader.IDL_read_file(path_to_raw + \
-                                                VC_weights_filename))
-Mr_VC = np.array(VC_data['goodnewabsr'])
-weights_VC = np.array(VC_weights['corrvecinterp'])
-volume_VC = 192294.221932 #(Mpc/h)^3
+#VC_data_filename = 'eco_wresa_050815.dat'
+#VC_weights_filename = 'eco_wresa_050815_weightmuiso.dat'
+#VC_data = pd.DataFrame(freader.IDL_read_file(path_to_raw + VC_data_filename))
+#VC_weights = pd.DataFrame(freader.IDL_read_file(path_to_raw + \
+#                                                VC_weights_filename))
+#Mr_VC = np.array(VC_data['goodnewabsr'])
+#weights_VC = np.array(VC_weights['corrvecinterp'])
+#volume_VC = 192294.221932 #(Mpc/h)^3
 
 ### Using SF to fit data between -17.33 and -23.5 and extrapolating both ends
 Mr_cut = [value for value in Mr_all if value <= -17.33 and value >= -23.5]
@@ -138,6 +138,7 @@ for i in range(len(bin_centers_cut)):
     chi2_i = ((n_Mr_cut[i]-model_fit[i])**2)/((err_poiss_cut[i])**2)
     chi2 += chi2_i
 ###############################################################################
+'''
 ### Using SF to fit VC's data and fit it
 ### Applying same cut as VC
 Mr_cut_VC = [(index,value) for index,value in enumerate(Mr_VC) if \
@@ -179,7 +180,7 @@ chi2_VC = 0
 for i in range(len(bin_edges_cut_VC)):
     chi2_i = ((n_Mr_cut_VC[i]-model_fit_VC[i])**2)/((err_poiss_cut_VC[i])**2)
     chi2_VC += chi2_i
-    
+'''   
 #################################PLOTS#########################################
 ### Plotting data + fit and extrapolation
 fig,(ax1,ax2) = plt.subplots(2,1,sharex=True,sharey=False,figsize=(20,20),\
@@ -201,12 +202,12 @@ ax1.plot(np.linspace(max_Mr_cut,max_Mr),fit_extrap_dim,'--y',label='extrap')
 ### Extrapolation on bright end
 ax1.plot(np.linspace(min_Mr,min_Mr_cut),fit_extrap_bright,'--y')
 ### VC data and fit
-ax1.errorbar(bin_edges_cut_VC,n_Mr_cut_VC,yerr=err_poiss_cut_VC,fmt="gs--",\
-             ls='None',elinewidth=0.5,ecolor='g',capsize=5,capthick=0.5,\
-             markersize=4,label='VC data between {0} and -17.33'.format\
-             (np.round(min_Mr_cut_VC,1)))
-ax1.plot(np.linspace(min_Mr_cut_VC,max_Mr_cut_VC),fit_VC,'--g',\
-         label=r'$\mathrm\chi^{2} = %s$' %(np.round(chi2_VC,2)))
+#ax1.errorbar(bin_edges_cut_VC,n_Mr_cut_VC,yerr=err_poiss_cut_VC,fmt="gs--",\
+#             ls='None',elinewidth=0.5,ecolor='g',capsize=5,capthick=0.5,\
+#             markersize=4,label='VC data between {0} and -17.33'.format\
+#             (np.round(min_Mr_cut_VC,1)))
+#ax1.plot(np.linspace(min_Mr_cut_VC,max_Mr_cut_VC),fit_VC,'--g',\
+#         label=r'$\mathrm\chi^{2} = %s$' %(np.round(chi2_VC,2)))
 
 ax1.set_ylabel(r'$\mathrm{[\frac{dn}{dmag}]}/[\mathrm{h}^{3}\mathrm{Mpc}^{-3}'
                 '\mathrm{mag}^{-1}]$')
