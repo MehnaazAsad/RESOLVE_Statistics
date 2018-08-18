@@ -274,8 +274,8 @@ f_h = interpolate.InterpolatedUnivariateSpline(bin_centers_vpeak,n_vpeak)
 pbar = ProgressBar(maxval=len(vpeak))
 n_vpeak_arr = [f_h(val) for val in pbar(vpeak)]
 pbar = ProgressBar(maxval=len(n_vpeak_arr))
-halo_Mr_sham = [result_func(val,phi_star_num,M_star_num,alpha_num) \
-                         for val in pbar(n_vpeak_arr)]
+halo_Mr_sham = np.array([result_func(val,phi_star_num,M_star_num,alpha_num) \
+                         for val in pbar(n_vpeak_arr)])
 halo_Mr_sham = np.ndarray.flatten(halo_Mr_sham)
 
 with open(path_to_interim + 'SHAM.csv', 'w') as f:
