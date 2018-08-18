@@ -5,9 +5,10 @@ Created on Fri Aug  3 14:10:35 2018
 
 @author: asadm2
 """
-
+import matplotlib as mpl
+mpl.use('agg')
 from cosmo_utils.utils import work_paths as cwpaths
-from cosmo_utils.utils import file_readers as freader
+#from cosmo_utils.utils import file_readers as freader
 from scipy.optimize import curve_fit
 from progressbar import ProgressBar
 import matplotlib.pyplot as plt
