@@ -281,7 +281,7 @@ halo_Mr_sham = np.ndarray.flatten(halo_Mr_sham)
 
 with open(path_to_interim + 'SHAM.csv', 'w') as f:
     writer = csv.writer(f, delimiter='\t')
-    writer.writerows(zip(n_vpeak_arr,halo_Mr_sham))
+    writer.writerows(zip(vpeak,halo_Mr_sham))
 #fig3 = plt.figure()
 ##plt.xscale('log')
 #plt.gca().invert_yaxis()
