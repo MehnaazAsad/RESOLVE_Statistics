@@ -7,8 +7,8 @@ Created on Fri Aug  3 14:10:35 2018
 """
 import matplotlib as mpl
 mpl.use('agg')
+from multiprocessing import Pool 
 from cosmo_utils.utils import work_paths as cwpaths
-#from cosmo_utils.utils import file_readers as freader
 from scipy.optimize import curve_fit
 from progressbar import ProgressBar
 import matplotlib.pyplot as plt
@@ -221,6 +221,7 @@ ax2.set_ylabel(r'$\mathrm{[\frac{model-data}{data}]} \%$')
 fig.tight_layout()
 fig.show()
 ###############################################################################
+
 ### Inverting the Schechter function using sympy so that it will return 
 ### magnitudes given a number density
 
@@ -275,11 +276,15 @@ f_h = interpolate.InterpolatedUnivariateSpline(bin_centers_vpeak,n_vpeak)
 pbar = ProgressBar(maxval=len(vpeak))
 n_vpeak_arr = [f_h(val) for val in pbar(vpeak)]
 pbar = ProgressBar(maxval=len(n_vpeak_arr))
-halo_Mr_sham = np.array([result_func(val,phi_star_num,M_star_num,alpha_num) \
-                         for val in pbar(n_vpeak_arr)])
-halo_Mr_sham = np.ndarray.flatten(halo_Mr_sham)
 
-with open(path_to_interim + 'SHAM.csv', 'w') as f:
+def resultfunc_helper(args):
+    return result_func(*args)
+job_args = [(val, phi_star_num,M_star_num,alpha_num) for val in pbar(n_vpeak_arr)]
+pool = Pool(processes=24)
+halo_Mr_sham = pool.map(resultfunc_helper,job_args)
+halo_Mr_sham = np.ndarray.flatten(np.array(halo_Mr_sham))
+
+with open(path_to_interim + 'SHAM_parallel.csv', 'w') as f:
     writer = csv.writer(f, delimiter='\t')
     writer.writerows(zip(vpeak,halo_Mr_sham))
 #fig3 = plt.figure()
