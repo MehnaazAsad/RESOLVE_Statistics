@@ -277,16 +277,46 @@ pbar = ProgressBar(maxval=len(vpeak))
 n_vpeak_arr = [f_h(val) for val in pbar(vpeak)]
 pbar = ProgressBar(maxval=len(n_vpeak_arr))
 
+### Parallelising SHAM
 def resultfunc_helper(args):
     return result_func(*args)
-job_args = [(val, phi_star_num,M_star_num,alpha_num) for val in pbar(n_vpeak_arr)]
+job_args = [(val, phi_star_num,M_star_num,alpha_num) for val \
+            in pbar(n_vpeak_arr)]
 pool = Pool(processes=24)
 halo_Mr_sham = pool.map(resultfunc_helper,job_args)
 halo_Mr_sham = np.ndarray.flatten(np.array(halo_Mr_sham))
 
+### Writing vpeak and Mr values to text file
 with open(path_to_interim + 'SHAM_parallel.csv', 'w') as f:
     writer = csv.writer(f, delimiter='\t')
     writer.writerows(zip(vpeak,halo_Mr_sham))
+
+### Reading text file
+Mr_vpeak_catalog = pd.read_csv(path_to_interim + 'SHAM_parallel.csv', \
+                               delimiter='\t', header=None, \
+                               names=['vpeak','Mr'])
+Mr_vpeak_catalog = Mr_vpeak_catalog.sort_values('Mr')
+eco_obs_catalog = eco_obs_catalog.sort_values('M_r')
+
+pbar = ProgressBar()
+nearest_match_idx_arr = []
+mbary_arr = []
+re_arr = []
+for mag_value in pbar(Mr_vpeak_catalog.Mr.values):
+    nearest_match_idx = (np.abs(eco_obs_catalog.M_r.values - \
+                                mag_value)).argmin()
+    nearest_match_idx_arr.append(nearest_match_idx)
+    mbary_arr.append(eco_obs_catalog.logmbary.values[nearest_match_idx])
+    re_arr.append(eco_obs_catalog.Re.values[nearest_match_idx])
+
+Mr_vpeak_catalog['logmbary'] = mbary_arr  
+Mr_vpeak_catalog['Re'] = re_arr
+
+Mr_vpeak_catalog = Mr_vpeak_catalog.reset_index(drop=True)
+Mr_vpeak_catalog = np.round(Mr_vpeak_catalog,3)
+Mr_vpeak_catalog.columns = ['v_peak(km/s)','M_r','logMbary(logMsun)','Re(kpc)']
+np.savetxt(path_to_interim + 'vpeak_Lr_Mb_Re.txt', Mr_vpeak_catalog.values,\
+           fmt='%1.3f',delimiter='\t',header=",".join(Mr_vpeak_catalog.columns))
 #fig3 = plt.figure()
 ##plt.xscale('log')
 #plt.gca().invert_yaxis()
