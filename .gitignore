@@ -76,3 +76,10 @@ target/
 ##### Including files #####
 !.rtd-environment.yml
 !.gitignore
+
+# Exclude figures folder
+reports/figures/
+
+# File extensions
+*.DS_Store
+*.sh
