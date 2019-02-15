@@ -11,12 +11,12 @@ Created on Mon May 28 16:22:17 2018
 #to the SMF from RESOVLE
 from halotools.empirical_models import PrebuiltSubhaloModelFactory
 from halotools.sim_manager import CachedHaloCatalog
-from halotools.sim_manager import FakeSim
 from cosmo_utils.utils import work_paths as cwpaths
 import matplotlib.animation as animation
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib import rc
-from shutil import which
 import pandas as pd
 import numpy as np
 import os
@@ -27,8 +27,9 @@ dict_of_paths = cwpaths.cookiecutter_paths()
 path_to_raw = dict_of_paths['raw_dir']
 path_to_interim = dict_of_paths['int_dir']
 path_to_figures = dict_of_paths['plot_dir']
-halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/bolshoi/'\
-'rockstar/bolshoi_test_v1.hdf5'
+halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/vishnu/'\
+'rockstar/vishnu_rockstar_test.hdf5'
+#halo_catalog = '/Users/asadm2/Desktop/vishnu_rockstar_test.hdf5'
 
 ###Formatting for plots and animation
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']},size=15)
@@ -37,33 +38,32 @@ plt.rcParams['animation.convert_path'] = '/fs1/masad/anaconda3/envs/resolve_stat
 #'{0}/magick'.format(os.path.dirname(which('python')))
 
 
-RESOLVE = pd.read_csv(path_to_interim + 'RESOLVE_formatted.txt',delimiter='\t')
-RESOLVE_A = RESOLVE[RESOLVE['Name'].str.contains("rs")] #969
-RESOLVE_B = RESOLVE[RESOLVE['Name'].str.contains("rf")] #402
+#RESOLVE = pd.read_csv(path_to_interim + 'RESOLVE_formatted.txt',delimiter='\t')
+#RESOLVE_A = RESOLVE[RESOLVE['Name'].str.contains("rs")] #969
+#RESOLVE_B = RESOLVE[RESOLVE['Name'].str.contains("rf")] #402
 
+resolve_live18 = pd.read_csv(path_to_raw + 'RESOLVE_liveJune2018.csv',delimiter=',')
+#956 galaxies
+resolve_A = resolve_live18.loc[(resolve_live18.f_a.values == 1) & \
+                               (resolve_live18.grpcz.values > 4500) & \
+                               (resolve_live18.grpcz.values < 7000) & \
+                               (resolve_live18.absrmag.values < -17.33)]
 
-M_HI = []
-M_stellar = []
-M_halo_s = [] #group halo mass from stellar mass limited sample
-M_halo_b = [] #group halo mass from baryonic mass limited sample
-H_0 = 70 #km/s/Mpc
-for galaxy in RESOLVE_B.Name.values:
-    f21 = RESOLVE_B.F21.loc[RESOLVE_B.Name == galaxy].values[0]
-    cz = RESOLVE_B.cz.loc[RESOLVE_B.Name == galaxy].values[0]
-    D = cz/H_0 #Mpc
-    m_HI = (2.36*10**5)*(D**2)*(f21)
-    M_HI.append(np.log10(m_HI))
-    M_stellar.append(RESOLVE_B['logstellarmass'].loc[RESOLVE_B.Name == galaxy].\
-                     values[0])
-    M_halo_s.append(RESOLVE_B['groupmass-s'].loc[RESOLVE_B.Name == galaxy]\
-                    .values[0])
-    M_halo_b.append(RESOLVE_B['groupmass-b'].loc[RESOLVE_B.Name == galaxy]\
-                    .values[0])
+v_resolveA = 13172.384 #Survey volume without buffer [Mpc/h]^3
+cvar_resolveA = 0.30
 
+#487
+resolve_B = resolve_live18.loc[(resolve_live18.f_b.values == 1) & \
+                               (resolve_live18.grpcz.values > 4500) & \
+                               (resolve_live18.grpcz.values < 7000) & \
+                               (resolve_live18.absrmag.values < -17)]
 
-logM_resolve  = M_stellar  #Read stellar masses
+v_resolveB = 4709.8373#*2.915 #Survey volume without buffer [Mpc/h]^3
+cvar_resolveB = 0.58
+
+logM_resolve  = resolve_B.logmstar.values  #Read stellar masses
 nbins_resolve = 10  #Number of bins to divide data into
-V_resolve = 13700 #RESOLVE-B volume in Mpc3
+V_resolve = v_resolveB 
 #Unnormalized histogram and bin edges
 Phi_resolve,edg_resolve = np.histogram(logM_resolve,bins=nbins_resolve)  
 dM_resolve = edg_resolve[1] - edg_resolve[0]  #Bin width
@@ -89,55 +89,62 @@ plt.ylabel(r'$\Phi\,/\,\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}$')
 plt.title('Stellar mass function')
 ###############################################################################
 ###COSMIC VARIANCE
-#eco = pd.read_csv(path_to_interim + 'ECO_DR1.txt',delimiter='\s+',header=None,usecols=\
-#                            [0,1,2,3,4,5,13,15],\
-#                            names=['ECOID','RA','DEC','velocity','M_r',\
-#                                   'log_stellarmass','groupcz',\
-#                                   'log_halogroupmass'])
-#    
-#dec_slices = np.arange(-1,49.85,2.5)
-#minz_resB = np.min(RESOLVE_B.cz/(3*10**5))
-#maxz_resB = np.max(RESOLVE_B.cz/(3*10**5))
-#mincz_resB = 4500
-#maxcz_resB = 7000
-#H_0 = 70
-#slice_area = 2.5*75 #deg^2
-#deg2_in_sphere = 41252.96 #deg^2
-#
-#num_in_slice = []
-#z = []
-#for index,value in enumerate(dec_slices):
-#    if index == 20:
-#        break
-#    counter = 0
-#    for index2,galaxy in enumerate(eco.ECOID.values):
-#        if 134.99 < eco.RA.values[index2] < 209.99:
-#            if value < eco.DEC.values[index2] < dec_slices[index+1]:
-#                if minz_resB < (eco.velocity.values[index2]/(3*10**5)) < maxz_resB:
-#                    z.append(eco.velocity.values[index2]/(3*10**5))
-#                    counter += 1
-#    num_in_slice.append(counter)
-#num_in_slice = np.array(num_in_slice)
-#
-##med_z = np.median(z)
-##d = med_z*3*10**5/H_0 #Mpc
-##vol_sphere = (4/3)*np.pi*(d**3) #Mpc^3
-#
-#inner_vol = (4/3)*np.pi*((mincz_resB/H_0)**3)
-#outer_vol = (4/3)*np.pi*((maxcz_resB/H_0)**3)
-#vol_sphere = outer_vol-inner_vol #Mpc^3
-#
-#vol_slice = (slice_area/deg2_in_sphere)*vol_sphere
-#gal_dens = num_in_slice/vol_slice
-#cosmic_variance = (np.std(gal_dens)*100)
-#print('Cosmic variance: {0}%'.format(np.round(cosmic_variance,2)))
+eco = pd.read_csv(path_to_interim + 'ECO_DR1.txt',delimiter='\s+',header=None,usecols=\
+                            [0,1,2,3,4,5,13,15],\
+                            names=['ECOID','RA','DEC','velocity','M_r',\
+                                   'log_stellarmass','groupcz',\
+                                   'log_halogroupmass'])
+    
+dec_slices = np.arange(-1,49.85,2.5) #slices of 2.5 degrees width
+minz_resB = np.min(resolve_B.cz/(3*10**5))
+maxz_resB = np.max(resolve_B.cz/(3*10**5))
+mincz_resB = 4500
+maxcz_resB = 7000
+H_0 = 70
+slice_area = 2.5*75 #deg^2
+deg2_in_sphere = 41252.96 #deg^2
+
+num_in_slice = []
+z = []
+for index,value in enumerate(dec_slices):
+    if index == 20:
+        break
+    counter = 0
+    RA_arr = []
+    DEC_arr = []
+    for index2,galaxy in enumerate(eco.ECOID.values):
+        if 134.99 < eco.RA.values[index2] < 209.99: #fixed RA span of 75 degrees
+            if value < eco.DEC.values[index2] < dec_slices[index+1]:
+                if minz_resB < (eco.velocity.values[index2]/(3*10**5)) < maxz_resB:
+                    z.append(eco.velocity.values[index2]/(3*10**5))
+                    RA_arr.append(eco.RA.values[index2])
+                    DEC_arr.append(eco.DEC.values[index2])
+                    counter += 1
+    fig = plt.figure(figsize=(10,8))
+    ax = plt.gca()
+    plt.ylim(-1,49.85)
+    plt.xlim(0,75)
+    plt.scatter(RA_arr,DEC_arr)
+    plt.xlabel('RA (deg)')
+    plt.ylabel('DEC (deg)')
+    num_in_slice.append(counter)
+num_in_slice = np.array(num_in_slice)
+
+inner_vol = (4/3)*np.pi*((mincz_resB/H_0)**3)
+outer_vol = (4/3)*np.pi*((maxcz_resB/H_0)**3)
+vol_sphere = outer_vol-inner_vol #Mpc^3
+
+vol_slice = (slice_area/deg2_in_sphere)*vol_sphere
+gal_dens = num_in_slice/vol_slice
+cosmic_variance = (np.std(gal_dens)*100)
+print('Cosmic variance: {0}%'.format(np.round(cosmic_variance,2)))
 ###############################################################################
 
 #%%
 counter = 0
 nbins = 10
 Volume =  V_resolve #Volume of RESOLVE-B Mpc^3
-Volume_FK = 250.**3
+Volume_FK = 130.**3
 Mhalo_characteristic = np.arange(11.5,13.0,0.1) #13.0 not included
 Mstellar_characteristic = np.arange(9.5,11.0,0.1) #11.0 not included
 Mlow_slope = np.arange(0.35,0.50,0.01)[:-1] #0.5 included by default
@@ -322,5 +329,5 @@ anim = animation.FuncAnimation(plt.gcf(), make_animation, \
 plt.tight_layout()
 print('Saving animation')
 os.chdir(path_to_figures)
-anim.save('SMF_RB_macc.gif',writer='imagemagick',fps=1)
+anim.save('SMF_RB_macc_2.gif',writer='imagemagick',fps=1)
 
