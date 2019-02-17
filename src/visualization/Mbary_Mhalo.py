@@ -63,7 +63,8 @@ RESOLVE_B = RESOLVE_B.reset_index(drop=True)
 RESOLVE_A = RESOLVE_A.reset_index(drop=True)
 
 ### Baryonic mass and BMF
-mbary = (10**(resolve_live18.logmstar.values) + 10**(resolve_live18.logmgas.values))
+mbary = (10**(resolve_live18.logmstar.values) + 10**(resolve_live18.logmgas.\
+         values))
 v_resolve = 50000/2.915 #(Mpc/h)^3 (h from 0.7 to 1)
 nbins = num_bins(mbary)
 bin_centers_mbary,bin_edges_mbary,n_mbary,err_poiss_mbary,bin_width_mbary = \
@@ -90,13 +91,16 @@ bin_centers_hmass,bin_edges_hmass,n_hmass,err_poiss_hmass,bin_width_hmass = \
 cumu_num_dens(halo_mass,nbins,None,v_sim,False)
 
 ### Interpolating between mbary and n
-mbary_n_interp_func = interpolate.interp1d(bin_centers_mbary,n_mbary,fill_value='extrapolate')
+mbary_n_interp_func = interpolate.interp1d(bin_centers_mbary,n_mbary,\
+                                           fill_value='extrapolate')
 
 ### Interpolating between grpmb and n
-grpmb_n_interp_func = interpolate.interp1d(bin_centers_grpmb,n_grpmb,fill_value='extrapolate')
+grpmb_n_interp_func = interpolate.interp1d(bin_centers_grpmb,n_grpmb,\
+                                           fill_value='extrapolate')
 
 ### Interpolating between smass and n
-smass_n_interp_func = interpolate.interp1d(bin_centers_smass,n_smass,fill_value='extrapolate')
+smass_n_interp_func = interpolate.interp1d(bin_centers_smass,n_smass,\
+                                           fill_value='extrapolate')
 
 ### Interpolating between hmass and n and reversing it so you can pass an n and
 ### get an hmass value
@@ -134,20 +138,22 @@ hmass_stellarmass = resolve_live18.logmh_s.values
 loggrpmb = resolve_live18.grpmb.values
 
 ### Using stats_one_arr to get error bars on mean
-x_mbary,y_mbary,y_std_mbary,y_std_err_mbary = Stats_one_arr(hmass_logmbary,logmbary,\
+x_mbary,y_mbary,y_std_mbary,y_std_err_mbary = Stats_one_arr(hmass_logmbary,\
+                                                            loggrpmb,\
                                                             base=0.5)
 
 x_rlum,y_rlum,y_std_rlum,y_std_err_rlum = Stats_one_arr(hmass_rlum,loggrpmb,\
-                                         base=0.5)
+                                                        base=0.5)
 
-x_smass,y_smass,y_std_smass,y_std_err_smass = Stats_one_arr(hmass_stellarmass,loggrpmb,\
-                                            base=0.5)
+x_smass,y_smass,y_std_smass,y_std_err_smass = Stats_one_arr(hmass_stellarmass,\
+                                                            loggrpmb,base=0.5)
 
-x_grpmb,y_grpmb,y_std_grpmb,y_std_err_grpmb = Stats_one_arr(hmass_loggrpmb,loggrpmb,\
+x_grpmb,y_grpmb,y_std_grpmb,y_std_err_grpmb = Stats_one_arr(hmass_loggrpmb,\
+                                                            loggrpmb,\
                                                             base=0.5)
 
 x_smass_sham,y_smass_sham,y_std_smass_sham,y_std_err_smass_sham = \
-Stats_one_arr(hmass_logsmass,logsmass,base=0.5)
+Stats_one_arr(hmass_logsmass,loggrpmb,base=0.5)
 
 
 ### Halo mass derived from different methods vs group baryonic mass
@@ -185,4 +191,3 @@ plt.errorbar(x_smass_sham,y_smass_sham,yerr=y_std_smass_sham,\
 plt.legend(loc='best',prop={'size': 10})
 plt.xlabel(r'\boldmath$\log\ M_h \left[M_\odot \right]$')
 plt.ylabel(r'\boldmath$\log\ M_s \left[M_\odot \right]$')
-

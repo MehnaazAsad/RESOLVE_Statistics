@@ -7,6 +7,7 @@ Created on Thu Dec  6 09:48:41 2018
 """
 
 from cosmo_utils.utils.stats_funcs import Stats_one_arr
+from cosmo_utils.utils import work_paths as cwpaths
 from progressbar import ProgressBar
 import matplotlib.pyplot as plt
 from scipy import interpolate
@@ -40,31 +41,12 @@ def cumu_num_dens(data,nbins,weights,volume,bool_mag):
     err_poiss = np.sqrt(N_cumu)/volume
     return bin_centers,edg,n_cumu,err_poiss,bin_width
 
-def centrals_satellites_flag(halo_table):
-    N_halo = len(halo_table)
-
-    ID   = halo_table['halo_id']
-    UPID = halo_table['halo_upid' ]
-    
-    # Arrrays #
-    C_S_FLAG = [ [] for x in range(N_halo)]
-    HALO_ID  = [ [] for x in range(N_halo)]
-        
-    pbar = ProgressBar(maxval=N_halo)
-    for Halo_Cat in pbar(range(0, N_halo)):
-    	if UPID[Halo_Cat] == -1:
-    		C_S_FLAG[Halo_Cat] = 1
-    		HALO_ID[Halo_Cat] = int(ID[Halo_Cat])
-    	else:
-    		C_S_FLAG[Halo_Cat] = 0
-    		HALO_ID [Halo_Cat] = int(UPID[Halo_Cat])
-    return C_S_FLAG
 
 ### Paths
-path_to_raw = '/Users/asadm2/Documents/Grad_School/Research/Repositories/'\
-'resolve_statistics/data/raw/'
-path_to_interim = '/Users/asadm2/Documents/Grad_School/Research/Repositories/'\
-'resolve_statistics/data/interim/'
+dict_of_paths = cwpaths.cookiecutter_paths()
+path_to_raw = dict_of_paths['raw_dir']
+path_to_interim = dict_of_paths['int_dir']
+path_to_figures = dict_of_paths['plot_dir']
 
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']},size=18)
 rc('text', usetex=True)
@@ -96,9 +78,10 @@ grp_keys = grps.groups.keys()
 mstar_c_arr = []
 for key in grp_keys:
     group = grps.get_group(key)
+    # If group has a central
     if 1 in group.fc.values:
         mstar_c = group.logmstar.loc[group.fc.values == 1].values[0]
-        temp_arr = [mstar_c]*len(group)
+        temp_arr = [mstar_c]*len(group) #Assign central's mass for each gxy entry
     else:
         temp_arr = [0]*len(group)
     mstar_c_arr.extend(temp_arr)
@@ -130,13 +113,14 @@ nbins = num_bins(grpmb)
 bin_centers_grpmb,bin_edges_grpmb,n_grpmb,err_poiss_grpmb,bin_width_grpmb = \
 cumu_num_dens(grpmb,nbins,None,v_resolve,False)
 
-### Using baryonic mass of each galaxy's group central for HAM
+### Using baryonic mass of each galaxy for HAM
 mstar_c = 10**mstar_c_arr
 mgas_c = 10**mgas_c_arr
 mbary_c = mstar_c + mgas_c
-nbins = num_bins(mbary_c)
-bin_centers_mbaryc,bin_edges_mbaryc,n_mbaryc,err_poiss_mbaryc,\
-bin_width_mbaryc = cumu_num_dens(mbary_c,nbins,None,v_resolve,False)
+mbary = (10**(resolve_live18_subset.logmstar.values) + 10**(resolve_live18_subset.logmgas.values))
+nbins = num_bins(mbary)
+bin_centers_mbary,bin_edges_mbary,n_mbary,err_poiss_mbary,\
+bin_width_mbary = cumu_num_dens(mbary,nbins,None,v_resolve,False)
 
 ### Group integrated stellar mass for HAM
 grpms = 10**(resolve_live18_subset.grpms.values)
@@ -144,135 +128,150 @@ nbins = num_bins(grpms)
 bin_centers_grpms,bin_edges_grpms,n_grpms,err_poiss_grpms,bin_width_grpms = \
 cumu_num_dens(grpms,nbins,None,v_resolve,False)
 
-### Using stellar mass of each galaxy's group central for HAM
-mstar_c = 10**mstar_c_arr
-nbins = num_bins(mstar_c)
-bin_centers_mstarc,bin_edges_mstarc,n_mstarc,err_poiss_mstarc,\
-bin_width_mstarc = cumu_num_dens(mstar_c,nbins,None,v_resolve,False)
+### Using stellar mass of each galaxy for HAM
+#mstar_c = 10**mstar_c_arr
+mstar = 10**(resolve_live18_subset.logmstar.values)
+nbins = num_bins(mstar)
+bin_centers_mstar,bin_edges_mstar,n_mstar,err_poiss_mstar,\
+bin_width_mstar = cumu_num_dens(mstar,nbins,None,v_resolve,False)
 
 ### Halo data (not in log)
 halo_table = pd.read_csv('../../data/interim/id_macc.csv',header=0)
 v_sim = 130**3 #(Mpc/h)^3
 
 halo_mass_c = halo_table.halo_macc.loc[halo_table.C_S.values==1].values
-nbins = num_bins(halo_mass_c)
-bin_centers_hmassc,bin_edges_hmassc,n_hmassc,err_poiss_hmassc,\
-bin_width_hmassc = cumu_num_dens(halo_mass_c,nbins,None,v_sim,False)
+halo_mass = halo_table.halo_macc.values
+nbins = num_bins(halo_mass)
+bin_centers_hmass,bin_edges_hmass,n_hmass,err_poiss_hmass,\
+bin_width_hmass = cumu_num_dens(halo_mass,nbins,None,v_sim,False)
 
 ############################### IN PROGRESS (HAM) ############################
 ### Interpolating between grpmb and n
 grpmb_n_interp_func = interpolate.interp1d(bin_centers_grpmb,n_grpmb,\
                                            fill_value='extrapolate')
 ### Interpolating between central mbary and n
-mbaryc_n_interp_func = interpolate.interp1d(bin_centers_mbaryc,n_mbaryc,\
+mbary_n_interp_func = interpolate.interp1d(bin_centers_mbary,n_mbary,\
                                             fill_value='extrapolate')
 
 ### Interpolating between grpmstar and n
 grpms_n_interp_func = interpolate.interp1d(bin_centers_grpms,n_grpms,\
                                            fill_value='extrapolate')
 ### Interpolating between central mstar and n
-mstarc_n_interp_func = interpolate.interp1d(bin_centers_mstarc,n_mstarc,\
+mstar_n_interp_func = interpolate.interp1d(bin_centers_mstar,n_mstar,\
                                             fill_value='extrapolate')
 
 ### Interpolating between central hmass and n and reversing it so you can pass 
 ### an n and get central hmass value
-hmassc_n_interp_func = interpolate.interp1d\
-(n_hmassc,bin_centers_hmassc,fill_value='extrapolate')
+hmass_n_interp_func = interpolate.interp1d\
+(n_hmass,bin_centers_hmass,fill_value='extrapolate')
 
 ### HAM
 pbar = ProgressBar(maxval=len(grpmb))
 n_grpmb_arr = [grpmb_n_interp_func(val) for val in pbar(grpmb)]
 pbar = ProgressBar(maxval=len(n_grpmb_arr))
-hmass_grpmb_ham = [hmassc_n_interp_func(val) for val in pbar(n_grpmb_arr)]
+hmass_grpmb_ham = [hmass_n_interp_func(val) for val in pbar(n_grpmb_arr)]
 
-pbar = ProgressBar(maxval=len(mbary_c))
-n_mbaryc_arr = [mbaryc_n_interp_func(val) for val in pbar(mbary_c)]
-pbar = ProgressBar(maxval=len(n_mbaryc_arr))
-hmass_mbaryc_ham = [hmassc_n_interp_func(val) for val in pbar(n_mbaryc_arr)]
+pbar = ProgressBar(maxval=len(mbary))
+n_mbary_arr = [mbary_n_interp_func(val) for val in pbar(mbary)]
+pbar = ProgressBar(maxval=len(n_mbary_arr))
+hmass_mbary_ham = [hmass_n_interp_func(val) for val in pbar(n_mbary_arr)]
 
 pbar = ProgressBar(maxval=len(grpms))
 n_grpms_arr = [grpms_n_interp_func(val) for val in pbar(grpms)]
 pbar = ProgressBar(maxval=len(n_grpms_arr))
-hmass_grpms_ham = [hmassc_n_interp_func(val) for val in pbar(n_grpms_arr)]
+hmass_grpms_ham = [hmass_n_interp_func(val) for val in pbar(n_grpms_arr)]
 
-pbar = ProgressBar(maxval=len(mstar_c))
-n_mstarc_arr = [mstarc_n_interp_func(val) for val in pbar(mstar_c)]
-pbar = ProgressBar(maxval=len(n_mstarc_arr))
-hmass_mstarc_ham = [hmassc_n_interp_func(val) for val in pbar(n_mstarc_arr)]
+pbar = ProgressBar(maxval=len(mstar))
+n_mstar_arr = [mstar_n_interp_func(val) for val in pbar(mstar)]
+pbar = ProgressBar(maxval=len(n_mstar_arr))
+hmass_mstar_ham = [hmass_n_interp_func(val) for val in pbar(n_mstar_arr)]
 
 ### Convert to log
-hmass_logmbaryc = np.log10(hmass_mbaryc_ham)
+hmass_logmbary = np.log10(hmass_mbary_ham)
 hmass_loggrpmb = np.log10(hmass_grpmb_ham)
+logmbary = np.log10(mbary)
 logmbaryc = np.log10(mbary_c)
 loggrpmb = np.log10(grpmb)
 
-hmass_logmstarc = np.log10(hmass_mstarc_ham)
+hmass_logmstar = np.log10(hmass_mstar_ham)
 hmass_loggrpms = np.log10(hmass_grpms_ham)
-logmstarc = np.log10(mstar_c)
+logmstar = np.log10(mstar)
 loggrpms = np.log10(grpms)
 
 ### Get error bars
-x_mbaryc,y_mbaryc,y_std_mbaryc,y_std_err_mbaryc = Stats_one_arr(hmass_logmbaryc,\
+x_mbary,y_mbary,y_std_mbary,y_std_err_mbary = Stats_one_arr(hmass_logmbary,\
                                                                 logmbaryc,\
-                                                                base=0.05)
+                                                                base=0.3)
 x_grpmb,y_grpmb,y_std_grpmb,y_std_err_grpmb = Stats_one_arr(hmass_loggrpmb,\
-                                                            logmbaryc,base=0.05)
+                                                            logmbaryc,base=0.3)
 
-x_mstarc,y_mstarc,y_std_mstarc,y_std_err_mstarc = Stats_one_arr(hmass_logmstarc,\
+x_mstar,y_mstar,y_std_mstar,y_std_err_mstar = Stats_one_arr(hmass_logmstar,\
                                                                 logmbaryc,\
-                                                                base=0.05)
+                                                                base=0.3)
 x_grpms,y_grpms,y_std_grpms,y_std_err_grpms = Stats_one_arr(hmass_loggrpms,\
                                                             logmbaryc,\
-                                                            base=0.05)
+                                                            base=0.3)
 
 x_mhs,y_mhs,y_std_mhs,y_std_err_mhs = Stats_one_arr(resolve_live18_subset.logmh_s.\
-                                                    values,logmbaryc,base=0.05)
+                                                    values,logmbaryc,base=0.3)
 x_mh,y_mh,y_std_mh,y_std_err_mh = Stats_one_arr(resolve_live18_subset.logmh.values,\
-                                                logmbaryc,base=0.05)
+                                                logmbaryc,base=0.3)
+
 ### Plotting BMHM and SMHM from HAM
 fig1 = plt.figure(figsize=(10,10))
-#plt.scatter(hmass_loggrpmb,logmbaryc,color='#1baeab',s=5)
-#plt.scatter(hmass_logmbaryc,logmbaryc,color='#f6a631',s=5)
-#plt.scatter(hmass_logmstarc,logmbaryc,color='k',s=5)
-#plt.scatter(hmass_loggrpms,logmbaryc,color='r',s=5)
-#plt.scatter(resolve_live18_subset.logmh_s.values,logmbaryc,color='b',s=5)
-#plt.scatter(resolve_live18_subset.logmh.values,logmbaryc,color='g',s=5)
+#plt.scatter(resolve_live18_subset.logmh.values,logmbaryc,color='g',s=5,label='RESOLVE group lum derived')
 
 plt.errorbar(x_grpmb,y_grpmb,yerr=y_std_grpmb,\
              color='#1baeab',fmt='--s',ecolor='#1baeab',markersize=4,capsize=5,\
-             capthick=0.5,label='Group mbary')
-plt.errorbar(x_mbaryc,y_mbaryc,yerr=y_std_mbaryc,\
-             color='#f6a631',fmt='s',ecolor='#f6a631',markersize=4,capsize=5,\
-             capthick=0.5,label='Central mbary')
+             capthick=0.5,label='Group mbary derived')
+plt.errorbar(x_mbary,y_mbary,yerr=y_std_mbary,\
+             color='k',fmt='--s',ecolor='k',markersize=4,capsize=5,\
+             capthick=0.5,label='mbary derived')
 plt.errorbar(x_mhs,y_mhs,yerr=y_std_mhs,\
-             color='#a0298d',fmt='s',ecolor='#a0298d',markersize=4,capsize=5,\
+             color='#a0298d',fmt='--s',ecolor='#a0298d',markersize=4,capsize=5,\
              capthick=0.5,label='RESOLVE stellar mass derived')
 plt.errorbar(x_mh,y_mh,yerr=y_std_mh,\
-             color='k',fmt='s',ecolor='k',markersize=4,capsize=5,\
+             color='#f6a631',fmt='--s',ecolor='#f6a631',markersize=4,capsize=5,\
              capthick=0.5,label='RESOLVE rband lum derived')
-plt.xlabel(r'Halo mass')
-plt.ylabel(r'Baryonic mass')
+plt.xlabel(r'\boldmath$\log\ M_h \left[M_\odot \right]$')
+plt.ylabel(r'\boldmath$\log\ M \left[M_\odot \right]$')
 plt.legend(loc='best',prop={'size': 10})
+
+### Plotting BMHM and SMHM from HAM
+#fig2 = plt.figure(figsize=(10,10))
+#plt.scatter(hmass_loggrpmb,logmbary,color='#1baeab',s=5,label='Group mbary derived')
+#plt.scatter(hmass_logmbary,logmbary,color='#f6a631',s=5,label='mbary derived')
+#plt.scatter(hmass_logmstar,logmbary,color='#a0298d',s=5,label='mstar derived')
+#plt.scatter(hmass_loggrpms,logmbary,color='k',s=5,label='Group mstar derived')
+#
+#plt.scatter(resolve_live18.logmh_s.values,logmbary,color='b',s=5,label='RESOLVE group mstar derived')
+#plt.scatter(resolve_live18.logmh.values,logmbary,color='g',s=5,label='RESOLVE group lum derived')
+
+#plt.xlabel(r'\boldmath$\log\ M_h \left[M_\odot \right]$')
+#plt.ylabel(r'\boldmath$\log\ M \left[M_\odot \right]$')
+#plt.legend(loc='best',prop={'size': 10})
 
 #x_mhs,y_mhs,y_std_mhs,y_std_err_mhs = Stats_one_arr(resolve_live18.logmh_s.\
 #                                                    values,resolve_live18.\
 #                                                    grpms.values,base=0.05)
 #
-#fig2 = plt.figure(figsize=(10,10))
+fig3 = plt.figure(figsize=(10,10))
 #plt.scatter(hmass_loggrpms,loggrpms,color='#1baeab',s=5)
-#plt.scatter(hmass_logmstarc,logmstarc,color='#f6a631',s=5)
-#plt.errorbar(x_grpms,y_grpms,yerr=y_std_grpms,\
-#             color='#1baeab',fmt='--s',ecolor='#1baeab',markersize=4,capsize=5,\
-#             capthick=0.5,label='Group mstar')
-#plt.errorbar(x_mstarc,y_mstarc,yerr=y_std_mstarc,\
-#             color='#f6a631',fmt='s',ecolor='#f6a631',markersize=4,capsize=5,\
-#             capthick=0.5,label='Central mstar')
-#plt.errorbar(x_mhs,y_mhs,yerr=y_std_mhs,\
-#             color='#a0298d',fmt='s',ecolor='#a0298d',markersize=4,capsize=5,\
-#             capthick=0.5,label='RESOLVE stellar mass derived')
-#plt.xlabel(r'Halo mass')
-#plt.ylabel(r'Stellar mass')
-#plt.legend(loc='best',prop={'size': 10})
+#plt.scatter(hmass_logmstar,logmstar,color='#f6a631',s=5)
+plt.scatter(resolve_live18_subset.logmh_s.values,\
+            resolve_live18_subset.grpms.values,color='#1baeab',s=5)
+plt.errorbar(x_grpms,y_grpms,yerr=y_std_grpms,\
+             color='#1baeab',fmt='--s',ecolor='#1baeab',markersize=4,capsize=5,\
+             capthick=0.5,label='Group mstar')
+plt.errorbar(x_mstar,y_mstar,yerr=y_std_mstar,\
+             color='#f6a631',fmt='s',ecolor='#f6a631',markersize=4,capsize=5,\
+             capthick=0.5,label='mstar')
+plt.errorbar(x_mhs,y_mhs,yerr=y_std_mhs,\
+             color='#a0298d',fmt='s',ecolor='#a0298d',markersize=4,capsize=5,\
+             capthick=0.5,label='RESOLVE stellar mass derived')
+plt.xlabel(r'Halo mass')
+plt.ylabel(r'Stellar mass')
+plt.legend(loc='best',prop={'size': 10})
 '''
 ################################# SHAM ########################################
 ### Calculate baryonic mass of all galaxies for SHAM

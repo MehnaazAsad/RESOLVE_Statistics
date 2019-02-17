@@ -6,14 +6,6 @@ Created on Thu Jun 21 12:55:42 2018
 @author: asadm2
 """
 
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Mon May 28 16:22:17 2018
-
-@author: asadm2
-"""
-
 ### DESCRIPTION
 #This script parametrizes the SMHM relation to produce a SMF which is compared
 #to the SMF from RESOVLE
@@ -29,63 +21,6 @@ from matplotlib import rc
 import pandas as pd
 import numpy as np
 import os
-
-
-
-### Paths
-dict_of_paths = cwpaths.cookiecutter_paths()
-path_to_raw = dict_of_paths['raw_dir']
-path_to_interim = dict_of_paths['int_dir']
-path_to_figures = dict_of_paths['plot_dir']
-halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/bolshoi/'\
-'rockstar/bolshoi_test_v1.hdf5'
-
-###Formatting for plots and animation
-rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']},size=10)
-rc('text', usetex=True)
-
-RESOLVE = pd.read_csv(path_to_interim + 'RESOLVE_formatted.txt',delimiter='\t')
-RESOLVE_A = RESOLVE[RESOLVE['Name'].str.contains("rs")] #969
-RESOLVE_B = RESOLVE[RESOLVE['Name'].str.contains("rf")] #402
-
-RESB_M_stellar = []
-for galaxy in RESOLVE_B.Name.values:
-    RESB_M_stellar.append(RESOLVE_B['logstellarmass'].loc\
-                          [RESOLVE_B.Name == galaxy].values[0])
-    
-    
-logM_resolveB  = RESB_M_stellar  #Read stellar masses
-nbins_resolveB = 10  #Number of bins to divide data into
-V_resolveB = 13700# 5.2e4  #Survey volume in Mpc3
-#Unnormalized histogram and bin edges
-Phi_resolveB,edg_resolveB = np.histogram(logM_resolveB,bins=nbins_resolveB)  
-dM_resolveB = edg_resolveB[1] - edg_resolveB[0]  #Bin width
-Max_resolveB = 0.5*(edg_resolveB[1:]+edg_resolveB[:-1])  #Mass axis i.e. bin centers
-#Normalized to volume and bin width
-err_poiss_B = np.sqrt(Phi_resolveB)/(V_resolveB*dM_resolveB)
-err_cvar_B = 0.58/(V_resolveB*dM_resolveB)
-err_tot_B = np.sqrt(err_cvar_B**2 + err_poiss_B**2)
-
-Phi_resolveB = Phi_resolveB/(V_resolveB*dM_resolveB) 
-
-RESA_M_stellar = []
-for galaxy in RESOLVE_A.Name.values:
-    RESA_M_stellar.append(RESOLVE_A['logstellarmass'].loc\
-                          [RESOLVE_A.Name == galaxy].values[0])
- 
-logM_resolveA  = RESA_M_stellar  #Read stellar masses
-nbins_resolveA = 10  #Number of bins to divide data into
-V_resolveA = 38400 #Survey volume in Mpc3
-#Unnormalized histogram and bin edges
-Phi_resolveA,edg_resolveA = np.histogram(logM_resolveA,bins=nbins_resolveA)  
-dM_resolveA = edg_resolveA[1] - edg_resolveA[0]  #Bin width
-Max_resolveA = 0.5*(edg_resolveA[1:]+edg_resolveA[:-1])  #Mass axis i.e. bin centers
-#Normalized to volume and bin width
-err_poiss_A = np.sqrt(Phi_resolveA)/(V_resolveA*dM_resolveA)
-err_cvar_A = 0.30/(V_resolveA*dM_resolveA)
-err_tot_A = np.sqrt(err_cvar_A**2 + err_poiss_A**2)
-
-Phi_resolveA = Phi_resolveA/(V_resolveA*dM_resolveA)
 
 def heatmap(data, row_labels, col_labels, ax=None,
             cbar_kw={}, cbarlabel="", **kwargs):
@@ -144,8 +79,72 @@ def heatmap(data, row_labels, col_labels, ax=None,
 
     return im, cbar
 
+### Paths
+dict_of_paths = cwpaths.cookiecutter_paths()
+path_to_raw = dict_of_paths['raw_dir']
+path_to_interim = dict_of_paths['int_dir']
+path_to_figures = dict_of_paths['plot_dir']
+halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
+                'vishnu/rockstar/vishnu_rockstar_test.hdf5'
+
+###Formatting for plots and animation
+rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']},size=10)
+rc('text', usetex=True)
+
+columns = ['name','radeg','dedeg','cz','grpcz','absrmag','logmstar','logmgas','grp',\
+           'grpn','grpnassoc','logmh','logmh_s','fc','grpmb','grpms','f_a','f_b']
+
+#2286 galaxies
+resolve_live18 = pd.read_csv(path_to_raw + "RESOLVE_liveJune2018.csv", \
+                             delimiter=",", header=0, usecols=columns)
+#487
+RESOLVE_B = resolve_live18.loc[(resolve_live18.f_b.values == 1) & \
+                               (resolve_live18.grpcz.values > 4500) & \
+                               (resolve_live18.grpcz.values < 7000) & \
+                               (resolve_live18.absrmag.values < -17)]
+
+#956 galaxies
+RESOLVE_A = resolve_live18.loc[(resolve_live18.f_a.values == 1) & \
+                               (resolve_live18.grpcz.values > 4500) & \
+                               (resolve_live18.grpcz.values < 7000) & \
+                               (resolve_live18.absrmag.values < -17.33)]
+
+RESB_M_stellar = RESOLVE_B.logmstar.values    
+    
+logM_resolveB  = RESB_M_stellar  #Read stellar masses
+nbins_resolveB = 5  #Number of bins to divide data into
+#V_resolveB = 13700# 5.2e4  #Survey volume in Mpc^3
+V_resolveB = 4709.8373 #Survey volume without buffer [Mpc/h]^3
+#Unnormalized histogram and bin edges
+Phi_resolveB,edg_resolveB = np.histogram(logM_resolveB,bins=nbins_resolveB)  
+dM_resolveB = edg_resolveB[1] - edg_resolveB[0]  #Bin width
+Max_resolveB = 0.5*(edg_resolveB[1:]+edg_resolveB[:-1])  #Mass axis i.e. bin centers
+#Normalized to volume and bin width
+err_poiss_B = np.sqrt(Phi_resolveB)/(V_resolveB*dM_resolveB)
+err_cvar_B = 0.58/(V_resolveB*dM_resolveB)
+err_tot_B = np.sqrt(err_cvar_B**2 + err_poiss_B**2)
+
+Phi_resolveB = Phi_resolveB/(V_resolveB*dM_resolveB) 
+
+RESA_M_stellar = RESOLVE_A.logmstar.values    
+ 
+logM_resolveA  = RESA_M_stellar  #Read stellar masses
+nbins_resolveA = 10  #Number of bins to divide data into
+#V_resolveA = 38400 #Survey volume in Mpc^3
+V_resolveA = 13172.384 #Survey volume without buffer [Mpc/h]^3
+#Unnormalized histogram and bin edges
+Phi_resolveA,edg_resolveA = np.histogram(logM_resolveA,bins=nbins_resolveA)  
+dM_resolveA = edg_resolveA[1] - edg_resolveA[0]  #Bin width
+Max_resolveA = 0.5*(edg_resolveA[1:]+edg_resolveA[:-1])  #Mass axis i.e. bin centers
+#Normalized to volume and bin width
+err_poiss_A = np.sqrt(Phi_resolveA)/(V_resolveA*dM_resolveA)
+err_cvar_A = 0.30/(V_resolveA*dM_resolveA)
+err_tot_A = np.sqrt(err_cvar_A**2 + err_poiss_A**2)
+
+Phi_resolveA = Phi_resolveA/(V_resolveA*dM_resolveA)
+
 nbins = 10
-Volume_FK = 250.**3
+Volume_FK = 130.**3 #Volume of Vishnu simulation
 Mhalo_characteristic = np.arange(11.5,13.0,0.1) #13.0 not included
 Mstellar_characteristic = np.arange(10,11.5,0.1) #11.0 not included
 
