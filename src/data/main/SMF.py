@@ -143,8 +143,7 @@ plt.title('Stellar mass function')
 #%%
 counter = 0
 nbins = 10
-Volume =  V_resolve #Volume of RESOLVE-B Mpc^3
-Volume_FK = 130.**3
+Volume_sim = 130**3
 Mhalo_characteristic = np.arange(11.5,13.0,0.1) #13.0 not included
 Mstellar_characteristic = np.arange(9.5,11.0,0.1) #11.0 not included
 Mlow_slope = np.arange(0.35,0.50,0.01)[:-1] #0.5 included by default
@@ -252,17 +251,17 @@ def make_animation(i,j,k,l,m):
     ax4_Max = 0.5*(ax4_edg[1:]+ax4_edg[:-1])
     ax5_Max = 0.5*(ax5_edg[1:]+ax5_edg[:-1])
     
-    ax1_menStd = np.sqrt(Phi1)/(Volume_FK*ax1_dM)
-    ax2_menStd = np.sqrt(Phi2)/(Volume_FK*ax2_dM)
-    ax3_menStd = np.sqrt(Phi3)/(Volume_FK*ax3_dM)
-    ax4_menStd = np.sqrt(Phi4)/(Volume_FK*ax4_dM)
-    ax5_menStd = np.sqrt(Phi5)/(Volume_FK*ax5_dM)
+    ax1_menStd = np.sqrt(Phi1)/(Volume_sim*ax1_dM)
+    ax2_menStd = np.sqrt(Phi2)/(Volume_sim*ax2_dM)
+    ax3_menStd = np.sqrt(Phi3)/(Volume_sim*ax3_dM)
+    ax4_menStd = np.sqrt(Phi4)/(Volume_sim*ax4_dM)
+    ax5_menStd = np.sqrt(Phi5)/(Volume_sim*ax5_dM)
    
-    Phi1 = Phi1/(float(Volume_FK)*ax1_dM)
-    Phi2 = Phi2/(float(Volume_FK)*ax2_dM)
-    Phi3 = Phi3/(float(Volume_FK)*ax3_dM)
-    Phi4 = Phi4/(float(Volume_FK)*ax4_dM)
-    Phi5 = Phi5/(float(Volume_FK)*ax5_dM)
+    Phi1 = Phi1/(float(Volume_sim)*ax1_dM)
+    Phi2 = Phi2/(float(Volume_sim)*ax2_dM)
+    Phi3 = Phi3/(float(Volume_sim)*ax3_dM)
+    Phi4 = Phi4/(float(Volume_sim)*ax4_dM)
+    Phi5 = Phi5/(float(Volume_sim)*ax5_dM)
     
     for ax in [ax1,ax2,ax3,ax4,ax5]:
         ax.clear()
@@ -271,6 +270,7 @@ def make_animation(i,j,k,l,m):
                                   ecolor='k',capsize=2,capthick=1.5,\
                                   markersize='3')
         ax.set_xlim(8.9,)
+        ax.set_ylim(10**-5,10**-1)
         ax.minorticks_on()
         ax.set_yscale('log')
         ax.set_xlabel(r'$\log(M_\star\,/\,M_\odot)$')
