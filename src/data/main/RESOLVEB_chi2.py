@@ -170,10 +170,10 @@ Mstellar_characteristic = np.arange(10,11.5,0.1) #11.0 not included
 chi2_arrs = []
 Mhalo_arr = []
 Mstellar_arr = []
-for index,stellar_value in enumerate(Mstellar_characteristic[:1]):
+for index,stellar_value in enumerate(Mstellar_characteristic):
     print('{0}/{1} characteristic stellar'.format(index+1,len(Mstellar_characteristic)))
     chi2_arr = []
-    for index2,halo_value in enumerate(Mhalo_characteristic[:2]):
+    for index2,halo_value in enumerate(Mhalo_characteristic):
         print('{0}/{1} characteristic halo'.format(index2+1,len(Mhalo_characteristic)))
         Mhalo_arr.append(halo_value)
         Mstellar_arr.append(stellar_value)
