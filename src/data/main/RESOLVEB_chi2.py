@@ -14,9 +14,9 @@ from halotools.sim_manager import CachedHaloCatalog
 from halotools.sim_manager import FakeSim
 from cosmo_utils.utils import work_paths as cwpaths
 import matplotlib
-matplotlib.use('Agg')
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
-plt.ioff()
+# plt.ioff()
 from matplotlib import rc
 import pandas as pd
 import numpy as np
@@ -79,13 +79,32 @@ def heatmap(data, row_labels, col_labels, ax=None,
 
     return im, cbar
 
+def populate_mock(model,halo_value,stellar_value):
+    halocat = CachedHaloCatalog(fname=halo_catalog,update_cached_fname = True)
+    z_model = np.median(resolve_live18.grpcz.values)/(3*10**5)
+    if model=='Moster':
+        model = Moster13SmHm(prim_haloprop_key='halo_macc')
+    elif model=='Behroozi':
+        model = PrebuiltSubhaloModelFactory('behroozi10',redshift=z_model,\
+                                     prim_haloprop_key='halo_macc')
+
+    model.param_dict['smhm_m1_0'] = halo_value
+    model.param_dict['smhm_m0_0'] = stellar_value
+    model.populate_mock(halocat)
+
+    sample_mask = model.mock.galaxy_table['stellar_mass'] >= 10**8.7
+    gals = model.mock.galaxy_table[sample_mask]
+    gals_df = gals.to_pandas()
+    return gals_df
+
 ### Paths
 dict_of_paths = cwpaths.cookiecutter_paths()
 path_to_raw = dict_of_paths['raw_dir']
 path_to_interim = dict_of_paths['int_dir']
 path_to_figures = dict_of_paths['plot_dir']
-halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
-                'vishnu/rockstar/vishnu_rockstar_test.hdf5'
+halo_catalog = '/Users/asadm2/Desktop/vishnu_rockstar_test.hdf5'
+# halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
+                # 'vishnu/rockstar/vishnu_rockstar_test.hdf5'
 
 ###Formatting for plots and animation
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']},size=10)
@@ -111,12 +130,12 @@ RESOLVE_A = resolve_live18.loc[(resolve_live18.f_a.values == 1) & \
 
 RESB_M_stellar = RESOLVE_B.logmstar.values    
     
-logM_resolveB  = RESB_M_stellar  #Read stellar masses
-nbins_resolveB = 5  #Number of bins to divide data into
+logM_resolveB  = np.log10((10**RESB_M_stellar)/1.429)  #Read stellar masses
+bins_resolveB = np.linspace(8.9,11.5,11)  #Number of bins to divide data into
 #V_resolveB = 13700# 5.2e4  #Survey volume in Mpc^3
 V_resolveB = 4709.8373 #Survey volume without buffer [Mpc/h]^3
 #Unnormalized histogram and bin edges
-Phi_resolveB,edg_resolveB = np.histogram(logM_resolveB,bins=nbins_resolveB)  
+Phi_resolveB,edg_resolveB = np.histogram(logM_resolveB,bins=bins_resolveB)  
 dM_resolveB = edg_resolveB[1] - edg_resolveB[0]  #Bin width
 Max_resolveB = 0.5*(edg_resolveB[1:]+edg_resolveB[:-1])  #Mass axis i.e. bin centers
 #Normalized to volume and bin width
@@ -143,7 +162,7 @@ err_tot_A = np.sqrt(err_cvar_A**2 + err_poiss_A**2)
 
 Phi_resolveA = Phi_resolveA/(V_resolveA*dM_resolveA)
 
-nbins = 10
+bins_mock = bins_resolveB
 Volume_FK = 130.**3 #Volume of Vishnu simulation
 Mhalo_characteristic = np.arange(11.5,13.0,0.1) #13.0 not included
 Mstellar_characteristic = np.arange(10,11.5,0.1) #11.0 not included
@@ -151,25 +170,19 @@ Mstellar_characteristic = np.arange(10,11.5,0.1) #11.0 not included
 chi2_arrs = []
 Mhalo_arr = []
 Mstellar_arr = []
-for index,stellar_value in enumerate(Mstellar_characteristic):
+for index,stellar_value in enumerate(Mstellar_characteristic[:1]):
     print('{0}/{1} characteristic stellar'.format(index+1,len(Mstellar_characteristic)))
     chi2_arr = []
-    for index2,halo_value in enumerate(Mhalo_characteristic):
+    for index2,halo_value in enumerate(Mhalo_characteristic[:2]):
         print('{0}/{1} characteristic halo'.format(index2+1,len(Mhalo_characteristic)))
         Mhalo_arr.append(halo_value)
         Mstellar_arr.append(stellar_value)
-        model1 = PrebuiltSubhaloModelFactory('behroozi10',redshift=0.0186,\
-                                         prim_haloprop_key='halo_macc')
-        halocat1 = CachedHaloCatalog(fname=halo_catalog)
-#        halocat1 = FakeSim()
-        model1.param_dict['smhm_m1_0'] = halo_value
-        model1.param_dict['smhm_m0_0'] = stellar_value
-        model1.populate_mock(halocat1)
-        sample_mask1 = model1.mock.galaxy_table['stellar_mass'] >= 10**8.7
-        gals = model1.mock.galaxy_table[sample_mask1]
         
-        logM = np.log10(gals['stellar_mass'])    
-        Phi,edg = np.histogram(logM,bins=nbins)    
+        
+        gals_df = populate_mock('Behroozi',halo_value,stellar_value)
+        
+        logM = np.log10(gals_df['stellar_mass'])    
+        Phi,edg = np.histogram(logM,bins=bins_mock)    
         dM = edg[1] - edg[0]    
         M_ax = 0.5*(edg[1:]+edg[:-1])   
         menStd = np.sqrt(Phi)/(Volume_FK*dM)  
@@ -177,8 +190,8 @@ for index,stellar_value in enumerate(Mstellar_characteristic):
         
         print('Calculating chi squared')
         chi2 = 0
-        for i in range(nbins):
-            chi2_i = ((Phi_resolveB[i]-Phi[i])**2)/((err_tot_B[i])**2)
+        for i in range(len(bins_mock)-1): #because we want nbins
+            chi2_i = ((10**Phi_resolveB[i]-10**Phi[i])**2)/((10**err_tot_B[i])**2)
             chi2 += chi2_i
         chi2_arr.append(chi2)
     chi2_arrs.append(chi2_arr)
@@ -195,5 +208,6 @@ plt.xlabel(r'Characteristic halo mass')
 plt.ylabel(r'Characteristic stellar mass')
 
 fig.tight_layout()
-os.chdir(path_to_figures)
-plt.savefig('chi-squared.png')     
+plt.show()
+# os.chdir(path_to_figures)
+# plt.savefig('chi-squared.png')     
