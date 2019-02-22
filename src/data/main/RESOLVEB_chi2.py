@@ -14,7 +14,7 @@ from halotools.sim_manager import CachedHaloCatalog
 from halotools.sim_manager import FakeSim
 from cosmo_utils.utils import work_paths as cwpaths
 import matplotlib
-matplotlib.use('TkAgg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 # plt.ioff()
 from matplotlib import rc
@@ -208,6 +208,6 @@ plt.xlabel(r'Characteristic halo mass')
 plt.ylabel(r'Characteristic stellar mass')
 
 fig.tight_layout()
-plt.show()
+# plt.show()
 os.chdir(path_to_figures)
 plt.savefig('chi-squared.png')     
