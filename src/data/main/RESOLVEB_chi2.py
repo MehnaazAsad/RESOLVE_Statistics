@@ -102,9 +102,9 @@ dict_of_paths = cwpaths.cookiecutter_paths()
 path_to_raw = dict_of_paths['raw_dir']
 path_to_interim = dict_of_paths['int_dir']
 path_to_figures = dict_of_paths['plot_dir']
-halo_catalog = '/Users/asadm2/Desktop/vishnu_rockstar_test.hdf5'
-# halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
-                # 'vishnu/rockstar/vishnu_rockstar_test.hdf5'
+# halo_catalog = '/Users/asadm2/Desktop/vishnu_rockstar_test.hdf5'
+halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
+                'vishnu/rockstar/vishnu_rockstar_test.hdf5'
 
 ###Formatting for plots and animation
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']},size=10)
