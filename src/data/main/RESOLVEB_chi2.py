@@ -209,5 +209,5 @@ plt.ylabel(r'Characteristic stellar mass')
 
 fig.tight_layout()
 plt.show()
-# os.chdir(path_to_figures)
-# plt.savefig('chi-squared.png')     
+os.chdir(path_to_figures)
+plt.savefig('chi-squared.png')     
