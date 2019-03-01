@@ -124,7 +124,7 @@ resb_m_stellar = resolve_B.logmstar.values
 max_resolveB,phi_resolveB,err_tot_B,bins_B = diff_SMF(resb_m_stellar,\
                                                        v_resolveB,cvar_resolveB,False)
 
-arr = np.arange(1,1000001,1)
+arr = np.arange(1,125000,1)
 list = arr.tolist()
 
 def lnprob(theta,phi_resolveB,err_tot_B):
