@@ -78,13 +78,13 @@ def chi_squared(data_y,model_y,err_data):
 ### Paths
 dict_of_paths = cwpaths.cookiecutter_paths()
 path_to_raw = dict_of_paths['raw_dir']
-path_to_data = dict_of_paths['data_dir']
+path_to_proc = dict_of_paths['proc_dir']
 path_to_interim = dict_of_paths['int_dir']
 path_to_figures = dict_of_paths['plot_dir']
-halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
-               'vishnu/rockstar/vishnu_rockstar_test.hdf5'
-# halo_catalog = '/Users/asadm2/Desktop/vishnu_rockstar_test.hdf5'
-chain_fname = path_to_data+'/processed/emcee_SMFRB.dat'
+# halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
+#                'vishnu/rockstar/vishnu_rockstar_test.hdf5'
+halo_catalog = '/Users/asadm2/Desktop/vishnu_rockstar_test.hdf5'
+chain_fname = path_to_data+'emcee_SMFRB.dat'
 
 ###Formatting for plots and animation
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']},size=18)
@@ -147,10 +147,9 @@ def lnprob(theta,phi_resolveB,err_tot_B):
 behroozi10_param_vals = [12.35,10.72,0.44,0.57,0.15]
 nwalkers = 250
 ndim = 5
-nsteps=4000
 p0 = behroozi10_param_vals + np.random.rand(ndim*nwalkers).reshape((nwalkers,ndim)) 
 # p0 = np.random.rand(ndim * nwalkers).reshape((nwalkers, ndim))
-sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(phi_resolveB, err_tot_B),threads=15)
+sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(phi_resolveB, err_tot_B))
 sampler.run_mcmc(p0, 4000)
 np.savetxt(chain_fname,sampler.flatchain)
 '''
