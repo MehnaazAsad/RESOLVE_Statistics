@@ -124,7 +124,11 @@ resb_m_stellar = resolve_B.logmstar.values
 max_resolveB,phi_resolveB,err_tot_B,bins_B = diff_SMF(resb_m_stellar,\
                                                        v_resolveB,cvar_resolveB,False)
 
+arr = np.arange(1,1000001,1)
+list = arr.tolist()
+
 def lnprob(theta,phi_resolveB,err_tot_B):
+    list.pop(0)
     if theta[0] < 0:
         return -np.inf
     if theta[1] < 0:
@@ -191,8 +195,11 @@ plt.show()
 # import emcee
 # import numpy as np
 
+
+
 # def lnprob(x, mu, icov):
 #     diff = x-mu
+#     list.pop(0)
 #     return -np.dot(diff,np.dot(icov,diff))/2.0
 
 
@@ -214,10 +221,11 @@ plt.show()
 # nwalkers = 250
 # nsteps = 4000
 # p0 = np.random.rand(ndim * nwalkers).reshape((nwalkers, ndim))
-# for i, result in enumerate(sampler.sample(p0, iterations=nsteps)):
-#     if (i+1) % 100 == 0:
-#         print("{0:5.1%}".format(float(i) / nsteps))
+# sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=[means, icov])
+# # for i, result in enumerate(sampler.sample(p0, iterations=nsteps)):
+# #     if (i+1) % 100 == 0:
+# #         print("{0:5.1%}".format(float(i) / nsteps))
 
-# test_sampler = sampler.run_mcmc(p0, 4000)()
+# sampler.run_mcmc(p0, 4000)
 
 # np.savetxt(chain_fname,sampler.flatchain)
