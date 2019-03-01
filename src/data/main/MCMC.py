@@ -123,8 +123,10 @@ max_resolveA,phi_resolveA,err_tot_A,bins_A = diff_SMF(resa_m_stellar,\
 resb_m_stellar = resolve_B.logmstar.values   
 max_resolveB,phi_resolveB,err_tot_B,bins_B = diff_SMF(resb_m_stellar,\
                                                        v_resolveB,cvar_resolveB,False)
-
+i = 0
 def lnprob(theta,phi_resolveB,err_tot_B):
+
+    print("Iteration i/1000000".format(i))
     if theta[0] < 0:
         return -np.inf
     if theta[1] < 0:
@@ -143,11 +145,15 @@ def lnprob(theta,phi_resolveB,err_tot_B):
 behroozi10_param_vals = [12.35,10.72,0.44,0.57,0.15]
 nwalkers = 250
 ndim = 5
+nsteps=4000
 p0 = behroozi10_param_vals + np.random.rand(ndim*nwalkers).reshape((nwalkers,ndim)) 
 # p0 = np.random.rand(ndim * nwalkers).reshape((nwalkers, ndim))
 sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(phi_resolveB, err_tot_B))
-result = sampler.run_mcmc(p0, 4000)
-np.savetxt(chain_fname,result.flatchain)
+for i, result in enumerate(sampler.sample(p0, iterations=nsteps)):
+    if (i+1) % 100 == 0:
+        print("{0:5.1%}".format(float(i) / nsteps))
+# sampler.run_mcmc(p0, 4000)
+np.savetxt(chain_fname,sampler.flatchain)
 '''
 ### Plot SMFs
 fig1 = plt.figure(figsize=(10,10))
