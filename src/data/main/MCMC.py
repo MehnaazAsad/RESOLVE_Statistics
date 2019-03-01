@@ -128,7 +128,7 @@ arr = np.arange(1,125000,1)
 list = arr.tolist()
 
 def lnprob(theta,phi_resolveB,err_tot_B):
-    print('iteration {0} of 1000000'.format(list.pop(0)))
+    print('iteration {0} of 125000'.format(list.pop(0)))
     if theta[0] < 0:
         return -np.inf
     if theta[1] < 0:
