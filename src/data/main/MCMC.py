@@ -64,11 +64,9 @@ def populate_mock(theta,model):
     model.param_dict['smhm_beta_0'] = mlow_slope
     model.param_dict['smhm_delta_0'] = mhigh_slope
     model.param_dict['u’scatter_model_param1'] = mstellar_scatter
+
+    model.mock.populate()
     
-    try:
-        model.mock.populate()
-    except Exception:
-        print(mhalo_characteristic,mstellar_characteristic,mlow_slope,mhigh_slope,mstellar_scatter)
     sample_mask = model.mock.galaxy_table['stellar_mass'] >= 10**8.7
     gals = model.mock.galaxy_table[sample_mask]
     gals_df = gals.to_pandas()
@@ -144,14 +142,16 @@ def lnprob(theta,phi_resolveB,err_tot_B):
         return -np.inf
     if theta[4] < 0:
         return -np.inf
-        
-    gals_df = populate_mock(theta,model)
-    v_sim = 130**3
-    mstellar_mock  = gals_df.stellar_mass.values  #Read stellar masses
-    max_model,phi_model,err_tot_model,bins_model = diff_SMF(mstellar_mock,\
-                                                        v_sim,0,True)
-    chi2 = chi_squared(phi_resolveB,phi_model,err_tot_B)
-    lnP = -chi2/2
+    try:
+        gals_df = populate_mock(theta,model)
+        v_sim = 130**3
+        mstellar_mock  = gals_df.stellar_mass.values  #Read stellar masses
+        max_model,phi_model,err_tot_model,bins_model = diff_SMF(mstellar_mock,\
+                                                            v_sim,0,True)
+        chi2 = chi_squared(phi_resolveB,phi_model,err_tot_B)
+        lnP = -chi2/2
+    except Exception:
+        lnP = -np.inf
     return lnP
 
 behroozi10_param_vals = [12.35,10.72,0.44,0.57,0.15]
@@ -201,40 +201,3 @@ plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{
 plt.legend(loc='best',prop={'size': 10})
 plt.show()
 '''
-# import emcee
-# import numpy as np
-
-
-
-# def lnprob(x, mu, icov):
-#     diff = x-mu
-#     list.pop(0)
-#     return -np.dot(diff,np.dot(icov,diff))/2.0
-
-
-# chain_fname = 'nd_gaussian_chain_pyversion.dat'
-# ndim = 5
-
-# # ensure reproducibility for tests against python emcee
-# rseed = 10
-# np.random.seed(rseed)
-
-# means = np.random.rand(ndim)
-
-# cov = 0.5 - np.random.rand(ndim ** 2).reshape((ndim, ndim))
-# cov = np.triu(cov)
-# cov += cov.T - np.diag(cov.diagonal())
-# cov = np.dot(cov,cov)
-
-# icov = np.linalg.inv(cov)
-# nwalkers = 250
-# nsteps = 4000
-# p0 = np.random.rand(ndim * nwalkers).reshape((nwalkers, ndim))
-# sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=[means, icov])
-# # for i, result in enumerate(sampler.sample(p0, iterations=nsteps)):
-# #     if (i+1) % 100 == 0:
-# #         print("{0:5.1%}".format(float(i) / nsteps))
-
-# sampler.run_mcmc(p0, 4000)
-
-# np.savetxt(chain_fname,sampler.flatchain)
