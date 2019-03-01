@@ -128,7 +128,7 @@ arr = np.arange(1,1000001,1)
 list = arr.tolist()
 
 def lnprob(theta,phi_resolveB,err_tot_B):
-    list.pop(0)
+    print('iteration {0} of 1000000'.format(list.pop(0)))
     if theta[0] < 0:
         return -np.inf
     if theta[1] < 0:
@@ -149,7 +149,7 @@ nwalkers = 250
 ndim = 5
 p0 = behroozi10_param_vals + np.random.rand(ndim*nwalkers).reshape((nwalkers,ndim)) 
 # p0 = np.random.rand(ndim * nwalkers).reshape((nwalkers, ndim))
-sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(phi_resolveB, err_tot_B),threads=14)
+sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(phi_resolveB, err_tot_B))
 sampler.run_mcmc(p0, 500)
 np.savetxt(chain_fname,sampler.flatchain)
 '''
