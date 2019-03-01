@@ -9,13 +9,14 @@ from halotools.empirical_models import PrebuiltSubhaloModelFactory
 from halotools.empirical_models import Moster13SmHm
 from halotools.sim_manager import CachedHaloCatalog
 from cosmo_utils.utils import work_paths as cwpaths
-#import matplotlib
-#matplotlib.use('Agg')
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 #plt.ioff()
 from matplotlib import rc
 import pandas as pd
 import numpy as np
+import emcee
 import math
 #import os
 
@@ -27,11 +28,15 @@ def num_bins(data_arr):
     n_bins = math.ceil((max(data_arr)-min(data_arr))/h) #Round up number   
     return n_bins
 
-def diff_SMF(mstar_arr,volume,cvar_err):
-    logmstar_arr = np.log10((10**mstar_arr)/1.429) #changing from h=0.7 to h=1
-    nbins = num_bins(logmstar_arr)  #Number of bins to divide data into
+def diff_SMF(mstar_arr,volume,cvar_err,h1_bool):
+    if not h1_bool:
+        logmstar_arr = np.log10((10**mstar_arr)/1.429) #changing from h=0.7 to h=1
+    else: 
+        logmstar_arr = np.log10(mstar_arr)
+    bins = np.linspace(8.9,11.5,11)
+    # nbins = num_bins(logmstar_arr)  #Number of bins to divide data into
     #Unnormalized histogram and bin edges
-    phi,edg = np.histogram(logmstar_arr,bins=nbins)  #paper used 17 bins
+    phi,edg = np.histogram(logmstar_arr,bins=bins)  #paper used 17 bins
     dM = edg[1] - edg[0]  #Bin width
     maxis = 0.5*(edg[1:]+edg[:-1])  #Mass axis i.e. bin centers
     #Normalized to volume and bin width
@@ -39,11 +44,36 @@ def diff_SMF(mstar_arr,volume,cvar_err):
     err_cvar = cvar_err/(volume*dM)
     err_tot = np.sqrt(err_cvar**2 + err_poiss**2)
     
-    phi = phi/(volume*dM) 
+    phi = phi/(volume*dM) #not a log quantity
     
-    return maxis,phi,err_tot,nbins
+    return maxis,phi,err_tot,bins
 
+def populate_mock(model,theta):
+    halocat = CachedHaloCatalog(fname=halo_catalog,update_cached_fname = True)
+    z_model = np.median(resolve_live18.grpcz.values)/(3*10**5)
+    if model=='Moster':
+        model = Moster13SmHm(prim_haloprop_key='halo_macc')
+    elif model=='Behroozi':
+        model = PrebuiltSubhaloModelFactory('behroozi10',redshift=z_model,\
+                                     prim_haloprop_key='halo_macc')
+    
+    mhalo_characteristic,mstellar_characteristic,mlow_slope,mhigh_slope,\
+        mstellar_scatter = theta
+    model.param_dict['smhm_m1_0'] = mhalo_characteristic
+    model.param_dict['smhm_m0_0'] = mstellar_characteristic
+    model.param_dict['smhm_beta_0'] = mlow_slope
+    model.param_dict['smhm_delta_0'] = mhigh_slope
+    model.param_dict['u’scatter_model_param1'] = mstellar_scatter
+    model.populate_mock(halocat)
 
+    sample_mask = model.mock.galaxy_table['stellar_mass'] >= 10**8.7
+    gals = model.mock.galaxy_table[sample_mask]
+    gals_df = gals.to_pandas()
+    return gals_df
+
+def chi_squared(data_y,model_y,err_data):
+    chi_squared = (data_y - model_y)**2/(err_data**2)
+    return np.sum(chi_squared)
 
 ### Paths
 dict_of_paths = cwpaths.cookiecutter_paths()
@@ -86,13 +116,45 @@ cvar_resolveB = 0.58
 
 ### SMFs     
 resa_m_stellar = resolve_A.logmstar.values     
-max_resolveA,phi_resolveA,err_tot_A,nbins_A = diff_SMF(resa_m_stellar,\
-                                                       v_resolveA,cvar_resolveA)
+max_resolveA,phi_resolveA,err_tot_A,bins_A = diff_SMF(resa_m_stellar,\
+                                                       v_resolveA,cvar_resolveA,False)
 
 resb_m_stellar = resolve_B.logmstar.values   
-max_resolveB,phi_resolveB,err_tot_B,nbins_B = diff_SMF(resb_m_stellar,\
-                                                       v_resolveB,cvar_resolveB)
+max_resolveB,phi_resolveB,err_tot_B,bins_B = diff_SMF(resb_m_stellar,\
+                                                       v_resolveB,cvar_resolveB,False)
 
+
+### Simulation method
+mhalo_characteristic = np.arange(11.5,13.0,0.1) #13.0 not included
+mstellar_characteristic = np.arange(9.5,11.0,0.1) #11.0 not included
+mlow_slope = np.arange(0.35,0.50,0.01)[:-1] #0.5 included by default
+mhigh_slope = np.arange(0.50,0.65,0.01)[:-1]
+mstellar_scatter = np.arange(0.02,0.095,0.005)
+
+def lnprob(theta,phi_resolveB,err_tot_B):
+    if theta[0] < 0:
+        return -np.inf
+    if theta[1] < 0:
+        return -np.inf
+    if theta[4] < 0:
+        return -np.inf
+    gals_df = populate_mock('Behroozi',theta)
+    v_sim = 130**3
+    mstellar_mock  = gals_df.stellar_mass.values  #Read stellar masses
+    max_model,phi_model,err_tot_model,bins_model = diff_SMF(mstellar_mock,\
+                                                        v_sim,0,True)
+    chi2 = chi_squared(phi_resolveB,phi_model,err_tot_B)
+    lnP = -chi2/2
+    return lnP
+
+behroozi10_param_vals = [12.35,10.72,0.44,0.57,0.15]
+nwalkers = 250
+ndim = 5
+p0 = behroozi10_param_vals + 1e-4*np.random.rand(ndim*nwalkers).reshape((nwalkers,ndim)) 
+# p0 = np.random.rand(ndim * nwalkers).reshape((nwalkers, ndim))
+sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(phi_resolveB, err_tot_B))
+result = sampler.run_mcmc(p0, 4000)
+'''
 ### Plot SMFs
 fig1 = plt.figure(figsize=(10,10))
 plt.errorbar(max_resolveB,phi_resolveB,yerr=err_tot_B,\
@@ -103,48 +165,13 @@ plt.errorbar(max_resolveA,phi_resolveA,yerr=err_tot_A,\
              capthick=0.5,label='RESOLVE A')
 plt.yscale('log')
 xlim_left,xlim_right = plt.xlim()
-plt.axvline(x=8.7,color='#921063')
-plt.axvline(x=8.9,color='#442b88')
-plt.axvspan(xlim_left, 8.7, color='gray', alpha=0.7, lw=0)
+# plt.axvline(x=8.7,color='#921063')
+# plt.axvline(x=8.9,color='#442b88')
+# plt.axvspan(xlim_left, 8.7, color='gray', alpha=0.7, lw=0)
 plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[M_\odot \right]$')
 plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{-1} \right]$')
 plt.legend(loc='best',prop={'size': 10})
-
-
-### Simulation method
-mhalo_characteristic = np.arange(11.5,13.0,0.1) #13.0 not included
-mstellar_characteristic = np.arange(9.5,11.0,0.1) #11.0 not included
-mlow_slope = np.arange(0.35,0.50,0.01)[:-1] #0.5 included by default
-mhigh_slope = np.arange(0.50,0.65,0.01)[:-1]
-mstellar_scatter = np.arange(0.02,0.095,0.005)
-
-z_model = np.median(resolve_live18.grpcz.values)/(3*10**5)
-#model = Moster13SmHm('moster13',prim_haloprop_key='halo_macc')
-model = PrebuiltSubhaloModelFactory('behroozi10',redshift=z_model,\
-                                     prim_haloprop_key='halo_macc')
-halocat = CachedHaloCatalog(fname=halo_catalog,update_cached_fname = True)
-
-model.param_dict['smhm_m1_0'] = mhalo_characteristic[0]
-model.param_dict['smhm_m0_0'] = mstellar_characteristic[0]
-model.param_dict['smhm_beta_0'] = mlow_slope[0]
-model.param_dict['smhm_delta_0'] = mhigh_slope[0]
-model.param_dict['u’scatter_model_param1'] = mstellar_scatter[0]
-
-model.populate_mock(halocat)
-
-sample_mask = model.mock.galaxy_table['stellar_mass'] >= 10**8.7
-gals = model.mock.galaxy_table[sample_mask]
-gals_df = gals.to_pandas()
-logM_mock  = np.log10(gals_df.stellar_mass.values)  #Read stellar masses
-nbins_mock = nbins_B  #Number of bins to divide data into
-V_sim = 130**3 #Vishnu volume [Mpc/h]^3 
-#Unnormalized histogram and bin edges
-Phi,edg = np.histogram(logM_mock,bins=nbins_mock)  
-dM = edg[1] - edg[0]  #Bin width
-Max = 0.5*(edg[1:]+edg[:-1])  #Mass axis i.e. bin centers
-#Normalized to volume and bin width
-err_poiss = np.sqrt(Phi)/(V_sim*dM)
-Phi = Phi/(V_sim*dM) 
+plt.show()
 
 fig2 = plt.figure(figsize=(10,10))
 plt.errorbar(max_resolveB,phi_resolveB,yerr=err_tot_B,\
@@ -154,13 +181,15 @@ plt.errorbar(max_resolveA,phi_resolveA,yerr=err_tot_A,\
              color='#442b88',fmt='--s',ecolor='#442b88',markersize=4,capsize=5,\
              capthick=0.5,label='RESOLVE A')
 
-plt.plot(Max,Phi,color='#442b88',linestyle='--',label='Vishnu')
+plt.plot(Max,Phi,color='k',linestyle='-',label='Vishnu')
 
 plt.yscale('log')
-plt.axvline(x=8.7,color='#921063')
-plt.axvline(x=8.9,color='#442b88')
-plt.axvspan(xlim_left, 8.7, color='gray', alpha=0.7, lw=0)
+plt.ylim(10**-5,10**-1)
+# plt.axvline(x=8.7,color='#921063')
+# plt.axvline(x=8.9,color='#442b88')
+# plt.axvspan(xlim_left, 8.7, color='gray', alpha=0.7, lw=0)
 plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[M_\odot \right]$')
 plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{-1} \right]$')
 plt.legend(loc='best',prop={'size': 10})
-
+plt.show()
+'''
