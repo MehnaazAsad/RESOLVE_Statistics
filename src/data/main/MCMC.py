@@ -125,8 +125,6 @@ max_resolveB,phi_resolveB,err_tot_B,bins_B = diff_SMF(resb_m_stellar,\
                                                        v_resolveB,cvar_resolveB,False)
 i = 0
 def lnprob(theta,phi_resolveB,err_tot_B):
-
-    print("Iteration i/1000000".format(i))
     if theta[0] < 0:
         return -np.inf
     if theta[1] < 0:
@@ -148,11 +146,8 @@ ndim = 5
 nsteps=4000
 p0 = behroozi10_param_vals + np.random.rand(ndim*nwalkers).reshape((nwalkers,ndim)) 
 # p0 = np.random.rand(ndim * nwalkers).reshape((nwalkers, ndim))
-sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(phi_resolveB, err_tot_B))
-for i, result in enumerate(sampler.sample(p0, iterations=nsteps)):
-    if (i+1) % 100 == 0:
-        print("{0:5.1%}".format(float(i) / nsteps))
-# sampler.run_mcmc(p0, 4000)
+sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(phi_resolveB, err_tot_B),threads=15)
+sampler.run_mcmc(p0, 4000)
 np.savetxt(chain_fname,sampler.flatchain)
 '''
 ### Plot SMFs
@@ -193,3 +188,36 @@ plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{
 plt.legend(loc='best',prop={'size': 10})
 plt.show()
 '''
+import emcee
+import numpy as np
+
+def lnprob(x, mu, icov):
+    diff = x-mu
+    return -np.dot(diff,np.dot(icov,diff))/2.0
+
+
+chain_fname = 'nd_gaussian_chain_pyversion.dat'
+ndim = 5
+
+# ensure reproducibility for tests against python emcee
+rseed = 10
+np.random.seed(rseed)
+
+means = np.random.rand(ndim)
+
+cov = 0.5 - np.random.rand(ndim ** 2).reshape((ndim, ndim))
+cov = np.triu(cov)
+cov += cov.T - np.diag(cov.diagonal())
+cov = np.dot(cov,cov)
+
+icov = np.linalg.inv(cov)
+nwalkers = 250
+nsteps = 4000
+p0 = np.random.rand(ndim * nwalkers).reshape((nwalkers, ndim))
+for i, result in enumerate(sampler.sample(p0, iterations=nsteps)):
+    if (i+1) % 100 == 0:
+        print("{0:5.1%}".format(float(i) / nsteps))
+
+test_sampler = sampler.run_mcmc(p0, 4000)()
+
+np.savetxt(chain_fname,sampler.flatchain)
