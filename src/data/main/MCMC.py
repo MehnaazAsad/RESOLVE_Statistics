@@ -159,7 +159,7 @@ nwalkers = 250
 ndim = 5
 p0 = behroozi10_param_vals + np.random.rand(ndim*nwalkers).reshape((nwalkers,ndim)) 
 # p0 = np.random.rand(ndim * nwalkers).reshape((nwalkers, ndim))
-sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(phi_resolveB, err_tot_B))
+sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(phi_resolveB, err_tot_B),threads=15)
 sampler.run_mcmc(p0, 500)
 np.savetxt(chain_fname,sampler.flatchain)
 '''
