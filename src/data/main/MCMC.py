@@ -9,9 +9,9 @@ from halotools.empirical_models import PrebuiltSubhaloModelFactory
 from halotools.empirical_models import Moster13SmHm
 from halotools.sim_manager import CachedHaloCatalog
 from cosmo_utils.utils import work_paths as cwpaths
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
+# import matplotlib
+# matplotlib.use('Agg')
+# import matplotlib.pyplot as plt
 #plt.ioff()
 from matplotlib import rc
 import pandas as pd
@@ -123,7 +123,7 @@ max_resolveA,phi_resolveA,err_tot_A,bins_A = diff_SMF(resa_m_stellar,\
 resb_m_stellar = resolve_B.logmstar.values   
 max_resolveB,phi_resolveB,err_tot_B,bins_B = diff_SMF(resb_m_stellar,\
                                                        v_resolveB,cvar_resolveB,False)
-i = 0
+
 def lnprob(theta,phi_resolveB,err_tot_B):
     if theta[0] < 0:
         return -np.inf
@@ -188,36 +188,36 @@ plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{
 plt.legend(loc='best',prop={'size': 10})
 plt.show()
 '''
-import emcee
-import numpy as np
+# import emcee
+# import numpy as np
 
-def lnprob(x, mu, icov):
-    diff = x-mu
-    return -np.dot(diff,np.dot(icov,diff))/2.0
+# def lnprob(x, mu, icov):
+#     diff = x-mu
+#     return -np.dot(diff,np.dot(icov,diff))/2.0
 
 
-chain_fname = 'nd_gaussian_chain_pyversion.dat'
-ndim = 5
+# chain_fname = 'nd_gaussian_chain_pyversion.dat'
+# ndim = 5
 
-# ensure reproducibility for tests against python emcee
-rseed = 10
-np.random.seed(rseed)
+# # ensure reproducibility for tests against python emcee
+# rseed = 10
+# np.random.seed(rseed)
 
-means = np.random.rand(ndim)
+# means = np.random.rand(ndim)
 
-cov = 0.5 - np.random.rand(ndim ** 2).reshape((ndim, ndim))
-cov = np.triu(cov)
-cov += cov.T - np.diag(cov.diagonal())
-cov = np.dot(cov,cov)
+# cov = 0.5 - np.random.rand(ndim ** 2).reshape((ndim, ndim))
+# cov = np.triu(cov)
+# cov += cov.T - np.diag(cov.diagonal())
+# cov = np.dot(cov,cov)
 
-icov = np.linalg.inv(cov)
-nwalkers = 250
-nsteps = 4000
-p0 = np.random.rand(ndim * nwalkers).reshape((nwalkers, ndim))
-for i, result in enumerate(sampler.sample(p0, iterations=nsteps)):
-    if (i+1) % 100 == 0:
-        print("{0:5.1%}".format(float(i) / nsteps))
+# icov = np.linalg.inv(cov)
+# nwalkers = 250
+# nsteps = 4000
+# p0 = np.random.rand(ndim * nwalkers).reshape((nwalkers, ndim))
+# for i, result in enumerate(sampler.sample(p0, iterations=nsteps)):
+#     if (i+1) % 100 == 0:
+#         print("{0:5.1%}".format(float(i) / nsteps))
 
-test_sampler = sampler.run_mcmc(p0, 4000)()
+# test_sampler = sampler.run_mcmc(p0, 4000)()
 
-np.savetxt(chain_fname,sampler.flatchain)
+# np.savetxt(chain_fname,sampler.flatchain)
