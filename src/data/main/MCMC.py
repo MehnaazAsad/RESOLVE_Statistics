@@ -124,14 +124,6 @@ resb_m_stellar = resolve_B.logmstar.values
 max_resolveB,phi_resolveB,err_tot_B,bins_B = diff_SMF(resb_m_stellar,\
                                                        v_resolveB,cvar_resolveB,False)
 
-
-### Simulation method
-mhalo_characteristic = np.arange(11.5,13.0,0.1) #13.0 not included
-mstellar_characteristic = np.arange(9.5,11.0,0.1) #11.0 not included
-mlow_slope = np.arange(0.35,0.50,0.01)[:-1] #0.5 included by default
-mhigh_slope = np.arange(0.50,0.65,0.01)[:-1]
-mstellar_scatter = np.arange(0.02,0.095,0.005)
-
 def lnprob(theta,phi_resolveB,err_tot_B):
     if theta[0] < 0:
         return -np.inf
@@ -151,7 +143,7 @@ def lnprob(theta,phi_resolveB,err_tot_B):
 behroozi10_param_vals = [12.35,10.72,0.44,0.57,0.15]
 nwalkers = 250
 ndim = 5
-p0 = behroozi10_param_vals + 1e-4*np.random.rand(ndim*nwalkers).reshape((nwalkers,ndim)) 
+p0 = behroozi10_param_vals + np.random.rand(ndim*nwalkers).reshape((nwalkers,ndim)) 
 # p0 = np.random.rand(ndim * nwalkers).reshape((nwalkers, ndim))
 sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(phi_resolveB, err_tot_B))
 result = sampler.run_mcmc(p0, 4000)
