@@ -48,14 +48,14 @@ def diff_SMF(mstar_arr,volume,cvar_err,h1_bool):
     
     return maxis,phi,err_tot,bins
 
-def populate_mock(model,theta):
-    halocat = CachedHaloCatalog(fname=halo_catalog,update_cached_fname = True)
-    z_model = np.median(resolve_live18.grpcz.values)/(3*10**5)
-    if model=='Moster':
-        model = Moster13SmHm(prim_haloprop_key='halo_macc')
-    elif model=='Behroozi':
-        model = PrebuiltSubhaloModelFactory('behroozi10',redshift=z_model,\
-                                     prim_haloprop_key='halo_macc')
+def populate_mock(theta,model):
+    # halocat = CachedHaloCatalog(fname=halo_catalog,update_cached_fname = True)
+    # z_model = np.median(resolve_live18.grpcz.values)/(3*10**5)
+    # if model_name=='Moster':
+    #     model = Moster13SmHm(prim_haloprop_key='halo_macc')
+    # elif model_name=='Behroozi':
+    #     model = PrebuiltSubhaloModelFactory('behroozi10',redshift=z_model,\
+    #                                  prim_haloprop_key='halo_macc')
     
     mhalo_characteristic,mstellar_characteristic,mlow_slope,mhigh_slope,\
         mstellar_scatter = theta
@@ -64,8 +64,11 @@ def populate_mock(model,theta):
     model.param_dict['smhm_beta_0'] = mlow_slope
     model.param_dict['smhm_delta_0'] = mhigh_slope
     model.param_dict['u’scatter_model_param1'] = mstellar_scatter
-    model.populate_mock(halocat)
-
+    
+    try:
+        model.mock.populate()
+    except Exception:
+        print(mhalo_characteristic,mstellar_characteristic,mlow_slope,mhigh_slope,mstellar_scatter)
     sample_mask = model.mock.galaxy_table['stellar_mass'] >= 10**8.7
     gals = model.mock.galaxy_table[sample_mask]
     gals_df = gals.to_pandas()
@@ -81,9 +84,9 @@ path_to_raw = dict_of_paths['raw_dir']
 path_to_proc = dict_of_paths['proc_dir']
 path_to_interim = dict_of_paths['int_dir']
 path_to_figures = dict_of_paths['plot_dir']
-halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
-               'vishnu/rockstar/vishnu_rockstar_test.hdf5'
-# halo_catalog = '/Users/asadm2/Desktop/vishnu_rockstar_test.hdf5'
+# halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
+#                'vishnu/rockstar/vishnu_rockstar_test.hdf5'
+halo_catalog = '/Users/asadm2/Desktop/vishnu_rockstar_test.hdf5'
 chain_fname = path_to_proc+'emcee_SMFRB.dat'
 
 ###Formatting for plots and animation
@@ -126,16 +129,23 @@ max_resolveB,phi_resolveB,err_tot_B,bins_B = diff_SMF(resb_m_stellar,\
 
 arr = np.arange(1,125000,1)
 list = arr.tolist()
+halocat = CachedHaloCatalog(fname=halo_catalog,update_cached_fname = True)
+z_model = np.median(resolve_live18.grpcz.values)/(3*10**5)
+model = PrebuiltSubhaloModelFactory('behroozi10',redshift=z_model,\
+                                     prim_haloprop_key='halo_macc')
+model.populate_mock(halocat)
 
 def lnprob(theta,phi_resolveB,err_tot_B):
-    print('iteration {0} of 125000'.format(list.pop(0)))
+    a = list.pop(0)
+    print('iteration {0} of 125000'.format(a))
     if theta[0] < 0:
         return -np.inf
     if theta[1] < 0:
         return -np.inf
     if theta[4] < 0:
         return -np.inf
-    gals_df = populate_mock('Behroozi',theta)
+        
+    gals_df = populate_mock(theta,model)
     v_sim = 130**3
     mstellar_mock  = gals_df.stellar_mass.values  #Read stellar masses
     max_model,phi_model,err_tot_model,bins_model = diff_SMF(mstellar_mock,\
