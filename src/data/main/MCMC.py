@@ -84,7 +84,7 @@ path_to_figures = dict_of_paths['plot_dir']
 # halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
 #                'vishnu/rockstar/vishnu_rockstar_test.hdf5'
 halo_catalog = '/Users/asadm2/Desktop/vishnu_rockstar_test.hdf5'
-chain_fname = path_to_data+'emcee_SMFRB.dat'
+chain_fname = path_to_proc+'emcee_SMFRB.dat'
 
 ###Formatting for plots and animation
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']},size=18)
