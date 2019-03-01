@@ -10,7 +10,7 @@ from halotools.empirical_models import Moster13SmHm
 from halotools.sim_manager import CachedHaloCatalog
 from cosmo_utils.utils import work_paths as cwpaths
 import matplotlib
-matplotlib.use('TkAgg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 #plt.ioff()
 from matplotlib import rc
@@ -78,12 +78,13 @@ def chi_squared(data_y,model_y,err_data):
 ### Paths
 dict_of_paths = cwpaths.cookiecutter_paths()
 path_to_raw = dict_of_paths['raw_dir']
+path_to_data = dict_of_paths['data_dir']
 path_to_interim = dict_of_paths['int_dir']
 path_to_figures = dict_of_paths['plot_dir']
-#halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
-#                'vishnu/rockstar/vishnu_rockstar_test.hdf5'
-halo_catalog = '/Users/asadm2/Desktop/vishnu_rockstar_test.hdf5'
-
+halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
+               'vishnu/rockstar/vishnu_rockstar_test.hdf5'
+# halo_catalog = '/Users/asadm2/Desktop/vishnu_rockstar_test.hdf5'
+chain_fname = path_to_data+'/processed/emcee_SMFRB.dat'
 
 ###Formatting for plots and animation
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']},size=18)
@@ -154,6 +155,7 @@ p0 = behroozi10_param_vals + 1e-4*np.random.rand(ndim*nwalkers).reshape((nwalker
 # p0 = np.random.rand(ndim * nwalkers).reshape((nwalkers, ndim))
 sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(phi_resolveB, err_tot_B))
 result = sampler.run_mcmc(p0, 4000)
+np.savetxt(chain_fname,result.flatchain)
 '''
 ### Plot SMFs
 fig1 = plt.figure(figsize=(10,10))
