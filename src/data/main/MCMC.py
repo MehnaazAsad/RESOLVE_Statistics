@@ -13,6 +13,7 @@ from cosmo_utils.utils import work_paths as cwpaths
 # matplotlib.use('Agg')
 # import matplotlib.pyplot as plt
 # plt.ioff()
+from 
 from matplotlib import rc
 import pandas as pd
 import numpy as np
@@ -178,9 +179,9 @@ nsteps = 500
 f = open(chain_fname, "w")
 f.close()
 
-for i,result in enumerate(sampler.sample(p0, iterations=125000, storechain=False)):
+for i,result in enumerate(sampler.sample(p0, iterations=nsteps, storechain=False)):
     position = result[0]
-    print("Iteration number {0} of {1}".format(i+1,125000))
+    print("Iteration number {0} of {1}".format(i+1,nsteps))
     f = open(chain_fname, "a")
     for k in range(position.shape[0]):
         f.write(str(position[k]).strip("[]"))
