@@ -63,7 +63,7 @@ def chi_squared(data_y, model_y, err_data):
 
     return np.sum(chi_squared)
 
-def lnprob(theta, phi, err_tot, model):
+def lnprob(theta, phi, err_tot):
     """Calculates log probability for emcee."""
     if theta[0] < 0:
         return -np.inf
@@ -130,7 +130,7 @@ p0 = behroozi10_param_vals + 0.1*np.random.rand(ndim*nwalkers).reshape((nwalkers
                                                                     ndim))
 with Pool(processes=20) as pool:
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(fake_y, \
-          fake_err, model),pool=pool)
+          fake_err),pool=pool)
     start = time.time()
     sampler.run_mcmc(p0, 500)
     end = time.time()
