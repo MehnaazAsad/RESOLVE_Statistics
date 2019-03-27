@@ -128,7 +128,7 @@ nwalkers = 250
 ndim = 5
 p0 = behroozi10_param_vals + 0.1*np.random.rand(ndim*nwalkers).reshape((nwalkers,\
                                                                     ndim))
-with Pool(20) as pool:
+with Pool(processes=20) as pool:
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(fake_y, \
           fake_err, model),pool=pool)
     start = time.time()
