@@ -93,9 +93,9 @@ path_to_raw = dict_of_paths['raw_dir']
 path_to_proc = dict_of_paths['proc_dir']
 path_to_interim = dict_of_paths['int_dir']
 path_to_figures = dict_of_paths['plot_dir']
-halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
-               'vishnu/rockstar/vishnu_rockstar_test.hdf5'
-# halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
+# halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
+#                'vishnu/rockstar/vishnu_rockstar_test.hdf5'
+halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
 chain_fname = path_to_proc + 'emcee_SMFRB_fake.dat'
 
 ## Generating fake data from simulation
@@ -126,18 +126,23 @@ behroozi10_param_vals = [12.25,10.62,0.54,0.67,0.3]
 
 nwalkers = 250
 ndim = 5
-p0 = behroozi10_param_vals + 0.1*np.random.rand(ndim*nwalkers).reshape((nwalkers,\
-                                                                    ndim))
+p0 = behroozi10_param_vals + 0.1*np.random.rand(ndim*nwalkers).\
+    reshape((nwalkers,ndim))
 with Pool(processes=20) as pool:
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(fake_y, \
-          fake_err),pool=pool)
+            fake_err))
     start = time.time()
     sampler.run_mcmc(p0, 500)
     end = time.time()
     multi_time = end - start
     print("Multiprocessing took {0:.1f} seconds".format(multi_time))
 
+print("Writing chain to file")
+chain = sampler.flatchain
 f = open(chain_fname, "w")
+for idx in range(len(chain)):
+    f.write(str(chain[idx]).strip("[]"))
+    f.write("\n")
 f.close()
 
 # nsteps = 10
