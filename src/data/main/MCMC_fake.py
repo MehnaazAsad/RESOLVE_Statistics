@@ -84,8 +84,8 @@ def lnprob(theta, phi, err_tot):
     return lnp
 
 # ensure reproducibility
-rseed = 12
-np.random.seed(rseed)
+# rseed = 12
+# np.random.seed(rseed)
 
 # Paths
 dict_of_paths = cwpaths.cookiecutter_paths()
@@ -96,7 +96,7 @@ path_to_figures = dict_of_paths['plot_dir']
 halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
                'vishnu/rockstar/vishnu_rockstar_test.hdf5'
 # halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
-chain_fname = path_to_proc + 'emcee_SMFRB_mp_fake.dat'
+chain_fname = path_to_proc + 'emcee_SMFRB_mp_fake_2.dat'
 
 ## Generating fake data from simulation
 halocat = CachedHaloCatalog(fname=halo_catalog, update_cached_fname=True)
@@ -156,3 +156,8 @@ f.close()
 #     # f.close()
 
 #behroozi10_param_vals = [12.35,10.72,0.44,0.57,0.15]
+
+## Generating fake SMF with small errors
+# fake_x = np.linspace(8.9,11.5,50)
+# fake_y = np.linspace(10**-5,10**-1,50)[::-1]
+# fake_err = np.linspace(0.0005,0.000005,50)
