@@ -91,7 +91,7 @@ path_to_figures = dict_of_paths['plot_dir']
 halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
                'vishnu/rockstar/vishnu_rockstar_test.hdf5'
 # halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
-chain_fname = path_to_proc + 'emcee_SMFRB_mp_eco.dat'
+chain_fname = path_to_proc + 'emcee_SMFRB_mp_eco_r2.dat'
 
 columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 'logmstar',
            'logmgas', 'grp', 'grpn', 'logmh', 'logmh_s', 'fc',
@@ -102,8 +102,8 @@ eco_buff = pd.read_csv(path_to_raw + "eco_all.csv",delimiter=",", header=0, \
     usecols=columns)
 
 # 6456 galaxies                       
-eco_nobuff = eco_buff.loc[(eco_buff.cz.values >= 3000) & \
-    (eco_buff.cz.values <= 7000) & (eco_buff.absrmag.values <= -17.33) &\
+eco_nobuff = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & \
+    (eco_buff.grpcz.values <= 7000) & (eco_buff.absrmag.values <= -17.33) &\
         (eco_buff.logmstar.values >= 8.9)]
 
 cvar = 0.125
@@ -126,8 +126,8 @@ np.random.seed(rseed)
 behroozi10_param_vals = [12.35,10.72,0.44,0.57,0.15]
 nwalkers = 250
 ndim = 5
-p0 = behroozi10_param_vals + 0.1*np.random.rand(ndim*nwalkers).reshape((nwalkers,\
-    ndim))
+p0 = behroozi10_param_vals + 0.1*np.random.rand(ndim*nwalkers).\
+    reshape((nwalkers,ndim))
 
 with Pool(processes=20) as pool:
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(phi, err)\
@@ -138,7 +138,15 @@ with Pool(processes=20) as pool:
     multi_time = end - start
     print("Multiprocessing took {0:.1f} seconds".format(multi_time))
 
-print("Writing chain to file")
+print("Writing raw chain to file")
+data = sampler.chain
+with open(path_to_proc + 'test.txt', 'w') as outfile:
+    # outfile.write('# Array shape: {0}\n'.format(sampler.chain.shape))
+    for data_slice in data:
+        np.savetxt(outfile, data_slice, fmt='%-7.2f')
+        outfile.write('# New slice\n')
+
+print("Writing flattened chain to file")
 chain = sampler.flatchain
 f = open(chain_fname, "w")
 for idx in range(len(chain)):
