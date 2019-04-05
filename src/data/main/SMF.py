@@ -80,7 +80,6 @@ def use_eco(path_to_file):
     eco_nobuff = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
                                 (eco_buff.grpcz.values <= 7000) & 
                                 (eco_buff.absrmag.values <= -17.33)]
-
     volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
     cvar = 0.125
     return eco_nobuff,volume,cvar
@@ -124,7 +123,7 @@ plt.ylabel(r'$\Phi\,/\,\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}$')
 plt.title('Stellar mass function')
 
 counter = 0
-nbins = 10
+nbins = bins
 Volume_sim = 130**3
 Mhalo_characteristic = np.arange(11.5,13.0,0.1) #13.0 not included
 Mstellar_characteristic = np.arange(9.5,11.0,0.1) #11.0 not included
@@ -133,6 +132,7 @@ Mhigh_slope = np.arange(0.50,0.65,0.01)[:-1]
 #testing with extreme scatter numbers from ECO's MCMC run
 Mstellar_scatter = np.linspace(10,800,15) 
 
+print('Setting up models')
 ###Models
 model1 = PrebuiltSubhaloModelFactory('behroozi10',redshift=0.0186,\
                                         prim_haloprop_key='halo_macc')
@@ -144,7 +144,7 @@ model4 = PrebuiltSubhaloModelFactory('behroozi10',redshift=0.0186,\
                                         prim_haloprop_key='halo_macc')
 model5 = PrebuiltSubhaloModelFactory('behroozi10',redshift=0.0186,\
                                         prim_haloprop_key='halo_macc')
-
+print('Setting up halocats')
 ###Halocats
 halocat1 = CachedHaloCatalog(fname=halo_catalog)
 halocat2 = CachedHaloCatalog(fname=halo_catalog)
@@ -152,6 +152,7 @@ halocat3 = CachedHaloCatalog(fname=halo_catalog)
 halocat4 = CachedHaloCatalog(fname=halo_catalog)
 halocat5 = CachedHaloCatalog(fname=halo_catalog)
 
+print('Initial mock population')
 ###Populate mocks
 model1.populate_mock(halocat1)
 model2.populate_mock(halocat2)
