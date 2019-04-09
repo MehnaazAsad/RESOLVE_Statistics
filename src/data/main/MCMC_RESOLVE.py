@@ -153,7 +153,7 @@ with Pool(20) as pool:
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(phi_resolveB, \
           err_tot_B),pool=pool)
     start = time.time()
-    sampler.run_mcmc(p0, 500)
+    sampler.run_mcmc(p0, 1000)
     end = time.time()
     multi_time = end - start
     print("Multiprocessing took {0:.1f} seconds".format(multi_time))
