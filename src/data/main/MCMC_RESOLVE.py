@@ -91,7 +91,7 @@ path_to_figures = dict_of_paths['plot_dir']
 halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
                'vishnu/rockstar/vishnu_rockstar_test.hdf5'
 # halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
-chain_fname = path_to_proc + 'emcee_resolveB_mp_r2.dat'
+chain_fname = path_to_proc + 'emcee_resolveA_mp_r2.dat'
 
 columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 'logmstar',
            'logmgas', 'grp', 'grpn', 'grpnassoc', 'logmh', 'logmh_s', 'fc',
@@ -150,8 +150,8 @@ p0 = behroozi10_param_vals + 0.1*np.random.rand(ndim*nwalkers).\
     reshape((nwalkers,ndim)) 
 
 with Pool(20) as pool:
-    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(phi_resolveB, \
-          err_tot_B),pool=pool)
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(phi_resolveA,\
+          err_tot_A),pool=pool)
     start = time.time()
     sampler.run_mcmc(p0, 1000)
     end = time.time()
@@ -160,7 +160,7 @@ with Pool(20) as pool:
 
 print("Writing raw chain to file")
 data = sampler.chain
-with open(path_to_proc + 'resolveB_mcmc_raw.txt', 'w') as outfile:
+with open(path_to_proc + 'resolveA_mcmc_raw_r2.txt', 'w') as outfile:
     # outfile.write('# Array shape: {0}\n'.format(sampler.chain.shape))
     for data_slice in data:
         np.savetxt(outfile, data_slice, fmt='%-7.2f')
