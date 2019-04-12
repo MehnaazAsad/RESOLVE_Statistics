@@ -46,7 +46,7 @@ def populate_mock(theta, model):
     model.param_dict['smhm_m0_0'] = mstellar_characteristic
     model.param_dict['smhm_beta_0'] = mlow_slope
     model.param_dict['smhm_delta_0'] = mhigh_slope
-    model.param_dict['u’scatter_model_param1'] = mstellar_scatter
+    model.param_dict['scatter_model_param1'] = mstellar_scatter
 
     model.mock.populate()
 
@@ -91,7 +91,7 @@ path_to_figures = dict_of_paths['plot_dir']
 halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
                'vishnu/rockstar/vishnu_rockstar_test.hdf5'
 # halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
-chain_fname = path_to_proc + 'emcee_SMFRB_mp_eco_r2.dat'
+chain_fname = path_to_proc + 'emcee_eco_mp_corrscatter.dat'
 
 columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 'logmstar',
            'logmgas', 'grp', 'grpn', 'logmh', 'logmh_s', 'fc',
@@ -140,7 +140,7 @@ with Pool(processes=20) as pool:
 
 print("Writing raw chain to file")
 data = sampler.chain
-with open(path_to_proc + 'test.txt', 'w') as outfile:
+with open(path_to_proc + 'eco_mcmc_raw_corrscatter.txt', 'w') as outfile:
     # outfile.write('# Array shape: {0}\n'.format(sampler.chain.shape))
     for data_slice in data:
         np.savetxt(outfile, data_slice, fmt='%-7.2f')
