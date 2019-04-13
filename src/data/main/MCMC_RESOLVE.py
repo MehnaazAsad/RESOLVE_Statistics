@@ -25,7 +25,7 @@ def diff_smf(mstar_arr, volume, cvar_err, h1_bool):
         logmstar_arr = np.log10((10**mstar_arr) / 1.429)
     else:
         logmstar_arr = np.log10(mstar_arr)
-    bins = np.linspace(8.9, 11.5, 12)
+    bins = np.linspace(8.7, 11.5, 12)
     # Unnormalized histogram and bin edges
     phi, edg = np.histogram(logmstar_arr, bins=bins)  # paper used 17 bins
     dm = edg[1] - edg[0]  # Bin width
@@ -50,7 +50,7 @@ def populate_mock(theta, model):
 
     model.mock.populate()
 
-    sample_mask = model.mock.galaxy_table['stellar_mass'] >= 10**8.9
+    sample_mask = model.mock.galaxy_table['stellar_mass'] >= 10**8.7
     gals = model.mock.galaxy_table[sample_mask]
     gals_df = gals.to_pandas()
 
@@ -91,7 +91,7 @@ path_to_figures = dict_of_paths['plot_dir']
 halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
                'vishnu/rockstar/vishnu_rockstar_test.hdf5'
 # halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
-chain_fname = path_to_proc + 'emcee_resolveA_mp_corrscatter.dat'
+chain_fname = path_to_proc + 'emcee_resolveB_mp_corrscatter.dat'
 
 columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 'logmstar',
            'logmgas', 'grp', 'grpn', 'grpnassoc', 'logmh', 'logmh_s', 'fc',
@@ -150,8 +150,8 @@ p0 = behroozi10_param_vals + 0.1*np.random.rand(ndim*nwalkers).\
     reshape((nwalkers,ndim)) 
 
 with Pool(20) as pool:
-    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(phi_resolveA,\
-          err_tot_A),pool=pool)
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(phi_resolveB,\
+          err_tot_B),pool=pool)
     start = time.time()
     sampler.run_mcmc(p0, 1000)
     end = time.time()
@@ -160,7 +160,7 @@ with Pool(20) as pool:
 
 print("Writing raw chain to file")
 data = sampler.chain
-with open(path_to_proc + 'resolveA_mcmc_raw_corrscatter.txt', 'w') as outfile:
+with open(path_to_proc + 'resolveB_mcmc_raw_corrscatter.txt', 'w') as outfile:
     # outfile.write('# Array shape: {0}\n'.format(sampler.chain.shape))
     for data_slice in data:
         np.savetxt(outfile, data_slice, fmt='%-7.2f')
