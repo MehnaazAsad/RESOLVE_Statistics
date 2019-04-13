@@ -25,7 +25,7 @@ def diff_smf(mstar_arr, volume, cvar_err, h1_bool):
         logmstar_arr = np.log10((10**mstar_arr) / 1.429)
     else:
         logmstar_arr = np.log10(mstar_arr)
-    bins = np.linspace(8.7, 11.5, 12)
+    bins = np.linspace(8.9, 11.5, 12)
     # Unnormalized histogram and bin edges
     phi, edg = np.histogram(logmstar_arr, bins=bins)  # paper used 17 bins
     dm = edg[1] - edg[0]  # Bin width
@@ -46,11 +46,11 @@ def populate_mock(theta, model):
     model.param_dict['smhm_m0_0'] = mstellar_characteristic
     model.param_dict['smhm_beta_0'] = mlow_slope
     model.param_dict['smhm_delta_0'] = mhigh_slope
-    model.param_dict['u’scatter_model_param1'] = mstellar_scatter
+    model.param_dict['scatter_model_param1'] = mstellar_scatter
 
     model.mock.populate()
 
-    sample_mask = model.mock.galaxy_table['stellar_mass'] >= 10**8.7
+    sample_mask = model.mock.galaxy_table['stellar_mass'] >= 10**8.9
     gals = model.mock.galaxy_table[sample_mask]
     gals_df = gals.to_pandas()
 
@@ -91,7 +91,7 @@ path_to_figures = dict_of_paths['plot_dir']
 halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
                'vishnu/rockstar/vishnu_rockstar_test.hdf5'
 # halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
-chain_fname = path_to_proc + 'emcee_resolveA_mp_r2.dat'
+chain_fname = path_to_proc + 'emcee_resolveA_mp_corrscatter.dat'
 
 columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 'logmstar',
            'logmgas', 'grp', 'grpn', 'grpnassoc', 'logmh', 'logmh_s', 'fc',
@@ -160,7 +160,7 @@ with Pool(20) as pool:
 
 print("Writing raw chain to file")
 data = sampler.chain
-with open(path_to_proc + 'resolveA_mcmc_raw_r2.txt', 'w') as outfile:
+with open(path_to_proc + 'resolveA_mcmc_raw_corrscatter.txt', 'w') as outfile:
     # outfile.write('# Array shape: {0}\n'.format(sampler.chain.shape))
     for data_slice in data:
         np.savetxt(outfile, data_slice, fmt='%-7.2f')
