@@ -65,11 +65,14 @@ def chi_squared(data_y, model_y, err_data):
 def lnprob(theta, phi, err_tot):
     """Calculates log probability for emcee."""
     if theta[0] < 0:
-        return -np.inf
+        chi2 = -np.inf
+        return -np.inf, chi2
     if theta[1] < 0:
-        return -np.inf
+        chi2 = -np.inf
+        return -np.inf, chi2
     if theta[4] < 0:
-        return -np.inf
+        chi2 = -np.inf
+        return -np.inf, chi2
     try:
         gals_df = populate_mock(theta, model)
         v_sim = 130**3
