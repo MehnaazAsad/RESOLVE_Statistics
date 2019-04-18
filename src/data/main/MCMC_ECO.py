@@ -78,9 +78,9 @@ def lnprob(theta, phi, err_tot):
             diff_smf(mstellar_mock, v_sim, 0, True)
         chi2 = chi_squared(phi, phi_model, err_tot)
         lnp = -chi2 / 2
-
     except Exception:
         lnp = -np.inf
+        chi2 = np.inf
     return lnp, chi2
 
 # Paths
