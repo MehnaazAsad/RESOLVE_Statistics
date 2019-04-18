@@ -78,9 +78,10 @@ def lnprob(theta, phi, err_tot):
             diff_smf(mstellar_mock, v_sim, 0, True)
         chi2 = chi_squared(phi, phi_model, err_tot)
         lnp = -chi2 / 2
+
     except Exception:
         lnp = -np.inf
-    return lnp
+    return lnp, chi2
 
 # Paths
 dict_of_paths = cwpaths.cookiecutter_paths()
@@ -91,7 +92,7 @@ path_to_figures = dict_of_paths['plot_dir']
 halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
                'vishnu/rockstar/vishnu_rockstar_test.hdf5'
 # halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
-chain_fname = path_to_proc + 'emcee_eco_mp_corrscatter.dat'
+chain_fname = path_to_proc + 'mcmc_eco.dat'
 
 columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 'logmstar',
            'logmgas', 'grp', 'grpn', 'logmh', 'logmh_s', 'fc',
@@ -140,7 +141,7 @@ with Pool(processes=20) as pool:
 
 print("Writing raw chain to file")
 data = sampler.chain
-with open(path_to_proc + 'eco_mcmc_raw_corrscatter.txt', 'w') as outfile:
+with open(path_to_proc + 'mcmc_eco_raw.txt', 'w') as outfile:
     # outfile.write('# Array shape: {0}\n'.format(sampler.chain.shape))
     for data_slice in data:
         np.savetxt(outfile, data_slice, fmt='%-7.2f')
@@ -153,6 +154,15 @@ for idx in range(len(chain)):
     f.write(str(chain[idx]).strip("[]"))
     f.write("\n")
 f.close()
+
+print("Writing chi squared to file")
+blobs = np.ndarray.flatten(np.array(sampler.blobs))
+fname = path_to_proc + 'eco_chi2.txt'
+with open(fname, 'w') as outfile:
+    for value in blobs:
+        outfile.write(str(value))
+        outfile.write("\n")
+            
 
 '''
 nsteps = 5
