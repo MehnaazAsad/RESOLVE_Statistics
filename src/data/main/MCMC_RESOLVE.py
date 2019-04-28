@@ -65,11 +65,14 @@ def chi_squared(data_y, model_y, err_data):
 def lnprob(theta, phi_resolveb, err_tot_b):
     """Calculates log probability for emcee."""
     if theta[0] < 0:
-        return -np.inf
+        chi2 = -np.inf
+        return -np.inf, chi2
     if theta[1] < 0:
-        return -np.inf
+        chi2 = -np.inf
+        return -np.inf, chi2
     if theta[4] < 0:
-        return -np.inf
+        chi2 = -np.inf
+        return -np.inf, chi2
     try:
         gals_df = populate_mock(theta, model)
         v_sim = 130**3
@@ -80,6 +83,7 @@ def lnprob(theta, phi_resolveb, err_tot_b):
         lnp = -chi2 / 2
     except Exception:
         lnp = -np.inf
+        chi2 = np.inf
     return lnp, chi2
 
 # Paths
@@ -149,7 +153,7 @@ ndim = 5
 p0 = behroozi10_param_vals + 0.1*np.random.rand(ndim*nwalkers).\
     reshape((nwalkers,ndim)) 
 
-with Pool(20) as pool:
+with Pool(processes=20) as pool:
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(phi_resolveB,\
           err_tot_B),pool=pool)
     start = time.time()
