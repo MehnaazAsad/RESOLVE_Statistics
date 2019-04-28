@@ -1,5 +1,5 @@
 """
-{This script carries out an MCMC analysis to parametrize the RESOLVE-B SMHM}
+{This script carries out an MCMC analysis to parametrize the RESOLVE (A&B) SMHM}
 """
 
 # Built-in/Generic Imports
@@ -80,7 +80,7 @@ def lnprob(theta, phi_resolveb, err_tot_b):
         lnp = -chi2 / 2
     except Exception:
         lnp = -np.inf
-    return lnp
+    return lnp, chi2
 
 # Paths
 dict_of_paths = cwpaths.cookiecutter_paths()
@@ -91,7 +91,7 @@ path_to_figures = dict_of_paths['plot_dir']
 halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
                'vishnu/rockstar/vishnu_rockstar_test.hdf5'
 # halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
-chain_fname = path_to_proc + 'emcee_resolveB_mp_corrscatter.dat'
+chain_fname = path_to_proc + 'mcmc_resolvb.dat'
 
 columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 'logmstar',
            'logmgas', 'grp', 'grpn', 'grpnassoc', 'logmh', 'logmh_s', 'fc',
@@ -160,7 +160,7 @@ with Pool(20) as pool:
 
 print("Writing raw chain to file")
 data = sampler.chain
-with open(path_to_proc + 'resolveB_mcmc_raw_corrscatter.txt', 'w') as outfile:
+with open(path_to_proc + 'mcmc_resolveb_raw.txt', 'w') as outfile:
     # outfile.write('# Array shape: {0}\n'.format(sampler.chain.shape))
     for data_slice in data:
         np.savetxt(outfile, data_slice, fmt='%-7.2f')
@@ -173,68 +173,12 @@ for idx in range(len(chain)):
     f.write(str(chain[idx]).strip("[]"))
     f.write("\n")
 f.close()
-'''
-nsteps = 5
-# f = open(chain_fname, "w")
-# f.close()
 
-for i,result in enumerate(sampler.sample(p0, iterations=nsteps, storechain=False)):
-    # position = result[0]
-    print("Iteration number {0} of {1}".format(i+1,nsteps))
-    # f = open(chain_fname, "a")
-    # for k in range(position.shape[0]):
-    #     f.write(str(position[k]).strip("[]"))
-    #     f.write("\n")
-    # f.close()
-'''
-'''
-resolve_A_grp = resolve_live18.loc[(resolve_live18.f_a.values == 1) & \
-    (resolve_live18.grpcz.values > 4500) & \
-        (resolve_live18.grpcz.values < 7000) & \
-            (resolve_live18.absrmag.values < -17.33) & \
-                (resolve_live18.logmstar.values >= 8.9)]
-
-resolve_B_grp = resolve_live18.loc[(resolve_live18.f_b.values == 1) & \
-    (resolve_live18.grpcz.values > 4500) & \
-        (resolve_live18.grpcz.values < 7000) & \
-            (resolve_live18.absrmag.values < -17) & \
-                (resolve_live18.logmstar.values >= 8.7)]
-
-resa_m_stellar_grp = resolve_A_grp.logmstar.values
-max_resolveA_grp, phi_resolveA_grp, err_tot_A_grp, bins_A_grp = diff_smf(resa_m_stellar_grp,
-                                                         v_resolveA,
-                                                         cvar_resolveA, False)
-resb_m_stellar_grp = resolve_B_grp.logmstar.values
-max_resolveB_grp, phi_resolveB_grp, err_tot_B_grp, bins_B_grp = diff_smf(resb_m_stellar_grp,
-                                                         v_resolveB,
-                                                         cvar_resolveB, False)
-fig1 = plt.figure(figsize=(10,10))
-plt.errorbar(max_resolveA_grp,phi_resolveA_grp,yerr=err_tot_A_grp,\
-    color='#1baeab',fmt='--s',ecolor='#1baeab',markersize=4,capsize=5,\
-        capthick=0.5,label=r'group cz')
-plt.errorbar(max_resolveA,phi_resolveA,yerr=err_tot_A,\
-    color='#f6a631',fmt='--s',ecolor='#f6a631',markersize=4,capsize=5,\
-        capthick=0.5,label=r'galaxy cz')
-
-plt.xlabel(r'\boldmath$\log\ M_{\star} \left[M_\odot \right]$',size=15)
-plt.ylabel(r'$\Phi\,/\,\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}$',size=15)
-plt.yscale('log')
-plt.title(r'\boldmath RESOLVE-A',size=15)
-plt.legend(loc='best',prop={'size': 10})
-plt.show()
-
-fig2 = plt.figure(figsize=(10,10))
-plt.errorbar(max_resolveB_grp,phi_resolveB_grp,yerr=err_tot_B_grp,\
-    color='#1baeab',fmt='--s',ecolor='#1baeab',markersize=4,capsize=5,\
-        capthick=0.5,label=r'group cz')
-plt.errorbar(max_resolveB,phi_resolveB,yerr=err_tot_B,\
-    color='#f6a631',fmt='--s',ecolor='#f6a631',markersize=4,capsize=5,\
-        capthick=0.5,label=r'galaxy cz')
-
-plt.xlabel(r'\boldmath$\log\ M_{\star} \left[M_\odot \right]$',size=15)
-plt.ylabel(r'$\Phi\,/\,\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}$',size=15)
-plt.yscale('log')
-plt.title(r'\boldmath RESOLVE-B',size=15)
-plt.legend(loc='best',prop={'size': 10})
-plt.show()
-'''
+print("Writing chi squared to file")
+blobs = np.ndarray.flatten(np.array(sampler.blobs))
+fname = path_to_proc + 'resolveb_chi2.txt'
+with open(fname, 'w') as outfile:
+    for value in blobs:
+        outfile.write(str(value))
+        outfile.write("\n")
+            
