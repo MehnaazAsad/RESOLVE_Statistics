@@ -715,6 +715,8 @@ def main(args):
     path_to_interim = dict_of_paths['int_dir']
     path_to_figures = dict_of_paths['plot_dir']
 
+    path_to_proc = path_to_proc + 'smhm/'
+    
     if machine == 'bender':
         halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
                     'vishnu/rockstar/vishnu_rockstar_test.hdf5'
