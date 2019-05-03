@@ -308,8 +308,12 @@ def get_centrals_data(catl):
     cen_halos = []
     for idx,val in enumerate(catl.fc.values):
         if val == 1:
-            cen_gals.append(catl.logmstar.values[idx])
-            cen_halos.append(catl.logmh_s.values[idx])
+            stellar_mass_h07 = catl.logmstar.values[idx]
+            stellar_mass_h1 = np.log10((10**stellar_mass_h07) / 1.429)
+            halo_mass_h07 = catl.logmh_s.values[idx]
+            halo_mass_h1 = np.log10((10**halo_mass_h07) / 1.429)
+            cen_gals.append(stellar_mass_h1)
+            cen_halos.append(halo_mass_h1)
 
     cen_gals = np.array(cen_gals)
     cen_halos = np.array(cen_halos)
@@ -597,10 +601,13 @@ def plot_smhm(result, gals_bf, halos_bf, gals_data, halos_data, gals_b10, \
     """
     if survey == 'resolvea':
         line_label = 'RESOLVE-A'
+        cvar = 0.3
     elif survey == 'resolveb':
         line_label = 'RESOLVE-B'
+        cvar = 0.58
     elif survey == 'eco':
         line_label = 'ECO'
+        cvar = 0.125
     
     x_bf,y_bf,y_std_bf,y_std_err_bf = Stats_one_arr(halos_bf,\
     gals_bf,base=0.4,bin_statval='center')
@@ -608,6 +615,7 @@ def plot_smhm(result, gals_bf, halos_bf, gals_data, halos_data, gals_b10, \
         gals_b10,base=0.4,bin_statval='center')
     x_data,y_data,y_std_data,y_std_err_data = Stats_one_arr(halos_data,\
         gals_data,base=0.4,bin_statval='center')
+    y_std_err_data = np.sqrt(y_std_err_data**2 + cvar**2)
 
     fig1 = plt.figure(figsize=(10,10))
     plt.errorbar(x_data,y_data,yerr=y_std_err_data,color='k',fmt='-s',\
@@ -655,6 +663,7 @@ def plot_smhm(result, gals_bf, halos_bf, gals_data, halos_data, gals_b10, \
         plt.ylim(8.9,)
     elif survey == 'resolveb':
         plt.ylim(8.7,)
+    plt.xlim(10,)
     plt.xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=15)
     plt.ylabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=15)
     handles, labels = plt.gca().get_legend_handles_labels()
