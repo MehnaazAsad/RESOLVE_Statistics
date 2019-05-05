@@ -422,8 +422,6 @@ def main(args):
     nwalkers = args.nwalkers
     nsteps = args.nsteps
 
-    print(nproc,nwalkers,nsteps)
-
     dict_of_paths = cwpaths.cookiecutter_paths()
     path_to_raw = dict_of_paths['raw_dir']
     path_to_proc = dict_of_paths['proc_dir']
