@@ -47,10 +47,7 @@ def read_chi2(path_to_file):
 
     # Needed to reshape since flattened along wrong axis, 
     # didn't correspond to chain
-    if survey == 'resolvea' or survey == 'resolveb':
-        test_reshape = chi2_df.chisquared.values.reshape((1000,250))
-    if survey == 'eco':
-        test_reshape = chi2_df.chisquared.values.reshape((500,250))
+    test_reshape = chi2_df.chisquared.values.reshape((1000,250))
     chi2 = np.ndarray.flatten(np.array(test_reshape),'F')
 
     return chi2
@@ -187,12 +184,14 @@ def get_paramvals_percentile(mcmc_table, pctl, chi2):
     """ 
     pctl = pctl/100
     mcmc_table['chi2'] = chi2
-    mcmc_table = mcmc_table.sort_values('chi2')
+    mcmc_table = mcmc_table.sort_values('chi2').reset_index(drop=True)
     slice_end = int(pctl*len(mcmc_table))
     mcmc_table_pctl = mcmc_table[:slice_end]
+    bf_params = mcmc_table_pctl.drop_duplicates().reset_index(drop=True).\
+        values[0][:5]
     mcmc_table_pctl = mcmc_table_pctl.drop_duplicates().sample(1000)
 
-    return mcmc_table_pctl
+    return mcmc_table_pctl, bf_params
 
 def diff_smf(mstar_arr, volume, cvar_err, h1_bool):
     """
@@ -453,7 +452,7 @@ def mp_init(mcmc_table_pctl,nproc):
 
     return result
 
-def get_best_fit_model(survey):
+def get_best_fit_model(best_fit_params):
     """
     Get SMF and SMHM information of best fit model given a survey
 
@@ -478,13 +477,7 @@ def get_best_fit_model(survey):
 
     cen_halos: array
         Array of central halo masses
-    """
-    if survey == 'eco':
-        best_fit_params = [12.261,10.662,0.4,0.6,0.37]
-    elif survey == 'resolvea':
-        best_fit_params = [12.2,10.61,0.384,0.42,0.39]
-    elif survey == 'resolveb':
-        best_fit_params = [12.25,10.96,0.453,0.66,0.19]   
+    """   
     v_sim = 130**3
     gals_df = populate_mock(best_fit_params)
     mstellar_mock = gals_df.stellar_mass.values  # Read stellar masses
@@ -736,7 +729,7 @@ def main(args):
     print('Reading catalog')
     catl, volume, cvar, z_median = read_catl(catl_file, survey)
     print('Getting data in specific percentile')
-    mcmc_table_pctl = get_paramvals_percentile(mcmc_table, 68, chi2)
+    mcmc_table_pctl, bf_params = get_paramvals_percentile(mcmc_table, 68, chi2)
 
     print('Retrieving stellar mass from catalog')
     stellar_mass_arr = catl.logmstar.values
@@ -757,7 +750,7 @@ def main(args):
     result = mp_init(mcmc_table_pctl, nproc)
     print('Getting best fit model and centrals')
     maxis_bf, phi_bf, err_tot_bf, cen_gals_bf, cen_halos_bf = \
-        get_best_fit_model(survey)
+        get_best_fit_model(bf_params)
 
     print('Plotting SMF')
     plot_smf(result, maxis_bf, phi_bf, err_tot_bf, maxis_data, phi_data, \
