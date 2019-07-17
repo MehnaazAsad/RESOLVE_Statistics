@@ -109,17 +109,17 @@ cbar.set_label(r'\boldmath\ g - r', rotation=270,labelpad=20,fontsize=15)
 plt.xlabel(r'\boldmath$\log\ M_h \left[M_\odot \right]$')
 plt.ylabel(r'\boldmath$\log\ M_b \left[M_\odot \right]$')
 plt.title('Baryonic vs halo mass RESOLVE-B')
+plt.show()
 
-
-#fig2 = plt.figure(figsize=(10,8))
-#plt.scatter(centrals.logmh_s.values,centrals.logmstar.values,\
-#            c=centrals.modelg_r.values,cmap='RdBu_r')
-#cbar = plt.colorbar()
-#cbar.set_label(r'\boldmath\ g - r', rotation=270,labelpad=20,fontsize=15)
-#plt.xlabel(r'\boldmath$\log\ M_h \left[M_\odot \right]$')
-#plt.ylabel(r'\boldmath$\log\ M_s \left[M_\odot \right]$')
-#plt.title('Stellar vs halo mass')
-#
+fig2 = plt.figure(figsize=(10,8))
+plt.scatter(centrals.logmh_s.values,centrals.logmstar.values,\
+           c=centrals.modelg_r.values,cmap='RdBu_r')
+cbar = plt.colorbar()
+cbar.set_label(r'\boldmath\ g - r', rotation=270,labelpad=20,fontsize=15)
+plt.xlabel(r'\boldmath$\log\ M_h \left[M_\odot \right]$')
+plt.ylabel(r'\boldmath$\log\ M_s \left[M_\odot \right]$')
+plt.title('Stellar vs halo mass')
+plt.show()
 
 def SHAM(obs_x,obs_y,sim_x,sim_y,data_x,sort_key):
     f_halo = interpolate.interp1d(sim_y, sim_x,fill_value="extrapolate")
@@ -146,5 +146,5 @@ cbar.set_label(r'\boldmath\ g - r', rotation=270,labelpad=20,fontsize=15)
 plt.xlabel(r'\boldmath$\log\ M_h \left[M_\odot \right]$')
 plt.ylabel(r'\boldmath$\log\ M_b \left[M_\odot \right]$')
 plt.title('Baryonic vs halo mass RESOLVE-B')
-
+plt.show()
 

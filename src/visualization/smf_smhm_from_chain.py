@@ -187,8 +187,10 @@ def get_paramvals_percentile(mcmc_table, pctl, chi2):
     mcmc_table = mcmc_table.sort_values('chi2').reset_index(drop=True)
     slice_end = int(pctl*len(mcmc_table))
     mcmc_table_pctl = mcmc_table[:slice_end]
+    # Best fit params are the parameters that correspond to the smallest chi2
     bf_params = mcmc_table_pctl.drop_duplicates().reset_index(drop=True).\
         values[0][:5]
+    # Sample random 1000 of lowest chi2
     mcmc_table_pctl = mcmc_table_pctl.drop_duplicates().sample(1000)
 
     return mcmc_table_pctl, bf_params
