@@ -19,6 +19,13 @@ else
 HAS_CONDA=True
 endif
 
+###############################################################################
+# VARIABLES FOR COMMANDS                                                                      #
+###############################################################################
+src_pip_install:=pip install -e .
+
+src_pip_uninstall:= pip uninstall --yes src
+
 #################################################################################
 # COMMANDS                                                                      #
 #################################################################################
@@ -60,17 +67,8 @@ test_environment:
 environment:
 ifeq (True,$(HAS_CONDA))
 		@echo ">>> Detected conda, creating conda environment."
-		# conda config --add channels conda-forge
-		# conda env create -f $(ENVIRONMENT_FILE)
-		conda create --name $(ENVIRONMENT_NAME) python=3.6
-		# source activate $(ENVIRONMENT_NAME)
-		# pip install -r requirements_conda.txt
+		conda env create -f $(ENVIRONMENT_FILE)
 endif
-
-## Post-creating environment
-environment_post:
-	# conda activate $(ENVIRONMENT_NAME)
-	pip install -r requirements_conda.txt
 
 ## Update python interpreter environment
 update_environment:
@@ -86,6 +84,15 @@ ifeq (True,$(HAS_CONDA))
 		@echo ">>> Detected conda, removing conda environment"
 		conda env remove -n $(ENVIRONMENT_NAME)
 endif
+
+## Import local source directory package
+src_env:
+	$(src_pip_install)
+
+## Updated local source directory package
+src_update:
+	$(src_pip_uninstall)
+	$(src_pip_install)
 
 #################################################################################
 # PROJECT RULES                                                                 #
