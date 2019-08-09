@@ -2,6 +2,7 @@ name: resolve_statistics
 
 channels:
   - defaults
+  - astropy
 
 dependencies:
   - python>=3.6
@@ -12,13 +13,14 @@ dependencies:
   - numpy
   - pandas
   - scipy
+  - halotools
   - seaborn
-  - sphinx >= 1.6
+  - sphinx>=1.6
   - pip
   - pip:
       - GitPython
       - progressbar2
-      # - cosmo-utils
+      - cosmo-utils
       - configparser
       - sphinx-astropy
       - sphinx_rtd_theme
