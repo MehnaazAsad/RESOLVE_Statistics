@@ -53,7 +53,7 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.imgmath',
     'sphinx.ext.ifconfig',
-    'sphinx_automodapi.automodapi',
+    # 'sphinx_automodapi.automodapi',
     'sphinx_automodapi.smart_resolver',
     'sphinx_astropy.ext.doctest',
     'sphinx_astropy.ext.changelog_links'
