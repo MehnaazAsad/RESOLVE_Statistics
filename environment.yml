@@ -16,6 +16,7 @@ dependencies:
   - halotools
   - seaborn
   - sphinx>=1.6
+  - sphinx_automodapi
   - pip
   - pip:
       - GitPython
