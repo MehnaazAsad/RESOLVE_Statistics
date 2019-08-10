@@ -9,8 +9,7 @@ dependencies:
     - python>=3.6
     - anaconda
     - astropy
-    - seaborn
-    - sphinx >= 1.6
+    - sphinx>=1.6
     - pip
     - pip:
         - GitPython
