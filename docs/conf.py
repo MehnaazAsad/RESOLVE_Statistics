@@ -53,13 +53,16 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.imgmath',
     'sphinx.ext.ifconfig',
-    # 'sphinx_automodapi.automodapi',
+    'sphinx_automodapi.automodapi',
     'sphinx_automodapi.smart_resolver',
     'sphinx_astropy.ext.doctest',
     'sphinx_astropy.ext.changelog_links'
     # 'matplotlib.sphinxext.only_directives',
     # 'matplotlib.sphinxext.plot_directive',
  ]
+
+# Added from sphinx_automodapi "quick start" page
+numpydoc_show_class_members = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
