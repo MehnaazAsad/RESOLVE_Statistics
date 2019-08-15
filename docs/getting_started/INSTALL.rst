@@ -3,7 +3,7 @@
 .. _INSTALL_MAIN:
 
 ************************************************************************
-Downloading and Installing
+Downloading and Installing this insane repository
 ************************************************************************
 
 Statistically infer BMHM and SMHM relation for RESOLVE
