@@ -13,11 +13,13 @@ dependencies:
   - numpy
   - pandas
   - scipy
-  - halotools
+    # Removed halotools to install from source instead
+    # - halotools
   - seaborn
   - sphinx>=1.6
-  - sphinx_automodapi
+  - sphinx-automodapi
   - pip
+  - emcee
   - pip:
       - GitPython
       - progressbar2
@@ -26,3 +28,4 @@ dependencies:
       - sphinx-astropy
       - sphinx_rtd_theme
       - sphinx-automodapi
+      - git+https://github.com/astropy/halotools.git
