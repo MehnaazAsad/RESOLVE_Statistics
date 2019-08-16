@@ -321,6 +321,19 @@ def populate_mock(theta):
     return gals_df
 
 def assign_cen_sat_flag(gals_df):
+    """
+    Assign centrals and satellites flag to dataframe
+
+    Parameters
+    ----------
+    gals_df: pandas dataframe
+        Mock catalog
+
+    Returns
+    ---------
+    gals_df: pandas dataframe
+        Mock catalog with centrals/satellites flag as new column
+    """
 
     C_S = []
     for idx in range(len(gals_df)):
@@ -335,7 +348,7 @@ def assign_cen_sat_flag(gals_df):
 
 def get_host_halo_mock(gals_df):
     """
-    Get centrals from mock catalog
+    Get host halo mass from mock catalog
 
     Parameters
     ----------
@@ -346,6 +359,8 @@ def get_host_halo_mock(gals_df):
     ---------
     cen_halos: array
         Array of central host halo masses
+    sat_halos: array
+        Array of satellite host halo masses
     """
 
     df = gals_df.copy()
@@ -365,7 +380,7 @@ def get_host_halo_mock(gals_df):
 
 def get_stellar_mock(gals_df):
     """
-    Get centrals from mock catalog
+    Get stellar mass from mock catalog
 
     Parameters
     ----------
@@ -374,8 +389,10 @@ def get_stellar_mock(gals_df):
 
     Returns
     ---------
-    cen_halos: array
-        Array of central host halo masses
+    cen_gals: array
+        Array of central stellar masses
+    sat_gals: array
+        Array of satellite stellar masses
     """
 
     df = gals_df.copy()
@@ -394,6 +411,21 @@ def get_stellar_mock(gals_df):
     return cen_gals, sat_gals
 
 def halo_quenching_model(gals_df):
+    """
+    Apply halo quenching model from Zu and Mandelbaum 2015
+
+    Parameters
+    ----------
+    gals_df: pandas dataframe
+        Mock catalog
+
+    Returns
+    ---------
+    f_red_cen: array
+        Array of central red fractions
+    f_red_sat: array
+        Array of satellite red fractions
+    """
 
     # parameter values from Table 1 of Zu and Mandelbaum 2015 "prior case"
     Mh_qc = 10**12.20 
@@ -409,6 +441,21 @@ def halo_quenching_model(gals_df):
     return f_red_cen, f_red_sat
 
 def hybrid_quenching_model(gals_df):
+    """
+    Apply hybrid quenching model from Zu and Mandelbaum 2015
+
+    Parameters
+    ----------
+    gals_df: pandas dataframe
+        Mock catalog
+
+    Returns
+    ---------
+    f_red_cen: array
+        Array of central red fractions
+    f_red_sat: array
+        Array of satellite red fractions
+    """
 
     # parameter values from Table 1 of Zu and Mandelbaum 2015 "prior case"
     Mstar_q = 10**10.5 
@@ -429,8 +476,27 @@ def hybrid_quenching_model(gals_df):
 
 def assign_colour_label_mock(f_red_cen, f_red_sat, gals_df, drop_fred=False):
     """
-    Assigns the color label
+    Assign colour label to mock catalog
+
+    Parameters
+    ----------
+    f_red_cen: array
+        Array of central red fractions
+    f_red_sat: array
+        Array of satellite red fractions
+    gals_df: pandas Dataframe
+        Mock catalog
+    drop_fred: boolean
+        Whether or not to keep red fraction column after colour has been
+        assigned
+
+    Returns
+    ---------
+    df: pandas Dataframe
+        Dataframe with colour label and random number assigned as 
+        new columns
     """
+
     # Copy of dataframe
     df = gals_df.copy()
     # Saving labels
@@ -465,6 +531,19 @@ def assign_colour_label_mock(f_red_cen, f_red_sat, gals_df, drop_fred=False):
     return df
 
 def assign_colour_label_data(catl):
+    """
+    Assign colour label to data
+
+    Parameters
+    ----------
+    catl: pandas Dataframe 
+        Data catalog
+
+    Returns
+    ---------
+    catl: pandas Dataframe
+        Data catalog with colour label assigned as new column
+    """
 
     logmstar_arr = catl.logmstar.values
     u_r_arr = catl.modelu_rcorr.values
@@ -472,6 +551,7 @@ def assign_colour_label_data(catl):
     colour_label_arr = np.empty(len(catl), dtype='str')
     for idx, value in enumerate(logmstar_arr):
 
+        # Divisions taken from Moffett et al. 2015 equation 1
         if value <= 9.1:
             if u_r_arr[idx] > 1.457:
                 colour_label = 'R'
@@ -498,6 +578,24 @@ def assign_colour_label_data(catl):
     return catl
 
 def assign_colour_mock(gals_df, catl, stat):
+    """
+    Assign colour to mock catalog
+
+    Parameters
+    ----------
+    gals_df: pandas Dataframe
+        Mock catalog
+    catl: pandas Dataframe
+        Data catalog
+    stat: string
+        Specify whether mean or median statistic is used to assign colour
+        from data to mock catalog
+
+    Returns
+    ---------
+    gals_df: pandas Dataframe
+        Dataframe with model corrected (u-r) colour assigned as new column
+    """
 
     logmstar_arr_mock = np.log10(gals_df.stellar_mass.values)
     logmstar_arr_data = catl.logmstar.values
@@ -505,6 +603,7 @@ def assign_colour_mock(gals_df, catl, stat):
     logmstar_arr_data = np.log10((10**logmstar_arr_data) / 2.041)
     u_r_arr_data = catl.modelu_rcorr.values
 
+    # Either assign the mean or median colour within each bin of stellar mass
     if stat == 'mean':
         x,y,x_err,y_err = Stats_one_arr(logmstar_arr_data, u_r_arr_data, 0.005, 
         statfunc=np.nanmean)
@@ -512,6 +611,8 @@ def assign_colour_mock(gals_df, catl, stat):
         x,y,x_err,y_err = Stats_one_arr(logmstar_arr_data, u_r_arr_data, 0.005, 
         statfunc=np.nanmedian)       
 
+    # Assign mean or median colour based on which data bin the mock stellar mass
+    # falls in
     colour_arr = np.zeros(len(gals_df))
     for idx1, value1 in enumerate(logmstar_arr_mock):
         colour = 0
@@ -585,6 +686,25 @@ def diff_smf(mstar_arr, volume, cvar_err, h1_bool):
     return maxis, phi, err_poiss, bins, counts
 
 def get_err_data(survey, path):
+    """
+    Calculate error in data SMF from mocks
+
+    Parameters
+    ----------
+    survey: string
+        Name of survey
+    path: string
+        Path to mock catalogs
+
+    Returns
+    ---------
+    err_total: array
+        Standard deviation of phi values between all mocks and for all galaxies
+    err_red: array
+        Standard deviation of phi values between all mocks and for red galaxies
+    err_blue: array
+        Standard deviation of phi values between all mocks and for blue galaxies
+    """
 
     if survey == 'eco':
         mock_name = 'ECO'
@@ -638,7 +758,7 @@ def get_err_data(survey, path):
         mock_pd['colour_label'] = colour_label_arr
 
         #Measure SMF of mock using diff_smf function
-        maxis, phi, err_poiss, bins, counts = \
+        max_total, phi_total, err_total, bins_total, counts_total = \
             diff_smf(logmstar_arr, volume, 0, False)
         max_red, phi_red, err_red, bins_red, counts_red = \
             diff_smf(mock_pd.logmstar.loc[mock_pd.colour_label.values == 'R'],
@@ -646,7 +766,7 @@ def get_err_data(survey, path):
         max_blue, phi_blue, err_blue, bins_blue, counts_blue = \
             diff_smf(mock_pd.logmstar.loc[mock_pd.colour_label.values == 'B'],
             volume, 0, False)
-        phi_arr_total.append(phi)
+        phi_arr_total.append(phi_total)
         phi_arr_red.append(phi_red)
         phi_arr_blue.append(phi_blue)
 
@@ -661,6 +781,14 @@ def get_err_data(survey, path):
     return err_total, err_red, err_blue
 
 def plot_mstellar_colour_data(catl):
+    """
+    Plots stellar mass vs colour for data catalog
+
+    Parameters
+    ----------
+    catl: pandas Dataframe
+        Data catalog
+    """
 
     u_r_arr = catl.modelu_rcorr.values
     logmstar_arr = catl.logmstar.values 
@@ -723,6 +851,16 @@ def plot_mstellar_colour_data(catl):
     plt.show()
 
 def plot_eco_mstellar_colour_mock(gals_df, model):
+    """
+    Plots stellar mass vs colour from mock catalog
+
+    Parameters
+    ----------
+    gals_df: pandas Dataframe
+        Dataframe of mock catalog
+    model: string
+        Hybrid or halo quenching model
+    """
 
     fig1 = plt.figure(figsize=(10,10))  
     ax1 = fig1.add_subplot(111)
@@ -741,6 +879,26 @@ def plot_eco_mstellar_colour_mock(gals_df, model):
     plt.show()
 
 def measure_all_smf(table, volume, cvar, data_bool):
+    """
+    Calculates differential stellar mass function for all, red and blue galaxies
+    from mock/data
+
+    Parameters
+    ----------
+    table: pandas Dataframe
+        Dataframe of either mock or data 
+    volume: float
+        Volume of simulation/survey
+    cvar: float
+        Cosmic variance error
+    data_bool: Boolean
+        Data or mock
+
+    Returns
+    ---------
+    3 multidimensional arrays of stellar mass, phi, total error in SMF and 
+    counts per bin for all, red and blue galaxies
+    """
 
     colour_col = 'colour_label'
 
@@ -771,6 +929,31 @@ def measure_all_smf(table, volume, cvar, data_bool):
 
 def plot_smf(total_data, red_data, blue_data, total_model, red_model, 
 blue_model, model):
+    """
+    Plots stellar mass function for all, red and blue galaxies for data and 
+    for halo/hybrid model
+
+    Parameters
+    ----------
+    total_data: array
+        Multidimensional array of stellar mass, phi, total error in SMF and 
+        counts per bin for all galaxies from data
+    red_data: array
+        Multidimensional array of stellar mass, phi, total error in SMF and 
+        counts per bin for red galaxies from data
+    blue_data: array
+        Multidimensional array of stellar mass, phi, total error in SMF and 
+        counts per bin for blue galaxies from data
+    total_model: array
+        Multidimensional array of stellar mass, phi, total error in SMF and 
+        counts per bin for all galaxies from model (hybrid or halo)
+    red_model: array
+        Multidimensional array of stellar mass, phi, total error in SMF and 
+        counts per bin for red galaxies from model (hybrid or halo)
+    blue_model: array
+        Multidimensional array of stellar mass, phi, total error in SMF and 
+        counts per bin for blue galaxies from model (hybrid or halo)
+    """
 
     max_total_data, phi_total_data, err_total_data, counts_total_data = \
         total_data[0], total_data[1], total_data[2], total_data[3]
