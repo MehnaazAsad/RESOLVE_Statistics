@@ -14,10 +14,11 @@ from multiprocessing import Pool
 import pandas as pd
 import numpy as np
 import argparse
-import emcee
+import emcee 
 import math
 
-__author__ = '{Mehnaaz Asad}'
+
+__author__ = '[Mehnaaz Asad]'
 
 def read_catl(path_to_file, survey):
     """
@@ -25,24 +26,24 @@ def read_catl(path_to_file, survey):
 
     Parameters
     ----------
-    path_to_file: string
+    path_to_file: `string`
         Path to survey catalog file
 
-    survey: string
+    survey: `string`
         Name of survey
 
     Returns
     ---------
-    catl: pandas dataframe
+    catl: `pandas.DataFrame`
         Survey catalog with grpcz, abs rmag and stellar mass limits
     
-    volume: float
+    volume: `float`
         Volume of survey
 
-    cvar: float
+    cvar: `float`
         Cosmic variance of survey
 
-    z_median: float
+    z_median: `float`
         Median redshift of survey
     """
     if survey == 'eco':
@@ -73,9 +74,9 @@ def read_catl(path_to_file, survey):
 
         if survey == 'resolvea':
             catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & \
-                (resolve_live18.grpcz.values > 4500) & \
-                    (resolve_live18.grpcz.values < 7000) & \
-                        (resolve_live18.absrmag.values < -17.33) & \
+                (resolve_live18.grpcz.values >= 4500) & \
+                    (resolve_live18.grpcz.values <= 7000) & \
+                        (resolve_live18.absrmag.values <= -17.33) & \
                             (resolve_live18.logmstar.values >= 8.9)]
 
 
@@ -86,9 +87,9 @@ def read_catl(path_to_file, survey):
         elif survey == 'resolveb':
             # 487 - cz, 369 - grpcz
             catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & \
-                (resolve_live18.grpcz.values > 4500) & \
-                    (resolve_live18.grpcz.values < 7000) & \
-                        (resolve_live18.absrmag.values < -17) & \
+                (resolve_live18.grpcz.values >= 4500) & \
+                    (resolve_live18.grpcz.values <= 7000) & \
+                        (resolve_live18.absrmag.values <= -17) & \
                             (resolve_live18.logmstar.values >= 8.7)]
 
             volume = 4709.8373  # *2.915 #Survey volume without buffer [Mpc/h]^3
@@ -99,7 +100,7 @@ def read_catl(path_to_file, survey):
 
 def diff_smf(mstar_arr, volume, cvar_err, h1_bool):
     """
-    Calculates differential stellar mass function
+    Calculates differential stellar mass function in units of h=1.0
 
     Parameters
     ----------
@@ -130,14 +131,18 @@ def diff_smf(mstar_arr, volume, cvar_err, h1_bool):
         Array of bin edge values
     """
     if not h1_bool:
-        # changing from h=0.7 to h=1
+        # changing from h=0.7 to h=1 assuming h^-2 dependence
         logmstar_arr = np.log10((10**mstar_arr) / 2.041)
     else:
         logmstar_arr = np.log10(mstar_arr)
     if survey == 'eco' or survey == 'resolvea':
-        bins = np.linspace(8.9, 11.8, 12)
+        bin_min = np.round(np.log10((10**8.9) / 2.041), 1)
+        bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
+        bins = np.linspace(bin_min, bin_max, 12)
     elif survey == 'resolveb':
-        bins = np.linspace(8.7, 11.8, 12)
+        bin_min = np.round(np.log10((10**8.7) / 2.041), 1)
+        bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
+        bins = np.linspace(bin_min, bin_max, 12)
     # Unnormalized histogram and bin edges
     phi, edg = np.histogram(logmstar_arr, bins=bins)  # paper used 17 bins
     dm = edg[1] - edg[0]  # Bin width
@@ -149,6 +154,58 @@ def diff_smf(mstar_arr, volume, cvar_err, h1_bool):
 
     phi = phi / (volume * dm)  # not a log quantity
 
+    return maxis, phi, err_tot, bins
+
+def calc_bary(mstar_arr, mgas_arr):
+    """Calculates baryonic mass of galaxies from survey assuming h^-2 
+    dependence and converting from h=0.7 to h=1"""
+    logmbary = np.log10(((10**mstar_arr) + (10**mgas_arr)) / 2.041)
+    return logmbary
+
+def diff_bmf(mass_arr, volume, cvar_err, sim_bool):
+    """
+    Calculates differential baryonic mass function
+
+    Parameters
+    ----------
+    mstar_arr: numpy array
+        Array of baryonic masses
+
+    volume: float
+        Volume of survey or simulation
+
+    cvar_err: float
+        Cosmic variance of survey
+
+    sim_bool: boolean
+        True if masses are from mock
+
+    Returns
+    ---------
+    maxis: array
+        Array of x-axis mass values
+
+    phi: array
+        Array of y-axis values
+
+    err_tot: array
+        Array of error values per bin
+    
+    bins: array
+        Array of bin edge values
+    """
+    if sim_bool:
+        mass_arr = np.log10(mass_arr)
+    # Unnormalized histogram and bin edges
+    bins = np.linspace(9.4,11.8,9)
+    phi, edg = np.histogram(mass_arr, bins=bins)  # paper used 17 bins
+    dm = edg[1] - edg[0]  # Bin width
+    maxis = 0.5 * (edg[1:] + edg[:-1])  # Mass axis i.e. bin centers
+    # Normalized to volume and bin width
+    err_poiss = np.sqrt(phi) / (volume * dm)
+    err_cvar = cvar_err / (volume * dm)
+    err_tot = np.sqrt(err_cvar**2 + err_poiss**2)
+    phi = phi / (volume * dm)  # not a log quantity
     return maxis, phi, err_tot, bins
 
 def halocat_init(halo_catalog, z_median):
@@ -248,9 +305,11 @@ def populate_mock(theta, model):
     model.mock.populate()
 
     if survey == 'eco' or survey == 'resolvea':
-        sample_mask = model_init.mock.galaxy_table['stellar_mass'] >= 10**8.9
+        limit = np.round(np.log10((10**8.9) / 2.041), 1)
+        sample_mask = model_init.mock.galaxy_table['stellar_mass'] >= 10**limit
     elif survey == 'resolveb':
-        sample_mask = model_init.mock.galaxy_table['stellar_mass'] >= 10**8.7
+        limit = np.round(np.log10((10**8.7) / 2.041), 1)
+        sample_mask = model_init.mock.galaxy_table['stellar_mass'] >= 10**limit
     gals = model.mock.galaxy_table[sample_mask]
     gals_df = gals.to_pandas()
 
@@ -415,6 +474,7 @@ def main(args):
     global survey
     global path_to_proc
     rseed = 12
+    np.random.seed(rseed)
 
     survey = args.survey
     machine = args.machine
@@ -446,8 +506,6 @@ def main(args):
         diff_smf(stellar_mass_arr, volume, cvar, False)
     print('Initial population of halo catalog')
     model_init = halocat_init(halo_catalog, z_median)
-
-    np.random.seed(rseed)
 
     print('Running MCMC')
     sampler = mcmc(nproc, nwalkers, nsteps, phi_data, err_data)
