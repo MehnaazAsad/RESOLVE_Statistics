@@ -233,9 +233,13 @@ def diff_smf(mstar_arr, volume, cvar_err, h1_bool):
     else:
         logmstar_arr = np.log10(mstar_arr)
     if survey == 'eco' or survey == 'resolvea':
-        bins = np.linspace(8.9, 11.8, 12)
+        bin_min = np.round(np.log10((10**8.9) / 2.041), 1)
+        bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
+        bins = np.linspace(bin_min, bin_max, 12)
     elif survey == 'resolveb':
-        bins = np.linspace(8.7, 11.8, 12)
+        bin_min = np.round(np.log10((10**8.7) / 2.041), 1)
+        bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
+        bins = np.linspace(bin_min, bin_max, 12) 
     # Unnormalized histogram and bin edges
     phi, edg = np.histogram(logmstar_arr, bins=bins)  # paper used 17 bins
     dm = edg[1] - edg[0]  # Bin width
@@ -310,9 +314,9 @@ def get_centrals_data(catl):
     for idx,val in enumerate(catl.fc.values):
         if val == 1:
             stellar_mass_h07 = catl.logmstar.values[idx]
-            stellar_mass_h1 = np.log10((10**stellar_mass_h07) / 1.429)
+            stellar_mass_h1 = np.log10((10**stellar_mass_h07) / 2.041)
             halo_mass_h07 = catl.logmh_s.values[idx]
-            halo_mass_h1 = np.log10((10**halo_mass_h07) / 1.429)
+            halo_mass_h1 = np.log10((10**halo_mass_h07) / 2.041)
             cen_gals.append(stellar_mass_h1)
             cen_halos.append(halo_mass_h1)
 
@@ -370,9 +374,11 @@ def populate_mock(theta):
     model_init.mock.populate()
 
     if survey == 'eco' or survey == 'resolvea':
-        sample_mask = model_init.mock.galaxy_table['stellar_mass'] >= 10**8.9
+        limit = np.round(np.log10((10**8.9) / 2.041), 1)
+        sample_mask = model_init.mock.galaxy_table['stellar_mass'] >= 10**limit
     elif survey == 'resolveb':
-        sample_mask = model_init.mock.galaxy_table['stellar_mass'] >= 10**8.7
+        limit = np.round(np.log10((10**8.7) / 2.041), 1)
+        sample_mask = model_init.mock.galaxy_table['stellar_mass'] >= 10**limit
     gals = model_init.mock.galaxy_table[sample_mask]
     gals_df = gals.to_pandas()
 
@@ -490,7 +496,7 @@ def get_best_fit_model(best_fit_params):
 
     return max_model, phi_model, err_tot_model, cen_gals, cen_halos
 
-def plot_smf(result, max_model_bf, phi_model_bf, err_tot_model_bf, maxis_data, \
+def plot_smf(result, max_model_bf, phi_model_bf, err_tot_model_bf, maxis_data, 
     phi_data, err_data):
     """
     Plot SMF from data, best fit param values and param values corresponding to 
@@ -531,27 +537,27 @@ def plot_smf(result, max_model_bf, phi_model_bf, err_tot_model_bf, maxis_data, \
         line_label = 'ECO'
 
     fig1 = plt.figure(figsize=(10,10))
-    plt.errorbar(maxis_data,phi_data,yerr=err_data,color='k',fmt='--s',ecolor='k',\
-        markersize=4,capsize=5,capthick=0.5,label='{0}'.format(line_label),\
-            zorder=10)
+    plt.errorbar(maxis_data,phi_data,yerr=err_data,color='k',fmt='--s',
+        ecolor='k',markersize=4,capsize=5,capthick=0.5,
+        label='{0}'.format(line_label),zorder=10)
     for idx in range(len(result[0][0])):
-        plt.plot(result[0][0][idx],result[0][1][idx],color='lightgray',\
+        plt.plot(result[0][0][idx],result[0][1][idx],color='lightgray',
             linestyle='-',alpha=0.5,zorder=0,label='model')
     for idx in range(len(result[1][0])):
-        plt.plot(result[1][0][idx],result[1][1][idx],color='lightgray',\
+        plt.plot(result[1][0][idx],result[1][1][idx],color='lightgray',
             linestyle='-',alpha=0.5,zorder=1)
     for idx in range(len(result[2][0])):
-        plt.plot(result[2][0][idx],result[2][1][idx],color='lightgray',\
+        plt.plot(result[2][0][idx],result[2][1][idx],color='lightgray',
             linestyle='-',alpha=0.5,zorder=2)
     for idx in range(len(result[3][0])):
-        plt.plot(result[3][0][idx],result[3][1][idx],color='lightgray',\
+        plt.plot(result[3][0][idx],result[3][1][idx],color='lightgray',
             linestyle='-',alpha=0.5,zorder=3)
     for idx in range(len(result[4][0])):
-        plt.plot(result[4][0][idx],result[4][1][idx],color='lightgray',\
+        plt.plot(result[4][0][idx],result[4][1][idx],color='lightgray',
             linestyle='-',alpha=0.5,zorder=4)
-    plt.errorbar(max_model_bf,phi_model_bf,yerr=err_tot_model_bf,\
-        color='r',fmt='--s',ecolor='r',markersize=4,capsize=5,\
-            capthick=0.5,label='best fit',zorder=10)
+    plt.errorbar(max_model_bf,phi_model_bf,yerr=err_tot_model_bf,
+        color='r',fmt='--s',ecolor='r',markersize=4,capsize=5,
+        capthick=0.5,label='best fit',zorder=10)
     plt.yscale('log')
     plt.ylim(10**-5,10**-1)
     plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=15)
@@ -755,11 +761,11 @@ def main(args):
         get_best_fit_model(bf_params)
 
     print('Plotting SMF')
-    plot_smf(result, maxis_bf, phi_bf, err_tot_bf, maxis_data, phi_data, \
+    plot_smf(result, maxis_bf, phi_bf, err_tot_bf, maxis_data, phi_data, 
         err_data)
 
     print('Plotting SMHM')
-    plot_smhm(result, cen_gals_bf, cen_halos_bf, cen_gals_data, cen_halos_data, \
+    plot_smhm(result, cen_gals_bf, cen_halos_bf, cen_gals_data, cen_halos_data,
         cen_gals_b10, cen_halos_b10)    
 
 # Main function
