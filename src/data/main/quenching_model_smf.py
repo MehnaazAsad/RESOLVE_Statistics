@@ -1,6 +1,6 @@
 """
-{This script tests best fit SMHM for ECO and compares the resulting SMF for 
- both red and blue galaxies with those from data}
+{This script tests best fit SMHM for all surveys and compares the resulting 
+ model SMF for both red and blue galaxies with those from data}
 """
 
 # Libs
@@ -428,8 +428,8 @@ def halo_quenching_model(gals_df):
     """
 
     # parameter values from Table 1 of Zu and Mandelbaum 2015 "prior case"
-    Mh_qc = 10**12.20 
-    Mh_qs = 10**12.17
+    Mh_qc = 10**12.20 # Msun/h 
+    Mh_qs = 10**12.17 # Msun/h
     mu_c = 0.38
     mu_s = 0.15
 
@@ -458,8 +458,8 @@ def hybrid_quenching_model(gals_df):
     """
 
     # parameter values from Table 1 of Zu and Mandelbaum 2015 "prior case"
-    Mstar_q = 10**10.5 
-    Mh_q = 10**13.76
+    Mstar_q = 10**10.5 # Msun/h
+    Mh_q = 10**13.76 # Msun/h
     mu = 0.69
     nu = 0.15
 
@@ -714,6 +714,22 @@ def get_err_data(survey, path):
         mag_limit = -17.33
         mstar_limit = 8.9
         volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
+    elif survey == 'resolvea':
+        mock_name = 'A'
+        num_mocks = 59
+        min_cz = 4500
+        max_cz = 7000
+        mag_limit = -17.33
+        mstar_limit = 8.9
+        volume = 13172.384  # Survey volume without buffer [Mpc/h]^3 
+    elif survey == 'resolveb':
+        mock_name = 'B'
+        num_mocks = 104
+        min_cz = 4500
+        max_cz = 7000
+        mag_limit = -17
+        mstar_limit = 8.7
+        volume = 4709.8373  # Survey volume without buffer [Mpc/h]^3
 
     phi_arr_total = []
     phi_arr_red = []
@@ -1047,10 +1063,42 @@ blue_model, model):
     plt.legend(by_label.values(), by_label.keys(), loc='lower left',
         prop={'size': 10})
     if model == 'halo':
-        plt.title(r'Halo quenching model - ECO')
+        plt.title(r'Halo quenching model - {0}'.format(survey))
     elif model == 'hybrid':
-        plt.title(r'Hybrid quenching model - ECO')
+        plt.title(r'Hybrid quenching model - {0}'.format(survey))
     plt.show()
+
+def plot_zumand_fig4(gals_df):
+
+    if model == 'halo':
+        sat_halomod_df = gals_df.loc[gals_df.C_S.values == 0] 
+        cen_halomod_df = gals_df.loc[gals_df.C_S.values == 1]
+    elif model == 'hybrid':
+        sat_hybmod_df = gals_df.loc[gals_df.C_S.values == 0]
+        cen_hybmod_df = gals_df.loc[gals_df.C_S.values == 1]
+    
+    fig, axs = plt.subplots(2, 2)
+    axs[0, 0].scatter(np.log10(cen_hybmod_df.halo_mvir.values), 
+            np.log10(cen_hybmod_df.stellar_mass.values), c=cen_hybmod_df.f_red.values,
+            cmap='rainbow')
+    pos0 = axs[0, 1].scatter(np.log10(sat_hybmod_df.halo_mvir_host_halo.values), 
+        np.log10(sat_hybmod_df.stellar_mass.values), c=sat_hybmod_df.f_red.values,
+        cmap='rainbow')
+    fig.colorbar(pos0,ax=axs[0,1])
+    axs[1, 0].scatter(np.log10(cen_halomod_df.halo_mvir.values), 
+        np.log10(cen_halomod_df.stellar_mass.values), c=cen_halomod_df.f_red.values,
+        cmap='rainbow')
+    pos1 = axs[1, 1].scatter(np.log10(sat_halomod_df.halo_mvir_host_halo.values), 
+        np.log10(sat_halomod_df.stellar_mass.values), c=sat_halomod_df.f_red.values,
+        cmap='rainbow')
+    fig.colorbar(pos1,ax=axs[1,1])
+    for ax in axs.flat:
+        ax.set(xlabel=r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', 
+            ylabel=r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$')
+
+    # Hide x labels and tick labels for top plots and y ticks for right plots.
+    for ax in axs.flat:
+        ax.label_outer()
 
 def args_parser():
     """
@@ -1094,7 +1142,13 @@ def main(args):
     path_to_interim = dict_of_paths['int_dir']
     path_to_figures = dict_of_paths['plot_dir']
     path_to_external = dict_of_paths['ext_dir']
-    path_to_eco_mocks = path_to_external + 'ECO_mvir_catls/'
+
+    if survey == 'eco':
+        path_to_mocks = path_to_external + 'ECO_mvir_catls/'
+    elif survey == 'resolvea':
+        path_to_mocks = path_to_external + 'RESOLVE_A_mvir_catls/'
+    elif survey == 'resolveb':
+        path_to_mocks = path_to_external + 'RESOLVE_B_mvir_catls/'
 
     vol_sim = 130**3 # Mpc/h
 
@@ -1136,6 +1190,9 @@ def main(args):
     print('Assigning colour labels to mock galaxies')
     gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, gals_df)
 
+    print('Plotting comparison Zu and Mandelbaum 2015')
+    plot_zumand_fig4(gals_df)
+
     print('Assigning colour labels to data')
     catl = assign_colour_label_data(catl)
 
@@ -1145,7 +1202,7 @@ def main(args):
     print('Measuring SMF for data')
     total_data, red_data, blue_data = measure_all_smf(catl, volume, 0, True)
     total_data[2], red_data[2], blue_data[2] = get_err_data(survey, 
-        path_to_eco_mocks)  
+        path_to_mocks)  
 
     print('Measuring SMF for model')
     total_model, red_model, blue_model = measure_all_smf(gals_df, vol_sim 
@@ -1159,3 +1216,4 @@ def main(args):
 if __name__ == '__main__':
     args = args_parser()
     main(args) 
+
