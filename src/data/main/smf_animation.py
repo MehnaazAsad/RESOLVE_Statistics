@@ -160,7 +160,7 @@ model3.populate_mock(halocat3)
 model4.populate_mock(halocat4)
 model5.populate_mock(halocat5)
 
-def gals(Mhalo_value,Mstellar_value,Mlow_slope,Mhigh_slope,Mstellar_scatter):   
+def gals(Mhalo_value,Mstellar_value,Mlow_slope,Mhigh_slope,Mstellar_scatter):
     ###Parameter values
     model1.param_dict['smhm_m1_0'] = Mhalo_value
     model2.param_dict['smhm_m0_0'] = Mstellar_value
@@ -255,7 +255,7 @@ def make_animation(i,j,k,l,m):
     
     for ax in [ax1,ax2,ax3,ax4,ax5]:
         ax.clear()
-        SMF_RESOLVEB = ax.errorbar(maxis,phi,yerr=err,\
+        SMF_ECO = ax.errorbar(maxis,phi,yerr=err,\
                                   fmt="rs--",linewidth=2,elinewidth=0.5,\
                                   ecolor='k',capsize=2,capthick=1.5,\
                                   markersize='3')
@@ -283,15 +283,15 @@ def make_animation(i,j,k,l,m):
                             capthick=1.5,markersize='3') 
 
     
-    ax1.legend([line1,SMF_RESOLVEB],[r'$M_{h}=%4.2f$' % Mhalo,'RESOLVE-B'],\
+    ax1.legend([line1,SMF_ECO],[r'$M_{h}=%4.2f$' % Mhalo,'ECO'],\
                loc='lower left',prop={'size': 10})
-    ax2.legend([line2,SMF_RESOLVEB],[r'$M_{*}=%4.2f$' % Mstellar,'RESOLVE-B'],\
+    ax2.legend([line2,SMF_ECO],[r'$M_{*}=%4.2f$' % Mstellar,'ECO'],\
                loc='lower left',prop={'size': 10})
-    ax3.legend([line3,SMF_RESOLVEB],[r'$\beta=%4.2f$' % Mlowslope,'RESOLVE-B'],\
+    ax3.legend([line3,SMF_ECO],[r'$\beta=%4.2f$' % Mlowslope,'ECO'],\
                loc='lower left',prop={'size': 10})
-    ax4.legend([line4,SMF_RESOLVEB],[r'$\delta=%4.2f$' % Mhighslope,'RESOLVE-B'],\
+    ax4.legend([line4,SMF_ECO],[r'$\delta=%4.2f$' % Mhighslope,'ECO'],\
                loc='lower left',prop={'size': 10})
-    ax5.legend([line5,SMF_RESOLVEB],[r'$\xi=%4.3f$' % Mstellarscatter,'RESOLVE-B']\
+    ax5.legend([line5,SMF_ECO],[r'$\xi=%4.3f$' % Mstellarscatter,'ECO']\
                ,loc='lower left',prop={'size': 10})
     
     print('Setting data')
