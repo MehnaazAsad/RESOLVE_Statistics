@@ -122,17 +122,17 @@ def read_data(path_to_file, survey):
     if survey == 'eco':
         columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
                     'logmstar', 'logmgas', 'grp', 'grpn', 'logmh', 'logmh_s', 
-                    'fc', 'grpmb', 'grpms', 'modelu_rcorr']
+                    'fc', 'grpmb', 'grpms', 'modelu_rcorr', 'umag', 'rmag']
 
         # 13878 galaxies
-        eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0, \
+        eco_buff = pd.read_csv(path_to_file, delimiter=",", header=0, 
             usecols=columns)
 
         # 6456 galaxies                       
-        catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & \
-            (eco_buff.grpcz.values <= 7000) & \
-                (eco_buff.absrmag.values <= -17.33) &\
-                    (eco_buff.logmstar.values >= 8.9)]
+        catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
+            (eco_buff.grpcz.values <= 7000) & 
+            (eco_buff.absrmag.values <= -17.33) &
+            (eco_buff.logmstar.values >= 8.9)]
 
         volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
         cvar = 0.125
@@ -144,16 +144,15 @@ def read_data(path_to_file, survey):
                     'logmh_s', 'fc', 'grpmb', 'grpms', 'f_a', 'f_b', 
                     'modelu_rcorr']
         # 2286 galaxies
-        resolve_live18 = pd.read_csv(path_to_file, delimiter=",", header=0, \
+        resolve_live18 = pd.read_csv(path_to_file, delimiter=",", header=0, 
             usecols=columns)
 
         if survey == 'resolvea':
-            catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & \
-                (resolve_live18.grpcz.values > 4500) & \
-                    (resolve_live18.grpcz.values < 7000) & \
-                        (resolve_live18.absrmag.values < -17.33) & \
-                            (resolve_live18.logmstar.values >= 8.9)]
-
+            catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
+                (resolve_live18.grpcz.values > 4500) & 
+                (resolve_live18.grpcz.values < 7000) & 
+                (resolve_live18.absrmag.values < -17.33) & 
+                (resolve_live18.logmstar.values >= 8.9)]
 
             volume = 13172.384  # Survey volume without buffer [Mpc/h]^3
             cvar = 0.30
@@ -161,11 +160,11 @@ def read_data(path_to_file, survey):
         
         elif survey == 'resolveb':
             # 487 - cz, 369 - grpcz
-            catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & \
-                (resolve_live18.grpcz.values > 4500) & \
-                    (resolve_live18.grpcz.values < 7000) & \
-                        (resolve_live18.absrmag.values < -17) & \
-                            (resolve_live18.logmstar.values >= 8.7)]
+            catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
+                (resolve_live18.grpcz.values > 4500) & 
+                (resolve_live18.grpcz.values < 7000) & 
+                (resolve_live18.absrmag.values < -17) & 
+                (resolve_live18.logmstar.values >= 8.7)]
 
             volume = 4709.8373  # *2.915 #Survey volume without buffer [Mpc/h]^3
             cvar = 0.58
@@ -734,15 +733,18 @@ def get_err_data(survey, path):
     phi_arr_total = []
     phi_arr_red = []
     phi_arr_blue = []
+    max_arr_blue = []
+    err_arr_blue = []
     for num in range(num_mocks):
         filename = path + '{0}_cat_{1}_Planck_memb_cat.hdf5'.format(
             mock_name, num)
         mock_pd = reading_catls(filename) 
 
-        #Using the same survey definition as in mcmc smf i.e excluding the buffer
+        # Using the same survey definition as in mcmc smf i.e excluding the 
+        # buffer
         mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & \
             (mock_pd.cz.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
-                (mock_pd.logmstar.values >= mstar_limit)]
+            (mock_pd.logmstar.values >= mstar_limit)]
 
         logmstar_arr = mock_pd.logmstar.values 
         u_r_arr = mock_pd.u_r.values
@@ -756,14 +758,14 @@ def get_err_data(survey, path):
                 else:
                     colour_label = 'B'
 
-            if value > 9.1 and value < 10.1:
+            elif value > 9.1 and value < 10.1:
                 divider = 0.24 * value - 0.7
                 if u_r_arr[idx] > divider:
                     colour_label = 'R'
                 else:
                     colour_label = 'B'
 
-            if value >= 10.1:
+            elif value >= 10.1:
                 if u_r_arr[idx] > 1.7:
                     colour_label = 'R'
                 else:
@@ -785,16 +787,20 @@ def get_err_data(survey, path):
         phi_arr_total.append(phi_total)
         phi_arr_red.append(phi_red)
         phi_arr_blue.append(phi_blue)
+        max_arr_blue.append(max_blue)
+        err_arr_blue.append(err_blue)
 
     phi_arr_total = np.array(phi_arr_total)
     phi_arr_red = np.array(phi_arr_red)
     phi_arr_blue = np.array(phi_arr_blue)
+    max_arr_blue = np.array(max_arr_blue)
+    err_arr_blue = np.array(err_arr_blue)
 
     err_total = np.std(phi_arr_total, axis=0)
     err_red = np.std(phi_arr_red, axis=0)
     err_blue = np.std(phi_arr_blue, axis=0)
 
-    return err_total, err_red, err_blue
+    return err_total, err_red, err_blue, max_arr_blue, phi_arr_blue, err_arr_blue
 
 def plot_mstellar_colour_data(catl):
     """
@@ -944,7 +950,7 @@ def measure_all_smf(table, volume, cvar, data_bool):
             [max_blue, phi_blue, err_blue, counts_blue]
 
 def plot_smf(total_data, red_data, blue_data, total_model, red_model, 
-blue_model, model):
+blue_model, model, max_blue_mocks, phi_blue_mocks, err_blue_mocks):
     """
     Plots stellar mass function for all, red and blue galaxies for data and 
     for halo/hybrid model
@@ -986,6 +992,12 @@ blue_model, model):
 
     fig1 = plt.figure(figsize=(10,10))
     ax1 = fig1.add_subplot(111)
+    for idx in range(len(max_blue_mocks)):
+        plt.errorbar(max_blue_mocks[idx],phi_blue_mocks[idx],
+            yerr=err_blue_mocks[idx],color='b',
+            fmt='--s',ecolor='b',markersize=4,capsize=5,capthick=0.5,
+            label=r'$\textrm{total}_{\textrm{m}}$',
+            zorder=10)
     plt.fill_between(max_total_data,phi_total_data-err_total_data,
     phi_total_data+err_total_data,color='k',alpha=0.3, 
         label=r'$\textrm{total}_{\textrm{d}}$')
@@ -1053,7 +1065,7 @@ blue_model, model):
             np.str(counts_blue[i]) + ')', ha="center", va="center", color="b", 
             size=7)            
     plt.yscale('log')
-    plt.ylim(10**-5,10**-1)
+    # plt.ylim(10**-5,10**-1)
     plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', 
         fontsize=15)
     plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', 
@@ -1191,7 +1203,7 @@ def main(args):
     gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, gals_df)
 
     print('Plotting comparison Zu and Mandelbaum 2015')
-    plot_zumand_fig4(gals_df)
+    # plot_zumand_fig4(gals_df)
 
     print('Assigning colour labels to data')
     catl = assign_colour_label_data(catl)
@@ -1201,7 +1213,7 @@ def main(args):
 
     print('Measuring SMF for data')
     total_data, red_data, blue_data = measure_all_smf(catl, volume, 0, True)
-    total_data[2], red_data[2], blue_data[2] = get_err_data(survey, 
+    total_data_, red_data_, blue_data_, max_blue, phi_blue, err_blue = get_err_data(survey, 
         path_to_mocks)  
 
     print('Measuring SMF for model')
@@ -1210,7 +1222,7 @@ def main(args):
 
     print('Plotting SMF')
     plot_smf(total_data, red_data, blue_data, total_model, red_model, blue_model, 
-    model)
+    model, max_blue, phi_blue, err_blue)
 
 # Main function
 if __name__ == '__main__':
