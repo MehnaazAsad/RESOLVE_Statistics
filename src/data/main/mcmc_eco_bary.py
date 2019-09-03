@@ -35,10 +35,10 @@ def diff_bmf(mass_arr, volume, cvar_err, sim_bool):
     maxis = 0.5 * (edg[1:] + edg[:-1])  # Mass axis i.e. bin centers
     # Normalized to volume and bin width
     err_poiss = np.sqrt(phi) / (volume * dm)
-    err_cvar = cvar_err / (volume * dm)
-    err_tot = np.sqrt(err_cvar**2 + err_poiss**2)
+    # err_cvar = cvar_err / (volume * dm)
+    # err_tot = np.sqrt(err_cvar**2 + err_poiss**2)
     phi = phi / (volume * dm)  # not a log quantity
-    return maxis, phi, err_tot, bins
+    return maxis, phi, err_poiss, bins
 
 def populate_mock(theta, model):
     """Populates halo catalog with galaxies given SMHM parameters and model."""
