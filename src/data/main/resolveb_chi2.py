@@ -9,13 +9,14 @@ Created on Thu Jun 21 12:55:42 2018
 ### DESCRIPTION
 #This script parametrizes the SMHM relation to produce a SMF which is compared
 #to the SMF from RESOVLE
-from halotools.empirical_models import PrebuiltSubhaloModelFactory
-from halotools.sim_manager import CachedHaloCatalog
-from halotools.sim_manager import FakeSim
-from cosmo_utils.utils import work_paths as cwpaths
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from halotools.empirical_models import PrebuiltSubhaloModelFactory
+from halotools.empirical_models import Moster13SmHm
+from halotools.sim_manager import CachedHaloCatalog
+from cosmo_utils.utils import work_paths as cwpaths
+from halotools.sim_manager import FakeSim
 # plt.ioff()
 from matplotlib import rc
 import pandas as pd
@@ -97,6 +98,25 @@ def populate_mock(model,halo_value,stellar_value):
     gals_df = gals.to_pandas()
     return gals_df
 
+def diff_SMF(mstar_arr,volume,cvar_err):
+    logmstar_arr = np.log10((10**mstar_arr)/1.429) #changing from h=0.7 to h=1
+    bins = np.linspace(8.9,11.5,11)
+    # nbins = num_bins(logmstar_arr)  #Number of bins to divide data into
+    #Unnormalized histogram and bin edges
+    phi,edg = np.histogram(logmstar_arr,bins=bins)  #paper used 17 bins
+    print('counts: ', phi,'edges: ' , edg)
+    dM = edg[1] - edg[0]  #Bin width
+    maxis = 0.5*(edg[1:]+edg[:-1])  #Mass axis i.e. bin centers
+    #Normalized to volume and bin width
+    err_poiss = np.sqrt(phi)/(volume*dM)
+    err_cvar = cvar_err/(volume*dM)
+    err_tot = np.sqrt(err_cvar**2 + err_poiss**2)
+    
+    phi = phi/(volume*dM) #not a log quantity
+    
+    return maxis,phi,err_tot,bins
+
+
 ### Paths
 dict_of_paths = cwpaths.cookiecutter_paths()
 path_to_raw = dict_of_paths['raw_dir']
@@ -116,53 +136,34 @@ columns = ['name','radeg','dedeg','cz','grpcz','absrmag','logmstar','logmgas','g
 #2286 galaxies
 resolve_live18 = pd.read_csv(path_to_raw + "RESOLVE_liveJune2018.csv", \
                              delimiter=",", header=0, usecols=columns)
-#487
-RESOLVE_B = resolve_live18.loc[(resolve_live18.f_b.values == 1) & \
-                               (resolve_live18.grpcz.values > 4500) & \
-                               (resolve_live18.grpcz.values < 7000) & \
-                               (resolve_live18.absrmag.values < -17)]
 
 #956 galaxies
-RESOLVE_A = resolve_live18.loc[(resolve_live18.f_a.values == 1) & \
+resolve_A = resolve_live18.loc[(resolve_live18.f_a.values == 1) & \
                                (resolve_live18.grpcz.values > 4500) & \
                                (resolve_live18.grpcz.values < 7000) & \
                                (resolve_live18.absrmag.values < -17.33)]
 
-RESB_M_stellar = RESOLVE_B.logmstar.values    
-    
-logM_resolveB  = np.log10((10**RESB_M_stellar)/1.429)  #Read stellar masses
-bins_resolveB = np.linspace(8.9,11.5,11)  #Number of bins to divide data into
-#V_resolveB = 13700# 5.2e4  #Survey volume in Mpc^3
-V_resolveB = 4709.8373 #Survey volume without buffer [Mpc/h]^3
-#Unnormalized histogram and bin edges
-Phi_resolveB,edg_resolveB = np.histogram(logM_resolveB,bins=bins_resolveB)  
-dM_resolveB = edg_resolveB[1] - edg_resolveB[0]  #Bin width
-Max_resolveB = 0.5*(edg_resolveB[1:]+edg_resolveB[:-1])  #Mass axis i.e. bin centers
-#Normalized to volume and bin width
-err_poiss_B = np.sqrt(Phi_resolveB)/(V_resolveB*dM_resolveB)
-err_cvar_B = 0.58/(V_resolveB*dM_resolveB)
-err_tot_B = np.sqrt(err_cvar_B**2 + err_poiss_B**2)
+#487 galaxies
+resolve_B = resolve_live18.loc[(resolve_live18.f_b.values == 1) & \
+                               (resolve_live18.grpcz.values > 4500) & \
+                               (resolve_live18.grpcz.values < 7000) & \
+                               (resolve_live18.absrmag.values < -17)]
 
-Phi_resolveB = Phi_resolveB/(V_resolveB*dM_resolveB) 
+v_resolveA = 13172.384 #Survey volume without buffer [Mpc/h]^3
+cvar_resolveA = 0.30
 
-RESA_M_stellar = RESOLVE_A.logmstar.values    
- 
-logM_resolveA  = RESA_M_stellar  #Read stellar masses
-nbins_resolveA = 10  #Number of bins to divide data into
-#V_resolveA = 38400 #Survey volume in Mpc^3
-V_resolveA = 13172.384 #Survey volume without buffer [Mpc/h]^3
-#Unnormalized histogram and bin edges
-Phi_resolveA,edg_resolveA = np.histogram(logM_resolveA,bins=nbins_resolveA)  
-dM_resolveA = edg_resolveA[1] - edg_resolveA[0]  #Bin width
-Max_resolveA = 0.5*(edg_resolveA[1:]+edg_resolveA[:-1])  #Mass axis i.e. bin centers
-#Normalized to volume and bin width
-err_poiss_A = np.sqrt(Phi_resolveA)/(V_resolveA*dM_resolveA)
-err_cvar_A = 0.30/(V_resolveA*dM_resolveA)
-err_tot_A = np.sqrt(err_cvar_A**2 + err_poiss_A**2)
+v_resolveB = 4709.8373#*2.915 #Survey volume without buffer [Mpc/h]^3
+cvar_resolveB = 0.58
 
-Phi_resolveA = Phi_resolveA/(V_resolveA*dM_resolveA)
+resa_m_stellar = resolve_A.logmstar.values     
+max_resolveA,phi_resolveA,err_tot_A,bins_A = diff_SMF(resa_m_stellar,\
+                                                       v_resolveA,cvar_resolveA)
 
-bins_mock = bins_resolveB
+resb_m_stellar = resolve_B.logmstar.values   
+max_resolveB,phi_resolveB,err_tot_B,bins_B = diff_SMF(resb_m_stellar,\
+                                                       v_resolveB,cvar_resolveB)
+
+bins_mock = bins_B
 Volume_FK = 130.**3 #Volume of Vishnu simulation
 Mhalo_characteristic = np.arange(11.5,13.0,0.1) #13.0 not included
 Mstellar_characteristic = np.arange(10,11.5,0.1) #11.0 not included
@@ -191,7 +192,7 @@ for index,stellar_value in enumerate(Mstellar_characteristic):
         print('Calculating chi squared')
         chi2 = 0
         for i in range(len(bins_mock)-1): #because we want nbins
-            chi2_i = ((10**Phi_resolveB[i]-10**Phi[i])**2)/((10**err_tot_B[i])**2)
+            chi2_i = ((phi_resolveB[i]-Phi[i])**2)/(err_tot_B[i]**2)
             chi2 += chi2_i
         chi2_arr.append(chi2)
     chi2_arrs.append(chi2_arr)
