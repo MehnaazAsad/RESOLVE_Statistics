@@ -77,14 +77,13 @@ target/
 !.rtd-environment.yml
 !.gitignore
 
-# Exclude figures folder
+# Repo folders
 reports/figures/
-
-# Exclude debug folder
 src/debug
-
-# Exclude emcee tutorials folder
 src/tutorials
+.vscode
+=
+=3.6
 
 # File extensions
 *.DS_Store
