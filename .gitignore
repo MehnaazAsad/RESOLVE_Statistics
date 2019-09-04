@@ -80,6 +80,12 @@ target/
 # Exclude figures folder
 reports/figures/
 
+# Exclude debug folder
+src/debug
+
+# Exclude emcee tutorials folder
+src/tutorials
+
 # File extensions
 *.DS_Store
 *.sh
