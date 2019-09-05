@@ -862,7 +862,7 @@ global model
 # model = args.quenching_model
 
 survey = 'eco'
-machine = 'mac'
+machine = 'bender'
 model = 'hybrid'
 
 plt.rcParams['animation.convert_path'] = '{0}/magick'.format(os.path.dirname(which('python')))
