@@ -398,9 +398,9 @@ def get_err_data(survey, path):
     phi_arr_red = np.array(phi_arr_red)
     phi_arr_blue = np.array(phi_arr_blue)
 
-    err_total = np.std(phi_arr_total, axis=0)
-    err_red = np.std(phi_arr_red, axis=0)
-    err_blue = np.std(phi_arr_blue, axis=0)
+    err_total = np.std(np.log10(phi_arr_total), axis=0)
+    err_red = np.std(np.log10(phi_arr_red), axis=0)
+    err_blue = np.std(np.log10(phi_arr_blue), axis=0)
 
     return err_total, err_red, err_blue
 
@@ -863,7 +863,7 @@ global model
 
 survey = 'eco'
 machine = 'bender'
-model = 'hybrid'
+model = 'halo'
 
 plt.rcParams['animation.convert_path'] = '{0}/magick'.format(os.path.dirname(which('python')))
 
@@ -933,12 +933,19 @@ total_data[2], red_data[2], blue_data[2] = get_err_data(survey,
     path_to_mocks) 
 
 counter = 0
-# HYBRID model
+
 # parameter values from Table 1 of Zu and Mandelbaum 2015 "prior case"
-Mh_q_arr = np.linspace(11.0, 15.5, 15) # Msun/h
-Mstar_q_arr = np.linspace(9.0, 12.0, 15) # Msun/h
-mu_arr = np.linspace(0.0, 3.0, 15)
-nu_arr = np.linspace(0.0, 3.0, 15)
+if model == 'hybrid':
+    Mh_q_arr = np.linspace(11.0, 15.5, 15) # Msun/h
+    Mstar_q_arr = np.linspace(9.0, 12.0, 15) # Msun/h
+    mu_arr = np.linspace(0.0, 3.0, 15)
+    nu_arr = np.linspace(0.0, 3.0, 15)
+
+elif model == 'halo':
+    Mh_qc_arr = np.linspace(11.0, 15.5, 15)
+    Mh_qs_arr = np.linspace(11.0, 15.5, 15)
+    muc_arr = np.linspace(0.0, 3.0, 15)
+    mus_arr = np.linspace(0.0, 3.0, 15)
     
 def init():
     
@@ -966,7 +973,10 @@ def init():
 def make_animation(i,j,k,l,ax1_catalog,ax2_catalog,ax3_catalog,ax4_catalog):
     global counter
     vol_sim = 130**3 # Mpc/h
-    Mhalo, Mstar, mu, nu = i, j[counter], k[counter], l[counter]
+    if model == 'hybrid:':
+        Mhalo, Mstar, mu, nu = i, j[counter], k[counter], l[counter]
+    elif model == 'halo':
+        Mhalo_c, Mhalo_s, mu_c, mu_s = i, j[counter], k[counter], l[counter]
 
     print('Applying quenching model')
     if model == 'hybrid':
@@ -975,11 +985,10 @@ def make_animation(i,j,k,l,ax1_catalog,ax2_catalog,ax3_catalog,ax4_catalog):
         f_red_cen3, f_red_sat3 = hybrid_quenching_model(ax3_catalog, mu, 2)
         f_red_cen4, f_red_sat4 = hybrid_quenching_model(ax4_catalog, nu, 3)
     elif model == 'halo':
-        ### CHANGE PARAM NAMES BEFORE RUNNING HALO MODEL ###
-        f_red_cen1, f_red_sat1 = halo_quenching_model(ax1_catalog, Mstar, 0)
-        f_red_cen2, f_red_sat2 = halo_quenching_model(ax2_catalog, Mhalo, 1)
-        f_red_cen3, f_red_sat3 = halo_quenching_model(ax3_catalog, mu, 2)
-        f_red_cen4, f_red_sat4 = halo_quenching_model(ax4_catalog, nu, 3)
+        f_red_cen1, f_red_sat1 = halo_quenching_model(ax1_catalog, Mhalo_c, 0)
+        f_red_cen2, f_red_sat2 = halo_quenching_model(ax2_catalog, Mhalo_s, 1)
+        f_red_cen3, f_red_sat3 = halo_quenching_model(ax3_catalog, mu_c, 2)
+        f_red_cen4, f_red_sat4 = halo_quenching_model(ax4_catalog, mu_s, 3)
 
     ax1_catalog = assign_colour_label_mock(f_red_cen1, f_red_sat1, ax1_catalog)
     ax2_catalog = assign_colour_label_mock(f_red_cen2, f_red_sat2, ax2_catalog)
@@ -997,60 +1006,83 @@ def make_animation(i,j,k,l,ax1_catalog,ax2_catalog,ax3_catalog,ax4_catalog):
     
     for ax in [ax1,ax2,ax3,ax4]:
         ax.clear()
-        smf_eco_red = ax.fill_between(red_data[0], red_data[1]-red_data[2], 
-            red_data[1]+red_data[2], color='#E61A27', alpha=0.3, 
+        smf_eco_red = ax.fill_between(red_data[0], 
+            np.log10(red_data[1])-red_data[2], 
+            np.log10(red_data[1])+red_data[2], color='#E61A27', alpha=0.3, 
             label=r'$\textrm{red}_{\textrm{d}}$')
-        smf_eco_blue = ax.fill_between(blue_data[0], blue_data[1]-blue_data[2], 
-            blue_data[1]+blue_data[2], color='#5696B9', alpha=0.3, 
-            label=r'$\textrm{blue}_{\textrm{d}}$')      
-        ax.set_ylim(10**-5,10**-1)
+        smf_eco_blue = ax.fill_between(blue_data[0], 
+            np.log10(blue_data[1])-blue_data[2], 
+            np.log10(blue_data[1])+blue_data[2], color='#5696B9', alpha=0.3, 
+            label=r'$\textrm{blue}_{\textrm{d}}$') 
+        ax.set_ylim(-5,-1)     
         ax.minorticks_on()
-        ax.set_yscale('log')
         if ax == ax3 or ax == ax4:
             ax.set_xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', 
-                fontsize=15)
+            fontsize=15)
         if ax == ax1 or ax == ax3:
             ax.set_ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', 
-                fontsize=15)
+            fontsize=15)
         ax.label_outer()
 
-    line1 = ax1.errorbar(red_model1[0], red_model1[1], yerr=red_model1[2],
+    rel_err = 0.434*(red_model1[2]/red_model1[1])
+    line1 = ax1.errorbar(red_model1[0], np.log10(red_model1[1]), yerr=rel_err,
         color='#E61A27', fmt="s-", linewidth=2, elinewidth=0.5, 
         ecolor='#E61A27', capsize=2, capthick=1.5, markersize='3') 
-    line2 = ax2.errorbar(red_model2[0], red_model2[1], yerr=red_model2[2],
+    rel_err = 0.434*(red_model2[2]/red_model2[1])
+    line2 = ax2.errorbar(red_model2[0], np.log10(red_model2[1]), yerr=rel_err,
         color='#E61A27', fmt="s-", linewidth=2, elinewidth=0.5, 
         ecolor='#E61A27', capsize=2, capthick=1.5, markersize='3')
-    line3 = ax3.errorbar(red_model3[0], red_model3[1], yerr=red_model3[2],
+    rel_err = 0.434*(red_model3[2]/red_model3[1])
+    line3 = ax3.errorbar(red_model3[0], np.log10(red_model3[1]), yerr=rel_err,
         color='#E61A27', fmt="s-", linewidth=2, elinewidth=0.5, 
         ecolor='#E61A27', capsize=2, capthick=1.5, markersize='3')
-    line4 = ax4.errorbar(red_model4[0], red_model4[1], yerr=red_model4[2],
+    rel_err = 0.434*(red_model4[2]/red_model4[1])
+    line4 = ax4.errorbar(red_model4[0], np.log10(red_model4[1]), yerr=rel_err,
         color='#E61A27', fmt="s-", linewidth=2, elinewidth=0.5, 
         ecolor='#E61A27', capsize=2, capthick=1.5, markersize='3')
-    line5 = ax1.errorbar(blue_model1[0], blue_model1[1], yerr=blue_model1[2],
+    rel_err = 0.434*(blue_model1[2]/blue_model1[1])
+    line5 = ax1.errorbar(blue_model1[0], np.log10(blue_model1[1]), yerr=rel_err,
         color='#5696B9', fmt="s-", linewidth=2, elinewidth=0.5, 
         ecolor='#5696B9', capsize=2, capthick=1.5, markersize='3')
-    line6 = ax2.errorbar(blue_model2[0], blue_model2[1], yerr=blue_model2[2],
+    rel_err = 0.434*(blue_model2[2]/blue_model2[1])
+    line6 = ax2.errorbar(blue_model2[0], np.log10(blue_model2[1]), yerr=rel_err,
         color='#5696B9', fmt="s-", linewidth=2, elinewidth=0.5, 
         ecolor='#5696B9', capsize=2, capthick=1.5, markersize='3')
-    line7 = ax3.errorbar(blue_model3[0], blue_model3[1], yerr=blue_model3[2],
+    rel_err = 0.434*(blue_model3[2]/blue_model3[1])
+    line7 = ax3.errorbar(blue_model3[0], np.log10(blue_model3[1]), yerr=rel_err,
         color='#5696B9', fmt="s-", linewidth=2, elinewidth=0.5, 
         ecolor='#5696B9', capsize=2, capthick=1.5, markersize='3')
-    line8 = ax4.errorbar(blue_model4[0], blue_model4[1], yerr=blue_model4[2],
+    rel_err = 0.434*(blue_model4[2]/blue_model4[1])
+    line8 = ax4.errorbar(blue_model4[0], np.log10(blue_model4[1]), yerr=rel_err,
         color='#5696B9', fmt="s-", linewidth=2, elinewidth=0.5, 
         ecolor='#5696B9', capsize=2, capthick=1.5, markersize='3')
 
-    ax1.legend([line1,smf_eco_red,smf_eco_blue],[r'$M_{h}^{q}=%4.2f$' % Mhalo, 
-        r'$\textrm{red}_{\textrm{d}}$', r'$\textrm{blue}_{\textrm{d}}$'], 
-        loc='lower left',prop={'size': 10})
-    ax2.legend([line2],[r'$M_{*}^{q}=%4.2f$' % Mstar],
-        loc='lower left',prop={'size': 10})
-    ax3.legend([line3],[r'$\mu=%4.2f$' % mu], 
-        loc='lower left',prop={'size': 10})
-    ax4.legend([line4],[r'$\nu=%4.2f$' % nu], 
-        loc='lower left',prop={'size': 10})
-    
+    if model == 'hybrid':
+        ax1.legend([line1,smf_eco_red,smf_eco_blue],
+            [r'$M_{h}^{q}=%4.2f$' % Mhalo, 
+            r'$\textrm{red}_{\textrm{d}}$', r'$\textrm{blue}_{\textrm{d}}$'], 
+            loc='lower left',prop={'size': 10})
+        ax2.legend([line2],[r'$M_{*}^{q}=%4.2f$' % Mstar],
+            loc='lower left',prop={'size': 10})
+        ax3.legend([line3],[r'$\mu=%4.2f$' % mu], 
+            loc='lower left',prop={'size': 10})
+        ax4.legend([line4],[r'$\nu=%4.2f$' % nu], 
+            loc='lower left',prop={'size': 10})
+
+    elif model == 'halo':
+        ax1.legend([line1,smf_eco_red,smf_eco_blue],
+            [r'$M_{h}^{qc}=%4.2f$' % Mhalo_c, 
+            r'$\textrm{red}_{\textrm{d}}$', r'$\textrm{blue}_{\textrm{d}}$'], 
+            loc='lower left',prop={'size': 10})
+        ax2.legend([line2],[r'$M_{h}^{qs}=%4.2f$' % Mhalo_s],
+            loc='lower left',prop={'size': 10})
+        ax3.legend([line3],[r'${\mu}^{c}=%4.2f$' % mu_c], 
+            loc='lower left',prop={'size': 10})
+        ax4.legend([line4],[r'${\mu}^{s}=%4.2f$' % mu_s], 
+            loc='lower left',prop={'size': 10})
+
     print('Setting data')
-    print('Frame {0}/{1}'.format(counter+1,len(Mh_q_arr)))
+    print('Frame {0}/{1}'.format(counter+1,len(Mh_qc_arr)))
     
     counter+=1
     
@@ -1062,12 +1094,12 @@ def make_animation(i,j,k,l,ax1_catalog,ax2_catalog,ax3_catalog,ax4_catalog):
 fig, axs = plt.subplots(2,2, figsize=(12,8), sharex='row', sharey='col', 
     gridspec_kw={'hspace': 0.1, 'wspace': 0.0})
 (ax1, ax2), (ax3, ax4) = axs
-fig.suptitle(r'Hybrid quenching model')
+fig.suptitle(r'Halo quenching model')
 
-anim = animation.FuncAnimation(plt.gcf(), make_animation, Mh_q_arr, 
-    init_func=init,fargs=(Mstar_q_arr, mu_arr, nu_arr, ax1_catalog, 
+anim = animation.FuncAnimation(plt.gcf(), make_animation, Mh_qc_arr, 
+    init_func=init,fargs=(Mh_qs_arr, muc_arr, mus_arr, ax1_catalog, 
     ax2_catalog, ax3_catalog, ax4_catalog,), interval=1000, blit=False, 
     repeat=True)
 print('Saving animation')
 os.chdir(path_to_figures)
-anim.save('eco_smf_hybrid.gif',writer='imagemagick',fps=1)
+anim.save('eco_smf_halo.gif',writer='imagemagick',fps=1)
