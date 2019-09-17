@@ -863,7 +863,7 @@ global model
 
 survey = 'eco'
 machine = 'bender'
-model = 'halo'
+model = 'hybrid'
 
 plt.rcParams['animation.convert_path'] = '{0}/magick'.format(os.path.dirname(which('python')))
 
@@ -1082,7 +1082,7 @@ def make_animation(i,j,k,l,ax1_catalog,ax2_catalog,ax3_catalog,ax4_catalog):
             loc='lower left',prop={'size': 10})
 
     print('Setting data')
-    print('Frame {0}/{1}'.format(counter+1,len(Mh_qc_arr)))
+    print('Frame {0}/{1}'.format(counter+1,len(Mh_q_arr)))
     
     counter+=1
     
@@ -1094,12 +1094,12 @@ def make_animation(i,j,k,l,ax1_catalog,ax2_catalog,ax3_catalog,ax4_catalog):
 fig, axs = plt.subplots(2,2, figsize=(12,8), sharex='row', sharey='col', 
     gridspec_kw={'hspace': 0.1, 'wspace': 0.0})
 (ax1, ax2), (ax3, ax4) = axs
-fig.suptitle(r'Halo quenching model')
+fig.suptitle(r'Hybrid quenching model')
 
-anim = animation.FuncAnimation(plt.gcf(), make_animation, Mh_qc_arr, 
-    init_func=init,fargs=(Mh_qs_arr, muc_arr, mus_arr, ax1_catalog, 
+anim = animation.FuncAnimation(plt.gcf(), make_animation, Mh_q_arr, 
+    init_func=init,fargs=(Mstar_q_arr, mu_arr, nu_arr, ax1_catalog, 
     ax2_catalog, ax3_catalog, ax4_catalog,), interval=1000, blit=False, 
     repeat=True)
 print('Saving animation')
 os.chdir(path_to_figures)
-anim.save('eco_smf_halo.gif',writer='imagemagick',fps=1)
+anim.save('eco_smf_hybrid.gif',writer='imagemagick',fps=1)
