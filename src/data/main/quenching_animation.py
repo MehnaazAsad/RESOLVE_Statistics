@@ -973,7 +973,7 @@ def init():
 def make_animation(i,j,k,l,ax1_catalog,ax2_catalog,ax3_catalog,ax4_catalog):
     global counter
     vol_sim = 130**3 # Mpc/h
-    if model == 'hybrid:':
+    if model == 'hybrid':
         Mhalo, Mstar, mu, nu = i, j[counter], k[counter], l[counter]
     elif model == 'halo':
         Mhalo_c, Mhalo_s, mu_c, mu_s = i, j[counter], k[counter], l[counter]
