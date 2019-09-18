@@ -4,8 +4,6 @@
  to that of data}
 """
 
-# BILL WAS HERE
-
 # Libs
 from halotools.empirical_models import PrebuiltSubhaloModelFactory
 from cosmo_utils.utils.stats_funcs import Stats_one_arr
