@@ -4,6 +4,8 @@
  to that of data}
 """
 
+# BILL WAS HERE
+
 # Libs
 from halotools.empirical_models import PrebuiltSubhaloModelFactory
 from cosmo_utils.utils.stats_funcs import Stats_one_arr
@@ -849,6 +851,26 @@ def measure_all_smf(table, volume, cvar, data_bool):
         [max_red, phi_red, err_red, counts_red] , \
             [max_blue, phi_blue, err_blue, counts_blue]
 
+def args_parser():
+    """
+    Parsing arguments passed to script
+
+    Returns
+    -------
+    args: 
+        Input arguments to the script
+    """
+    print('Parsing in progress')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('survey', type=str, 
+        help='Options: eco/resolvea/resolveb')
+    parser.add_argument('machine', type=str, 
+        help='Options: mac/bender')   
+    parser.add_argument('quenching_model', type=str,
+        help='Options: hybrid/halo')
+    args = parser.parse_args()
+    return args
+
 
 global survey
 global model1
@@ -858,12 +880,10 @@ global model4
 global machine
 global model
 
-# survey = args.survey
-# model = args.quenching_model
-
-survey = 'eco'
-machine = 'bender'
-model = 'hybrid'
+args = args_parser()
+survey = args.survey
+machine = args.machine
+model = args.quenching_model
 
 plt.rcParams['animation.convert_path'] = '{0}/magick'.format(os.path.dirname(which('python')))
 
@@ -936,10 +956,10 @@ counter = 0
 
 # parameter values from Table 1 of Zu and Mandelbaum 2015 "prior case"
 if model == 'hybrid':
-    Mh_q_arr = np.linspace(11.0, 15.5, 15) # Msun/h
-    Mstar_q_arr = np.linspace(9.0, 12.0, 15) # Msun/h
-    mu_arr = np.linspace(0.0, 3.0, 15)
-    nu_arr = np.linspace(0.0, 3.0, 15)
+    Mh_q_arr = np.linspace(11.0, 15.5, 15)[:2] # Msun/h
+    Mstar_q_arr = np.linspace(9.0, 12.0, 15)[:2] # Msun/h
+    mu_arr = np.linspace(0.0, 3.0, 15)[:2]
+    nu_arr = np.linspace(0.0, 3.0, 15)[:2]
 
 elif model == 'halo':
     Mh_qc_arr = np.linspace(11.0, 15.5, 15)
@@ -1006,11 +1026,11 @@ def make_animation(i,j,k,l,ax1_catalog,ax2_catalog,ax3_catalog,ax4_catalog):
     
     for ax in [ax1,ax2,ax3,ax4]:
         ax.clear()
-        smf_eco_red = ax.fill_between(red_data[0], 
+        smf_data_red = ax.fill_between(red_data[0], 
             np.log10(red_data[1])-red_data[2], 
             np.log10(red_data[1])+red_data[2], color='#E61A27', alpha=0.3, 
             label=r'$\textrm{red}_{\textrm{d}}$')
-        smf_eco_blue = ax.fill_between(blue_data[0], 
+        smf_data_blue = ax.fill_between(blue_data[0], 
             np.log10(blue_data[1])-blue_data[2], 
             np.log10(blue_data[1])+blue_data[2], color='#5696B9', alpha=0.3, 
             label=r'$\textrm{blue}_{\textrm{d}}$') 
@@ -1058,7 +1078,7 @@ def make_animation(i,j,k,l,ax1_catalog,ax2_catalog,ax3_catalog,ax4_catalog):
         ecolor='#5696B9', capsize=2, capthick=1.5, markersize='3')
 
     if model == 'hybrid':
-        ax1.legend([line1,smf_eco_red,smf_eco_blue],
+        ax1.legend([line1,smf_data_red,smf_data_blue],
             [r'$M_{h}^{q}=%4.2f$' % Mhalo, 
             r'$\textrm{red}_{\textrm{d}}$', r'$\textrm{blue}_{\textrm{d}}$'], 
             loc='lower left',prop={'size': 10})
@@ -1070,7 +1090,7 @@ def make_animation(i,j,k,l,ax1_catalog,ax2_catalog,ax3_catalog,ax4_catalog):
             loc='lower left',prop={'size': 10})
 
     elif model == 'halo':
-        ax1.legend([line1,smf_eco_red,smf_eco_blue],
+        ax1.legend([line1,smf_data_red,smf_data_blue],
             [r'$M_{h}^{qc}=%4.2f$' % Mhalo_c, 
             r'$\textrm{red}_{\textrm{d}}$', r'$\textrm{blue}_{\textrm{d}}$'], 
             loc='lower left',prop={'size': 10})
@@ -1082,7 +1102,11 @@ def make_animation(i,j,k,l,ax1_catalog,ax2_catalog,ax3_catalog,ax4_catalog):
             loc='lower left',prop={'size': 10})
 
     print('Setting data')
-    print('Frame {0}/{1}'.format(counter+1,len(Mh_q_arr)))
+    if model == 'hybrid':
+        array_for_counter = Mh_q_arr
+    elif model == 'halo':
+        array_for_counter = Mh_qc_arr
+    print('Frame {0}/{1}'.format(counter+1,len(array_for_counter)))
     
     counter+=1
     
@@ -1094,12 +1118,24 @@ def make_animation(i,j,k,l,ax1_catalog,ax2_catalog,ax3_catalog,ax4_catalog):
 fig, axs = plt.subplots(2,2, figsize=(12,8), sharex='row', sharey='col', 
     gridspec_kw={'hspace': 0.1, 'wspace': 0.0})
 (ax1, ax2), (ax3, ax4) = axs
-fig.suptitle(r'Hybrid quenching model')
+if model == 'hybrid':
+    fig.suptitle(r'Hybrid quenching model')
+elif model == 'halo':
+    fig.suptitle(r'Halo quenching model')
 
-anim = animation.FuncAnimation(plt.gcf(), make_animation, Mh_q_arr, 
-    init_func=init,fargs=(Mstar_q_arr, mu_arr, nu_arr, ax1_catalog, 
-    ax2_catalog, ax3_catalog, ax4_catalog,), interval=1000, blit=False, 
-    repeat=True)
+if model == 'hybrid':
+    anim = animation.FuncAnimation(plt.gcf(), make_animation, Mh_q_arr, 
+        init_func=init,fargs=(Mstar_q_arr, mu_arr, nu_arr, ax1_catalog, 
+        ax2_catalog, ax3_catalog, ax4_catalog,), interval=1000, blit=False, 
+        repeat=True)
+elif model == 'halo':
+    anim = animation.FuncAnimation(plt.gcf(), make_animation, Mh_qc_arr, 
+        init_func=init,fargs=(Mh_qs_arr, muc_arr, mus_arr, ax1_catalog, 
+        ax2_catalog, ax3_catalog, ax4_catalog,), interval=1000, blit=False, 
+        repeat=True)
 print('Saving animation')
 os.chdir(path_to_figures)
-anim.save('eco_smf_hybrid.gif',writer='imagemagick',fps=1)
+if model == 'hybrid':
+    anim.save('{0}_smf_hybrid_test.gif'.format(survey),writer='imagemagick',fps=1)
+elif model == 'halo':
+    anim.save('{0}_smf_halo_test.gif'.format(survey),writer='imagemagick',fps=1)
