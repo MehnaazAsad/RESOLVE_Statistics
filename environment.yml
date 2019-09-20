@@ -3,6 +3,7 @@ name: resolve_statistics
 channels:
   - defaults
   - astropy
+  - conda-forge
 
 dependencies:
   - python>=3.6
@@ -20,6 +21,7 @@ dependencies:
   - sphinx-automodapi
   - pip
   - emcee
+  - imagemagick
   - pip:
       - GitPython
       - progressbar2
