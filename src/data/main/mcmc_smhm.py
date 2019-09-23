@@ -17,7 +17,6 @@ import argparse
 import emcee 
 import math
 
-
 __author__ = '[Mehnaaz Asad]'
 
 def read_catl(path_to_file, survey):
@@ -98,7 +97,7 @@ def read_catl(path_to_file, survey):
 
     return catl,volume,cvar,z_median
 
-def diff_smf(mstar_arr, volume, cvar_err, h1_bool):
+def diff_smf(mstar_arr, volume, h1_bool):
     """
     Calculates differential stellar mass function in units of h=1.0
 
@@ -138,23 +137,24 @@ def diff_smf(mstar_arr, volume, cvar_err, h1_bool):
     if survey == 'eco' or survey == 'resolvea':
         bin_min = np.round(np.log10((10**8.9) / 2.041), 1)
         bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
-        bins = np.linspace(bin_min, bin_max, 12)
+        bins = np.linspace(bin_min, bin_max, 10)
     elif survey == 'resolveb':
         bin_min = np.round(np.log10((10**8.7) / 2.041), 1)
         bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
         bins = np.linspace(bin_min, bin_max, 12)
     # Unnormalized histogram and bin edges
-    phi, edg = np.histogram(logmstar_arr, bins=bins)  # paper used 17 bins
+    counts, edg = np.histogram(logmstar_arr, bins=bins)  # paper used 17 bins
     dm = edg[1] - edg[0]  # Bin width
     maxis = 0.5 * (edg[1:] + edg[:-1])  # Mass axis i.e. bin centers
     # Normalized to volume and bin width
-    err_poiss = np.sqrt(phi) / (volume * dm)
-    err_cvar = cvar_err / (volume * dm)
-    err_tot = np.sqrt(err_cvar**2 + err_poiss**2)
+    err_poiss = np.sqrt(counts) / (volume * dm)
+    err_tot = err_poiss
 
-    phi = phi / (volume * dm)  # not a log quantity
+    phi = counts / (volume * dm)  # not a log quantity
 
-    return maxis, phi, err_tot, bins
+    phi = np.log10(phi)
+
+    return maxis, phi, err_tot, bins, counts
 
 def calc_bary(mstar_arr, mgas_arr):
     """Calculates baryonic mass of galaxies from survey assuming h^-2 
@@ -208,6 +208,102 @@ def diff_bmf(mass_arr, volume, cvar_err, sim_bool):
     phi = phi / (volume * dm)  # not a log quantity
     return maxis, phi, err_tot, bins
 
+def jackknife(catl, volume):
+    """
+    Jackknife ECO survey to get data in error and correlation matrix for 
+    chi-squared calculation
+
+    Parameters
+    ----------
+    catl: Pandas DataFrame
+        Survey catalog
+
+    Returns
+    ---------
+    stddev_jk: numpy array
+        Array of sigmas
+    corr_mat_inv: numpy matrix
+        Inverse of correlation matrix
+    """
+
+    ra = catl.radeg.values # degrees
+    dec = catl.dedeg.values # degrees
+
+    sin_dec_all = np.rad2deg(np.sin(np.deg2rad(dec))) # degrees
+
+    sin_dec_arr = np.linspace(sin_dec_all.min(), sin_dec_all.max(), 8)
+    ra_arr = np.linspace(ra.min(), ra.max(), 8)
+
+    grid_id_arr = []
+    gal_id_arr = []
+    grid_id = 1
+    max_bin_id = len(sin_dec_arr)-2 # left edge of max bin
+    for dec_idx in range(len(sin_dec_arr)):
+        for ra_idx in range(len(ra_arr)):
+            try:
+                if dec_idx == max_bin_id and ra_idx == max_bin_id:
+                    catl_subset = catl.loc[(catl.radeg.values >= ra_arr[ra_idx]) &
+                        (catl.radeg.values <= ra_arr[ra_idx+1]) & 
+                        (np.rad2deg(np.sin(np.deg2rad(catl.dedeg.values))) >= 
+                            sin_dec_arr[dec_idx]) & (np.rad2deg(np.sin(np.deg2rad(
+                                catl.dedeg.values))) <= sin_dec_arr[dec_idx+1])] 
+                elif dec_idx == max_bin_id:
+                    catl_subset = catl.loc[(catl.radeg.values >= ra_arr[ra_idx]) &
+                        (catl.radeg.values < ra_arr[ra_idx+1]) & 
+                        (np.rad2deg(np.sin(np.deg2rad(catl.dedeg.values))) >= 
+                            sin_dec_arr[dec_idx]) & (np.rad2deg(np.sin(np.deg2rad(
+                                catl.dedeg.values))) <= sin_dec_arr[dec_idx+1])] 
+                elif ra_idx == max_bin_id:
+                    catl_subset = catl.loc[(catl.radeg.values >= ra_arr[ra_idx]) &
+                        (catl.radeg.values <= ra_arr[ra_idx+1]) & 
+                        (np.rad2deg(np.sin(np.deg2rad(catl.dedeg.values))) >= 
+                            sin_dec_arr[dec_idx]) & (np.rad2deg(np.sin(np.deg2rad(
+                                catl.dedeg.values))) < sin_dec_arr[dec_idx+1])] 
+                else:                
+                    catl_subset = catl.loc[(catl.radeg.values >= ra_arr[ra_idx]) &
+                        (catl.radeg.values < ra_arr[ra_idx+1]) & 
+                        (np.rad2deg(np.sin(np.deg2rad(catl.dedeg.values))) >= 
+                            sin_dec_arr[dec_idx]) & (np.rad2deg(np.sin(np.deg2rad(
+                                catl.dedeg.values))) < sin_dec_arr[dec_idx+1])] 
+                # Append dec and sin  
+                for gal_id in catl_subset.name.values:
+                    gal_id_arr.append(gal_id)
+                for grid_id in [grid_id] * len(catl_subset):
+                    grid_id_arr.append(grid_id)
+                grid_id += 1
+            except IndexError:
+                break
+
+    gal_grid_id_data = {'grid_id': grid_id_arr, 'name': gal_id_arr}
+    df_gal_grid = pd.DataFrame(data=gal_grid_id_data)
+
+    catl = catl.join(df_gal_grid.set_index('name'), on='name')
+    catl = catl.reset_index(drop=True)
+
+    # Loop over all sub grids, remove one and measure global smf
+    jackknife_smf_phi_arr = []
+    for grid_id in range(len(np.unique(catl.grid_id.values))):
+        grid_id += 1
+        catl_subset = catl.loc[catl.grid_id.values != grid_id]  
+        logmstar = catl_subset.logmstar.values
+        maxis, phi, err, bins, counts = diff_smf(logmstar, volume, False)
+        jackknife_smf_phi_arr.append(phi)
+
+    jackknife_smf_phi_arr = np.array(jackknife_smf_phi_arr)
+
+    N = len(jackknife_smf_phi_arr)
+
+    # Covariance matrix
+    cov_mat = np.cov(jackknife_smf_phi_arr.T, bias=True)*(N-1)
+    stddev_jk = np.sqrt(cov_mat.diagonal())
+
+    # Correlation matrix
+    corr_mat = cov_mat / np.outer(stddev_jk , stddev_jk)
+    # Inverse of correlation matrix
+    corr_mat_inv = np.linalg.inv(corr_mat)
+
+    return stddev_jk, corr_mat_inv
+
 def halocat_init(halo_catalog, z_median):
     """
     Initial population of halo catalog using populate_mock function
@@ -232,7 +328,7 @@ def halocat_init(halo_catalog, z_median):
 
     return model
 
-def mcmc(nproc, nwalkers, nsteps, phi, err):
+def mcmc(nproc, nwalkers, nsteps, phi, err, corr_mat_inv):
     """
     MCMC analysis
 
@@ -265,8 +361,8 @@ def mcmc(nproc, nwalkers, nsteps, phi, err):
         reshape((nwalkers,ndim))
 
     with Pool(processes=nproc) as pool:
-        sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(phi, err)\
-            ,pool=pool)
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, 
+            args=(phi, err, corr_mat_inv),pool=pool)
         start = time.time()
         sampler.run_mcmc(p0, nsteps)
         end = time.time()
@@ -315,7 +411,7 @@ def populate_mock(theta, model):
 
     return gals_df
 
-def chi_squared(data, model, err_data):
+def chi_squared(data, model, err_data, inv_corr_mat):
     """
     Calculates chi squared
 
@@ -336,12 +432,13 @@ def chi_squared(data, model, err_data):
         Value of chi-squared given a model 
 
     """
-    chi_squared = (data - model)**2 / (err_data**2)
-    chi_squared = np.sum(chi_squared)
+    # dot product ((1x9)(9x9))(9x1)
+    first_term = ((data - model) / (err_data)).reshape(1,9)
+    third_term = np.transpose(first_term)
+    chi_squared = np.dot(np.dot(first_term,inv_corr_mat),third_term)
+    return chi_squared[0][0]
 
-    return chi_squared
-
-def lnprob(theta, phi, err_tot):
+def lnprob(theta, phi, err_tot, inv_corr_mat):
     """
     Calculates log probability for emcee
 
@@ -378,9 +475,9 @@ def lnprob(theta, phi, err_tot):
         gals_df = populate_mock(theta, model_init)
         v_sim = 130**3
         mstellar_mock = gals_df.stellar_mass.values 
-        max_model, phi_model, err_tot_model, bins_model =\
-            diff_smf(mstellar_mock, v_sim, 0, True)
-        chi2 = chi_squared(phi, phi_model, err_tot)
+        max_model, phi_model, err_tot_model, bins_model, counts_model =\
+            diff_smf(mstellar_mock, v_sim, True)
+        chi2 = chi_squared(phi, phi_model, err_tot, inv_corr_mat)
         lnp = -chi2 / 2
     except Exception:
         lnp = -np.inf
@@ -451,11 +548,11 @@ def args_parser():
         help='Options: mac/bender')
     parser.add_argument('survey', type=str, \
         help='Options: eco/resolvea/resolveb')
-    parser.add_argument('nproc', type=int, nargs='?', help='Number of processes',\
-        default=20)
-    parser.add_argument('nwalkers', type=int, nargs='?', help='Number of walkers',\
-        default=250)
-    parser.add_argument('nsteps', type=int, nargs='?', help='Number of steps',\
+    parser.add_argument('nproc', type=int, nargs='?', 
+        help='Number of processes', default=20)
+    parser.add_argument('nwalkers', type=int, nargs='?', 
+        help='Number of walkers', default=250)
+    parser.add_argument('nsteps', type=int, nargs='?', help='Number of steps',
         default=1000)
     args = parser.parse_args()
     return args
@@ -502,13 +599,17 @@ def main(args):
 
     print('Retrieving stellar mass from catalog')
     stellar_mass_arr = catl.logmstar.values
-    maxis_data, phi_data, err_data, bins_data = \
-        diff_smf(stellar_mass_arr, volume, cvar, False)
+    maxis_data, phi_data, err_data, bins_data, counts_data = \
+        diff_smf(stellar_mass_arr, volume, False)
     print('Initial population of halo catalog')
     model_init = halocat_init(halo_catalog, z_median)
 
+    if survey == 'eco':
+        print('Jackknife ECO survey')
+        err_data, inv_corr_mat = jackknife(catl, volume)
+
     print('Running MCMC')
-    sampler = mcmc(nproc, nwalkers, nsteps, phi_data, err_data)
+    sampler = mcmc(nproc, nwalkers, nsteps, phi_data, err_data, inv_corr_mat)
     print('Writing to files:')
     write_to_files(sampler)
 
