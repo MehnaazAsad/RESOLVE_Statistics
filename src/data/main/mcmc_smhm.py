@@ -468,6 +468,12 @@ def lnprob(theta, phi, err_tot, inv_corr_mat):
     if theta[1] < 0:
         chi2 = -np.inf
         return -np.inf, chi2
+    if theta[2] < 0:
+        chi2 = -np.inf
+        return -np.inf, chi2
+    if theta[3] < 0:
+        chi2 = -np.inf
+        return -np.inf, chi2       
     if theta[4] < 0:
         chi2 = -np.inf
         return -np.inf, chi2
