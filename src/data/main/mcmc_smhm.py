@@ -137,7 +137,7 @@ def diff_smf(mstar_arr, volume, h1_bool):
     if survey == 'eco' or survey == 'resolvea':
         bin_min = np.round(np.log10((10**8.9) / 2.041), 1)
         bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
-        bins = np.linspace(bin_min, bin_max, 10)
+        bins = np.linspace(bin_min, bin_max, 9)
     elif survey == 'resolveb':
         bin_min = np.round(np.log10((10**8.7) / 2.041), 1)
         bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
@@ -433,7 +433,7 @@ def chi_squared(data, model, err_data, inv_corr_mat):
 
     """
     # dot product ((1x9)(9x9))(9x1)
-    first_term = ((data - model) / (err_data)).reshape(1,9)
+    first_term = ((data - model) / (err_data)).reshape(1,len(data))
     third_term = np.transpose(first_term)
     chi_squared = np.dot(np.dot(first_term,inv_corr_mat),third_term)
     return chi_squared[0][0]
@@ -475,13 +475,15 @@ def lnprob(theta, phi, err_tot, inv_corr_mat):
         gals_df = populate_mock(theta, model_init)
         v_sim = 130**3
         mstellar_mock = gals_df.stellar_mass.values 
-        max_model, phi_model, err_tot_model, bins_model, counts_model =\
+        max_model, phi_model, err_tot_model, bins_model, counts_model = \
             diff_smf(mstellar_mock, v_sim, True)
         chi2 = chi_squared(phi, phi_model, err_tot, inv_corr_mat)
         lnp = -chi2 / 2
+
     except Exception:
         lnp = -np.inf
         chi2 = np.inf
+
     return lnp, chi2
 
 def write_to_files(sampler):
