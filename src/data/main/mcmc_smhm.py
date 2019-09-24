@@ -14,6 +14,7 @@ from multiprocessing import Pool
 import pandas as pd
 import numpy as np
 import argparse
+import warnings
 import emcee 
 import math
 
@@ -137,7 +138,7 @@ def diff_smf(mstar_arr, volume, h1_bool):
     if survey == 'eco' or survey == 'resolvea':
         bin_min = np.round(np.log10((10**8.9) / 2.041), 1)
         bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
-        bins = np.linspace(bin_min, bin_max, 9)
+        bins = np.linspace(bin_min, bin_max, 7)
     elif survey == 'resolveb':
         bin_min = np.round(np.log10((10**8.7) / 2.041), 1)
         bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
@@ -151,7 +152,6 @@ def diff_smf(mstar_arr, volume, h1_bool):
     err_tot = err_poiss
 
     phi = counts / (volume * dm)  # not a log quantity
-
     phi = np.log10(phi)
 
     return maxis, phi, err_tot, bins, counts
@@ -471,6 +471,7 @@ def lnprob(theta, phi, err_tot, inv_corr_mat):
     if theta[4] < 0:
         chi2 = -np.inf
         return -np.inf, chi2
+    warnings.simplefilter("error", UserWarning)
     try:
         gals_df = populate_mock(theta, model_init)
         v_sim = 130**3
@@ -480,7 +481,7 @@ def lnprob(theta, phi, err_tot, inv_corr_mat):
         chi2 = chi_squared(phi, phi_model, err_tot, inv_corr_mat)
         lnp = -chi2 / 2
 
-    except Exception:
+    except UserWarning:
         lnp = -np.inf
         chi2 = np.inf
 
@@ -580,7 +581,7 @@ def main(args):
     nproc = args.nproc
     nwalkers = args.nwalkers
     nsteps = args.nsteps
-
+    
     dict_of_paths = cwpaths.cookiecutter_paths()
     path_to_raw = dict_of_paths['raw_dir']
     path_to_proc = dict_of_paths['proc_dir']
