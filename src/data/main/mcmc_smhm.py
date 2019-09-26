@@ -55,10 +55,16 @@ def read_catl(path_to_file, survey):
         eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0, \
             usecols=columns)
 
-        # 6456 galaxies                       
-        catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & \
-            (eco_buff.grpcz.values <= 7000) & (eco_buff.absrmag.values <= -17.33) &\
+        if mf_type == 'smf':
+            # 6456 galaxies                       
+            catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
+                (eco_buff.grpcz.values <= 7000) & 
+                (eco_buff.absrmag.values <= -17.33) &
                 (eco_buff.logmstar.values >= 8.9)]
+        elif mf_type == 'bmf':
+            catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
+                (eco_buff.grpcz.values <= 7000) & 
+                (eco_buff.absrmag.values <= -17.33)] 
 
         volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
         cvar = 0.125
@@ -73,24 +79,35 @@ def read_catl(path_to_file, survey):
             usecols=columns)
 
         if survey == 'resolvea':
-            catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & \
-                (resolve_live18.grpcz.values >= 4500) & \
-                    (resolve_live18.grpcz.values <= 7000) & \
-                        (resolve_live18.absrmag.values <= -17.33) & \
-                            (resolve_live18.logmstar.values >= 8.9)]
-
+            if mf_type == 'smf':
+                catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
+                    (resolve_live18.grpcz.values >= 4500) & 
+                    (resolve_live18.grpcz.values <= 7000) & 
+                    (resolve_live18.absrmag.values <= -17.33) & 
+                    (resolve_live18.logmstar.values >= 8.9)]
+            elif mf_type == 'bmf':
+                catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
+                    (resolve_live18.grpcz.values >= 4500) & 
+                    (resolve_live18.grpcz.values <= 7000) & 
+                    (resolve_live18.absrmag.values <= -17.33)]
 
             volume = 13172.384  # Survey volume without buffer [Mpc/h]^3
             cvar = 0.30
             z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
         
         elif survey == 'resolveb':
-            # 487 - cz, 369 - grpcz
-            catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & \
-                (resolve_live18.grpcz.values >= 4500) & \
-                    (resolve_live18.grpcz.values <= 7000) & \
-                        (resolve_live18.absrmag.values <= -17) & \
-                            (resolve_live18.logmstar.values >= 8.7)]
+            if mf_type == 'smf':
+                # 487 - cz, 369 - grpcz
+                catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
+                    (resolve_live18.grpcz.values >= 4500) & 
+                    (resolve_live18.grpcz.values <= 7000) & 
+                    (resolve_live18.absrmag.values <= -17) & 
+                    (resolve_live18.logmstar.values >= 8.7)]
+            elif mf_type == 'bmf':
+                catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
+                    (resolve_live18.grpcz.values >= 4500) & 
+                    (resolve_live18.grpcz.values <= 7000) & 
+                    (resolve_live18.absrmag.values <= -17)]
 
             volume = 4709.8373  # *2.915 #Survey volume without buffer [Mpc/h]^3
             cvar = 0.58
@@ -142,7 +159,7 @@ def diff_smf(mstar_arr, volume, h1_bool):
     elif survey == 'resolveb':
         bin_min = np.round(np.log10((10**8.7) / 2.041), 1)
         bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
-        bins = np.linspace(bin_min, bin_max, 12)
+        bins = np.linspace(bin_min, bin_max, 7)
     # Unnormalized histogram and bin edges
     counts, edg = np.histogram(logmstar_arr, bins=bins)  # paper used 17 bins
     dm = edg[1] - edg[0]  # Bin width
@@ -156,13 +173,12 @@ def diff_smf(mstar_arr, volume, h1_bool):
 
     return maxis, phi, err_tot, bins, counts
 
-def calc_bary(mstar_arr, mgas_arr):
-    """Calculates baryonic mass of galaxies from survey assuming h^-2 
-    dependence and converting from h=0.7 to h=1"""
-    logmbary = np.log10(((10**mstar_arr) + (10**mgas_arr)) / 2.041)
+def calc_bary(logmstar_arr, logmgas_arr):
+    """Calculates baryonic mass of galaxies from survey"""
+    logmbary = np.log10((10**logmstar_arr) + (10**logmgas_arr))
     return logmbary
 
-def diff_bmf(mass_arr, volume, cvar_err, sim_bool):
+def diff_bmf(mass_arr, volume, h1_bool):
     """
     Calculates differential baryonic mass function
 
@@ -194,19 +210,31 @@ def diff_bmf(mass_arr, volume, cvar_err, sim_bool):
     bins: array
         Array of bin edge values
     """
-    if sim_bool:
-        mass_arr = np.log10(mass_arr)
+    if not h1_bool:
+        # changing from h=0.7 to h=1 assuming h^-2 dependence
+        logmbary_arr = np.log10((10**mass_arr) / 2.041)
+    else:
+        logmbary_arr = np.log10(mass_arr)
+    if survey == 'eco' or survey == 'resolvea':
+        bin_min = np.round(np.log10((10**9.1) / 2.041), 1)
+        bin_max = np.round(np.log10((10**12.0) / 2.041), 1)
+        bins = np.linspace(bin_min, bin_max, 7)
+    elif survey == 'resolveb':
+        bin_min = np.round(np.log10((10**9.4) / 2.041), 1)
+        bin_max = np.round(np.log10((10**12.0) / 2.041), 1)
+        bins = np.linspace(bin_min, bin_max, 7)
     # Unnormalized histogram and bin edges
-    bins = np.linspace(9.4,11.8,9)
-    phi, edg = np.histogram(mass_arr, bins=bins)  # paper used 17 bins
+    counts, edg = np.histogram(logmbary_arr, bins=bins)  # paper used 17 bins
     dm = edg[1] - edg[0]  # Bin width
     maxis = 0.5 * (edg[1:] + edg[:-1])  # Mass axis i.e. bin centers
     # Normalized to volume and bin width
-    err_poiss = np.sqrt(phi) / (volume * dm)
-    err_cvar = cvar_err / (volume * dm)
-    err_tot = np.sqrt(err_cvar**2 + err_poiss**2)
-    phi = phi / (volume * dm)  # not a log quantity
-    return maxis, phi, err_tot, bins
+    err_poiss = np.sqrt(counts) / (volume * dm)
+    err_tot = err_poiss
+
+    phi = counts / (volume * dm)  # not a log quantity
+    phi = np.log10(phi)
+
+    return maxis, phi, err_tot, bins, counts
 
 def jackknife(catl, volume):
     """
@@ -281,20 +309,25 @@ def jackknife(catl, volume):
     catl = catl.reset_index(drop=True)
 
     # Loop over all sub grids, remove one and measure global smf
-    jackknife_smf_phi_arr = []
+    jackknife_phi_arr = []
     for grid_id in range(len(np.unique(catl.grid_id.values))):
         grid_id += 1
         catl_subset = catl.loc[catl.grid_id.values != grid_id]  
         logmstar = catl_subset.logmstar.values
-        maxis, phi, err, bins, counts = diff_smf(logmstar, volume, False)
-        jackknife_smf_phi_arr.append(phi)
+        logmgas = catl_subset.logmgas.values
+        logmbary = calc_bary(logmstar, logmgas)
+        if mf_type == 'smf':
+            maxis, phi, err, bins, counts = diff_smf(logmstar, volume, False)
+        elif mf_type == 'bmf':
+            maxis, phi, err, bins, counts = diff_bmf(logmbary, volume, False)
+        jackknife_phi_arr.append(phi)
 
-    jackknife_smf_phi_arr = np.array(jackknife_smf_phi_arr)
+    jackknife_phi_arr = np.array(jackknife_phi_arr)
 
-    N = len(jackknife_smf_phi_arr)
+    N = len(jackknife_phi_arr)
 
     # Covariance matrix
-    cov_mat = np.cov(jackknife_smf_phi_arr.T, bias=True)*(N-1)
+    cov_mat = np.cov(jackknife_phi_arr.T, bias=True)*(N-1)
     stddev_jk = np.sqrt(cov_mat.diagonal())
 
     # Correlation matrix
@@ -358,13 +391,28 @@ def mcmc(nproc, nwalkers, nsteps, phi, err, corr_mat_inv):
     behroozi10_param_vals = [12.35,10.72,0.44,0.57,0.15]
     ndim = 5
     p0 = behroozi10_param_vals + 0.1*np.random.rand(ndim*nwalkers).\
-        reshape((nwalkers,ndim))
+        reshape((nwalkers, ndim))
 
     with Pool(processes=nproc) as pool:
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, 
-            args=(phi, err, corr_mat_inv),pool=pool)
+            args=(phi, err, corr_mat_inv), pool=pool)
         start = time.time()
-        sampler.run_mcmc(p0, nsteps)
+        for i,result in enumerate(sampler.sample(p0, iterations=nsteps, storechain=False)):
+            position = result[0]
+            chi2 = np.array(result[3])
+            print("Iteration number {0} of {1}".format(i+1,nsteps))
+            chain_fname = open("mcmc_{0}_raw.txt".format(survey), "a")
+            chi2_fname = open("{0}_chi2.txt".format(survey), "a")
+            for k in range(position.shape[0]):
+                chain_fname.write(str(position[k]).strip("[]"))
+                chain_fname.write("\n")
+            chain_fname.write("# New slice\n")
+            for k in range(chi2.shape[0]):
+                chi2_fname.write(str(chi2[k]).strip("[]"))
+                chi2_fname.write("\n")
+            chain_fname.close()
+            chi2_fname.close()
+        # sampler.run_mcmc(p0, nsteps)
         end = time.time()
         multi_time = end - start
         print("Multiprocessing took {0:.1f} seconds".format(multi_time))
@@ -432,7 +480,6 @@ def chi_squared(data, model, err_data, inv_corr_mat):
         Value of chi-squared given a model 
 
     """
-    # dot product ((1x9)(9x9))(9x1)
     first_term = ((data - model) / (err_data)).reshape(1,len(data))
     third_term = np.transpose(first_term)
     chi_squared = np.dot(np.dot(first_term,inv_corr_mat),third_term)
@@ -513,7 +560,7 @@ def write_to_files(sampler):
     with open(fname, 'w') as outfile:
         # outfile.write('# Array shape: {0}\n'.format(sampler.chain.shape))
         for data_slice in data:
-            np.savetxt(outfile, data_slice, fmt='%-7.2f')
+            np.savetxt(outfile, data_slice)
             outfile.write('# New slice\n')
 
     print("\t - Writing flattened chain")
@@ -532,16 +579,6 @@ def write_to_files(sampler):
             outfile.write(str(value))
             outfile.write("\n")
     
-    # nsteps = 5
-    # for i,result in enumerate(sampler.sample(p0, iterations=nsteps, storechain=False)):
-        # position = result[0]
-        # print("Iteration number {0} of {1}".format(i+1,nsteps))
-        # f = open(chain_fname, "a")
-        # for k in range(position.shape[0]):
-        #     f.write(str(position[k]).strip("[]"))
-        #     f.write("\n")
-        # f.close()
-
 def args_parser():
     """
     Parsing arguments passed to script
@@ -557,6 +594,8 @@ def args_parser():
         help='Options: mac/bender')
     parser.add_argument('survey', type=str, \
         help='Options: eco/resolvea/resolveb')
+    parser.add_argument('mf_type', type=str, \
+        help='Options: smf/bmf')
     parser.add_argument('nproc', type=int, nargs='?', 
         help='Number of processes', default=20)
     parser.add_argument('nwalkers', type=int, nargs='?', 
@@ -579,6 +618,7 @@ def main(args):
     global model_init
     global survey
     global path_to_proc
+    global mf_type
     rseed = 12
     np.random.seed(rseed)
 
@@ -587,6 +627,7 @@ def main(args):
     nproc = args.nproc
     nwalkers = args.nwalkers
     nsteps = args.nsteps
+    mf_type = args.mf_type
     
     dict_of_paths = cwpaths.cookiecutter_paths()
     path_to_raw = dict_of_paths['raw_dir']
@@ -608,8 +649,14 @@ def main(args):
 
     print('Retrieving stellar mass from catalog')
     stellar_mass_arr = catl.logmstar.values
-    maxis_data, phi_data, err_data, bins_data, counts_data = \
-        diff_smf(stellar_mass_arr, volume, False)
+    gas_mass_arr = catl.logmgas.values
+    bary_mass_arr = calc_bary(stellar_mass_arr, gas_mass_arr)
+    if mf_type == 'smf':
+        maxis_data, phi_data, err_data, bins_data, counts_data = \
+            diff_smf(stellar_mass_arr, volume, False)
+    elif mf_type == 'bmf':
+        maxis_data, phi_data, err_data, bins_data, counts_data = \
+            diff_bmf(bary_mass_arr, volume, False)
     print('Initial population of halo catalog')
     model_init = halocat_init(halo_catalog, z_median)
 
