@@ -528,10 +528,10 @@ def lnprob(theta, phi, err_tot, inv_corr_mat):
     if theta[3] < 0:
         chi2 = -np.inf
         return -np.inf, chi2       
-    if theta[4] < 0:
+    if theta[4] < 0.1:
         chi2 = -np.inf
         return -np.inf, chi2
-    warnings.simplefilter("error", (UserWarning, RuntimeWarning))
+    warnings.simplefilter("error", (UserWarning, RuntimeWarning, ValueError))
     try:
         gals_df = populate_mock(theta, model_init)
         v_sim = 130**3
@@ -541,7 +541,7 @@ def lnprob(theta, phi, err_tot, inv_corr_mat):
         chi2 = chi_squared(phi, phi_model, err_tot, inv_corr_mat)
         lnp = -chi2 / 2
 
-    except (UserWarning, RuntimeWarning):
+    except (UserWarning, RuntimeWarning, ValueError):
         lnp = -np.inf
         chi2 = np.inf
 
