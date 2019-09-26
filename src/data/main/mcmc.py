@@ -395,7 +395,7 @@ def mcmc(nproc, nwalkers, nsteps, phi, err, corr_mat_inv):
         Result of running emcee 
 
     """
-    behroozi10_param_vals = [12.37727465 ,10.68159579 , 0.57265652,  0.62885552 , 0.03717226]#[12.35,10.72,0.44,0.57,0.15]
+    behroozi10_param_vals = [12.35,10.72,0.44,0.57,0.15]
     ndim = 5
     p0 = behroozi10_param_vals + 0.1*np.random.rand(ndim*nwalkers).\
         reshape((nwalkers, ndim))
@@ -531,19 +531,19 @@ def lnprob(theta, phi, err_tot, inv_corr_mat):
     if theta[4] < 0:
         chi2 = -np.inf
         return -np.inf, chi2
-    # warnings.simplefilter("error", (UserWarning, RuntimeWarning))
-    # try:
-    gals_df = populate_mock(theta, model_init)
-    v_sim = 130**3
-    mstellar_mock = gals_df.stellar_mass.values 
-    max_model, phi_model, err_tot_model, bins_model, counts_model = \
-        diff_bmf(mstellar_mock, v_sim, True)
-    chi2 = chi_squared(phi, phi_model, err_tot, inv_corr_mat)
-    lnp = -chi2 / 2
+    warnings.simplefilter("error", (UserWarning, RuntimeWarning))
+    try:
+        gals_df = populate_mock(theta, model_init)
+        v_sim = 130**3
+        mstellar_mock = gals_df.stellar_mass.values 
+        max_model, phi_model, err_tot_model, bins_model, counts_model = \
+            diff_bmf(mstellar_mock, v_sim, True)
+        chi2 = chi_squared(phi, phi_model, err_tot, inv_corr_mat)
+        lnp = -chi2 / 2
 
-    # except (UserWarning, RuntimeWarning):
-    #     lnp = -np.inf
-    #     chi2 = np.inf
+    except (UserWarning, RuntimeWarning):
+        lnp = -np.inf
+        chi2 = np.inf
 
     return lnp, chi2
 
