@@ -240,7 +240,7 @@ def diff_bmf(mass_arr, volume, h1_bool):
 
     phi = counts / (volume * dm)  # not a log quantity
     phi = np.log10(phi)
-
+    # print(phi)
     return maxis, phi, err_tot, bins, counts
 
 def jackknife(catl, volume):
@@ -341,7 +341,7 @@ def jackknife(catl, volume):
     corr_mat = cov_mat / np.outer(stddev_jk , stddev_jk)
     # Inverse of correlation matrix
     corr_mat_inv = np.linalg.inv(corr_mat)
-
+    print(corr_mat)
     return stddev_jk, corr_mat_inv
 
 def halocat_init(halo_catalog, z_median):
@@ -531,7 +531,7 @@ def lnprob(theta, phi, err_tot, inv_corr_mat):
     if theta[4] < 0.1:
         chi2 = -np.inf
         return -np.inf, chi2
-    warnings.simplefilter("error", (UserWarning, RuntimeWarning, ValueError))
+    warnings.simplefilter("error", (UserWarning, RuntimeWarning))
     try:
         gals_df = populate_mock(theta, model_init)
         v_sim = 130**3
@@ -541,7 +541,7 @@ def lnprob(theta, phi, err_tot, inv_corr_mat):
         chi2 = chi_squared(phi, phi_model, err_tot, inv_corr_mat)
         lnp = -chi2 / 2
 
-    except (UserWarning, RuntimeWarning, ValueError):
+    except (UserWarning, RuntimeWarning):
         lnp = -np.inf
         chi2 = np.inf
 
