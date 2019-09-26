@@ -152,6 +152,7 @@ def diff_smf(mstar_arr, volume, h1_bool):
         logmstar_arr = np.log10((10**mstar_arr) / 2.041)
     else:
         logmstar_arr = np.log10(mstar_arr)
+        print(logmstar_arr.max())
     if survey == 'eco' or survey == 'resolvea':
         bin_min = np.round(np.log10((10**8.9) / 2.041), 1)
         bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
@@ -167,8 +168,9 @@ def diff_smf(mstar_arr, volume, h1_bool):
     # Normalized to volume and bin width
     err_poiss = np.sqrt(counts) / (volume * dm)
     err_tot = err_poiss
-
     phi = counts / (volume * dm)  # not a log quantity
+    # print(phi)
+
     phi = np.log10(phi)
 
     return maxis, phi, err_tot, bins, counts
@@ -213,15 +215,20 @@ def diff_bmf(mass_arr, volume, h1_bool):
     if not h1_bool:
         # changing from h=0.7 to h=1 assuming h^-2 dependence
         logmbary_arr = np.log10((10**mass_arr) / 2.041)
+        # print("Data ", logmbary_arr.min(), logmbary_arr.max())
     else:
         logmbary_arr = np.log10(mass_arr)
+        # print(logmbary_arr.min(), logmbary_arr.max())
     if survey == 'eco' or survey == 'resolvea':
-        bin_min = np.round(np.log10((10**9.1) / 2.041), 1)
-        bin_max = np.round(np.log10((10**12.0) / 2.041), 1)
-        bins = np.linspace(bin_min, bin_max, 7)
-    elif survey == 'resolveb':
         bin_min = np.round(np.log10((10**9.4) / 2.041), 1)
-        bin_max = np.round(np.log10((10**12.0) / 2.041), 1)
+        bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
+        if mf_type == 'smf':
+            bins = np.linspace(bin_min, bin_max, 7)
+        elif mf_type == 'bmf':
+            bins = np.linspace(bin_min, bin_max, 7)
+    elif survey == 'resolveb':
+        bin_min = np.round(np.log10((10**9.1) / 2.041), 1)
+        bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
         bins = np.linspace(bin_min, bin_max, 7)
     # Unnormalized histogram and bin edges
     counts, edg = np.histogram(logmbary_arr, bins=bins)  # paper used 17 bins
@@ -524,17 +531,17 @@ def lnprob(theta, phi, err_tot, inv_corr_mat):
     if theta[4] < 0:
         chi2 = -np.inf
         return -np.inf, chi2
-    warnings.simplefilter("error", UserWarning)
+    warnings.simplefilter("error", (UserWarning, RuntimeWarning))
     try:
         gals_df = populate_mock(theta, model_init)
         v_sim = 130**3
         mstellar_mock = gals_df.stellar_mass.values 
         max_model, phi_model, err_tot_model, bins_model, counts_model = \
-            diff_smf(mstellar_mock, v_sim, True)
+            diff_bmf(mstellar_mock, v_sim, True)
         chi2 = chi_squared(phi, phi_model, err_tot, inv_corr_mat)
         lnp = -chi2 / 2
 
-    except UserWarning:
+    except (UserWarning, RuntimeWarning):
         lnp = -np.inf
         chi2 = np.inf
 
