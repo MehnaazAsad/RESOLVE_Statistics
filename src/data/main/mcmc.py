@@ -152,11 +152,12 @@ def diff_smf(mstar_arr, volume, h1_bool):
         logmstar_arr = np.log10((10**mstar_arr) / 2.041)
     else:
         logmstar_arr = np.log10(mstar_arr)
-        print(logmstar_arr.max())
+
     if survey == 'eco' or survey == 'resolvea':
         bin_min = np.round(np.log10((10**8.9) / 2.041), 1)
         bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
-        bins = np.linspace(bin_min, bin_max, 7)
+        # bins = np.linspace(bin_min, bin_max, 7)
+        bins = np.linspace(bin_min, bin_max, 8)
     elif survey == 'resolveb':
         bin_min = np.round(np.log10((10**8.7) / 2.041), 1)
         bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
@@ -169,7 +170,6 @@ def diff_smf(mstar_arr, volume, h1_bool):
     err_poiss = np.sqrt(counts) / (volume * dm)
     err_tot = err_poiss
     phi = counts / (volume * dm)  # not a log quantity
-    # print(phi)
 
     phi = np.log10(phi)
 
@@ -222,10 +222,7 @@ def diff_bmf(mass_arr, volume, h1_bool):
     if survey == 'eco' or survey == 'resolvea':
         bin_min = np.round(np.log10((10**9.4) / 2.041), 1)
         bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
-        if mf_type == 'smf':
-            bins = np.linspace(bin_min, bin_max, 7)
-        elif mf_type == 'bmf':
-            bins = np.linspace(bin_min, bin_max, 6)
+        bins = np.linspace(bin_min, bin_max, 6)
     elif survey == 'resolveb':
         bin_min = np.round(np.log10((10**9.1) / 2.041), 1)
         bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
@@ -404,22 +401,22 @@ def mcmc(nproc, nwalkers, nsteps, phi, err, corr_mat_inv):
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, 
             args=(phi, err, corr_mat_inv), pool=pool)
         start = time.time()
-        for i,result in enumerate(sampler.sample(p0, iterations=nsteps, storechain=False)):
-            position = result[0]
-            chi2 = np.array(result[3])
-            print("Iteration number {0} of {1}".format(i+1,nsteps))
-            chain_fname = open("mcmc_{0}_raw.txt".format(survey), "a")
-            chi2_fname = open("{0}_chi2.txt".format(survey), "a")
-            for k in range(position.shape[0]):
-                chain_fname.write(str(position[k]).strip("[]"))
-                chain_fname.write("\n")
-            chain_fname.write("# New slice\n")
-            for k in range(chi2.shape[0]):
-                chi2_fname.write(str(chi2[k]).strip("[]"))
-                chi2_fname.write("\n")
-            chain_fname.close()
-            chi2_fname.close()
-        # sampler.run_mcmc(p0, nsteps)
+        # for i,result in enumerate(sampler.sample(p0, iterations=nsteps, storechain=False)):
+        #     position = result[0]
+        #     chi2 = np.array(result[3])
+        #     print("Iteration number {0} of {1}".format(i+1,nsteps))
+        #     chain_fname = open("mcmc_{0}_raw.txt".format(survey), "a")
+        #     chi2_fname = open("{0}_chi2.txt".format(survey), "a")
+        #     for k in range(position.shape[0]):
+        #         chain_fname.write(str(position[k]).strip("[]"))
+        #         chain_fname.write("\n")
+        #     chain_fname.write("# New slice\n")
+        #     for k in range(chi2.shape[0]):
+        #         chi2_fname.write(str(chi2[k]).strip("[]"))
+        #         chi2_fname.write("\n")
+        #     chain_fname.close()
+        #     chi2_fname.close()
+        sampler.run_mcmc(p0, nsteps)
         end = time.time()
         multi_time = end - start
         print("Multiprocessing took {0:.1f} seconds".format(multi_time))
@@ -674,7 +671,7 @@ def main(args):
     print('Running MCMC')
     sampler = mcmc(nproc, nwalkers, nsteps, phi_data, err_data, inv_corr_mat)
     print('Writing to files:')
-    write_to_files(sampler)
+    # write_to_files(sampler)
 
 # Main function
 if __name__ == '__main__':
