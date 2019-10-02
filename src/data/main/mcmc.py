@@ -538,7 +538,8 @@ def lnprob(theta, phi, err_tot, inv_corr_mat):
             diff_smf(mstellar_mock, v_sim, True)
         chi2 = chi_squared(phi, phi_model, err_tot, inv_corr_mat)
         lnp = -chi2 / 2
-
+        if math.isnan(lnp):
+            raise ValueError
     except ValueError:
         print("in except clause")
         lnp = -np.inf
