@@ -534,7 +534,7 @@ def lnprob(theta, phi, err_tot, inv_corr_mat):
         v_sim = 130**3
         mstellar_mock = gals_df.stellar_mass.values 
         max_model, phi_model, err_tot_model, bins_model, counts_model = \
-            diff_bmf(mstellar_mock, v_sim, True)
+            diff_smf(mstellar_mock, v_sim, True)
         chi2 = chi_squared(phi, phi_model, err_tot, inv_corr_mat)
         lnp = -chi2 / 2
 
