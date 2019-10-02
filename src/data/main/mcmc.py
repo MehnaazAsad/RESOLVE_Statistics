@@ -528,19 +528,19 @@ def lnprob(theta, phi, err_tot, inv_corr_mat):
     if theta[4] < 0.1:
         chi2 = -np.inf
         return -np.inf, chi2
-    warnings.simplefilter("error", (UserWarning, RuntimeWarning))
-    try:
-        gals_df = populate_mock(theta, model_init)
-        v_sim = 130**3
-        mstellar_mock = gals_df.stellar_mass.values 
-        max_model, phi_model, err_tot_model, bins_model, counts_model = \
-            diff_smf(mstellar_mock, v_sim, True)
-        chi2 = chi_squared(phi, phi_model, err_tot, inv_corr_mat)
-        lnp = -chi2 / 2
+    # warnings.simplefilter("error", (UserWarning, RuntimeWarning))
+    # try:
+    gals_df = populate_mock(theta, model_init)
+    v_sim = 130**3
+    mstellar_mock = gals_df.stellar_mass.values 
+    max_model, phi_model, err_tot_model, bins_model, counts_model = \
+        diff_smf(mstellar_mock, v_sim, True)
+    chi2 = chi_squared(phi, phi_model, err_tot, inv_corr_mat)
+    lnp = -chi2 / 2
 
-    except (UserWarning, RuntimeWarning):
-        lnp = -np.inf
-        chi2 = np.inf
+    # except (UserWarning, RuntimeWarning, ValueError):
+    #     lnp = -np.inf
+    #     chi2 = np.inf
 
     return lnp, chi2
 
