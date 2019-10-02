@@ -486,8 +486,10 @@ def chi_squared(data, model, err_data, inv_corr_mat):
 
     """
     first_term = ((data - model) / (err_data)).reshape(1,len(data))
+    print("phi_model: ", model)
     third_term = np.transpose(first_term)
     chi_squared = np.dot(np.dot(first_term,inv_corr_mat),third_term)
+    print("chi2: ", chi_squared)
     return chi_squared[0][0]
 
 def lnprob(theta, phi, err_tot, inv_corr_mat):
