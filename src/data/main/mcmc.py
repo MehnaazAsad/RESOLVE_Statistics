@@ -392,7 +392,8 @@ def mcmc(nproc, nwalkers, nsteps, phi, err, corr_mat_inv):
         Result of running emcee 
 
     """
-    behroozi10_param_vals = [12.35,10.72,0.44,0.57,0.15]
+    behroozi10_param_vals = [12.46174527, 10.61989256 , 0.53968546  ,\
+        0.85463982,  0.10656538]#[12.35,10.72,0.44,0.57,0.15]
     ndim = 5
     p0 = behroozi10_param_vals + 0.1*np.random.rand(ndim*nwalkers).\
         reshape((nwalkers, ndim))
@@ -677,4 +678,3 @@ def main(args):
 if __name__ == '__main__':
     args = args_parser()
     main(args)
-         
