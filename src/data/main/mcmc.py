@@ -540,7 +540,7 @@ def lnprob(theta, phi, err_tot, inv_corr_mat):
         lnp = -chi2 / 2
         if math.isnan(lnp):
             raise ValueError
-    except ValueError:
+    except (ValueError, RuntimeWarning):
         print("in except clause")
         lnp = -np.inf
         chi2 = np.inf
