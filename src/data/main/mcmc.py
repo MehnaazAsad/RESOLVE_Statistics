@@ -541,7 +541,7 @@ def lnprob(theta, phi, err_tot, inv_corr_mat):
         chi2 = chi_squared(phi, phi_model, err_tot, inv_corr_mat)
         lnp = -chi2 / 2
 
-    except (UserWarning, RuntimeWarning, ValueError):
+    except ValueError:
         print("in except clause")
         lnp = -np.inf
         chi2 = np.inf
