@@ -156,8 +156,7 @@ def diff_smf(mstar_arr, volume, h1_bool):
     if survey == 'eco' or survey == 'resolvea':
         bin_min = np.round(np.log10((10**8.9) / 2.041), 1)
         bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
-        # bins = np.linspace(bin_min, bin_max, 7)
-        bins = np.linspace(bin_min, bin_max, 8)
+        bins = np.linspace(bin_min, bin_max, 7)
     elif survey == 'resolveb':
         bin_min = np.round(np.log10((10**8.7) / 2.041), 1)
         bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
@@ -222,7 +221,7 @@ def diff_bmf(mass_arr, volume, h1_bool):
     if survey == 'eco' or survey == 'resolvea':
         bin_min = np.round(np.log10((10**9.4) / 2.041), 1)
         bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
-        bins = np.linspace(bin_min, bin_max, 6)
+        bins = np.linspace(bin_min, bin_max, 7)
     elif survey == 'resolveb':
         bin_min = np.round(np.log10((10**9.1) / 2.041), 1)
         bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
@@ -237,7 +236,7 @@ def diff_bmf(mass_arr, volume, h1_bool):
 
     phi = counts / (volume * dm)  # not a log quantity
     phi = np.log10(phi)
-    # print(phi)
+
     return maxis, phi, err_tot, bins, counts
 
 def jackknife(catl, volume):
@@ -392,8 +391,9 @@ def mcmc(nproc, nwalkers, nsteps, phi, err, corr_mat_inv):
         Result of running emcee 
 
     """
-    behroozi10_param_vals = [12.46174527, 10.61989256 , 0.53968546  ,\
-        0.85463982,  0.10656538]#[12.35,10.72,0.44,0.57,0.15]
+    behroozi10_param_vals = [12.35,10.72,0.44,0.57,0.15]
+    # bad_params_for_testing = [12.46174527, 10.61989256 , 0.53968546  ,\
+    #     0.85463982,  0.10656538]
     ndim = 5
     p0 = behroozi10_param_vals + 0.1*np.random.rand(ndim*nwalkers).\
         reshape((nwalkers, ndim))
@@ -402,21 +402,22 @@ def mcmc(nproc, nwalkers, nsteps, phi, err, corr_mat_inv):
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, 
             args=(phi, err, corr_mat_inv), pool=pool)
         start = time.time()
-        for i,result in enumerate(sampler.sample(p0, iterations=nsteps, storechain=False)):
-            # position = result[0]
-            # chi2 = np.array(result[3])
+        for i,result in enumerate(sampler.sample(p0, iterations=nsteps, 
+            storechain=False)):
+            position = result[0]
+            chi2 = np.array(result[3])
             print("Iteration number {0} of {1}".format(i+1,nsteps))
-            # chain_fname = open("mcmc_{0}_raw.txt".format(survey), "a")
-            # chi2_fname = open("{0}_chi2.txt".format(survey), "a")
-            # for k in range(position.shape[0]):
-            #     chain_fname.write(str(position[k]).strip("[]"))
-            #     chain_fname.write("\n")
-            # chain_fname.write("# New slice\n")
-            # for k in range(chi2.shape[0]):
-            #     chi2_fname.write(str(chi2[k]).strip("[]"))
-            #     chi2_fname.write("\n")
-            # chain_fname.close()
-            # chi2_fname.close()
+            chain_fname = open("mcmc_{0}_raw.txt".format(survey), "a")
+            chi2_fname = open("{0}_chi2.txt".format(survey), "a")
+            for k in range(position.shape[0]):
+                chain_fname.write(str(position[k]).strip("[]"))
+                chain_fname.write("\n")
+            chain_fname.write("# New slice\n")
+            for k in range(chi2.shape[0]):
+                chi2_fname.write(str(chi2[k]).strip("[]"))
+                chi2_fname.write("\n")
+            chain_fname.close()
+            chi2_fname.close()
         # sampler.run_mcmc(p0, nsteps)
         end = time.time()
         multi_time = end - start
@@ -454,11 +455,16 @@ def populate_mock(theta, model):
     model.mock.populate()
 
     if survey == 'eco' or survey == 'resolvea':
-        limit = np.round(np.log10((10**8.9) / 2.041), 1)
-        sample_mask = model_init.mock.galaxy_table['stellar_mass'] >= 10**limit
+        if mf_type == 'smf':
+            limit = np.round(np.log10((10**8.9) / 2.041), 1)
+        elif mf_type == 'bmf':
+            limit = np.round(np.log10((10**9.4) / 2.041), 1)
     elif survey == 'resolveb':
-        limit = np.round(np.log10((10**8.7) / 2.041), 1)
-        sample_mask = model_init.mock.galaxy_table['stellar_mass'] >= 10**limit
+        if mf_type == 'smf':
+            limit = np.round(np.log10((10**8.7) / 2.041), 1)
+        elif mf_type == 'bmf':
+            limit = np.round(np.log10((10**9.1) / 2.041), 1)
+    sample_mask = model_init.mock.galaxy_table['stellar_mass'] >= 10**limit
     gals = model.mock.galaxy_table[sample_mask]
     gals_df = gals.to_pandas()
 
@@ -534,14 +540,17 @@ def lnprob(theta, phi, err_tot, inv_corr_mat):
         gals_df = populate_mock(theta, model_init)
         v_sim = 130**3
         mstellar_mock = gals_df.stellar_mass.values 
-        max_model, phi_model, err_tot_model, bins_model, counts_model = \
-            diff_smf(mstellar_mock, v_sim, True)
+        if mf_type == 'smf':
+            max_model, phi_model, err_tot_model, bins_model, counts_model = \
+                diff_smf(mstellar_mock, v_sim, True)
+        elif mf_type == 'bmf':
+            max_model, phi_model, err_tot_model, bins_model, counts_model = \
+                diff_bmf(mstellar_mock, v_sim, True)           
         chi2 = chi_squared(phi, phi_model, err_tot, inv_corr_mat)
         lnp = -chi2 / 2
         if math.isnan(lnp):
             raise ValueError
-    except (ValueError, RuntimeWarning):
-        print("in except clause")
+    except (ValueError, RuntimeWarning, UserWarning):
         lnp = -np.inf
         chi2 = np.inf
 
@@ -673,7 +682,7 @@ def main(args):
 
     print('Running MCMC')
     sampler = mcmc(nproc, nwalkers, nsteps, phi_data, err_data, inv_corr_mat)
-    print('Writing to files:')
+    # print('Writing to files:')
     # write_to_files(sampler)
 
 # Main function
