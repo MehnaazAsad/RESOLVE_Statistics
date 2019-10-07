@@ -676,9 +676,8 @@ def main(args):
     print('Initial population of halo catalog')
     model_init = halocat_init(halo_catalog, z_median)
 
-    if survey == 'eco':
-        print('Jackknife ECO survey')
-        err_data, inv_corr_mat = jackknife(catl, volume)
+    print('Jackknife survey')
+    err_data, inv_corr_mat = jackknife(catl, volume)
 
     print('Running MCMC')
     sampler = mcmc(nproc, nwalkers, nsteps, phi_data, err_data, inv_corr_mat)
