@@ -220,7 +220,11 @@ def diff_bmf(mass_arr, volume, h1_bool):
         # print(logmbary_arr.min(), logmbary_arr.max())
     if survey == 'eco' or survey == 'resolvea':
         bin_min = np.round(np.log10((10**9.4) / 2.041), 1)
-        bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
+        if survey == 'eco':
+            bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
+        elif survey == 'resolvea':
+            # set different so that inv corr mat wasn't nan
+            bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
         bins = np.linspace(bin_min, bin_max, 7)
     elif survey == 'resolveb':
         bin_min = np.round(np.log10((10**9.1) / 2.041), 1)
@@ -262,8 +266,8 @@ def jackknife(catl, volume):
 
     sin_dec_all = np.rad2deg(np.sin(np.deg2rad(dec))) # degrees
 
-    sin_dec_arr = np.linspace(sin_dec_all.min(), sin_dec_all.max(), 8)
-    ra_arr = np.linspace(ra.min(), ra.max(), 8)
+    sin_dec_arr = np.linspace(sin_dec_all.min(), sin_dec_all.max(), 4)
+    ra_arr = np.linspace(ra.min(), ra.max(), 4)
 
     grid_id_arr = []
     gal_id_arr = []
@@ -337,7 +341,8 @@ def jackknife(catl, volume):
     corr_mat = cov_mat / np.outer(stddev_jk , stddev_jk)
     # Inverse of correlation matrix
     corr_mat_inv = np.linalg.inv(corr_mat)
-    # print(corr_mat)
+    # print(corr_mat_inv)
+    # print(stddev_jk)
     return stddev_jk, corr_mat_inv
 
 def halocat_init(halo_catalog, z_median):
