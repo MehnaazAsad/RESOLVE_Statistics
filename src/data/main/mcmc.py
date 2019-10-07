@@ -341,7 +341,8 @@ def jackknife(catl, volume):
     corr_mat = cov_mat / np.outer(stddev_jk , stddev_jk)
     # Inverse of correlation matrix
     corr_mat_inv = np.linalg.inv(corr_mat)
-    # print(corr_mat)
+    print(corr_mat_inv)
+    print(stddev_jk)
     return stddev_jk, corr_mat_inv
 
 def halocat_init(halo_catalog, z_median):
