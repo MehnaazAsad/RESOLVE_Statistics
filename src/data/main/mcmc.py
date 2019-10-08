@@ -224,7 +224,10 @@ def diff_bmf(mass_arr, volume, h1_bool):
         # print(logmbary_arr.min(), logmbary_arr.max())
     if survey == 'eco' or survey == 'resolvea':
         bin_min = np.round(np.log10((10**9.4) / 2.041), 1)
-        bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
+        if survey == 'eco':
+            bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
+        elif survey == 'resolvea':
+            bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
         bins = np.linspace(bin_min, bin_max, 7)
     elif survey == 'resolveb':
         bin_min = np.round(np.log10((10**9.1) / 2.041), 1)
