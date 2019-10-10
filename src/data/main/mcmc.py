@@ -231,7 +231,7 @@ def diff_bmf(mass_arr, volume, h1_bool):
         bins = np.linspace(bin_min, bin_max, 7)
     elif survey == 'resolveb':
         bin_min = np.round(np.log10((10**9.1) / 2.041), 1)
-        bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
+        bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
         bins = np.linspace(bin_min, bin_max, 7)
     # Unnormalized histogram and bin edges
     counts, edg = np.histogram(logmbary_arr, bins=bins)  # paper used 17 bins
