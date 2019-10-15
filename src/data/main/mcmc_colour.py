@@ -1043,7 +1043,7 @@ def args_parser():
     parser.add_argument('nproc', type=int, nargs='?', 
         help='Number of processes', default=20)
     parser.add_argument('nwalkers', type=int, nargs='?', 
-        help='Number of walkers', default=250)
+        help='Number of walkers', default=260)
     parser.add_argument('nsteps', type=int, nargs='?', help='Number of steps',
         default=1000)
     args = parser.parse_args()
