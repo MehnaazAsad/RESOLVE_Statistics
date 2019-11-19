@@ -17,10 +17,11 @@ import argparse
 import warnings
 import emcee 
 import math
+import os
 
 __author__ = '[Mehnaaz Asad]'
 
-def read_catl(path_to_file, survey):
+def read_data_catl(path_to_file, survey):
     """
     Reads survey catalog from file
 
@@ -114,6 +115,75 @@ def read_catl(path_to_file, survey):
             z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
 
     return catl,volume,cvar,z_median
+
+def reading_catls(filename, catl_format='.hdf5'):
+    """
+    Function to read ECO/RESOLVE catalogues.
+
+    Parameters
+    ----------
+    filename: string
+        path and name of the ECO/RESOLVE catalogue to read
+
+    catl_format: string, optional (default = '.hdf5')
+        type of file to read.
+        Options:
+            - '.hdf5': Reads in a catalogue in HDF5 format
+
+    Returns
+    -------
+    mock_pd: pandas DataFrame
+        DataFrame with galaxy/group information
+
+    Examples
+    --------
+    # Specifying `filename`
+    >>> filename = 'ECO_catl.hdf5'
+
+    # Reading in Catalogue
+    >>> mock_pd = reading_catls(filename, format='.hdf5')
+
+    >>> mock_pd.head()
+               x          y         z          vx          vy          vz  \
+    0  10.225435  24.778214  3.148386  356.112457 -318.894409  366.721832
+    1  20.945772  14.500367 -0.237940  168.731766   37.558834  447.436951
+    2  21.335835  14.808488  0.004653  967.204407 -701.556763 -388.055115
+    3  11.102760  21.782235  2.947002  611.646484 -179.032089  113.388794
+    4  13.217764  21.214905  2.113904  120.689598  -63.448833  400.766541
+
+       loghalom  cs_flag  haloid  halo_ngal    ...        cz_nodist      vel_tot  \
+    0    12.170        1  196005          1    ...      2704.599189   602.490355
+    1    11.079        1  197110          1    ...      2552.681697   479.667489
+    2    11.339        1  197131          1    ...      2602.377466  1256.285409
+    3    11.529        1  199056          1    ...      2467.277182   647.318259
+    4    10.642        1  199118          1    ...      2513.381124   423.326770
+
+           vel_tan     vel_pec     ra_orig  groupid    M_group g_ngal  g_galtype  \
+    0   591.399858 -115.068833  215.025116        0  11.702527      1          1
+    1   453.617221  155.924074  182.144134        1  11.524787      4          0
+    2  1192.742240  394.485714  182.213220        1  11.524787      4          0
+    3   633.928896  130.977416  210.441320        2  11.502205      1          1
+    4   421.064495   43.706352  205.525386        3  10.899680      1          1
+
+       halo_rvir
+    0   0.184839
+    1   0.079997
+    2   0.097636
+    3   0.113011
+    4   0.057210
+    """
+    ## Checking if file exists
+    if not os.path.exists(filename):
+        msg = '`filename`: {0} NOT FOUND! Exiting..'.format(filename)
+        raise ValueError(msg)
+    ## Reading file
+    if catl_format=='.hdf5':
+        mock_pd = pd.read_hdf(filename)
+    else:
+        msg = '`catl_format` ({0}) not supported! Exiting...'.format(catl_format)
+        raise ValueError(msg)
+
+    return mock_pd
 
 def diff_smf(mstar_arr, volume, h1_bool):
     """
@@ -348,6 +418,79 @@ def jackknife(catl, volume):
     print(stddev_jk)
     return stddev_jk, corr_mat_inv
 
+def get_err_data(survey, path):
+    """
+    Calculate error in data SMF from mocks
+
+    Parameters
+    ----------
+    survey: string
+        Name of survey
+    path: string
+        Path to mock catalogs
+
+    Returns
+    ---------
+    err_total: array
+        Standard deviation of phi values between all mocks and for all galaxies
+    err_red: array
+        Standard deviation of phi values between all mocks and for red galaxies
+    err_blue: array
+        Standard deviation of phi values between all mocks and for blue galaxies
+    """
+
+    if survey == 'eco':
+        mock_name = 'ECO'
+        num_mocks = 8
+        min_cz = 3000
+        max_cz = 7000
+        mag_limit = -17.33
+        mstar_limit = 8.9
+        volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
+    elif survey == 'resolvea':
+        mock_name = 'A'
+        num_mocks = 59
+        min_cz = 4500
+        max_cz = 7000
+        mag_limit = -17.33
+        mstar_limit = 8.9
+        volume = 13172.384  # Survey volume without buffer [Mpc/h]^3 
+    elif survey == 'resolveb':
+        mock_name = 'B'
+        num_mocks = 104
+        min_cz = 4500
+        max_cz = 7000
+        mag_limit = -17
+        mstar_limit = 8.7
+        volume = 4709.8373  # Survey volume without buffer [Mpc/h]^3
+
+    phi_arr_total = []
+    phi_arr_red = []
+    phi_arr_blue = []
+    for num in range(num_mocks):
+        filename = path + '{0}_cat_{1}_Planck_memb_cat.hdf5'.format(
+            mock_name, num)
+        mock_pd = reading_catls(filename) 
+
+        # Using the same survey definition as in mcmc smf i.e excluding the 
+        # buffer
+        mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & \
+            (mock_pd.cz.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
+            (mock_pd.logmstar.values >= mstar_limit)]
+
+        logmstar_arr = mock_pd.logmstar.values 
+
+        #Measure SMF of mock using diff_smf function
+        max_total, phi_total, err_total, bins_total, counts_total = \
+            diff_smf(logmstar_arr, volume, False)
+        phi_arr_total.append(phi_total)
+
+    phi_arr_total = np.array(phi_arr_total)
+
+    err_total = np.std(phi_arr_total, axis=0)
+
+    return err_total
+
 def halocat_init(halo_catalog, z_median):
     """
     Initial population of halo catalog using populate_mock function
@@ -372,7 +515,7 @@ def halocat_init(halo_catalog, z_median):
 
     return model
 
-def mcmc(nproc, nwalkers, nsteps, phi, err, corr_mat_inv):
+def mcmc(nproc, nwalkers, nsteps, phi, err):
     """
     MCMC analysis
 
@@ -408,7 +551,7 @@ def mcmc(nproc, nwalkers, nsteps, phi, err, corr_mat_inv):
 
     with Pool(processes=nproc) as pool:
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, 
-            args=(phi, err, corr_mat_inv), pool=pool)
+            args=(phi, err), pool=pool)
         start = time.time()
         for i,result in enumerate(sampler.sample(p0, iterations=nsteps, 
             storechain=False)):
@@ -478,7 +621,7 @@ def populate_mock(theta, model):
 
     return gals_df
 
-def chi_squared(data, model, err_data, inv_corr_mat):
+def chi_squared(data, model, err_data):
     """
     Calculates chi squared
 
@@ -499,12 +642,16 @@ def chi_squared(data, model, err_data, inv_corr_mat):
         Value of chi-squared given a model 
 
     """
-    first_term = ((data - model) / (err_data)).reshape(1,len(data))
-    third_term = np.transpose(first_term)
-    chi_squared = np.dot(np.dot(first_term,inv_corr_mat),third_term)
-    return chi_squared[0][0]
+    chi_squared_arr = (data - model)**2 / (err_data**2)
+    chi_squared = np.sum(chi_squared_arr)
 
-def lnprob(theta, phi, err_tot, inv_corr_mat):
+    return chi_squared
+    # first_term = ((data - model) / (err_data)).reshape(1,len(data))
+    # third_term = np.transpose(first_term)
+    # chi_squared = np.dot(np.dot(first_term,inv_corr_mat),third_term)
+    # return chi_squared[0][0]
+
+def lnprob(theta, phi, err_tot):
     """
     Calculates log probability for emcee
 
@@ -554,7 +701,7 @@ def lnprob(theta, phi, err_tot, inv_corr_mat):
         elif mf_type == 'bmf':
             max_model, phi_model, err_tot_model, bins_model, counts_model = \
                 diff_bmf(mstellar_mock, v_sim, True)           
-        chi2 = chi_squared(phi, phi_model, err_tot, inv_corr_mat)
+        chi2 = chi_squared(phi, phi_model, err_tot)
         lnp = -chi2 / 2
         if math.isnan(lnp):
             raise ValueError
@@ -656,6 +803,7 @@ def main(args):
     dict_of_paths = cwpaths.cookiecutter_paths()
     path_to_raw = dict_of_paths['raw_dir']
     path_to_proc = dict_of_paths['proc_dir']
+    path_to_external = dict_of_paths['ext_dir']
 
     if machine == 'bender':
         halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
@@ -668,8 +816,15 @@ def main(args):
     elif survey == 'resolvea' or survey == 'resolveb':
         catl_file = path_to_raw + "RESOLVE_liveJune2018.csv"
 
+    if survey == 'eco':
+        path_to_mocks = path_to_external + 'ECO_mvir_catls/'
+    elif survey == 'resolvea':
+        path_to_mocks = path_to_external + 'RESOLVE_A_mvir_catls/'
+    elif survey == 'resolveb':
+        path_to_mocks = path_to_external + 'RESOLVE_B_mvir_catls/'
+
     print('Reading catalog')
-    catl, volume, cvar, z_median = read_catl(catl_file, survey)
+    catl, volume, cvar, z_median = read_data_catl(catl_file, survey)
 
     print('Retrieving stellar mass from catalog')
     stellar_mass_arr = catl.logmstar.values
@@ -684,11 +839,16 @@ def main(args):
     print('Initial population of halo catalog')
     model_init = halocat_init(halo_catalog, z_median)
 
-    print('Jackknife survey')
-    err_data, inv_corr_mat = jackknife(catl, volume)
+    # print('Jackknife survey')
+    # err_data, inv_corr_mat = jackknife(catl, volume)
+    # print('Running MCMC')
+    # sampler = mcmc(nproc, nwalkers, nsteps, phi_data, err_data, inv_corr_mat)
+
+    print('Measuring error in data from mocks')
+    err_data = get_err_data(survey, path_to_mocks)
 
     print('Running MCMC')
-    sampler = mcmc(nproc, nwalkers, nsteps, phi_data, err_data, inv_corr_mat)
+    sampler = mcmc(nproc, nwalkers, nsteps, phi_data, err_data)
     # print('Writing to files:')
     # write_to_files(sampler)
 
