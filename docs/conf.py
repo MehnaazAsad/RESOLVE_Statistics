@@ -55,8 +55,8 @@ extensions = [
     'sphinx.ext.ifconfig',
               #'sphinx_automodapi.automodapi',
               #'sphinx_automodapi.smart_resolver',
-    'sphinx_astropy.ext.doctest',
-    'sphinx_astropy.ext.changelog_links'
+              #'sphinx_astropy.ext.doctest',
+              #'sphinx_astropy.ext.changelog_links'
     # 'matplotlib.sphinxext.only_directives',
     # 'matplotlib.sphinxext.plot_directive',
  ]
