@@ -82,8 +82,6 @@ reports/figures/
 src/debug
 src/tutorials
 .vscode
-=
-=3.6
 
 # File extensions
 *.DS_Store
