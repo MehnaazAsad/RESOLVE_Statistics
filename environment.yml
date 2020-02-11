@@ -30,4 +30,5 @@ dependencies:
       - sphinx-astropy
       - sphinx_rtd_theme
       - sphinx-automodapi
+      - chainconsumer
       - git+https://github.com/astropy/halotools.git
