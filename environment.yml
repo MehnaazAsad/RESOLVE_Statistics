@@ -17,8 +17,7 @@ dependencies:
     # Removed halotools to install from source instead
     # - halotools
   - seaborn
-  - sphinx>=1.6
-  - sphinx-automodapi
+    #- sphinx>=1.6
   - pip
   - emcee
   - imagemagick
@@ -27,8 +26,8 @@ dependencies:
       - progressbar2
       - cosmo-utils
       - configparser
-      - sphinx-astropy
-      - sphinx_rtd_theme
-      - sphinx-automodapi
+        #- sphinx-astropy
+        #- sphinx_rtd_theme
+        #- sphinx-automodapi
       - chainconsumer
       - git+https://github.com/astropy/halotools.git
