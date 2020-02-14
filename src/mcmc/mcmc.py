@@ -864,7 +864,7 @@ def main(args):
 
     print('Measuring error in data from mocks')
     err_data, inv_corr_mat = get_err_data(survey, path_to_mocks)
-
+    print(err_data, inv_corr_mat)
     print('Running MCMC')
     sampler = mcmc(nproc, nwalkers, nsteps, phi_data, err_data, inv_corr_mat)
     # print('Writing to files:')
