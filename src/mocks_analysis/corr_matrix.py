@@ -421,7 +421,7 @@ plt.show()
 fig2 = plt.figure()
 ax1 = fig2.add_subplot(111)
 cmap = cm.get_cmap('Spectral')
-cax = ax1.matshow(df.corr(method='spearman'), cmap=cmap)
+cax = ax1.matshow(df.corr(), cmap=cmap)
 # Loop over data dimensions and create text annotations.
 # for i in range(df.corr().shape[0]):
 #     for j in range(df.corr().shape[1]):
