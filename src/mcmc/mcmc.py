@@ -469,29 +469,43 @@ def get_err_data(survey, path):
     phi_arr_total = []
     phi_arr_red = []
     phi_arr_blue = []
-    for num in range(num_mocks):
-        filename = path + '{0}_cat_{1}_Planck_memb_cat.hdf5'.format(
-            mock_name, num)
-        mock_pd = reading_catls(filename) 
+    box_id_arr = np.linspace(5001,5008,8)
+    for box in box_id_arr:
+        box = int(box)
+        temp_path = path + '{0}/{1}_m200b_catls/'.format(box, 
+            mock_name) 
+        # print(box)
+        for num in range(num_mocks):
+            filename = temp_path + '{0}_cat_{1}_Planck_memb_cat.hdf5'.\
+                format(mock_name, num)
+            # print(num)
+            mock_pd = reading_catls(filename) 
 
-        # Using the same survey definition as in mcmc smf i.e excluding the 
-        # buffer
-        mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & \
-            (mock_pd.cz.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
-            (mock_pd.logmstar.values >= mstar_limit)]
+            # Using the same survey definition as in mcmc smf i.e excluding the 
+            # buffer
+            mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & \
+                (mock_pd.cz.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
+                (mock_pd.logmstar.values >= mstar_limit)]
 
-        logmstar_arr = mock_pd.logmstar.values 
+            logmstar_arr = mock_pd.logmstar.values 
 
-        #Measure SMF of mock using diff_smf function
-        max_total, phi_total, err_total, bins_total, counts_total = \
-            diff_smf(logmstar_arr, volume, False)
-        phi_arr_total.append(phi_total)
+            #Measure SMF of mock using diff_smf function
+            max_total, phi_total, err_total, bins_total, counts_total = \
+                diff_smf(logmstar_arr, volume, False)
+            phi_arr_total.append(phi_total)
 
     phi_arr_total = np.array(phi_arr_total)
-
-    err_total = np.std(phi_arr_total, axis=0)
-
-    return err_total
+    # np.std(phi_arr_total, axis=0)
+    # Covariance matrix
+    # A variable here is a bin so each row is a bin and each column is one 
+    # observation of all bins.
+    cov_mat = np.cov(phi_arr_total, rowvar=False) # default norm is N-1
+    stddev = np.sqrt(cov_mat.diagonal())
+    # Correlation matrix
+    corr_mat = cov_mat / np.outer(stddev , stddev)
+    # Inverse of correlation matrix
+    corr_mat_inv = np.linalg.inv(corr_mat)
+    return stddev, corr_mat_inv
 
 def halocat_init(halo_catalog, z_median):
     """
@@ -517,7 +531,7 @@ def halocat_init(halo_catalog, z_median):
 
     return model
 
-def mcmc(nproc, nwalkers, nsteps, phi, err):
+def mcmc(nproc, nwalkers, nsteps, phi, err, corr_mat):
     """
     MCMC analysis
 
@@ -553,12 +567,13 @@ def mcmc(nproc, nwalkers, nsteps, phi, err):
 
     with Pool(processes=nproc) as pool:
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, 
-            args=(phi, err), pool=pool)
+            args=(phi, err, corr_mat), pool=pool)
         start = time.time()
         for i,result in enumerate(sampler.sample(p0, iterations=nsteps, 
             storechain=False)):
             position = result[0]
             chi2 = np.array(result[3])
+            # print(chi2)
             print("Iteration number {0} of {1}".format(i+1,nsteps))
             chain_fname = open("mcmc_{0}_raw.txt".format(survey), "a")
             chi2_fname = open("{0}_chi2.txt".format(survey), "a")
@@ -623,7 +638,7 @@ def populate_mock(theta, model):
 
     return gals_df
 
-def chi_squared(data, model, err_data):
+def chi_squared(data, model, err_data, inv_corr_mat):
     """
     Calculates chi squared
 
@@ -644,16 +659,16 @@ def chi_squared(data, model, err_data):
         Value of chi-squared given a model 
 
     """
-    chi_squared_arr = (data - model)**2 / (err_data**2)
-    chi_squared = np.sum(chi_squared_arr)
+    # chi_squared_arr = (data - model)**2 / (err_data**2)
+    # chi_squared = np.sum(chi_squared_arr)
 
-    return chi_squared
-    # first_term = ((data - model) / (err_data)).reshape(1,len(data))
-    # third_term = np.transpose(first_term)
-    # chi_squared = np.dot(np.dot(first_term,inv_corr_mat),third_term)
-    # return chi_squared[0][0]
+    # return chi_squared
+    first_term = ((data - model) / (err_data)).reshape(1,len(data))
+    third_term = np.transpose(first_term)
+    chi_squared = np.dot(np.dot(first_term,inv_corr_mat),third_term)
+    return chi_squared[0][0]
 
-def lnprob(theta, phi, err_tot):
+def lnprob(theta, phi, err_tot, corr_mat):
     """
     Calculates log probability for emcee
 
@@ -703,7 +718,7 @@ def lnprob(theta, phi, err_tot):
         elif mf_type == 'bmf':
             max_model, phi_model, err_tot_model, bins_model, counts_model = \
                 diff_bmf(mstellar_mock, v_sim, True)           
-        chi2 = chi_squared(phi, phi_model, err_tot)
+        chi2 = chi_squared(phi, phi_model, err_tot, corr_mat)
         lnp = -chi2 / 2
         if math.isnan(lnp):
             raise ValueError
@@ -806,6 +821,7 @@ def main(args):
     path_to_raw = dict_of_paths['raw_dir']
     path_to_proc = dict_of_paths['proc_dir']
     path_to_external = dict_of_paths['ext_dir']
+    path_to_data = dict_of_paths['data_dir']
 
     if machine == 'bender':
         halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
@@ -814,12 +830,12 @@ def main(args):
         halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
 
     if survey == 'eco':
-        catl_file = path_to_raw + "eco_all.csv"
+        catl_file = path_to_raw + "eco/eco_all.csv"
     elif survey == 'resolvea' or survey == 'resolveb':
         catl_file = path_to_raw + "RESOLVE_liveJune2018.csv"
 
     if survey == 'eco':
-        path_to_mocks = path_to_external + 'ECO_mvir_catls/'
+        path_to_mocks = path_to_data + 'mocks/m200b/eco/'
     elif survey == 'resolvea':
         path_to_mocks = path_to_external + 'RESOLVE_A_mvir_catls/'
     elif survey == 'resolveb':
@@ -847,10 +863,10 @@ def main(args):
     # sampler = mcmc(nproc, nwalkers, nsteps, phi_data, err_data, inv_corr_mat)
 
     print('Measuring error in data from mocks')
-    err_data = get_err_data(survey, path_to_mocks)
+    err_data, inv_corr_mat = get_err_data(survey, path_to_mocks)
 
     print('Running MCMC')
-    sampler = mcmc(nproc, nwalkers, nsteps, phi_data, err_data)
+    sampler = mcmc(nproc, nwalkers, nsteps, phi_data, err_data, inv_corr_mat)
     # print('Writing to files:')
     # write_to_files(sampler)
 
