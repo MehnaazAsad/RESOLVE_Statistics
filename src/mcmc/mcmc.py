@@ -68,7 +68,7 @@ def read_data_catl(path_to_file, survey):
                 (eco_buff.absrmag.values <= -17.33)] 
 
         volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
-        cvar = 0.125
+        # cvar = 0.125
         z_median = np.median(catl.grpcz.values) / (3 * 10**5)
         
     elif survey == 'resolvea' or survey == 'resolveb':
@@ -93,7 +93,7 @@ def read_data_catl(path_to_file, survey):
                     (resolve_live18.absrmag.values <= -17.33)]
 
             volume = 13172.384  # Survey volume without buffer [Mpc/h]^3
-            cvar = 0.30
+            # cvar = 0.30
             z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
         
         elif survey == 'resolveb':
@@ -111,10 +111,10 @@ def read_data_catl(path_to_file, survey):
                     (resolve_live18.absrmag.values <= -17)]
 
             volume = 4709.8373  # *2.915 #Survey volume without buffer [Mpc/h]^3
-            cvar = 0.58
+            # cvar = 0.58
             z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
 
-    return catl,volume,cvar,z_median
+    return catl,volume,z_median
 
 def reading_catls(filename, catl_format='.hdf5'):
     """
@@ -467,8 +467,6 @@ def get_err_data(survey, path):
         volume = 4709.8373  # Survey volume without buffer [Mpc/h]^3
 
     phi_arr_total = []
-    phi_arr_red = []
-    phi_arr_blue = []
     box_id_arr = np.linspace(5001,5008,8)
     for box in box_id_arr:
         box = int(box)
@@ -531,7 +529,7 @@ def halocat_init(halo_catalog, z_median):
 
     return model
 
-def mcmc(nproc, nwalkers, nsteps, phi, err, corr_mat):
+def mcmc(nproc, nwalkers, nsteps, phi, err, inv_corr_mat):
     """
     MCMC analysis
 
@@ -567,7 +565,7 @@ def mcmc(nproc, nwalkers, nsteps, phi, err, corr_mat):
 
     with Pool(processes=nproc) as pool:
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, 
-            args=(phi, err, corr_mat), pool=pool)
+            args=(phi, err, inv_corr_mat), pool=pool)
         start = time.time()
         for i,result in enumerate(sampler.sample(p0, iterations=nsteps, 
             storechain=False)):
@@ -668,7 +666,7 @@ def chi_squared(data, model, err_data, inv_corr_mat):
     chi_squared = np.dot(np.dot(first_term,inv_corr_mat),third_term)
     return chi_squared[0][0]
 
-def lnprob(theta, phi, err_tot, corr_mat):
+def lnprob(theta, phi, err_tot, inv_corr_mat):
     """
     Calculates log probability for emcee
 
@@ -718,7 +716,7 @@ def lnprob(theta, phi, err_tot, corr_mat):
         elif mf_type == 'bmf':
             max_model, phi_model, err_tot_model, bins_model, counts_model = \
                 diff_bmf(mstellar_mock, v_sim, True)           
-        chi2 = chi_squared(phi, phi_model, err_tot, corr_mat)
+        chi2 = chi_squared(phi, phi_model, err_tot, inv_corr_mat)
         lnp = -chi2 / 2
         if math.isnan(lnp):
             raise ValueError
@@ -842,7 +840,7 @@ def main(args):
         path_to_mocks = path_to_external + 'RESOLVE_B_mvir_catls/'
 
     print('Reading catalog')
-    catl, volume, cvar, z_median = read_data_catl(catl_file, survey)
+    catl, volume, z_median = read_data_catl(catl_file, survey)
 
     print('Retrieving stellar mass from catalog')
     stellar_mass_arr = catl.logmstar.values
@@ -857,18 +855,12 @@ def main(args):
     print('Initial population of halo catalog')
     model_init = halocat_init(halo_catalog, z_median)
 
-    # print('Jackknife survey')
-    # err_data, inv_corr_mat = jackknife(catl, volume)
-    # print('Running MCMC')
-    # sampler = mcmc(nproc, nwalkers, nsteps, phi_data, err_data, inv_corr_mat)
-
     print('Measuring error in data from mocks')
     err_data, inv_corr_mat = get_err_data(survey, path_to_mocks)
     print(err_data, inv_corr_mat)
     print('Running MCMC')
     sampler = mcmc(nproc, nwalkers, nsteps, phi_data, err_data, inv_corr_mat)
-    # print('Writing to files:')
-    # write_to_files(sampler)
+
 
 # Main function
 if __name__ == '__main__':
