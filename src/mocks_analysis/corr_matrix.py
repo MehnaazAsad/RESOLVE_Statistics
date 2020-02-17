@@ -412,7 +412,7 @@ df2 = pd.DataFrame(phi_arr_bmf, columns=columns)
 df2.index += 1
 ###################### Covariance and correlation matrix #######################
 N = len(phi_arr_smf)
-cov_mat_eco = np.cov(phi_arr_smf.T, bias=True)*(N-1)
+cov_mat_eco = np.cov(phi_arr_smf, rowvar=False) # default norm is N-1
 fig1 = plt.figure()
 ax = sns.heatmap(cov_mat_eco, linewidth=0.5)
 plt.gca().invert_xaxis()
