@@ -385,7 +385,7 @@ def get_err_data(survey, path):
 
         #Measure SMF of mock using diff_smf function
         max_total, phi_total, err_total, bins_total, counts_total = \
-            diff_smf(logmstar_arr, volume, 0, False)
+            diff_smf(logmstar_arr, volume, False)
 
         phi_arr_total.append(phi_total)
  
@@ -641,6 +641,7 @@ plt.ylim(sin_dec_all.min(), sin_dec_all.max())
 plt.ylabel(r'\boldmath$\sin(\delta) [deg]$')
 plt.xlabel(r'\boldmath$\alpha [deg]$')
 
+# Plotting all SMFs from jackknife
 fig5 = plt.figure()
 for idx in range(len(jackknife_smf_phi_arr)):
     plt.errorbar(jackknife_smf_max_arr[idx],jackknife_smf_phi_arr[idx],
