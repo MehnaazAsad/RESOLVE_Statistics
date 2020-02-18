@@ -41,9 +41,6 @@ def read_data_catl(path_to_file, survey):
     volume: `float`
         Volume of survey
 
-    cvar: `float`
-        Cosmic variance of survey
-
     z_median: `float`
         Median redshift of survey
     """
@@ -114,7 +111,7 @@ def read_data_catl(path_to_file, survey):
             # cvar = 0.58
             z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
 
-    return catl,volume,z_median
+    return catl, volume, z_median
 
 def reading_catls(filename, catl_format='.hdf5'):
     """
@@ -197,9 +194,6 @@ def diff_smf(mstar_arr, volume, h1_bool):
     volume: float
         Volume of survey or simulation
 
-    cvar_err: float
-        Cosmic variance of survey
-
     h1_bool: boolean
         True if units of masses are h=1, False if units of masses are not h=1
 
@@ -265,9 +259,6 @@ def diff_bmf(mass_arr, volume, h1_bool):
     volume: float
         Volume of survey or simulation
 
-    cvar_err: float
-        Cosmic variance of survey
-
     sim_bool: boolean
         True if masses are from mock
 
@@ -294,10 +285,7 @@ def diff_bmf(mass_arr, volume, h1_bool):
         # print(logmbary_arr.min(), logmbary_arr.max())
     if survey == 'eco' or survey == 'resolvea':
         bin_min = np.round(np.log10((10**9.4) / 2.041), 1)
-        if survey == 'eco':
-            bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
-        elif survey == 'resolvea':
-            bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
+        bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
         bins = np.linspace(bin_min, bin_max, 7)
     elif survey == 'resolveb':
         bin_min = np.round(np.log10((10**9.1) / 2.041), 1)
@@ -315,110 +303,6 @@ def diff_bmf(mass_arr, volume, h1_bool):
     phi = np.log10(phi)
 
     return maxis, phi, err_tot, bins, counts
-
-def jackknife(catl, volume):
-    """
-    Jackknife ECO survey to get data in error and correlation matrix for 
-    chi-squared calculation
-
-    Parameters
-    ----------
-    catl: Pandas DataFrame
-        Survey catalog
-
-    Returns
-    ---------
-    stddev_jk: numpy array
-        Array of sigmas
-    corr_mat_inv: numpy matrix
-        Inverse of correlation matrix
-    """
-
-    ra = catl.radeg.values # degrees
-    dec = catl.dedeg.values # degrees
-
-    sin_dec_all = np.rad2deg(np.sin(np.deg2rad(dec))) # degrees
-
-    sin_dec_arr = np.linspace(sin_dec_all.min(), sin_dec_all.max(), 11)
-    ra_arr = np.linspace(ra.min(), ra.max(), 11)
-
-    grid_id_arr = []
-    gal_id_arr = []
-    grid_id = 1
-    max_bin_id = len(sin_dec_arr)-2 # left edge of max bin
-    for dec_idx in range(len(sin_dec_arr)):
-        for ra_idx in range(len(ra_arr)):
-            try:
-                if dec_idx == max_bin_id and ra_idx == max_bin_id:
-                    catl_subset = catl.loc[(catl.radeg.values >= ra_arr[ra_idx]) &
-                        (catl.radeg.values <= ra_arr[ra_idx+1]) & 
-                        (np.rad2deg(np.sin(np.deg2rad(catl.dedeg.values))) >= 
-                            sin_dec_arr[dec_idx]) & (np.rad2deg(np.sin(np.deg2rad(
-                                catl.dedeg.values))) <= sin_dec_arr[dec_idx+1])] 
-                elif dec_idx == max_bin_id:
-                    catl_subset = catl.loc[(catl.radeg.values >= ra_arr[ra_idx]) &
-                        (catl.radeg.values < ra_arr[ra_idx+1]) & 
-                        (np.rad2deg(np.sin(np.deg2rad(catl.dedeg.values))) >= 
-                            sin_dec_arr[dec_idx]) & (np.rad2deg(np.sin(np.deg2rad(
-                                catl.dedeg.values))) <= sin_dec_arr[dec_idx+1])] 
-                elif ra_idx == max_bin_id:
-                    catl_subset = catl.loc[(catl.radeg.values >= ra_arr[ra_idx]) &
-                        (catl.radeg.values <= ra_arr[ra_idx+1]) & 
-                        (np.rad2deg(np.sin(np.deg2rad(catl.dedeg.values))) >= 
-                            sin_dec_arr[dec_idx]) & (np.rad2deg(np.sin(np.deg2rad(
-                                catl.dedeg.values))) < sin_dec_arr[dec_idx+1])] 
-                else:                
-                    catl_subset = catl.loc[(catl.radeg.values >= ra_arr[ra_idx]) &
-                        (catl.radeg.values < ra_arr[ra_idx+1]) & 
-                        (np.rad2deg(np.sin(np.deg2rad(catl.dedeg.values))) >= 
-                            sin_dec_arr[dec_idx]) & (np.rad2deg(np.sin(np.deg2rad(
-                                catl.dedeg.values))) < sin_dec_arr[dec_idx+1])] 
-                # Append dec and sin  
-                for gal_id in catl_subset.name.values:
-                    gal_id_arr.append(gal_id)
-                for grid_id in [grid_id] * len(catl_subset):
-                    grid_id_arr.append(grid_id)
-                grid_id += 1
-            except IndexError:
-                break
-
-    gal_grid_id_data = {'grid_id': grid_id_arr, 'name': gal_id_arr}
-    df_gal_grid = pd.DataFrame(data=gal_grid_id_data)
-
-    catl = catl.join(df_gal_grid.set_index('name'), on='name')
-    catl = catl.reset_index(drop=True)
-
-    # Loop over all sub grids, remove one and measure global smf
-    jackknife_phi_arr = []
-    for grid_id in range(len(np.unique(catl.grid_id.values))):
-        grid_id += 1
-        catl_subset = catl.loc[catl.grid_id.values != grid_id]  
-        logmstar = catl_subset.logmstar.values
-        logmgas = catl_subset.logmgas.values
-        logmbary = calc_bary(logmstar, logmgas)
-        if mf_type == 'smf':
-            maxis, phi, err, bins, counts = diff_smf(logmstar, volume, False)
-        elif mf_type == 'bmf':
-            maxis, phi, err, bins, counts = diff_bmf(logmbary, volume, False)
-        jackknife_phi_arr.append(phi)
-
-    jackknife_phi_arr = np.array(jackknife_phi_arr)
-
-    N = len(jackknife_phi_arr)
-
-    # Covariance matrix
-    # A variable here is a bin so each row is a bin and each column is one 
-    # observation of all bins. 
-    cov_mat = np.cov(jackknife_phi_arr.T, bias=True)*(N-1)
-    stddev_jk = np.sqrt(cov_mat.diagonal())
-
-    # Correlation matrix
-    corr_mat = cov_mat / np.outer(stddev_jk , stddev_jk)
-    # Inverse of correlation matrix
-    corr_mat_inv = np.linalg.inv(corr_mat)
-    print(corr_mat_inv)
-    print(stddev_jk)
-    return stddev_jk, corr_mat_inv
 
 def get_err_data(survey, path):
     """
@@ -476,20 +360,32 @@ def get_err_data(survey, path):
         for num in range(num_mocks):
             filename = temp_path + '{0}_cat_{1}_Planck_memb_cat.hdf5'.\
                 format(mock_name, num)
-            # print(num)
             mock_pd = reading_catls(filename) 
 
-            # Using the same survey definition as in mcmc smf i.e excluding the 
-            # buffer
-            mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & \
-                (mock_pd.cz.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
-                (mock_pd.logmstar.values >= mstar_limit)]
+            if mf_type == 'smf':
+                # Using the same survey definition as data
+                mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & 
+                    (mock_pd.cz.values <= max_cz) & 
+                    (mock_pd.M_r.values <= mag_limit) &
+                    (mock_pd.logmstar.values >= mstar_limit)]
 
-            logmstar_arr = mock_pd.logmstar.values 
+                logmstar_arr = mock_pd.logmstar.values 
+                #Measure SMF of mock using diff_smf function
+                max_total, phi_total, err_total, bins_total, counts_total = \
+                    diff_smf(logmstar_arr, volume, False)
+            elif mf_type == 'bmf':
+                # Using the same survey definition as data - *no mstar cut*
+                mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & 
+                    (mock_pd.cz.values <= max_cz) & 
+                    (mock_pd.M_r.values <= mag_limit)]
 
-            #Measure SMF of mock using diff_smf function
-            max_total, phi_total, err_total, bins_total, counts_total = \
-                diff_smf(logmstar_arr, volume, False)
+                logmstar_arr = mock_pd.logmstar.values 
+                mhi_arr = mock_pd.mhi.values
+                logmgas_arr = np.log10(1.4 * mhi_arr)
+                logmbary_arr = calc_bary(logmstar_arr, logmgas_arr)
+                max_total, phi_total, err_total, bins_total, counts_total = \
+                    diff_bmf(logmbary_arr, volume, False)
+
             phi_arr_total.append(phi_total)
 
     phi_arr_total = np.array(phi_arr_total)
@@ -844,12 +740,12 @@ def main(args):
 
     print('Retrieving stellar mass from catalog')
     stellar_mass_arr = catl.logmstar.values
-    gas_mass_arr = catl.logmgas.values
-    bary_mass_arr = calc_bary(stellar_mass_arr, gas_mass_arr)
     if mf_type == 'smf':
         maxis_data, phi_data, err_data, bins_data, counts_data = \
             diff_smf(stellar_mass_arr, volume, False)
     elif mf_type == 'bmf':
+        gas_mass_arr = catl.logmgas.values
+        bary_mass_arr = calc_bary(stellar_mass_arr, gas_mass_arr)
         maxis_data, phi_data, err_data, bins_data, counts_data = \
             diff_bmf(bary_mass_arr, volume, False)
     print('Initial population of halo catalog')
