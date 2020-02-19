@@ -1,10 +1,13 @@
 """
-{This script carries out an MCMC analysis to parametrize the SMHM for ECO, 
- RESOLVE-A and RESOLVE-B}
+{This script carries out forward modeling to parametrize the SMHM and BMHM for 
+ ECO, RESOLVE-A and RESOLVE-B}
 """
 
 # Built-in/Generic Imports
+import argparse
+import warnings
 import time
+import os
 
 # Libs
 from halotools.empirical_models import PrebuiltSubhaloModelFactory
@@ -13,11 +16,8 @@ from cosmo_utils.utils import work_paths as cwpaths
 from multiprocessing import Pool
 import pandas as pd
 import numpy as np
-import argparse
-import warnings
 import emcee 
 import math
-import os
 
 __author__ = '[Mehnaaz Asad]'
 
@@ -453,10 +453,9 @@ def mcmc(nproc, nwalkers, nsteps, phi, err, inv_corr_mat):
 
     """
     behroozi10_param_vals = [12.35,10.72,0.44,0.57,0.15]
-    # bad_params_for_testing = [12.46174527, 10.61989256 , 0.53968546  ,\
-    #     0.85463982,  0.10656538]
+    bmf_resume = [12.03949177, 10.65053122, 0.50320246, 0.26588596, 0.22353107]
     ndim = 5
-    p0 = behroozi10_param_vals + 0.1*np.random.rand(ndim*nwalkers).\
+    p0 = bmf_resume + 0.1*np.random.rand(ndim*nwalkers).\
         reshape((nwalkers, ndim))
 
     with Pool(processes=nproc) as pool:
@@ -469,8 +468,8 @@ def mcmc(nproc, nwalkers, nsteps, phi, err, inv_corr_mat):
             chi2 = np.array(result[3])
             # print(chi2)
             print("Iteration number {0} of {1}".format(i+1,nsteps))
-            chain_fname = open("mcmc_{0}_raw.txt".format(survey), "a")
-            chi2_fname = open("{0}_chi2.txt".format(survey), "a")
+            chain_fname = open("mcmc_{0}_raw_bmf986.txt".format(survey), "a")
+            chi2_fname = open("{0}_chi2_bmf986.txt".format(survey), "a")
             for k in range(position.shape[0]):
                 chain_fname.write(str(position[k]).strip("[]"))
                 chain_fname.write("\n")
