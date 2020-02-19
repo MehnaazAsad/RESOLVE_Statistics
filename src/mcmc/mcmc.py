@@ -481,7 +481,7 @@ def mcmc(nproc, nwalkers, nsteps, phi, err, inv_corr_mat):
     emcee_table = emcee_table.dropna(axis='index', how='any').\
         reset_index(drop=True)
 
-    p0 = emcee_table[:250]
+    p0 = emcee_table[-250:]
 
     with Pool(processes=nproc) as pool:
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, 
