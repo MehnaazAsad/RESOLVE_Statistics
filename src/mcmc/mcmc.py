@@ -458,6 +458,31 @@ def mcmc(nproc, nwalkers, nsteps, phi, err, inv_corr_mat):
     p0 = bmf_resume + 0.1*np.random.rand(ndim*nwalkers).\
         reshape((nwalkers, ndim))
 
+    colnames = ['mhalo_c','mstellar_c','lowmass_slope','highmass_slope',\
+        'scatter']
+    
+    emcee_table = pd.read_csv('../../data/processed/bmhm_run3/mcmc_eco_raw.txt', names=colnames, 
+        delim_whitespace=True, header=None)
+
+    emcee_table = emcee_table[emcee_table.mhalo_c.values != '#']
+    emcee_table.mhalo_c = emcee_table.mhalo_c.astype(np.float64)
+    emcee_table.mstellar_c = emcee_table.mstellar_c.astype(np.float64)
+    emcee_table.lowmass_slope = emcee_table.lowmass_slope.astype(np.float64)
+
+    # Cases where last parameter was a NaN and its value was being written to 
+    # the first element of the next line followed by 4 NaNs for the other 
+    # parameters
+    for idx,row in enumerate(emcee_table.values):
+        if np.isnan(row)[4] == True and np.isnan(row)[3] == False:
+            scatter_val = emcee_table.values[idx+1][0]
+            row[4] = scatter_val
+    
+    # Cases where rows of NANs appear
+    emcee_table = emcee_table.dropna(axis='index', how='any').\
+        reset_index(drop=True)
+
+    p0 = emcee_table[:250]
+
     with Pool(processes=nproc) as pool:
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, 
             args=(phi, err, inv_corr_mat), pool=pool)
