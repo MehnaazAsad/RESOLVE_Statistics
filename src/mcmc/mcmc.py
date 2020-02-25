@@ -57,8 +57,7 @@ def read_data_catl(path_to_file, survey):
             # 6456 galaxies                       
             catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
                 (eco_buff.grpcz.values <= 7000) & 
-                (eco_buff.absrmag.values <= -17.33) &
-                (eco_buff.logmstar.values >= 8.9)]
+                (eco_buff.absrmag.values <= -17.33)]
         elif mf_type == 'bmf':
             catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
                 (eco_buff.grpcz.values <= 7000) & 
@@ -81,8 +80,7 @@ def read_data_catl(path_to_file, survey):
                 catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
                     (resolve_live18.grpcz.values >= 4500) & 
                     (resolve_live18.grpcz.values <= 7000) & 
-                    (resolve_live18.absrmag.values <= -17.33) & 
-                    (resolve_live18.logmstar.values >= 8.9)]
+                    (resolve_live18.absrmag.values <= -17.33)]
             elif mf_type == 'bmf':
                 catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
                     (resolve_live18.grpcz.values >= 4500) & 
@@ -99,8 +97,7 @@ def read_data_catl(path_to_file, survey):
                 catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
                     (resolve_live18.grpcz.values >= 4500) & 
                     (resolve_live18.grpcz.values <= 7000) & 
-                    (resolve_live18.absrmag.values <= -17) & 
-                    (resolve_live18.logmstar.values >= 8.7)]
+                    (resolve_live18.absrmag.values <= -17)]
             elif mf_type == 'bmf':
                 catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
                     (resolve_live18.grpcz.values >= 4500) & 
@@ -216,7 +213,6 @@ def diff_smf(mstar_arr, volume, h1_bool):
         logmstar_arr = np.log10((10**mstar_arr) / 2.041)
     else:
         logmstar_arr = np.log10(mstar_arr)
-
     if survey == 'eco' or survey == 'resolvea':
         bin_min = np.round(np.log10((10**8.9) / 2.041), 1)
         if survey == 'eco':
@@ -772,6 +768,7 @@ def main(args):
         bary_mass_arr = calc_bary(stellar_mass_arr, gas_mass_arr)
         maxis_data, phi_data, err_data, bins_data, counts_data = \
             diff_bmf(bary_mass_arr, volume, False)
+    
     print('Initial population of halo catalog')
     model_init = halocat_init(halo_catalog, z_median)
 
@@ -780,7 +777,7 @@ def main(args):
     print(err_data, inv_corr_mat)
     print('Running MCMC')
     sampler = mcmc(nproc, nwalkers, nsteps, phi_data, err_data, inv_corr_mat)
-
+    
 
 # Main function
 if __name__ == '__main__':
