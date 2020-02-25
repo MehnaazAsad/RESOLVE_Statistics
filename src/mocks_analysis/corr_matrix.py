@@ -363,7 +363,7 @@ box_id_arr = np.linspace(5001,5008,8)
 for box in box_id_arr:
     box = int(box)
     path_to_mocks = '/Users/asadm2/Documents/Grad_School/Research/'\
-        'Repositories/resolve_statistics/data/external/m200b/eco/{0}/'\
+        'Repositories/resolve_statistics/data/mocks/m200b/eco/{0}/'\
         'ECO_m200b_catls/'.format(box) 
     for num in range(8):
         filename = path_to_mocks + 'ECO_cat_{0}_Planck_memb_cat.hdf5'.format(num)
