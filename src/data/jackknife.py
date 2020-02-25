@@ -242,7 +242,7 @@ def fixed_dec_method():
 
 def diff_smf(mstar_arr, volume, h1_bool):
     """
-    Calculates differential stellar mass function
+    Calculates differential stellar mass function in units of h=1.0
 
     Parameters
     ----------
@@ -270,27 +270,35 @@ def diff_smf(mstar_arr, volume, h1_bool):
         Array of bin edge values
     """
     if not h1_bool:
-        # changing from h=0.7 to h=1
-        logmstar_arr = np.log10((10**mstar_arr) / 2.041)        
+        # changing from h=0.7 to h=1 assuming h^-2 dependence
+        logmstar_arr = np.log10((10**mstar_arr) / 2.041)
     else:
-        logmstar_arr = mstar_arr
+        logmstar_arr = np.log10(mstar_arr)
+
     if survey == 'eco' or survey == 'resolvea':
         bin_min = np.round(np.log10((10**8.9) / 2.041), 1)
-        bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
-        bins = np.linspace(bin_min, bin_max, 12)
+        if survey == 'eco':
+            bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
+        elif survey == 'resolvea':
+            # different to avoid nan in inverse corr mat
+            bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
+        bins = np.linspace(bin_min, bin_max, 7)
     elif survey == 'resolveb':
         bin_min = np.round(np.log10((10**8.7) / 2.041), 1)
         bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
-        bins = np.linspace(bin_min, bin_max, 12)   
-
+        bins = np.linspace(bin_min, bin_max, 7)
     # Unnormalized histogram and bin edges
     counts, edg = np.histogram(logmstar_arr, bins=bins)  # paper used 17 bins
     dm = edg[1] - edg[0]  # Bin width
     maxis = 0.5 * (edg[1:] + edg[:-1])  # Mass axis i.e. bin centers
     # Normalized to volume and bin width
     err_poiss = np.sqrt(counts) / (volume * dm)
+    err_tot = err_poiss
     phi = counts / (volume * dm)  # not a log quantity
-    return maxis, phi, err_poiss, bins, counts     
+
+    phi = np.log10(phi)
+
+    return maxis, phi, err_tot, bins, counts    
 
 def get_err_data(survey, path):
     """
@@ -405,9 +413,9 @@ def measure_cov_mat(mf_array):
 def measure_corr_mat(mf_array):
 
     if mf_type == 'smf':
-        columns = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11'] 
+        columns = ['1', '2', '3', '4', '5', '6', '7'] 
     elif mf_type == 'bmf':
-        columns = ['1', '2', '3', '4', '5', '6', '7', '8']
+        columns = ['1', '2', '3', '4', '5', '6', '7']
 
     df = pd.DataFrame(mf_array, columns=columns)
     df.index += 1
@@ -448,14 +456,15 @@ path_to_proc = dict_of_paths['proc_dir']
 path_to_interim = dict_of_paths['int_dir']
 path_to_figures = dict_of_paths['plot_dir']
 path_to_external = dict_of_paths['ext_dir']
+path_to_data = dict_of_paths['data_dir']
 
 global survey
 global mf_type
-survey = 'resolvea'
+survey = 'eco'
 mf_type = 'smf'
 
 if survey == 'eco':
-    path_to_mocks = path_to_external + 'ECO_mvir_catls/'
+    path_to_mocks = path_to_data + 'mocks/mvir/ECO_mvir_catls/'
     catl_file = path_to_raw + "eco/eco_all.csv"
 elif survey == 'resolvea':
     path_to_mocks = path_to_external + 'RESOLVE_A_mvir_catls/'
@@ -471,8 +480,8 @@ dec = catl.dedeg.values # degrees
 
 sin_dec_all = np.rad2deg(np.sin(np.deg2rad(dec))) # degrees
 
-sin_dec_arr = np.linspace(sin_dec_all.min(), sin_dec_all.max(), 3)
-ra_arr = np.linspace(ra.min(), ra.max(), 3)
+sin_dec_arr = np.linspace(sin_dec_all.min(), sin_dec_all.max(), 7)
+ra_arr = np.linspace(ra.min(), ra.max(), 7)
 
 area_boxes = []
 for dec_idx in range(len(sin_dec_arr)):
@@ -593,15 +602,16 @@ stddev = np.sqrt(cov_mat.diagonal())
 corr_mat = cov_mat / np.outer(stddev , stddev)
 
 corr_mat_inv = np.linalg.inv(corr_mat)
+
 fig3 = plt.figure()
 ax1 = fig3.add_subplot(111)
-cmap = cm.get_cmap('rainbow')
+cmap = cm.get_cmap('Spectral')
 cax = ax1.matshow(corr_mat, cmap=cmap)
 # Loop over data dimensions and create text annotations.
-for i in range(corr_mat.shape[0]):
-    for j in range(corr_mat.shape[1]):
-        text = ax1.text(j, i, np.round(corr_mat[i, j],2),
-                    ha="center", va="center", color="w", size='10')
+# for i in range(corr_mat.shape[0]):
+#     for j in range(corr_mat.shape[1]):
+#         text = ax1.text(j, i, np.round(corr_mat[i, j],2),
+#                     ha="center", va="center", color="w", size='10')
 plt.gca().invert_yaxis() 
 plt.gca().xaxis.tick_bottom()
 fig3.colorbar(cax)
@@ -649,7 +659,6 @@ for idx in range(len(jackknife_smf_phi_arr)):
         color=colours[idx],fmt='-s',ecolor=colours[idx])
 plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$')
 plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{-3} \right]$')
-plt.yscale('log')
 
 if survey == 'eco':
     if mf_type == 'smf':
