@@ -45,9 +45,11 @@ def read_chi2(path_to_file):
     chi2: array
         Array of reshaped chi^2 values to match chain values
     """
+    ver = 2.0
     chi2_df = pd.read_csv(path_to_file,header=None,names=['chisquared'])
 
-    if mf_type == 'smf' and survey == 'eco':
+    # Applies to runs prior to run 5?
+    if mf_type == 'smf' and survey == 'eco' and ver==1.0:
         # Needed to reshape since flattened along wrong axis, 
         # didn't correspond to chain
         test_reshape = chi2_df.chisquared.values.reshape((1000,250))
@@ -72,10 +74,11 @@ def read_mcmc(path_to_file):
     emcee_table: pandas dataframe
         Dataframe of mcmc chain values with NANs removed
     """
+    ver = 2.0
     colnames = ['mhalo_c','mstellar_c','lowmass_slope','highmass_slope',\
         'scatter']
     
-    if mf_type == 'smf' and survey == 'eco':
+    if mf_type == 'smf' and survey == 'eco' and ver==1.0:
         emcee_table = pd.read_csv(path_to_file,names=colnames,sep='\s+',\
             dtype=np.float64)
 
@@ -136,8 +139,7 @@ def read_data_catl(path_to_file, survey):
             # 6456 galaxies                       
             catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
                 (eco_buff.grpcz.values <= 7000) & 
-                (eco_buff.absrmag.values <= -17.33) &
-                (eco_buff.logmstar.values >= 8.9)]
+                (eco_buff.absrmag.values <= -17.33)]
         elif mf_type == 'bmf':
             catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
                 (eco_buff.grpcz.values <= 7000) & 
@@ -158,11 +160,6 @@ def read_data_catl(path_to_file, survey):
                     (resolve_live18.grpcz.values <= 7000) & 
                     (resolve_live18.absrmag.values <= -17.33) & 
                     (resolve_live18.logmstar.values >= 8.9)]
-                # catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
-                #     (resolve_live18.grpcz.values >= 4500) & 
-                #     (resolve_live18.grpcz.values <= 7000) & 
-                #     (resolve_live18.absrmag.values <= -17.33) & 
-                #     (resolve_live18.logmstar.values >= 8.9)]
             elif mf_type == 'bmf':
                 catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
                     (resolve_live18.grpcz.values >= 4500) & 
@@ -190,7 +187,6 @@ def read_data_catl(path_to_file, survey):
             volume = 4709.8373  # *2.915 #Survey volume without buffer [Mpc/h]^3
             cvar = 0.58
             z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
-
     return catl,volume,cvar,z_median
 
 def read_mock_catl(filename, catl_format='.hdf5'):
@@ -304,7 +300,7 @@ def calc_bary(logmstar_arr, logmgas_arr):
 
 def diff_smf(mstar_arr, volume, h1_bool):
     """
-    Calculates differential stellar mass function
+    Calculates differential stellar mass function in units of h=1.0
 
     Parameters
     ----------
@@ -336,6 +332,7 @@ def diff_smf(mstar_arr, volume, h1_bool):
         logmstar_arr = np.log10((10**mstar_arr) / 2.041)
     else:
         logmstar_arr = np.log10(mstar_arr)
+    
     if survey == 'eco' or survey == 'resolvea':
         bin_min = np.round(np.log10((10**8.9) / 2.041), 1)
         if survey == 'eco':
@@ -347,7 +344,7 @@ def diff_smf(mstar_arr, volume, h1_bool):
     elif survey == 'resolveb':
         bin_min = np.round(np.log10((10**8.7) / 2.041), 1)
         bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
-        bins = np.linspace(bin_min, bin_max, 7) 
+        bins = np.linspace(bin_min, bin_max, 7)
     # Unnormalized histogram and bin edges
     counts, edg = np.histogram(logmstar_arr, bins=bins)  # paper used 17 bins
     dm = edg[1] - edg[0]  # Bin width
@@ -355,8 +352,8 @@ def diff_smf(mstar_arr, volume, h1_bool):
     # Normalized to volume and bin width
     err_poiss = np.sqrt(counts) / (volume * dm)
     err_tot = err_poiss
-
     phi = counts / (volume * dm)  # not a log quantity
+
     phi = np.log10(phi)
 
     return maxis, phi, err_tot, bins, counts
@@ -372,9 +369,6 @@ def diff_bmf(mass_arr, volume, h1_bool):
 
     volume: float
         Volume of survey or simulation
-
-    cvar_err: float
-        Cosmic variance of survey
 
     sim_bool: boolean
         True if masses are from mock
@@ -396,23 +390,21 @@ def diff_bmf(mass_arr, volume, h1_bool):
     if not h1_bool:
         # changing from h=0.7 to h=1 assuming h^-2 dependence
         logmbary_arr = np.log10((10**mass_arr) / 2.041)
-        # print("Data ", logmbary_arr.min(), logmbary_arr.max())
     else:
         logmbary_arr = np.log10(mass_arr)
-        # print(logmbary_arr.min(), logmbary_arr.max())
+
     if survey == 'eco' or survey == 'resolvea':
         bin_min = np.round(np.log10((10**9.4) / 2.041), 1)
-        if survey == 'eco':
-            bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
-        elif survey == 'resolvea':
-            bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
+        bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
         bins = np.linspace(bin_min, bin_max, 7)
     elif survey == 'resolveb':
         bin_min = np.round(np.log10((10**9.1) / 2.041), 1)
         bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
         bins = np.linspace(bin_min, bin_max, 7)
+
     # Unnormalized histogram and bin edges
     counts, edg = np.histogram(logmbary_arr, bins=bins)  # paper used 17 bins
+    print(sum(counts))
     dm = edg[1] - edg[0]  # Bin width
     maxis = 0.5 * (edg[1:] + edg[:-1])  # Mass axis i.e. bin centers
     # Normalized to volume and bin width
@@ -493,7 +485,8 @@ def get_centrals_data(catl):
     
     if mf_type == 'smf':
         cen_gals = np.log10(10**catl.logmstar.loc[catl.fc.values == 1]/2.041)
-        cen_halos = np.log10(10**catl.groupmass_s.loc[catl.fc.values == 1]/2.041)
+        cen_halos = np.log10(10**catl.logmh_s.loc[catl.fc.values == 1]/2.041)
+        # cen_halos = np.log10(10**catl.groupmass_s.loc[catl.fc.values == 1]/2.041)
     elif mf_type == 'bmf':
         logmstar = catl.logmstar.loc[catl.fc.values == 1]
         logmgas = catl.logmgas.loc[catl.fc.values == 1]
@@ -696,135 +689,94 @@ def get_best_fit_model(best_fit_params):
     return max_model, phi_model, err_tot_model, counts_model, cen_gals, \
         cen_halos
 
-def jackknife(catl, volume):
+def get_err_data(survey, path):
     """
-    Jackknife survey to get data in error and correlation matrix for 
-    chi-squared calculation
+    Calculate error in data SMF from mocks
 
     Parameters
     ----------
-    catl: Pandas DataFrame
-        Survey catalog
+    survey: string
+        Name of survey
+    path: string
+        Path to mock catalogs
 
     Returns
     ---------
-    stddev_jk: numpy array
-        Array of sigmas
-    corr_mat_inv: numpy matrix
-        Inverse of correlation matrix
+    err_total: array
+        Standard deviation of phi values between all mocks and for all galaxies
+    err_red: array
+        Standard deviation of phi values between all mocks and for red galaxies
+    err_blue: array
+        Standard deviation of phi values between all mocks and for blue galaxies
     """
 
-    ra = catl.radeg.values # degrees
-    dec = catl.dedeg.values # degrees
+    if survey == 'eco':
+        mock_name = 'ECO'
+        num_mocks = 8
+        min_cz = 3000
+        max_cz = 7000
+        mag_limit = -17.33
+        mstar_limit = 8.9
+        volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
+    elif survey == 'resolvea':
+        mock_name = 'A'
+        num_mocks = 59
+        min_cz = 4500
+        max_cz = 7000
+        mag_limit = -17.33
+        mstar_limit = 8.9
+        volume = 13172.384  # Survey volume without buffer [Mpc/h]^3 
+    elif survey == 'resolveb':
+        mock_name = 'B'
+        num_mocks = 104
+        min_cz = 4500
+        max_cz = 7000
+        mag_limit = -17
+        mstar_limit = 8.7
+        volume = 4709.8373  # Survey volume without buffer [Mpc/h]^3
 
-    sin_dec_all = np.rad2deg(np.sin(np.deg2rad(dec))) # degrees
+    phi_arr_total = []
+    box_id_arr = np.linspace(5001,5008,8)
+    for box in box_id_arr:
+        box = int(box)
+        temp_path = path + '{0}/{1}_m200b_catls/'.format(box, 
+            mock_name) 
+        # print(box)
+        for num in range(num_mocks):
+            filename = temp_path + '{0}_cat_{1}_Planck_memb_cat.hdf5'.\
+                format(mock_name, num)
+            mock_pd = read_mock_catl(filename) 
 
-    sin_dec_arr = np.linspace(sin_dec_all.min(), sin_dec_all.max(), 11)
-    ra_arr = np.linspace(ra.min(), ra.max(), 11)
+            if mf_type == 'smf':
+                # Using the same survey definition as data
+                mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & 
+                    (mock_pd.cz.values <= max_cz) & 
+                    (mock_pd.M_r.values <= mag_limit) &
+                    (mock_pd.logmstar.values >= mstar_limit)]
 
-    grid_id_arr = []
-    gal_id_arr = []
-    grid_id = 1
-    max_bin_id = len(sin_dec_arr)-2 # left edge of max bin
-    for dec_idx in range(len(sin_dec_arr)):
-        for ra_idx in range(len(ra_arr)):
-            try:
-                if dec_idx == max_bin_id and ra_idx == max_bin_id:
-                    catl_subset = catl.loc[(catl.radeg.values >= ra_arr[ra_idx]) &
-                        (catl.radeg.values <= ra_arr[ra_idx+1]) & 
-                        (np.rad2deg(np.sin(np.deg2rad(catl.dedeg.values))) >= 
-                            sin_dec_arr[dec_idx]) & (np.rad2deg(np.sin(np.deg2rad(
-                                catl.dedeg.values))) <= sin_dec_arr[dec_idx+1])] 
-                elif dec_idx == max_bin_id:
-                    catl_subset = catl.loc[(catl.radeg.values >= ra_arr[ra_idx]) &
-                        (catl.radeg.values < ra_arr[ra_idx+1]) & 
-                        (np.rad2deg(np.sin(np.deg2rad(catl.dedeg.values))) >= 
-                            sin_dec_arr[dec_idx]) & (np.rad2deg(np.sin(np.deg2rad(
-                                catl.dedeg.values))) <= sin_dec_arr[dec_idx+1])] 
-                elif ra_idx == max_bin_id:
-                    catl_subset = catl.loc[(catl.radeg.values >= ra_arr[ra_idx]) &
-                        (catl.radeg.values <= ra_arr[ra_idx+1]) & 
-                        (np.rad2deg(np.sin(np.deg2rad(catl.dedeg.values))) >= 
-                            sin_dec_arr[dec_idx]) & (np.rad2deg(np.sin(np.deg2rad(
-                                catl.dedeg.values))) < sin_dec_arr[dec_idx+1])] 
-                else:                
-                    catl_subset = catl.loc[(catl.radeg.values >= ra_arr[ra_idx]) &
-                        (catl.radeg.values < ra_arr[ra_idx+1]) & 
-                        (np.rad2deg(np.sin(np.deg2rad(catl.dedeg.values))) >= 
-                            sin_dec_arr[dec_idx]) & (np.rad2deg(np.sin(np.deg2rad(
-                                catl.dedeg.values))) < sin_dec_arr[dec_idx+1])] 
-                # Append dec and sin  
-                for gal_id in catl_subset.name.values:
-                    gal_id_arr.append(gal_id)
-                for grid_id in [grid_id] * len(catl_subset):
-                    grid_id_arr.append(grid_id)
-                grid_id += 1
-            except IndexError:
-                break
+                logmstar_arr = mock_pd.logmstar.values 
+                #Measure SMF of mock using diff_smf function
+                max_total, phi_total, err_total, bins_total, counts_total = \
+                    diff_smf(logmstar_arr, volume, False)
+            elif mf_type == 'bmf':
+                # Using the same survey definition as data - *no mstar cut*
+                mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & 
+                    (mock_pd.cz.values <= max_cz) & 
+                    (mock_pd.M_r.values <= mag_limit)]
 
-    gal_grid_id_data = {'grid_id': grid_id_arr, 'name': gal_id_arr}
-    df_gal_grid = pd.DataFrame(data=gal_grid_id_data)
+                logmstar_arr = mock_pd.logmstar.values 
+                mhi_arr = mock_pd.mhi.values
+                logmgas_arr = np.log10(1.4 * mhi_arr)
+                logmbary_arr = calc_bary(logmstar_arr, logmgas_arr)
+                max_total, phi_total, err_total, bins_total, counts_total = \
+                    diff_bmf(logmbary_arr, volume, False)
 
-    catl = catl.join(df_gal_grid.set_index('name'), on='name')
-    catl = catl.reset_index(drop=True)
+            phi_arr_total.append(phi_total)
 
-    # Loop over all sub grids, remove one and measure global smf
-    jackknife_phi_arr = []
-    for grid_id in range(len(np.unique(catl.grid_id.values))):
-        grid_id += 1
-        catl_subset = catl.loc[catl.grid_id.values != grid_id]  
-        logmstar = catl_subset.logmstar.values
-        logmgas = catl_subset.logmgas.values
-        logmbary = calc_bary(logmstar, logmgas)
-        if mf_type == 'smf':
-            maxis, phi, err, bins, counts = diff_smf(logmstar, volume, False)
-        elif mf_type == 'bmf':
-            maxis, phi, err, bins, counts = diff_bmf(logmbary, volume, False)
-        jackknife_phi_arr.append(phi)
+    phi_arr_total = np.array(phi_arr_total)
+    err_arr = np.std(phi_arr_total, axis=0)
 
-    jackknife_phi_arr = np.array(jackknife_phi_arr)
-
-    N = len(jackknife_phi_arr)
-
-    # Covariance matrix
-    cov_mat_xmf = np.cov(jackknife_phi_arr.T, bias=True)*(N-1)
-    stddev_jk_xmf = np.sqrt(cov_mat_xmf.diagonal())
-
-    jackknife_mass_arr = []
-    for grid_id in range(len(np.unique(catl.grid_id.values))):
-        grid_id += 1
-        catl_subset = catl.loc[catl.grid_id.values != grid_id]  
-
-        if mf_type == 'smf':
-            # Both masses below in h=1.0
-            cen_gal_mass, cen_halo_mass = get_centrals_data(catl_subset)
-            x_smhm,y_smhm,y_std_smhm,y_std_err_smhm = \
-                Stats_one_arr(cen_halo_mass, cen_gal_mass, base=0.4, 
-                bin_statval='center')
-            # Case where one set of measurements of mean stellar mass was one 
-            # element smaller than the rest of the sets
-            if survey == 'resolvea':
-                if len(y_smhm) != 8:
-                    y_smhm = np.append(y_smhm, 11.320157)
-            jackknife_mass_arr.append(y_smhm)
-
-        elif mf_type == 'bmf':
-            # Both masses below in h=1.0
-            cen_bary_mass, cen_halo_mass = get_centrals_data(catl_subset)
-            x_bmhm,y_bmhm,y_std_bmhm,y_std_err_bmhm = \
-                Stats_one_arr(cen_halo_mass, cen_bary_mass, base=0.4, 
-                bin_statval='center')
-            jackknife_mass_arr.append(y_bmhm)
-
-    jackknife_mass_arr = np.array(jackknife_mass_arr)
-
-    N = len(jackknife_mass_arr)
-
-    # Covariance matrix
-    cov_mat_xmhm = np.cov(jackknife_mass_arr.T, bias=True)*(N-1)
-    stddev_jk_xmhm = np.sqrt(cov_mat_xmhm.diagonal())
-
-    return stddev_jk_xmf, stddev_jk_xmhm
+    return err_arr
 
 def get_xmhm_mocks(survey, path, mf_type):
     """
@@ -1281,11 +1233,12 @@ def main(args):
     machine = args.machine
     nproc = args.nproc
     mf_type = args.mf_type
+    ver = 2.0 # No more .dat
 
     dict_of_paths = cwpaths.cookiecutter_paths()
     path_to_raw = dict_of_paths['raw_dir']
     path_to_proc = dict_of_paths['proc_dir']
-    path_to_interim = dict_of_paths['int_dir']
+    path_to_data = dict_of_paths['data_dir']
     path_to_figures = dict_of_paths['plot_dir']
     path_to_external = dict_of_paths['ext_dir']
 
@@ -1296,22 +1249,22 @@ def main(args):
         halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
 
     if mf_type == 'smf':
-        path_to_proc = path_to_proc + 'smhm_run4_errjk/'
+        path_to_proc = path_to_proc + 'smhm_run6/'
     elif mf_type == 'bmf':
-        path_to_proc = path_to_proc + 'bmhm_run2/'
+        path_to_proc = path_to_proc + 'bmhm_run3/'
 
     chi2_file = path_to_proc + '{0}_chi2.txt'.format(survey)
 
-    if mf_type == 'smf' and survey == 'eco':
+    if mf_type == 'smf' and survey == 'eco' and ver == 1.0:
         chain_file = path_to_proc + 'mcmc_{0}.dat'.format(survey)
     else:
         chain_file = path_to_proc + 'mcmc_{0}_raw.txt'.format(survey)
 
     if survey == 'eco':
-        catl_file = path_to_raw + "eco_all.csv"
-        path_to_mocks = path_to_external + 'ECO_mvir_catls/'
+        catl_file = path_to_raw + 'eco/eco_all.csv'
+        path_to_mocks = path_to_data + 'mocks/m200b/eco/'
     elif survey == 'resolvea' or survey == 'resolveb':
-        catl_file = path_to_raw + "RESOLVE_liveJune2019.csv"
+        catl_file = path_to_raw + 'RESOLVE_liveJune2019.csv'
         if survey == 'resolvea':
             path_to_mocks = path_to_external + 'RESOLVE_A_mvir_catls/'
         else:
@@ -1327,62 +1280,63 @@ def main(args):
     mcmc_table_pctl, bf_params, bf_chi2 = \
         get_paramvals_percentile(mcmc_table, 68, chi2)
 
-    # print('Retrieving stellar mass from catalog')
-    # stellar_mass_arr = catl.logmstar.values
-    # if mf_type == 'smf':
-    #     maxis_data, phi_data, err_data_, bins_data, counts_data = \
-    #         diff_smf(stellar_mass_arr, volume, False)
-    # elif mf_type == 'bmf':
-    #     gas_mass_arr = catl.logmgas.values
-    #     bary_mass_arr = calc_bary(stellar_mass_arr, gas_mass_arr)
-    #     maxis_data, phi_data, err_data_, bins_data, counts_data = \
-    #         diff_bmf(bary_mass_arr, volume, False)
-    # print('Jackknife survey')
-    # err_data_mf, err_data_xmhm = jackknife(catl, volume)
+    print('Retrieving stellar mass from catalog')
+    stellar_mass_arr = catl.logmstar.values
+    if mf_type == 'smf':
+        maxis_data, phi_data, err_data_, bins_data, counts_data = \
+            diff_smf(stellar_mass_arr, volume, False)
+    elif mf_type == 'bmf':
+        gas_mass_arr = catl.logmgas.values
+        bary_mass_arr = calc_bary(stellar_mass_arr, gas_mass_arr)
+        maxis_data, phi_data, err_data_, bins_data, counts_data = \
+            diff_bmf(bary_mass_arr, volume, False)
+
+    print('Getting error in data')
+    err_data_mf = get_err_data(survey, path_to_mocks)
     print('Initial population of halo catalog')
     model_init = halocat_init(halo_catalog, z_median)
 
-    # print('Retrieving Behroozi 2010 centrals')
-    # model_init.mock.populate()
-    # if survey == 'eco' or survey == 'resolvea':
-    #     if mf_type == 'smf':
-    #         limit = np.round(np.log10((10**8.9) / 2.041), 1)
-    #     elif mf_type == 'bmf':
-    #         limit = np.round(np.log10((10**9.4) / 2.041), 1)
-    # elif survey == 'resolveb':
-    #     if mf_type == 'smf':
-    #         limit = np.round(np.log10((10**8.7) / 2.041), 1)
-    #     elif mf_type == 'bmf':
-    #         limit = np.round(np.log10((10**9.1) / 2.041), 1)
-    # sample_mask = model_init.mock.galaxy_table['stellar_mass'] >= 10**limit
-    # gals_b10 = model_init.mock.galaxy_table[sample_mask]
-    # cen_gals_b10, cen_halos_b10 = get_centrals_mock(gals_b10)
+    print('Retrieving Behroozi 2010 centrals')
+    model_init.mock.populate()
+    if survey == 'eco' or survey == 'resolvea':
+        if mf_type == 'smf':
+            limit = np.round(np.log10((10**8.9) / 2.041), 1)
+        elif mf_type == 'bmf':
+            limit = np.round(np.log10((10**9.4) / 2.041), 1)
+    elif survey == 'resolveb':
+        if mf_type == 'smf':
+            limit = np.round(np.log10((10**8.7) / 2.041), 1)
+        elif mf_type == 'bmf':
+            limit = np.round(np.log10((10**9.1) / 2.041), 1)
+    sample_mask = model_init.mock.galaxy_table['stellar_mass'] >= 10**limit
+    gals_b10 = model_init.mock.galaxy_table[sample_mask]
+    cen_gals_b10, cen_halos_b10 = get_centrals_mock(gals_b10)
 
     print('Retrieving survey centrals')
     cen_gals_data, cen_halos_data = get_centrals_data(catl)
 
     # Need following two lines ONLY if using groupmass_s for RESOLVE-A
-    cen_halos_data = np.array(list(cen_halos_data.values[:65]) + list(cen_halos_data.values[66:]))
-    cen_gals_data = np.array(list(cen_gals_data.values[:65]) + list(cen_gals_data.values[66:]))
+    # cen_halos_data = np.array(list(cen_halos_data.values[:65]) + list(cen_halos_data.values[66:]))
+    # cen_gals_data = np.array(list(cen_gals_data.values[:65]) + list(cen_gals_data.values[66:]))
 
-    # print('Multiprocessing')
-    # result = mp_init(mcmc_table_pctl, nproc)
+    print('Multiprocessing')
+    result = mp_init(mcmc_table_pctl, nproc)
     print('Getting best fit model and centrals')
     maxis_bf, phi_bf, err_tot_bf, counts_bf, cen_gals_bf, cen_halos_bf = \
         get_best_fit_model(bf_params)
 
-    # print('Plotting MF')
-    # plot_mf(result, maxis_bf, phi_bf, err_tot_bf, maxis_data, phi_data, 
-    #     err_data_mf, bf_chi2)
+    print('Plotting MF')
+    plot_mf(result, maxis_bf, phi_bf, err_tot_bf, maxis_data, phi_data, 
+        err_data_mf, bf_chi2)
 
-    # print('Plotting XMHM')
-    # plot_xmhm(result, cen_gals_bf, cen_halos_bf, cen_gals_data, cen_halos_data,
-    #     cen_gals_b10, cen_halos_b10, bf_chi2)   
+    print('Plotting XMHM')
+    plot_xmhm(result, cen_gals_bf, cen_halos_bf, cen_gals_data, cen_halos_data,
+        cen_gals_b10, cen_halos_b10, bf_chi2)   
 
-    xmhm_mocks = get_xmhm_mocks(survey, path_to_mocks, mf_type)
+    # xmhm_mocks = get_xmhm_mocks(survey, path_to_mocks, mf_type)
 
-    plot_xmhm_data_mocks(cen_gals_data, cen_halos_data, 
-        xmhm_mocks, cen_gals_bf, cen_halos_bf)
+    # plot_xmhm_data_mocks(cen_gals_data, cen_halos_data, 
+    #     xmhm_mocks, cen_gals_bf, cen_halos_bf)
 
 # Main function
 if __name__ == '__main__':
