@@ -25,8 +25,10 @@ def which(pgm):
 ### Paths
 dict_of_paths = cwpaths.cookiecutter_paths()
 path_to_raw = dict_of_paths['raw_dir']
-path_to_interim = dict_of_paths['int_dir']
+path_to_data = dict_of_paths['data_dir']
 path_to_figures = dict_of_paths['plot_dir']
+path_to_eco = path_to_raw + "eco/eco_all.csv"
+path_to_mocks = path_to_data + 'mocks/m200b/eco/'
 # halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/vishnu/'\
 # 'rockstar/vishnu_rockstar_test.hdf5'
 halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
@@ -36,70 +38,6 @@ rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']},size=15)
 rc('text', usetex=True)
 plt.rcParams['animation.convert_path'] = '{0}/magick'.format(os.path.dirname(which('python')))
 #'/fs1/masad/anaconda3/envs/resolve_statistics/bin/magick'
-
-
-def diff_smf(mstar_arr, volume, h1_bool):
-    """
-    Calculates differential stellar mass function in units of h=1.0
-
-    Parameters
-    ----------
-    mstar_arr: numpy array
-        Array of stellar masses
-
-    volume: float
-        Volume of survey or simulation
-
-    cvar_err: float
-        Cosmic variance of survey
-
-    h1_bool: boolean
-        True if units of masses are h=1, False if units of masses are not h=1
-
-    Returns
-    ---------
-    maxis: array
-        Array of x-axis mass values
-
-    phi: array
-        Array of y-axis values
-
-    err_tot: array
-        Array of error values per bin
-    
-    bins: array
-        Array of bin edge values
-    """
-    if not h1_bool:
-        # changing from h=0.7 to h=1 assuming h^-2 dependence
-        logmstar_arr = np.log10((10**mstar_arr) / 2.041)
-    else:
-        logmstar_arr = np.log10(mstar_arr)
-
-    if survey == 'eco' or survey == 'resolvea':
-        bin_min = np.round(np.log10((10**8.9) / 2.041), 1)
-        if survey == 'eco':
-            bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
-        elif survey == 'resolvea':
-            # different to avoid nan in inverse corr mat
-            bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
-        bins = np.linspace(bin_min, bin_max, 7)
-    elif survey == 'resolveb':
-        bin_min = np.round(np.log10((10**8.7) / 2.041), 1)
-        bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
-        bins = np.linspace(bin_min, bin_max, 7)
-    # Unnormalized histogram and bin edges
-    counts, edg = np.histogram(logmstar_arr, bins=bins)  # paper used 17 bins
-    dm = edg[1] - edg[0]  # Bin width
-    maxis = 0.5 * (edg[1:] + edg[:-1])  # Mass axis i.e. bin centers
-    # Normalized to volume and bin width
-    err_poiss = np.sqrt(counts) / (volume * dm)
-    err_tot = err_poiss
-    phi = counts / (volume * dm)  # not a log quantity
-
-    phi = np.log10(phi)
-
-    return maxis, phi, err_tot, bins, counts
 
 def read_catl(path_to_file):
     """
@@ -140,15 +78,14 @@ def read_catl(path_to_file):
             # 6456 galaxies                       
             catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
                 (eco_buff.grpcz.values <= 7000) & 
-                (eco_buff.absrmag.values <= -17.33) &
-                (eco_buff.logmstar.values >= 8.9)]
+                (eco_buff.absrmag.values <= -17.33)]
         elif mf_type == 'bmf':
             catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
                 (eco_buff.grpcz.values <= 7000) & 
                 (eco_buff.absrmag.values <= -17.33)] 
 
         volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
-        cvar = 0.125
+        # cvar = 0.125
         z_median = np.median(catl.grpcz.values) / (3 * 10**5)
         
     elif survey == 'resolvea' or survey == 'resolveb':
@@ -164,8 +101,7 @@ def read_catl(path_to_file):
                 catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
                     (resolve_live18.grpcz.values >= 4500) & 
                     (resolve_live18.grpcz.values <= 7000) & 
-                    (resolve_live18.absrmag.values <= -17.33) & 
-                    (resolve_live18.logmstar.values >= 8.9)]
+                    (resolve_live18.absrmag.values <= -17.33)]
             elif mf_type == 'bmf':
                 catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
                     (resolve_live18.grpcz.values >= 4500) & 
@@ -173,7 +109,7 @@ def read_catl(path_to_file):
                     (resolve_live18.absrmag.values <= -17.33)]
 
             volume = 13172.384  # Survey volume without buffer [Mpc/h]^3
-            cvar = 0.30
+            # cvar = 0.30
             z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
         
         elif survey == 'resolveb':
@@ -182,8 +118,7 @@ def read_catl(path_to_file):
                 catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
                     (resolve_live18.grpcz.values >= 4500) & 
                     (resolve_live18.grpcz.values <= 7000) & 
-                    (resolve_live18.absrmag.values <= -17) & 
-                    (resolve_live18.logmstar.values >= 8.7)]
+                    (resolve_live18.absrmag.values <= -17)]
             elif mf_type == 'bmf':
                 catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
                     (resolve_live18.grpcz.values >= 4500) & 
@@ -191,117 +126,245 @@ def read_catl(path_to_file):
                     (resolve_live18.absrmag.values <= -17)]
 
             volume = 4709.8373  # *2.915 #Survey volume without buffer [Mpc/h]^3
-            cvar = 0.58
+            # cvar = 0.58
             z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
 
-    return catl,volume,cvar,z_median
+    return catl, volume, z_median
 
-def jackknife(catl, volume):
+def reading_catls(filename, catl_format='.hdf5'):
     """
-    Jackknife ECO survey to get data in error and correlation matrix for 
-    chi-squared calculation
+    Function to read ECO/RESOLVE catalogues.
 
     Parameters
     ----------
-    catl: Pandas DataFrame
-        Survey catalog
+    filename: string
+        path and name of the ECO/RESOLVE catalogue to read
+
+    catl_format: string, optional (default = '.hdf5')
+        type of file to read.
+        Options:
+            - '.hdf5': Reads in a catalogue in HDF5 format
+
+    Returns
+    -------
+    mock_pd: pandas DataFrame
+        DataFrame with galaxy/group information
+
+    Examples
+    --------
+    # Specifying `filename`
+    >>> filename = 'ECO_catl.hdf5'
+
+    # Reading in Catalogue
+    >>> mock_pd = reading_catls(filename, format='.hdf5')
+
+    >>> mock_pd.head()
+               x          y         z          vx          vy          vz  \
+    0  10.225435  24.778214  3.148386  356.112457 -318.894409  366.721832
+    1  20.945772  14.500367 -0.237940  168.731766   37.558834  447.436951
+    2  21.335835  14.808488  0.004653  967.204407 -701.556763 -388.055115
+    3  11.102760  21.782235  2.947002  611.646484 -179.032089  113.388794
+    4  13.217764  21.214905  2.113904  120.689598  -63.448833  400.766541
+
+       loghalom  cs_flag  haloid  halo_ngal    ...        cz_nodist      vel_tot  \
+    0    12.170        1  196005          1    ...      2704.599189   602.490355
+    1    11.079        1  197110          1    ...      2552.681697   479.667489
+    2    11.339        1  197131          1    ...      2602.377466  1256.285409
+    3    11.529        1  199056          1    ...      2467.277182   647.318259
+    4    10.642        1  199118          1    ...      2513.381124   423.326770
+
+           vel_tan     vel_pec     ra_orig  groupid    M_group g_ngal  g_galtype  \
+    0   591.399858 -115.068833  215.025116        0  11.702527      1          1
+    1   453.617221  155.924074  182.144134        1  11.524787      4          0
+    2  1192.742240  394.485714  182.213220        1  11.524787      4          0
+    3   633.928896  130.977416  210.441320        2  11.502205      1          1
+    4   421.064495   43.706352  205.525386        3  10.899680      1          1
+
+       halo_rvir
+    0   0.184839
+    1   0.079997
+    2   0.097636
+    3   0.113011
+    4   0.057210
+    """
+    ## Checking if file exists
+    if not os.path.exists(filename):
+        msg = '`filename`: {0} NOT FOUND! Exiting..'.format(filename)
+        raise ValueError(msg)
+    ## Reading file
+    if catl_format=='.hdf5':
+        mock_pd = pd.read_hdf(filename)
+    else:
+        msg = '`catl_format` ({0}) not supported! Exiting...'.format(catl_format)
+        raise ValueError(msg)
+
+    return mock_pd
+
+def diff_smf(mstar_arr, volume, h1_bool):
+    """
+    Calculates differential stellar mass function in units of h=1.0
+
+    Parameters
+    ----------
+    mstar_arr: numpy array
+        Array of stellar masses
+
+    volume: float
+        Volume of survey or simulation
+
+    h1_bool: boolean
+        True if units of masses are h=1, False if units of masses are not h=1
 
     Returns
     ---------
-    stddev_jk: numpy array
-        Array of sigmas
-    corr_mat_inv: numpy matrix
-        Inverse of correlation matrix
+    maxis: array
+        Array of x-axis mass values
+
+    phi: array
+        Array of y-axis values
+
+    err_tot: array
+        Array of error values per bin
+    
+    bins: array
+        Array of bin edge values
+    """
+    if not h1_bool:
+        # changing from h=0.7 to h=1 assuming h^-2 dependence
+        logmstar_arr = np.log10((10**mstar_arr) / 2.041)
+    else:
+        logmstar_arr = np.log10(mstar_arr)
+    if survey == 'eco' or survey == 'resolvea':
+        bin_min = np.round(np.log10((10**8.9) / 2.041), 1)
+        if survey == 'eco':
+            bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
+        elif survey == 'resolvea':
+            # different to avoid nan in inverse corr mat
+            bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
+        bins = np.linspace(bin_min, bin_max, 7)
+    elif survey == 'resolveb':
+        bin_min = np.round(np.log10((10**8.7) / 2.041), 1)
+        bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
+        bins = np.linspace(bin_min, bin_max, 7)
+    # Unnormalized histogram and bin edges
+    counts, edg = np.histogram(logmstar_arr, bins=bins)  # paper used 17 bins
+    dm = edg[1] - edg[0]  # Bin width
+    maxis = 0.5 * (edg[1:] + edg[:-1])  # Mass axis i.e. bin centers
+    # Normalized to volume and bin width
+    err_poiss = np.sqrt(counts) / (volume * dm)
+    err_tot = err_poiss
+    phi = counts / (volume * dm)  # not a log quantity
+
+    phi = np.log10(phi)
+
+    return maxis, phi, err_tot, bins, counts
+
+def get_err_data(survey, path):
+    """
+    Calculate error in data SMF from mocks
+
+    Parameters
+    ----------
+    survey: string
+        Name of survey
+    path: string
+        Path to mock catalogs
+
+    Returns
+    ---------
+    err_total: array
+        Standard deviation of phi values between all mocks and for all galaxies
+    err_red: array
+        Standard deviation of phi values between all mocks and for red galaxies
+    err_blue: array
+        Standard deviation of phi values between all mocks and for blue galaxies
     """
 
-    ra = catl.radeg.values # degrees
-    dec = catl.dedeg.values # degrees
+    if survey == 'eco':
+        mock_name = 'ECO'
+        num_mocks = 8
+        min_cz = 3000
+        max_cz = 7000
+        mag_limit = -17.33
+        mstar_limit = 8.9
+        volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
+    elif survey == 'resolvea':
+        mock_name = 'A'
+        num_mocks = 59
+        min_cz = 4500
+        max_cz = 7000
+        mag_limit = -17.33
+        mstar_limit = 8.9
+        volume = 13172.384  # Survey volume without buffer [Mpc/h]^3 
+    elif survey == 'resolveb':
+        mock_name = 'B'
+        num_mocks = 104
+        min_cz = 4500
+        max_cz = 7000
+        mag_limit = -17
+        mstar_limit = 8.7
+        volume = 4709.8373  # Survey volume without buffer [Mpc/h]^3
 
-    sin_dec_all = np.rad2deg(np.sin(np.deg2rad(dec))) # degrees
+    phi_arr_total = []
+    box_id_arr = np.linspace(5001,5008,8)
+    for box in box_id_arr:
+        box = int(box)
+        temp_path = path + '{0}/{1}_m200b_catls/'.format(box, 
+            mock_name) 
+        # print(box)
+        for num in range(num_mocks):
+            filename = temp_path + '{0}_cat_{1}_Planck_memb_cat.hdf5'.\
+                format(mock_name, num)
+            mock_pd = reading_catls(filename) 
 
-    sin_dec_arr = np.linspace(sin_dec_all.min(), sin_dec_all.max(), 11)
-    ra_arr = np.linspace(ra.min(), ra.max(), 11)
+            if mf_type == 'smf':
+                # Using the same survey definition as data
+                mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & 
+                    (mock_pd.cz.values <= max_cz) & 
+                    (mock_pd.M_r.values <= mag_limit) &
+                    (mock_pd.logmstar.values >= mstar_limit)]
 
-    grid_id_arr = []
-    gal_id_arr = []
-    grid_id = 1
-    max_bin_id = len(sin_dec_arr)-2 # left edge of max bin
-    for dec_idx in range(len(sin_dec_arr)):
-        for ra_idx in range(len(ra_arr)):
-            try:
-                if dec_idx == max_bin_id and ra_idx == max_bin_id:
-                    catl_subset = catl.loc[(catl.radeg.values >= ra_arr[ra_idx]) &
-                        (catl.radeg.values <= ra_arr[ra_idx+1]) & 
-                        (np.rad2deg(np.sin(np.deg2rad(catl.dedeg.values))) >= 
-                            sin_dec_arr[dec_idx]) & (np.rad2deg(np.sin(np.deg2rad(
-                                catl.dedeg.values))) <= sin_dec_arr[dec_idx+1])] 
-                elif dec_idx == max_bin_id:
-                    catl_subset = catl.loc[(catl.radeg.values >= ra_arr[ra_idx]) &
-                        (catl.radeg.values < ra_arr[ra_idx+1]) & 
-                        (np.rad2deg(np.sin(np.deg2rad(catl.dedeg.values))) >= 
-                            sin_dec_arr[dec_idx]) & (np.rad2deg(np.sin(np.deg2rad(
-                                catl.dedeg.values))) <= sin_dec_arr[dec_idx+1])] 
-                elif ra_idx == max_bin_id:
-                    catl_subset = catl.loc[(catl.radeg.values >= ra_arr[ra_idx]) &
-                        (catl.radeg.values <= ra_arr[ra_idx+1]) & 
-                        (np.rad2deg(np.sin(np.deg2rad(catl.dedeg.values))) >= 
-                            sin_dec_arr[dec_idx]) & (np.rad2deg(np.sin(np.deg2rad(
-                                catl.dedeg.values))) < sin_dec_arr[dec_idx+1])] 
-                else:                
-                    catl_subset = catl.loc[(catl.radeg.values >= ra_arr[ra_idx]) &
-                        (catl.radeg.values < ra_arr[ra_idx+1]) & 
-                        (np.rad2deg(np.sin(np.deg2rad(catl.dedeg.values))) >= 
-                            sin_dec_arr[dec_idx]) & (np.rad2deg(np.sin(np.deg2rad(
-                                catl.dedeg.values))) < sin_dec_arr[dec_idx+1])] 
-                # Append dec and sin  
-                for gal_id in catl_subset.name.values:
-                    gal_id_arr.append(gal_id)
-                for grid_id in [grid_id] * len(catl_subset):
-                    grid_id_arr.append(grid_id)
-                grid_id += 1
-            except IndexError:
-                break
+                logmstar_arr = mock_pd.logmstar.values 
+                #Measure SMF of mock using diff_smf function
+                max_total, phi_total, err_total, bins_total, counts_total = \
+                    diff_smf(logmstar_arr, volume, False)
+            elif mf_type == 'bmf':
+                # Using the same survey definition as data - *no mstar cut*
+                mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & 
+                    (mock_pd.cz.values <= max_cz) & 
+                    (mock_pd.M_r.values <= mag_limit)]
 
-    gal_grid_id_data = {'grid_id': grid_id_arr, 'name': gal_id_arr}
-    df_gal_grid = pd.DataFrame(data=gal_grid_id_data)
+                logmstar_arr = mock_pd.logmstar.values 
+                mhi_arr = mock_pd.mhi.values
+                logmgas_arr = np.log10(1.4 * mhi_arr)
+                logmbary_arr = calc_bary(logmstar_arr, logmgas_arr)
+                max_total, phi_total, err_total, bins_total, counts_total = \
+                    diff_bmf(logmbary_arr, volume, False)
 
-    catl = catl.join(df_gal_grid.set_index('name'), on='name')
-    catl = catl.reset_index(drop=True)
+            phi_arr_total.append(phi_total)
 
-    # Loop over all sub grids, remove one and measure global smf
-    jackknife_phi_arr = []
-    for grid_id in range(len(np.unique(catl.grid_id.values))):
-        grid_id += 1
-        catl_subset = catl.loc[catl.grid_id.values != grid_id]  
-        logmstar = catl_subset.logmstar.values
-        maxis, phi, err, bins, counts = diff_smf(logmstar, volume, False)
-        jackknife_phi_arr.append(phi)
-
-    jackknife_phi_arr = np.array(jackknife_phi_arr)
-
-    N = (len(ra_arr)-1)**2
-
+    phi_arr_total = np.array(phi_arr_total)
+    # np.std(phi_arr_total, axis=0)
     # Covariance matrix
-    cov_mat = np.cov(jackknife_phi_arr.T, bias=True)*(N-1)
-    stddev_jk = np.sqrt(cov_mat.diagonal())
-
-    return stddev_jk
+    # A variable here is a bin so each row is a bin and each column is one 
+    # observation of all bins.
+    cov_mat = np.cov(phi_arr_total, rowvar=False) # default norm is N-1
+    stddev = np.sqrt(cov_mat.diagonal())
+    # Correlation matrix
+    corr_mat = cov_mat / np.outer(stddev , stddev)
+    # Inverse of correlation matrix
+    corr_mat_inv = np.linalg.inv(corr_mat)
+    return stddev, corr_mat_inv
 
 global survey
 global mf_type
 survey = 'eco'
 mf_type = 'smf'
 
-path_to_eco = path_to_raw + "eco_all.csv"
-catl, volume, cvar, z_median = read_catl(path_to_eco)
+catl, volume, z_median = read_catl(path_to_eco)
 logmstar = catl.logmstar.values
 maxis_data, phi_data, err_data, bins, counts = diff_smf(logmstar, volume, False)
-err_data = jackknife(catl, volume)
-lower_err = phi_data - err_data
-upper_err = phi_data + err_data
-lower_err = phi_data - lower_err
-upper_err = upper_err - phi_data
-asymmetric_err = [lower_err, upper_err]
+sigma, inv_corr_mat = get_err_data(survey, path_to_mocks)
 
 # fig1 = plt.figure(figsize=(10,8))
 # plt.xlim(np.log10((10**8.9)/2.041),np.log10((10**11.5)/2.041))
@@ -316,11 +379,17 @@ counter = 0
 nbins = bins
 volume_sim = 130**3
 
-Mhalo_characteristic = np.linspace(11.5,13.0,30)
-Mstellar_characteristic = np.linspace(9.5,11.0,30)
-Mlow_slope = np.linspace(0.35,0.50,30)
-Mhigh_slope = np.linspace(0.50,0.65,30)
-Mstellar_scatter = np.linspace(0.1,0.2,30)
+# Mhalo_characteristic = np.linspace(11.5,13.0,30)
+# Mstellar_characteristic = np.linspace(9.5,11.0,30)
+# Mlow_slope = np.linspace(0.35,0.50,30)
+# Mhigh_slope = np.linspace(0.50,0.65,30)
+# Mstellar_scatter = np.linspace(0.1,0.2,30)
+
+Mhalo_characteristic = np.array([0.9*12.31, 12.31, 1.1*12.31])
+Mstellar_characteristic = np.array([0.9*10.576, 10.576, 1.1*10.576])
+Mlow_slope = np.array([0.9*0.422, 0.422, 1.1*0.422])
+Mhigh_slope = np.array([0.9*0.61, 0.61, 1.1*0.61])
+Mstellar_scatter = np.array([0.9*0.352, 0.352, 1.1*0.352])
 
 print('Setting up models')
 ###Models
@@ -424,7 +493,7 @@ def make_animation(i,j,k,l,m):
     
     for ax in [ax1,ax2,ax3,ax4,ax5]:
         ax.clear()
-        SMF_ECO = ax.errorbar(maxis_data, phi_data, yerr=asymmetric_err, 
+        SMF_ECO = ax.errorbar(maxis_data, phi_data, yerr=sigma, 
             fmt="ks", linewidth=2, elinewidth=0.5, ecolor='k', capsize=2, 
             capthick=1.5, markersize='5')
         ax.set_xlim(np.log10((10**8.9)/2.041),np.log10((10**11.8)/2.041))
@@ -496,7 +565,7 @@ for ax in [ax2, ax3, ax5]:
 
 anim = animation.FuncAnimation(plt.gcf(), make_animation, 
     Mhalo_characteristic, init_func=init, fargs=(Mstellar_characteristic, 
-    Mlow_slope,Mhigh_slope,Mstellar_scatter,), interval=500, blit=False, 
+    Mlow_slope,Mhigh_slope,Mstellar_scatter,), interval=1000, blit=False, 
     repeat=True)
 plt.tight_layout()
 print('Saving animation')
