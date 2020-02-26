@@ -25,13 +25,13 @@ path_to_interim = dict_of_paths['int_dir']
 path_to_figures = dict_of_paths['plot_dir']
 
 survey = 'eco'
-mf_type = 'smf'
+mf_type = 'bmf'
 file_ver = 2.0 # Writing to files as chain runs
 
 if mf_type == 'smf':
-    path_to_proc = path_to_proc + 'smhm_run5_errmock/'
+    path_to_proc = path_to_proc + 'smhm_run6/'
 else:
-    path_to_proc = path_to_proc + 'bmhm_run2/'
+    path_to_proc = path_to_proc + 'bmhm_run3/'
 
 if mf_type == 'smf' and survey == 'eco' and file_ver == 1.0:   
 
@@ -68,24 +68,24 @@ if mf_type == 'smf' and survey == 'eco' and file_ver == 1.0:
             iteration_id_arr[idx] = counter_itid
 
 else:
-
-    chain_fname = path_to_proc + 'mcmc_{0}_raw.txt'.format(survey)
+    chain_fname = path_to_proc + 'combined_processed_{0}_raw.txt'.format(survey)
+    # chain_fname = path_to_proc + 'mcmc_{0}_raw.txt'.format(survey)
 
     emcee_table = pd.read_csv(chain_fname, delim_whitespace=True, 
         names=['halo','stellar','lowmass','highmass','scatter'], 
         header=None)
 
-    emcee_table = emcee_table[emcee_table.halo.values != '#']
-    emcee_table.halo = emcee_table.halo.astype(np.float64)
-    emcee_table.stellar = emcee_table.stellar.astype(np.float64)
-    emcee_table.lowmass = emcee_table.lowmass.astype(np.float64)
+    # emcee_table = emcee_table[emcee_table.halo.values != '#']
+    # emcee_table.halo = emcee_table.halo.astype(np.float64)
+    # emcee_table.stellar = emcee_table.stellar.astype(np.float64)
+    # emcee_table.lowmass = emcee_table.lowmass.astype(np.float64)
 
-    for idx,row in enumerate(emcee_table.values):
-        if np.isnan(row)[4] == True and np.isnan(row)[3] == False:
-            scatter_val = emcee_table.values[idx+1][0]
-            row[4] = scatter_val 
-    emcee_table = emcee_table.dropna(axis='index', how='any').\
-        reset_index(drop=True)
+    # for idx,row in enumerate(emcee_table.values):
+    #     if np.isnan(row)[4] == True and np.isnan(row)[3] == False:
+    #         scatter_val = emcee_table.values[idx+1][0]
+    #         row[4] = scatter_val 
+    # emcee_table = emcee_table.dropna(axis='index', how='any').\
+    #     reset_index(drop=True)
 
     # Each chunk is now a step and within each chunk, each row is a walker
     # Different from what it used to be where each chunk was a walker and 
@@ -183,20 +183,10 @@ ax4.annotate(behroozi10_param_vals[3], (0.95,0.85), xycoords='axes fraction',
     bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
 ax5.annotate(behroozi10_param_vals[4], (0.95,0.85), xycoords='axes fraction', 
     bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
-
-# ax1.text(495,12.4,r'$\mathbf{12.35}$',bbox=dict(boxstyle="square",ec='k',
-#     fc='lightgray',alpha=0.5),size=10)
-# ax2.text(495,10.78,r'$\mathbf{10.72}$',bbox=dict(boxstyle="square",ec='k',
-#     fc='lightgray',alpha=0.5),size=10)
-# ax3.text(495,0.49,r'$\mathbf{0.44}$',bbox=dict(boxstyle="square",ec='k',
-#     fc='lightgray',alpha=0.5),size=10)
-# ax4.text(495,0.9,r'$\mathbf{0.57}$',bbox=dict(boxstyle="square",ec='k',
-#     fc='lightgray',alpha=0.5),size=10)
-# ax5.text(495,0.25,r'$\mathbf{0.15}$',bbox=dict(boxstyle="square",ec='k',
-#     fc='lightgray',alpha=0.5),size=10)
 plt.xlabel(r"$\mathbf{iteration\ number}$")
 plt.show()
 '''
+# Old method where .dat file was used
 dat_file = pd.read_csv('mcmc_eco.dat', sep='\s+', 
     names=['halo','stellar','lowmass','highmass','scatter']) 
 
