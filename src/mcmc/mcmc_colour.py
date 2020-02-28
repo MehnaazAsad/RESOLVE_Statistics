@@ -116,7 +116,7 @@ def read_data_catl(path_to_file, survey):
     if survey == 'eco':
         columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
                     'logmstar', 'logmgas', 'grp', 'grpn', 'logmh', 'logmh_s', 
-                    'fc', 'grpmb', 'grpms']
+                    'fc', 'grpmb', 'grpms','modelu_rcorr']
 
         # 13878 galaxies
         eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0, \
