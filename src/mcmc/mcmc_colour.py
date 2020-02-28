@@ -90,7 +90,7 @@ def reading_catls(filename, catl_format='.hdf5'):
 
     return mock_pd
 
-def read_catl(path_to_file, survey):
+def read_data_catl(path_to_file, survey):
     """
     Reads survey catalog from file
 
@@ -110,16 +110,13 @@ def read_catl(path_to_file, survey):
     volume: `float`
         Volume of survey
 
-    cvar: `float`
-        Cosmic variance of survey
-
     z_median: `float`
         Median redshift of survey
     """
     if survey == 'eco':
         columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
                     'logmstar', 'logmgas', 'grp', 'grpn', 'logmh', 'logmh_s', 
-                    'fc', 'grpmb', 'grpms', 'modelu_rcorr']
+                    'fc', 'grpmb', 'grpms']
 
         # 13878 galaxies
         eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0, \
@@ -129,22 +126,20 @@ def read_catl(path_to_file, survey):
             # 6456 galaxies                       
             catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
                 (eco_buff.grpcz.values <= 7000) & 
-                (eco_buff.absrmag.values <= -17.33) &
-                (eco_buff.logmstar.values >= 8.9)]
+                (eco_buff.absrmag.values <= -17.33)]
         elif mf_type == 'bmf':
             catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
                 (eco_buff.grpcz.values <= 7000) & 
                 (eco_buff.absrmag.values <= -17.33)] 
 
         volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
-        cvar = 0.125
+        # cvar = 0.125
         z_median = np.median(catl.grpcz.values) / (3 * 10**5)
         
     elif survey == 'resolvea' or survey == 'resolveb':
         columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
                     'logmstar', 'logmgas', 'grp', 'grpn', 'grpnassoc', 'logmh', 
-                    'logmh_s', 'fc', 'grpmb', 'grpms', 'f_a', 'f_b', 
-                    'modelu_rcorr']
+                    'logmh_s', 'fc', 'grpmb', 'grpms', 'f_a', 'f_b']
         # 2286 galaxies
         resolve_live18 = pd.read_csv(path_to_file, delimiter=",", header=0, \
             usecols=columns)
@@ -154,8 +149,7 @@ def read_catl(path_to_file, survey):
                 catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
                     (resolve_live18.grpcz.values >= 4500) & 
                     (resolve_live18.grpcz.values <= 7000) & 
-                    (resolve_live18.absrmag.values <= -17.33) & 
-                    (resolve_live18.logmstar.values >= 8.9)]
+                    (resolve_live18.absrmag.values <= -17.33)]
             elif mf_type == 'bmf':
                 catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
                     (resolve_live18.grpcz.values >= 4500) & 
@@ -163,7 +157,7 @@ def read_catl(path_to_file, survey):
                     (resolve_live18.absrmag.values <= -17.33)]
 
             volume = 13172.384  # Survey volume without buffer [Mpc/h]^3
-            cvar = 0.30
+            # cvar = 0.30
             z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
         
         elif survey == 'resolveb':
@@ -172,8 +166,7 @@ def read_catl(path_to_file, survey):
                 catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
                     (resolve_live18.grpcz.values >= 4500) & 
                     (resolve_live18.grpcz.values <= 7000) & 
-                    (resolve_live18.absrmag.values <= -17) & 
-                    (resolve_live18.logmstar.values >= 8.7)]
+                    (resolve_live18.absrmag.values <= -17)]
             elif mf_type == 'bmf':
                 catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
                     (resolve_live18.grpcz.values >= 4500) & 
@@ -181,10 +174,10 @@ def read_catl(path_to_file, survey):
                     (resolve_live18.absrmag.values <= -17)]
 
             volume = 4709.8373  # *2.915 #Survey volume without buffer [Mpc/h]^3
-            cvar = 0.58
+            # cvar = 0.58
             z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
 
-    return catl,volume,cvar,z_median
+    return catl, volume, z_median
 
 def read_chi2(path_to_file):
     """
@@ -202,10 +195,15 @@ def read_chi2(path_to_file):
     """
     chi2_df = pd.read_csv(path_to_file,header=None,names=['chisquared'])
 
-    # Needed to reshape since flattened along wrong axis, 
-    # didn't correspond to chain
-    test_reshape = chi2_df.chisquared.values.reshape((1000,250))
-    chi2 = np.ndarray.flatten(np.array(test_reshape),'F')
+    # Applies to runs prior to run 5?
+    if mf_type == 'smf' and survey == 'eco' and ver==1.0:
+        # Needed to reshape since flattened along wrong axis, 
+        # didn't correspond to chain
+        test_reshape = chi2_df.chisquared.values.reshape((1000,250))
+        chi2 = np.ndarray.flatten(np.array(test_reshape),'F')
+    
+    else:
+        chi2 = chi2_df.chisquared.values
 
     return chi2
 
@@ -225,8 +223,19 @@ def read_mcmc(path_to_file):
     """
     colnames = ['mhalo_c','mstellar_c','lowmass_slope','highmass_slope',\
         'scatter']
-    emcee_table = pd.read_csv(path_to_file,names=colnames,sep='\s+',\
-        dtype=np.float64)
+    
+    if mf_type == 'smf' and survey == 'eco' and ver==1.0:
+        emcee_table = pd.read_csv(path_to_file,names=colnames,sep='\s+',\
+            dtype=np.float64)
+
+    else:
+        emcee_table = pd.read_csv(path_to_file, names=colnames, 
+            delim_whitespace=True, header=None)
+
+        emcee_table = emcee_table[emcee_table.mhalo_c.values != '#']
+        emcee_table.mhalo_c = emcee_table.mhalo_c.astype(np.float64)
+        emcee_table.mstellar_c = emcee_table.mstellar_c.astype(np.float64)
+        emcee_table.lowmass_slope = emcee_table.lowmass_slope.astype(np.float64)
 
     # Cases where last parameter was a NaN and its value was being written to 
     # the first element of the next line followed by 4 NaNs for the other 
@@ -237,7 +246,8 @@ def read_mcmc(path_to_file):
             row[4] = scatter_val
     
     # Cases where rows of NANs appear
-    emcee_table = emcee_table.dropna().reset_index(drop=True)
+    emcee_table = emcee_table.dropna(axis='index', how='any').\
+        reset_index(drop=True)
     
     return emcee_table
 
@@ -284,9 +294,6 @@ def diff_smf(mstar_arr, volume, h1_bool, colour_flag=False):
     volume: float
         Volume of survey or simulation
 
-    cvar_err: float
-        Cosmic variance of survey
-
     h1_bool: boolean
         True if units of masses are h=1, False if units of masses are not h=1
 
@@ -314,14 +321,18 @@ def diff_smf(mstar_arr, volume, h1_bool, colour_flag=False):
         bin_min = np.round(np.log10((10**8.9) / 2.041), 1)
         if survey == 'eco' and colour_flag == 'R':
             bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
+            bin_num = 6
         elif survey == 'eco' and colour_flag == 'B':
             bin_max = np.round(np.log10((10**11) / 2.041), 1)
+            bin_num = 6
         elif survey == 'resolvea':
             # different to avoid nan in inverse corr mat
             bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
+            bin_num = 7
         else:
             bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
-        bins = np.linspace(bin_min, bin_max, 7)
+            bin_num = 7
+        bins = np.linspace(bin_min, bin_max, bin_num)
     elif survey == 'resolveb':
         bin_min = np.round(np.log10((10**8.7) / 2.041), 1)
         bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
@@ -631,7 +642,7 @@ def get_stellar_mock(gals_df):
 
     return cen_gals, sat_gals
 
-def chi_squared(data, model, err_data):
+def chi_squared(data, model, err_data, inv_corr_mat):
     """
     Calculates chi squared
 
@@ -652,12 +663,16 @@ def chi_squared(data, model, err_data):
         Value of chi-squared given a model 
 
     """
-    chi_squared_arr = (data - model)**2 / (err_data**2)
-    chi_squared = np.sum(chi_squared_arr)
+    # chi_squared_arr = (data - model)**2 / (err_data**2)
+    # chi_squared = np.sum(chi_squared_arr)
+    first_term = ((data - model) / (err_data)).reshape(1,len(data))
+    third_term = np.transpose(first_term)
+    chi_squared = np.dot(np.dot(first_term,inv_corr_mat),third_term)
+    print('chi-squared: ', chi_squared)
 
-    return chi_squared
+    return chi_squared[0][0]
 
-def lnprob(theta, phi_red, phi_blue, err_red, err_blue, gals_df):
+def lnprob(theta, phi_red, phi_blue, err, corr_mat_inv, gals_df):
     """
     Calculates log probability for emcee
 
@@ -669,8 +684,11 @@ def lnprob(theta, phi_red, phi_blue, err_red, err_blue, gals_df):
     phi: array
         Array of y-axis values of mass function
     
-    err_tot: array
-        Array of error values of mass function
+    err: numpy.array
+        Array of error values of red and blue mass function
+
+    corr_mat: array
+        Array of inverse of correlation matrix
 
     Returns
     ---------
@@ -694,34 +712,33 @@ def lnprob(theta, phi_red, phi_blue, err_red, err_blue, gals_df):
         chi2 = -np.inf
         return -np.inf, chi2       
 
-    warnings.simplefilter("error", (UserWarning, RuntimeWarning))
-    try:
-        f_red_cen, f_red_sat = hybrid_quenching_model(theta, gals_df)
-        gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, gals_df)
-        v_sim = 130**3
-        total_model, red_model, blue_model = measure_all_smf(gals_df, v_sim 
-        , False)     
+    # warnings.simplefilter("error", (UserWarning, RuntimeWarning))
+    # try:
+    f_red_cen, f_red_sat = hybrid_quenching_model(theta, gals_df)
+    gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, gals_df)
+    v_sim = 130**3
+    total_model, red_model, blue_model = measure_all_smf(gals_df, v_sim 
+    , False)     
 
-        data_arr = []
-        data_arr.append(phi_red)
-        data_arr.append(phi_blue)
-        model_arr = []
-        model_arr.append(red_model[1])
-        model_arr.append(blue_model[1])   
-        err_arr = []
-        err_arr.append(err_red)
-        err_arr.append(err_blue)
-    
-        data_arr, model_arr, err_arr = np.array(data_arr), np.array(model_arr),\
-            np.array(err_arr)
+    data_arr = []
+    data_arr.append(phi_red)
+    data_arr.append(phi_blue)
+    model_arr = []
+    model_arr.append(red_model[1])
+    model_arr.append(blue_model[1])   
+    err_arr = err
 
-        chi2 = chi_squared(data_arr, model_arr, err_arr)
-        lnp = -chi2 / 2
-        if math.isnan(lnp):
-            raise ValueError
-    except (ValueError, RuntimeWarning, UserWarning):
-        lnp = -np.inf
-        chi2 = np.inf
+    data_arr, model_arr = np.array(data_arr), np.array(model_arr)
+
+    chi2 = chi_squared(data_arr, model_arr, err_arr, corr_mat_inv)
+    lnp = -chi2 / 2
+    print('chi2: ', chi2)
+    print('lnp: ', lnp)
+        # if math.isnan(lnp):
+        #     raise ValueError
+    # except (ValueError, RuntimeWarning, UserWarning):
+    #     lnp = -np.inf
+    #     chi2 = np.inf
 
     return lnp, chi2
 
@@ -911,68 +928,84 @@ def get_err_data(survey, path):
     phi_arr_total = []
     phi_arr_red = []
     phi_arr_blue = []
-    for num in range(num_mocks):
-        filename = path + '{0}_cat_{1}_Planck_memb_cat.hdf5'.format(
-            mock_name, num)
-        mock_pd = reading_catls(filename) 
+    box_id_arr = np.linspace(5001,5008,8)
+    for box in box_id_arr:
+        box = int(box)
+        temp_path = path + '{0}/{1}_m200b_catls/'.format(box, 
+            mock_name) 
+        for num in range(num_mocks):
+            filename = temp_path + '{0}_cat_{1}_Planck_memb_cat.hdf5'.format(
+                mock_name, num)
+            mock_pd = reading_catls(filename) 
 
-        # Using the same survey definition as in mcmc smf i.e excluding the 
-        # buffer
-        mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & \
-            (mock_pd.cz.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
-            (mock_pd.logmstar.values >= mstar_limit)]
+            # Using the same survey definition as in mcmc smf i.e excluding the 
+            # buffer
+            mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & \
+                (mock_pd.cz.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
+                (mock_pd.logmstar.values >= mstar_limit)]
 
-        logmstar_arr = mock_pd.logmstar.values 
-        u_r_arr = mock_pd.u_r.values
+            logmstar_arr = mock_pd.logmstar.values 
+            u_r_arr = mock_pd.u_r.values
 
-        colour_label_arr = np.empty(len(mock_pd), dtype='str')
-        for idx, value in enumerate(logmstar_arr):
+            colour_label_arr = np.empty(len(mock_pd), dtype='str')
+            for idx, value in enumerate(logmstar_arr):
 
-            if value <= 9.1:
-                if u_r_arr[idx] > 1.457:
-                    colour_label = 'R'
-                else:
-                    colour_label = 'B'
+                if value <= 9.1:
+                    if u_r_arr[idx] > 1.457:
+                        colour_label = 'R'
+                    else:
+                        colour_label = 'B'
 
-            elif value > 9.1 and value < 10.1:
-                divider = 0.24 * value - 0.7
-                if u_r_arr[idx] > divider:
-                    colour_label = 'R'
-                else:
-                    colour_label = 'B'
+                elif value > 9.1 and value < 10.1:
+                    divider = 0.24 * value - 0.7
+                    if u_r_arr[idx] > divider:
+                        colour_label = 'R'
+                    else:
+                        colour_label = 'B'
 
-            elif value >= 10.1:
-                if u_r_arr[idx] > 1.7:
-                    colour_label = 'R'
-                else:
-                    colour_label = 'B'
-                
-            colour_label_arr[idx] = colour_label
+                elif value >= 10.1:
+                    if u_r_arr[idx] > 1.7:
+                        colour_label = 'R'
+                    else:
+                        colour_label = 'B'
+                    
+                colour_label_arr[idx] = colour_label
 
-        mock_pd['colour_label'] = colour_label_arr
+            mock_pd['colour_label'] = colour_label_arr
 
-        #Measure SMF of mock using diff_smf function
-        max_total, phi_total, err_total, bins_total, counts_total = \
-            diff_smf(logmstar_arr, volume, False)
-        max_red, phi_red, err_red, bins_red, counts_red = \
-            diff_smf(mock_pd.logmstar.loc[mock_pd.colour_label.values == 'R'],
-            volume, False, 'R')
-        max_blue, phi_blue, err_blue, bins_blue, counts_blue = \
-            diff_smf(mock_pd.logmstar.loc[mock_pd.colour_label.values == 'B'],
-            volume, False, 'B')
-        phi_arr_total.append(phi_total)
-        phi_arr_red.append(phi_red)
-        phi_arr_blue.append(phi_blue)
+            #Measure SMF of mock using diff_smf function
+            max_total, phi_total, err_total, bins_total, counts_total = \
+                diff_smf(logmstar_arr, volume, False)
+            max_red, phi_red, err_red, bins_red, counts_red = \
+                diff_smf(mock_pd.logmstar.loc[mock_pd.colour_label.values == 'R'],
+                volume, False, 'R')
+            max_blue, phi_blue, err_blue, bins_blue, counts_blue = \
+                diff_smf(mock_pd.logmstar.loc[mock_pd.colour_label.values == 'B'],
+                volume, False, 'B')
+            phi_arr_total.append(phi_total)
+            phi_arr_red.append(phi_red)
+            phi_arr_blue.append(phi_blue)
 
     phi_arr_total = np.array(phi_arr_total)
     phi_arr_red = np.array(phi_arr_red)
     phi_arr_blue = np.array(phi_arr_blue)
 
-    err_total = np.std(phi_arr_total, axis=0)
-    err_red = np.std(phi_arr_red, axis=0)
-    err_blue = np.std(phi_arr_blue, axis=0)
+    # Covariance matrix for total phi (all galaxies)
+    cov_mat = np.cov(phi_arr_total, rowvar=False) # default norm is N-1
+    err_total = np.sqrt(cov_mat.diagonal())
+    cov_mat_red = np.cov(phi_arr_red, rowvar=False) # default norm is N-1
+    err_red = np.sqrt(cov_mat_red.diagonal())
+    cov_mat_blue = np.cov(phi_arr_blue, rowvar=False) # default norm is N-1
+    err_blue = np.sqrt(cov_mat_blue.diagonal())
 
-    return err_total, err_red, err_blue
+    corr_mat_red = cov_mat_red / np.outer(err_red , err_red)
+    corr_mat_inv_red = np.linalg.inv(corr_mat_red)
+    corr_mat_blue = cov_mat_blue / np.outer(err_blue , err_blue)
+    corr_mat_inv_blue = np.linalg.inv(corr_mat_blue)
+
+    colour_err_arr = np.concatenate((err_red, err_blue))
+    colour_corr_mat_inv = np.concatenate((corr_mat_inv_red, corr_mat_inv_blue))
+    return colour_err_arr, colour_corr_mat_inv
 
 def measure_all_smf(table, volume, data_bool):
     """
@@ -1004,20 +1037,20 @@ def measure_all_smf(table, volume, data_bool):
             diff_smf(table[logmstar_col], volume, False)
         max_red, phi_red, err_red, bins_red, counts_red = \
             diff_smf(table[logmstar_col].loc[table[colour_col] == 'R'], 
-            volume, False)
+            volume, False, 'R')
         max_blue, phi_blue, err_blue, bins_blue, counts_blue = \
             diff_smf(table[logmstar_col].loc[table[colour_col] == 'B'], 
-            volume, False)
+            volume, False, 'B')
     else:
         logmstar_col = 'stellar_mass'
         max_total, phi_total, err_total, bins_total, counts_total = \
             diff_smf(table[logmstar_col], volume, True)
         max_red, phi_red, err_red, bins_red, counts_red = \
             diff_smf(table[logmstar_col].loc[table[colour_col] == 'R'], 
-            volume, True)
+            volume, True, 'R')
         max_blue, phi_blue, err_blue, bins_blue, counts_blue = \
             diff_smf(table[logmstar_col].loc[table[colour_col] == 'B'], 
-            volume, True)
+            volume, True, 'B')
     
     return [max_total, phi_total, err_total, counts_total] , \
         [max_red, phi_red, err_red, counts_red] , \
@@ -1063,20 +1096,23 @@ def main(args):
     global survey
     global path_to_proc
     global mf_type
+    global ver
+
     rseed = 12
     np.random.seed(rseed)
-
     survey = args.survey
     machine = args.machine
     nproc = args.nproc
     nwalkers = args.nwalkers
     nsteps = args.nsteps
     mf_type = args.mf_type
+    ver = 2.0
     
     dict_of_paths = cwpaths.cookiecutter_paths()
     path_to_raw = dict_of_paths['raw_dir']
     path_to_proc = dict_of_paths['proc_dir']
     path_to_external = dict_of_paths['ext_dir']
+    path_to_data = dict_of_paths['data_dir']
     
     if machine == 'bender':
         halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
@@ -1085,19 +1121,22 @@ def main(args):
         halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
 
     if survey == 'eco':
-        catl_file = path_to_raw + "eco_all.csv"
+        catl_file = path_to_raw + "eco/eco_all.csv"
     elif survey == 'resolvea' or survey == 'resolveb':
-        catl_file = path_to_raw + "RESOLVE_liveJune2018.csv"
+        catl_file = path_to_raw + "resolve/RESOLVE_liveJune2018.csv"
 
     if survey == 'eco':
-        path_to_mocks = path_to_external + 'ECO_mvir_catls/'
+        path_to_mocks = path_to_data + 'mocks/m200b/eco/'
     elif survey == 'resolvea':
         path_to_mocks = path_to_external + 'RESOLVE_A_mvir_catls/'
     elif survey == 'resolveb':
         path_to_mocks = path_to_external + 'RESOLVE_B_mvir_catls/'
 
-    chi2_file = path_to_proc + 'smhm_run3/{0}_chi2.txt'.format(survey)
-    chain_file = path_to_proc + 'smhm_run3/mcmc_{0}.dat'.format(survey)
+    chi2_file = path_to_proc + 'smhm_run6/{0}_chi2.txt'.format(survey)
+    if mf_type == 'smf' and survey == 'eco' and ver == 1.0:
+        chain_file = path_to_proc + 'mcmc_{0}.dat'.format(survey)
+    else:
+        chain_file = path_to_proc + 'smhm_run6/mcmc_{0}_raw.txt'.format(survey)
 
     print('Reading chi-squared file')
     chi2 = read_chi2(chi2_file)
@@ -1109,18 +1148,19 @@ def main(args):
     bf_params = get_paramvals_percentile(mcmc_table, 68, chi2)
 
     print('Reading catalog')
-    catl, volume, cvar, z_median = read_catl(catl_file, survey)
+    catl, volume, z_median = read_data_catl(catl_file, survey)
 
     print('Assigning colour to data')
     catl = assign_colour_label_data(catl)
 
     print('Measuring SMF for data')
+    # Error here is counts
     total_data, red_data, blue_data = measure_all_smf(catl, volume, True)
 
     print('Measuring error in data from mocks')
-    total_data[2], red_data[2], blue_data[2] = \
-        get_err_data(survey, path_to_mocks)
-
+    sigma, corr_mat_inv = get_err_data(survey, path_to_mocks)
+    print('sigma: ', sigma)
+    print('corr mat inverse: ', corr_mat_inv)
     print('Loading halo catalog')
     model_init = halocat_init(halo_catalog, z_median)
 
@@ -1130,7 +1170,7 @@ def main(args):
 
     print('Running MCMC')
     sampler = mcmc(nproc, nwalkers, nsteps, red_data[1], blue_data[1], 
-        red_data[2], blue_data[2], gals_df_)
+        sigma, corr_mat_inv, gals_df_)
 
 # Main function
 if __name__ == '__main__':
