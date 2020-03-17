@@ -665,10 +665,15 @@ def chi_squared(data, model, err_data, inv_corr_mat):
     """
     # chi_squared_arr = (data - model)**2 / (err_data**2)
     # chi_squared = np.sum(chi_squared_arr)
-    first_term = ((data - model) / (err_data)).reshape(1,len(data))
+    
+    data = data.flatten() # from (2,5) to (1,10)
+    model = model.flatten() # same as above
+
+    first_term = ((data - model) / (err_data)).reshape(1,data.size)
     third_term = np.transpose(first_term)
+
+    # chi_squared is saved as [[value]]
     chi_squared = np.dot(np.dot(first_term,inv_corr_mat),third_term)
-    print('chi-squared: ', chi_squared)
 
     return chi_squared[0][0]
 
@@ -729,11 +734,10 @@ def lnprob(theta, phi_red, phi_blue, err, corr_mat_inv, gals_df):
     err_arr = err
 
     data_arr, model_arr = np.array(data_arr), np.array(model_arr)
-
     chi2 = chi_squared(data_arr, model_arr, err_arr, corr_mat_inv)
     lnp = -chi2 / 2
-    print('chi2: ', chi2)
-    print('lnp: ', lnp)
+    # print('chi2: ', chi2)
+    # print('lnp: ', lnp)
         # if math.isnan(lnp):
         #     raise ValueError
     # except (ValueError, RuntimeWarning, UserWarning):
@@ -928,6 +932,8 @@ def get_err_data(survey, path):
     phi_arr_total = []
     phi_arr_red = []
     phi_arr_blue = []
+    # colour_err_arr = []
+    # colour_corr_mat_inv = []
     box_id_arr = np.linspace(5001,5008,8)
     for box in box_id_arr:
         box = int(box)
@@ -993,19 +999,26 @@ def get_err_data(survey, path):
     # Covariance matrix for total phi (all galaxies)
     cov_mat = np.cov(phi_arr_total, rowvar=False) # default norm is N-1
     err_total = np.sqrt(cov_mat.diagonal())
-    cov_mat_red = np.cov(phi_arr_red, rowvar=False) # default norm is N-1
-    err_red = np.sqrt(cov_mat_red.diagonal())
-    cov_mat_blue = np.cov(phi_arr_blue, rowvar=False) # default norm is N-1
-    err_blue = np.sqrt(cov_mat_blue.diagonal())
+    # cov_mat_red = np.cov(phi_arr_red, rowvar=False) # default norm is N-1
+    # err_red = np.sqrt(cov_mat_red.diagonal())
+    # colour_err_arr.append(err_red)
+    # cov_mat_blue = np.cov(phi_arr_blue, rowvar=False) # default norm is N-1
+    # err_blue = np.sqrt(cov_mat_blue.diagonal())
+    # colour_err_arr.append(err_blue)
 
-    corr_mat_red = cov_mat_red / np.outer(err_red , err_red)
-    corr_mat_inv_red = np.linalg.inv(corr_mat_red)
-    corr_mat_blue = cov_mat_blue / np.outer(err_blue , err_blue)
-    corr_mat_inv_blue = np.linalg.inv(corr_mat_blue)
+    # corr_mat_red = cov_mat_red / np.outer(err_red , err_red)
+    # corr_mat_inv_red = np.linalg.inv(corr_mat_red)
+    # colour_corr_mat_inv.append(corr_mat_inv_red)
+    # corr_mat_blue = cov_mat_blue / np.outer(err_blue , err_blue)
+    # corr_mat_inv_blue = np.linalg.inv(corr_mat_blue)
+    # colour_corr_mat_inv.append(corr_mat_inv_blue)
 
-    colour_err_arr = np.concatenate((err_red, err_blue))
-    colour_corr_mat_inv = np.concatenate((corr_mat_inv_red, corr_mat_inv_blue))
-    return colour_err_arr, colour_corr_mat_inv
+    cov_mat_colour = np.cov(phi_arr_red,phi_arr_blue, rowvar=False)
+    err_colour = np.sqrt(cov_mat_colour.diagonal())
+    corr_mat_colour = cov_mat_colour / np.outer(err_colour, err_colour)                                                           
+    corr_mat_inv_colour = np.linalg.inv(corr_mat_colour)
+
+    return err_colour, corr_mat_inv_colour
 
 def measure_all_smf(table, volume, data_bool):
     """
@@ -1159,9 +1172,9 @@ def main(args):
 
     print('Measuring error in data from mocks')
     sigma, corr_mat_inv = get_err_data(survey, path_to_mocks)
-    print('sigma: ', sigma)
-    print('corr mat inverse: ', corr_mat_inv)
-    print('Loading halo catalog')
+    # print('sigma: ', sigma)
+    # print('corr mat inverse: ', corr_mat_inv)
+    # print('Loading halo catalog')
     model_init = halocat_init(halo_catalog, z_median)
 
     print('Populating halos using best fit shmr params')
@@ -1176,3 +1189,29 @@ def main(args):
 if __name__ == '__main__':
     args = args_parser()
     main(args)
+
+# data = [[-2.12357237, -2.0610347,  -1.97307953, -2.14607971, -2.73599082],
+#     [-1.62996357, -1.78882601, -1.95090655, -2.26177934, -2.80028339]]
+# model = [[-2.29403118, -2.27257477, -2.18069251, -2.24518738, -2.79443407],
+#  [-1.56917661, -1.72248823, -1.85307795, -2.06976732, -2.55633074]]
+# error = [np.array([0.11262902, 0.13973573, 0.1531687 , 0.18059565, 0.20898339]), 
+# np.array([0.13360779, 0.15453666, 0.16433404, 0.18760987, 0.32632216])]
+# corr_mat_inv = [np.array([[ 20.51359062,   3.68988504, -13.30992671,  -7.21494601,
+#          -3.29643143],
+#        [  3.68988504,  25.85609946, -13.07895573, -13.12555388,
+#          -2.97866831],
+#        [-13.30992671, -13.07895573,  37.33173537,  -7.36990172,
+#          -3.63661339],
+#        [ -7.21494601, -13.12555388,  -7.36990172,  32.82421313,
+#          -5.09429311],
+#        [ -3.29643143,  -2.97866831,  -3.63661339,  -5.09429311,
+#          15.34021367]]), np.array([[ 19.73994652, -10.67335235,  -5.61307961,  -3.02419699,
+#          -0.68821374],
+#        [-10.67335235,  17.4645791 ,  -5.79552428,  -0.29623739,
+#          -0.64090228],
+#        [ -5.61307961,  -5.79552428,  12.55630868,  -0.90958995,
+#           0.10996032],
+#        [ -3.02419699,  -0.29623739,  -0.90958995,   4.62883054,
+#           0.14213433],
+#        [ -0.68821374,  -0.64090228,   0.10996032,   0.14213433,
+#           1.69890077]])]
