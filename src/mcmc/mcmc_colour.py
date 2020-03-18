@@ -665,7 +665,7 @@ def chi_squared(data, model, err_data, inv_corr_mat):
     """
     # chi_squared_arr = (data - model)**2 / (err_data**2)
     # chi_squared = np.sum(chi_squared_arr)
-    
+
     data = data.flatten() # from (2,5) to (1,10)
     model = model.flatten() # same as above
 
@@ -717,32 +717,32 @@ def lnprob(theta, phi_red, phi_blue, err, corr_mat_inv, gals_df):
         chi2 = -np.inf
         return -np.inf, chi2       
 
-    # warnings.simplefilter("error", (UserWarning, RuntimeWarning))
-    # try:
-    f_red_cen, f_red_sat = hybrid_quenching_model(theta, gals_df)
-    gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, gals_df)
-    v_sim = 130**3
-    total_model, red_model, blue_model = measure_all_smf(gals_df, v_sim 
-    , False)     
+    warnings.simplefilter("error", (UserWarning, RuntimeWarning))
+    try:
+        f_red_cen, f_red_sat = hybrid_quenching_model(theta, gals_df)
+        gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, gals_df)
+        v_sim = 130**3
+        total_model, red_model, blue_model = measure_all_smf(gals_df, v_sim 
+        , False)     
 
-    data_arr = []
-    data_arr.append(phi_red)
-    data_arr.append(phi_blue)
-    model_arr = []
-    model_arr.append(red_model[1])
-    model_arr.append(blue_model[1])   
-    err_arr = err
+        data_arr = []
+        data_arr.append(phi_red)
+        data_arr.append(phi_blue)
+        model_arr = []
+        model_arr.append(red_model[1])
+        model_arr.append(blue_model[1])   
+        err_arr = err
 
-    data_arr, model_arr = np.array(data_arr), np.array(model_arr)
-    chi2 = chi_squared(data_arr, model_arr, err_arr, corr_mat_inv)
-    lnp = -chi2 / 2
+        data_arr, model_arr = np.array(data_arr), np.array(model_arr)
+        chi2 = chi_squared(data_arr, model_arr, err_arr, corr_mat_inv)
+        lnp = -chi2 / 2
     # print('chi2: ', chi2)
     # print('lnp: ', lnp)
-        # if math.isnan(lnp):
-        #     raise ValueError
-    # except (ValueError, RuntimeWarning, UserWarning):
-    #     lnp = -np.inf
-    #     chi2 = np.inf
+        if math.isnan(lnp):
+            raise ValueError
+    except (ValueError, RuntimeWarning, UserWarning):
+        lnp = -np.inf
+        chi2 = np.inf
 
     return lnp, chi2
 
