@@ -442,7 +442,7 @@ def halocat_init(halo_catalog, z_median):
 
     return model
 
-def mcmc(nproc, nwalkers, nsteps, phi_red, phi_blue, err_red, err_blue, gals_df):
+def mcmc(nproc, nwalkers, nsteps, phi_red, phi_blue, err, corr_mat_inv, gals_df):
     """
     MCMC analysis
 
@@ -482,7 +482,7 @@ def mcmc(nproc, nwalkers, nsteps, phi_red, phi_blue, err_red, err_blue, gals_df)
 
     with Pool(processes=nproc) as pool:
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, 
-            args=(phi_red, phi_blue, err_red, err_blue, gals_df), pool=pool)
+            args=(phi_red, phi_blue, err, corr_mat_inv, gals_df), pool=pool)
         start = time.time()
         for i,result in enumerate(sampler.sample(p0, iterations=nsteps, 
             storechain=False)):
