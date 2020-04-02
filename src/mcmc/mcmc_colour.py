@@ -469,8 +469,8 @@ def mcmc(nproc, nwalkers, nsteps, phi_red, phi_blue, err_red, err_blue, gals_df)
         Result of running emcee 
 
     """
-    Mstar_q = 10**10.5 # Msun/h
-    Mh_q = 10**13.76 # Msun/h
+    Mstar_q = 10.5 # Msun/h
+    Mh_q = 13.76 # Msun/h
     mu = 0.69
     nu = 0.15
 
@@ -707,7 +707,7 @@ def lnprob(theta, phi_red, phi_blue, err, corr_mat_inv, gals_df):
     if theta[0] < 0:
         chi2 = -np.inf
         return -np.inf, chi2
-    if theta[1] < 0 or theta[1] > 10**14:
+    if theta[1] < 0 or theta[1] > 14:
         chi2 = -np.inf
         return -np.inf, chi2
     if theta[2] < 0:
@@ -772,10 +772,10 @@ def hybrid_quenching_model(theta, gals_df):
     cen_hosthalo_mass_arr, sat_hosthalo_mass_arr = get_host_halo_mock(gals_df)
     cen_stellar_mass_arr, sat_stellar_mass_arr = get_stellar_mock(gals_df)
 
-    f_red_cen = 1 - np.exp(-((cen_stellar_mass_arr/Mstar_q)**mu))
+    f_red_cen = 1 - np.exp(-((cen_stellar_mass_arr/(10**Mstar_q))**mu))
 
-    g_Mstar = np.exp(-((sat_stellar_mass_arr/Mstar_q)**mu))
-    h_Mh = np.exp(-((sat_hosthalo_mass_arr/Mh_q)**nu))
+    g_Mstar = np.exp(-((sat_stellar_mass_arr/(10**Mstar_q))**mu))
+    h_Mh = np.exp(-((sat_hosthalo_mass_arr/(10**Mh_q))**nu))
     f_red_sat = 1 - (g_Mstar * h_Mh)
 
     return f_red_cen, f_red_sat
@@ -1180,6 +1180,7 @@ def main(args):
     print('Populating halos using best fit shmr params')
     gals_df_ = populate_mock(bf_params, model_init)
     gals_df_ = assign_cen_sat_flag(gals_df_)
+    
 
     print('Running MCMC')
     sampler = mcmc(nproc, nwalkers, nsteps, red_data[1], blue_data[1], 
