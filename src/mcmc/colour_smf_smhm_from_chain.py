@@ -1310,6 +1310,10 @@ def plot_xmhm(result, gals_bf_red, halos_bf_red, gals_bf_blue, halos_bf_blue,
     elif mf_type == 'bmf':
         plt.savefig(path_to_figures + 'bmhm_emcee_{0}.png'.format(survey))
 
+global model_init
+global gals_df_
+global path_to_figures
+
 dict_of_paths = cwpaths.cookiecutter_paths()
 path_to_raw = dict_of_paths['raw_dir']
 path_to_proc = dict_of_paths['proc_dir']
@@ -1317,10 +1321,6 @@ path_to_interim = dict_of_paths['int_dir']
 path_to_figures = dict_of_paths['plot_dir']
 path_to_external = dict_of_paths['ext_dir']
 path_to_data = dict_of_paths['data_dir']
-
-global model_init
-global gals_df_
-global path_to_figures
 
 machine = 'mac'
 mf_type = 'smf'
