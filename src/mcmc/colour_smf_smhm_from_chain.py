@@ -1153,10 +1153,10 @@ def plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red,
         xy=(0.1, 0.1), xycoords='axes fraction', bbox=dict(boxstyle="square", 
         ec='k', fc='lightgray', alpha=0.5), size=15)
     plt.show()
-    # if mf_type == 'smf':
-    #     plt.savefig(path_to_figures + 'smf_colour_{0}.png'.format(survey))
-    # elif mf_type == 'bmf':
-    #     plt.savefig(path_to_figures + 'bmf_colour_{0}.png'.format(survey))
+    if mf_type == 'smf':
+        plt.savefig(path_to_figures + 'smf_colour_{0}.png'.format(survey))
+    elif mf_type == 'bmf':
+        plt.savefig(path_to_figures + 'bmf_colour_{0}.png'.format(survey))
 
 def plot_xmhm(result, gals_bf_red, halos_bf_red, gals_bf_blue, halos_bf_blue,
     gals_data_red, halos_data_red, gals_data_blue, 
@@ -1305,10 +1305,10 @@ def plot_xmhm(result, gals_bf_red, halos_bf_red, gals_bf_blue, halos_bf_blue,
         xy=(0.8, 0.1), xycoords='axes fraction', bbox=dict(boxstyle="square", 
         ec='k', fc='lightgray', alpha=0.5), size=15)
     plt.show()
-    # if mf_type == 'smf':
-    #     plt.savefig(path_to_figures + 'smhm_emcee_{0}.png'.format(survey))
-    # elif mf_type == 'bmf':
-    #     plt.savefig(path_to_figures + 'bmhm_emcee_{0}.png'.format(survey))
+    if mf_type == 'smf':
+        plt.savefig(path_to_figures + 'smhm_emcee_{0}.png'.format(survey))
+    elif mf_type == 'bmf':
+        plt.savefig(path_to_figures + 'bmhm_emcee_{0}.png'.format(survey))
 
 dict_of_paths = cwpaths.cookiecutter_paths()
 path_to_raw = dict_of_paths['raw_dir']
@@ -1320,6 +1320,7 @@ path_to_data = dict_of_paths['data_dir']
 
 global model_init
 global gals_df_
+global path_to_figures
 
 machine = 'mac'
 mf_type = 'smf'
