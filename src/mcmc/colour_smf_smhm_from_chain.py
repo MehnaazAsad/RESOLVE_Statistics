@@ -1322,7 +1322,7 @@ path_to_figures = dict_of_paths['plot_dir']
 path_to_external = dict_of_paths['ext_dir']
 path_to_data = dict_of_paths['data_dir']
 
-machine = 'mac'
+machine = 'bender'
 mf_type = 'smf'
 survey = 'eco'
 nproc = 32
