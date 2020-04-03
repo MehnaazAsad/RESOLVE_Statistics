@@ -30,6 +30,9 @@ __author__ = '{Mehnaaz Asad}'
 rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=20)
 rc('text', usetex=True)
 rc('text.latex', preamble=[r"\usepackage{amsmath}"])
+rc('axes', linewidth=2)
+rc('xtick.major', width=2, size=7)
+rc('ytick.major', width=2, size=7)
 
 def read_chi2(path_to_file):
     """
@@ -50,7 +53,7 @@ def read_chi2(path_to_file):
 
     return chi2
 
-def reading_catls(filename, catl_format='.hdf5'):
+def reading_mock_catl(filename, catl_format='.hdf5'):
     """
     Function to read ECO/RESOLVE catalogues.
 
@@ -173,20 +176,14 @@ def read_data_catl(path_to_file, survey):
         Median redshift of survey
     """
     if survey == 'eco':
-        columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
-                    'logmstar', 'logmgas', 'grp', 'grpn', 'logmh', 'logmh_s', 
-                    'fc', 'grpmb', 'grpms', 'modelu_rcorr']
-
         # 13878 galaxies
-        eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0, \
-            usecols=columns)
+        eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0)
 
         if mf_type == 'smf':
             # 6456 galaxies                       
             catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
                 (eco_buff.grpcz.values <= 7000) & 
-                (eco_buff.absrmag.values <= -17.33) &
-                (eco_buff.logmstar.values >= 8.9)]
+                (eco_buff.absrmag.values <= -17.33)]
         elif mf_type == 'bmf':
             catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
                 (eco_buff.grpcz.values <= 7000) & 
@@ -197,16 +194,12 @@ def read_data_catl(path_to_file, survey):
         z_median = np.median(catl.grpcz.values) / (3 * 10**5)
         
     elif survey == 'resolvea' or survey == 'resolveb':
-        columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
-                    'logmstar', 'logmgas', 'grp', 'grpn', 'grpnassoc', 'logmh', 
-                    'logmh_s', 'fc', 'grpmb', 'grpms', 'f_a', 'f_b']
         # 2286 galaxies
-        resolve_live18 = pd.read_csv(path_to_file, delimiter=",", header=0, \
-            usecols=columns)
+        resolve_live18 = pd.read_csv(path_to_file, delimiter=",", header=0)
 
         if survey == 'resolvea':
             if mf_type == 'smf':
-                catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
+                catl = resolve_live18.loc[
                     (resolve_live18.grpcz.values >= 4500) & 
                     (resolve_live18.grpcz.values <= 7000) & 
                     (resolve_live18.absrmag.values <= -17.33) & 
@@ -243,7 +236,7 @@ def read_data_catl(path_to_file, survey):
 
 def get_paramvals_percentile(mcmc_table, pctl, chi2):
     """
-    Isolates 68th percentile lowest chi^2 values and takes random 1000 sample
+    Isolates 68th percentile lowest chi^2 values and takes random 100 sample
 
     Parameters
     ----------
@@ -271,14 +264,14 @@ def get_paramvals_percentile(mcmc_table, pctl, chi2):
         values[0][:4]
     bf_chi2 = mcmc_table_pctl.drop_duplicates().reset_index(drop=True).\
         values[0][4]
-    # Randomly sample 100 lowest chi2 
-    mcmc_table_pctl = mcmc_table_pctl.drop_duplicates().sample(10)
+    # Randomly sample 1000 lowest chi2 
+    mcmc_table_pctl = mcmc_table_pctl.drop_duplicates().sample(1000)
 
     return mcmc_table_pctl, bf_params, bf_chi2
 
 def diff_smf(mstar_arr, volume, h1_bool, colour_flag=False):
     """
-    Calculates differential stellar mass function
+    Calculates differential stellar mass function in units of h=1.0
 
     Parameters
     ----------
@@ -310,22 +303,27 @@ def diff_smf(mstar_arr, volume, h1_bool, colour_flag=False):
         logmstar_arr = np.log10((10**mstar_arr) / 2.041)
     else:
         logmstar_arr = np.log10(mstar_arr)
+
     if survey == 'eco' or survey == 'resolvea':
         bin_min = np.round(np.log10((10**8.9) / 2.041), 1)
         if survey == 'eco' and colour_flag == 'R':
             bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
+            bin_num = 6
         elif survey == 'eco' and colour_flag == 'B':
             bin_max = np.round(np.log10((10**11) / 2.041), 1)
+            bin_num = 6
         elif survey == 'resolvea':
             # different to avoid nan in inverse corr mat
             bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
+            bin_num = 7
         else:
             bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
-        bins = np.linspace(bin_min, bin_max, 7)
+            bin_num = 7
+        bins = np.linspace(bin_min, bin_max, bin_num)
     elif survey == 'resolveb':
         bin_min = np.round(np.log10((10**8.7) / 2.041), 1)
         bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
-        bins = np.linspace(bin_min, bin_max, 7) 
+        bins = np.linspace(bin_min, bin_max, 7)
     # Unnormalized histogram and bin edges
     counts, edg = np.histogram(logmstar_arr, bins=bins)  # paper used 17 bins
     dm = edg[1] - edg[0]  # Bin width
@@ -333,8 +331,8 @@ def diff_smf(mstar_arr, volume, h1_bool, colour_flag=False):
     # Normalized to volume and bin width
     err_poiss = np.sqrt(counts) / (volume * dm)
     err_tot = err_poiss
-
     phi = counts / (volume * dm)  # not a log quantity
+
     phi = np.log10(phi)
 
     return maxis, phi, err_tot, bins, counts
@@ -365,10 +363,10 @@ def hybrid_quenching_model(theta, gals_df):
     cen_hosthalo_mass_arr, sat_hosthalo_mass_arr = get_host_halo_mock(gals_df)
     cen_stellar_mass_arr, sat_stellar_mass_arr = get_stellar_mock(gals_df)
 
-    f_red_cen = 1 - np.exp(-((cen_stellar_mass_arr/Mstar_q)**mu))
+    f_red_cen = 1 - np.exp(-((cen_stellar_mass_arr/(10**Mstar_q))**mu))
 
-    g_Mstar = np.exp(-((sat_stellar_mass_arr/Mstar_q)**mu))
-    h_Mh = np.exp(-((sat_hosthalo_mass_arr/Mh_q)**nu))
+    g_Mstar = np.exp(-((sat_stellar_mass_arr/(10**Mstar_q))**mu))
+    h_Mh = np.exp(-((sat_hosthalo_mass_arr/10**(Mh_q))**nu))
     f_red_sat = 1 - (g_Mstar * h_Mh)
 
     return f_red_cen, f_red_sat
@@ -784,66 +782,91 @@ def get_err_data(survey, path):
     phi_arr_total = []
     phi_arr_red = []
     phi_arr_blue = []
-    for num in range(num_mocks):
-        filename = path + '{0}_cat_{1}_Planck_memb_cat.hdf5'.format(
-            mock_name, num)
-        mock_pd = reading_catls(filename) 
+    # colour_err_arr = []
+    # colour_corr_mat_inv = []
+    box_id_arr = np.linspace(5001,5008,8)
+    for box in box_id_arr:
+        box = int(box)
+        temp_path = path + '{0}/{1}_m200b_catls/'.format(box, 
+            mock_name) 
+        for num in range(num_mocks):
+            filename = temp_path + '{0}_cat_{1}_Planck_memb_cat.hdf5'.format(
+                mock_name, num)
+            mock_pd = reading_mock_catl(filename) 
 
-        # Using the same survey definition as in mcmc smf i.e excluding the 
-        # buffer
-        mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & \
-            (mock_pd.cz.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
-            (mock_pd.logmstar.values >= mstar_limit)]
+            # Using the same survey definition as in mcmc smf i.e excluding the 
+            # buffer
+            mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & \
+                (mock_pd.cz.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
+                (mock_pd.logmstar.values >= mstar_limit)]
 
-        logmstar_arr = mock_pd.logmstar.values 
-        u_r_arr = mock_pd.u_r.values
+            logmstar_arr = mock_pd.logmstar.values 
+            u_r_arr = mock_pd.u_r.values
 
-        colour_label_arr = np.empty(len(mock_pd), dtype='str')
-        for idx, value in enumerate(logmstar_arr):
+            colour_label_arr = np.empty(len(mock_pd), dtype='str')
+            for idx, value in enumerate(logmstar_arr):
 
-            if value <= 9.1:
-                if u_r_arr[idx] > 1.457:
-                    colour_label = 'R'
-                else:
-                    colour_label = 'B'
+                if value <= 9.1:
+                    if u_r_arr[idx] > 1.457:
+                        colour_label = 'R'
+                    else:
+                        colour_label = 'B'
 
-            elif value > 9.1 and value < 10.1:
-                divider = 0.24 * value - 0.7
-                if u_r_arr[idx] > divider:
-                    colour_label = 'R'
-                else:
-                    colour_label = 'B'
+                elif value > 9.1 and value < 10.1:
+                    divider = 0.24 * value - 0.7
+                    if u_r_arr[idx] > divider:
+                        colour_label = 'R'
+                    else:
+                        colour_label = 'B'
 
-            elif value >= 10.1:
-                if u_r_arr[idx] > 1.7:
-                    colour_label = 'R'
-                else:
-                    colour_label = 'B'
-                
-            colour_label_arr[idx] = colour_label
+                elif value >= 10.1:
+                    if u_r_arr[idx] > 1.7:
+                        colour_label = 'R'
+                    else:
+                        colour_label = 'B'
+                    
+                colour_label_arr[idx] = colour_label
 
-        mock_pd['colour_label'] = colour_label_arr
+            mock_pd['colour_label'] = colour_label_arr
 
-        #Measure SMF of mock using diff_smf function
-        max_total, phi_total, err_total, bins_total, counts_total = \
-            diff_smf(logmstar_arr, volume, False)
-        max_red, phi_red, err_red, bins_red, counts_red = \
-            diff_smf(mock_pd.logmstar.loc[mock_pd.colour_label.values == 'R'],
-            volume, False, 'R')
-        max_blue, phi_blue, err_blue, bins_blue, counts_blue = \
-            diff_smf(mock_pd.logmstar.loc[mock_pd.colour_label.values == 'B'],
-            volume, False, 'B')
-        phi_arr_total.append(phi_total)
-        phi_arr_red.append(phi_red)
-        phi_arr_blue.append(phi_blue)
+            #Measure SMF of mock using diff_smf function
+            max_total, phi_total, err_total, bins_total, counts_total = \
+                diff_smf(logmstar_arr, volume, False)
+            max_red, phi_red, err_red, bins_red, counts_red = \
+                diff_smf(mock_pd.logmstar.loc[mock_pd.colour_label.values == 'R'],
+                volume, False, 'R')
+            max_blue, phi_blue, err_blue, bins_blue, counts_blue = \
+                diff_smf(mock_pd.logmstar.loc[mock_pd.colour_label.values == 'B'],
+                volume, False, 'B')
+            phi_arr_total.append(phi_total)
+            phi_arr_red.append(phi_red)
+            phi_arr_blue.append(phi_blue)
 
     phi_arr_total = np.array(phi_arr_total)
     phi_arr_red = np.array(phi_arr_red)
     phi_arr_blue = np.array(phi_arr_blue)
 
-    err_total = np.std(phi_arr_total, axis=0)
-    err_red = np.std(phi_arr_red, axis=0)
-    err_blue = np.std(phi_arr_blue, axis=0)
+    # Covariance matrix for total phi (all galaxies)
+    cov_mat = np.cov(phi_arr_total, rowvar=False) # default norm is N-1
+    err_total = np.sqrt(cov_mat.diagonal())
+    cov_mat_red = np.cov(phi_arr_red, rowvar=False) # default norm is N-1
+    err_red = np.sqrt(cov_mat_red.diagonal())
+    # colour_err_arr.append(err_red)
+    cov_mat_blue = np.cov(phi_arr_blue, rowvar=False) # default norm is N-1
+    err_blue = np.sqrt(cov_mat_blue.diagonal())
+    # colour_err_arr.append(err_blue)
+
+    # corr_mat_red = cov_mat_red / np.outer(err_red , err_red)
+    # corr_mat_inv_red = np.linalg.inv(corr_mat_red)
+    # colour_corr_mat_inv.append(corr_mat_inv_red)
+    # corr_mat_blue = cov_mat_blue / np.outer(err_blue , err_blue)
+    # corr_mat_inv_blue = np.linalg.inv(corr_mat_blue)
+    # colour_corr_mat_inv.append(corr_mat_inv_blue)
+
+    # cov_mat_colour = np.cov(phi_arr_red,phi_arr_blue, rowvar=False)
+    # err_colour = np.sqrt(cov_mat_colour.diagonal())
+    # corr_mat_colour = cov_mat_colour / np.outer(err_colour, err_colour)                                                           
+    # corr_mat_inv_colour = np.linalg.inv(corr_mat_colour)
 
     return err_total, err_red, err_blue
 
@@ -972,6 +995,10 @@ def mp_func(a_list):
     phi_red_arr = []
     maxis_blue_arr = []
     phi_blue_arr = []
+    cen_gals_red_arr = []
+    cen_halos_red_arr = []
+    cen_gals_blue_arr = []
+    cen_halos_blue_arr = []
 
     for theta in a_list:  
         f_red_cen, f_red_sat = hybrid_quenching_model(theta, gals_df_)
@@ -979,13 +1006,19 @@ def mp_func(a_list):
         v_sim = 130**3
         total_model, red_model, blue_model = measure_all_smf(gals_df, v_sim 
         , False)     
-
+        cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue = \
+            get_centrals_mock(gals_df)
         maxis_red_arr.append(red_model[0])
         phi_red_arr.append(red_model[1])
         maxis_blue_arr.append(blue_model[0])
         phi_blue_arr.append(blue_model[1])
+        cen_gals_red_arr.append(cen_gals_red)
+        cen_halos_red_arr.append(cen_halos_red)
+        cen_gals_blue_arr.append(cen_gals_blue)
+        cen_halos_blue_arr.append(cen_halos_blue)
 
-    return [maxis_red_arr, phi_red_arr, maxis_blue_arr, phi_blue_arr]
+    return [maxis_red_arr, phi_red_arr, maxis_blue_arr, phi_blue_arr, 
+    cen_gals_red_arr, cen_halos_red_arr, cen_gals_blue_arr, cen_halos_blue_arr]
 
 def mp_init(mcmc_table_pctl,nproc):
     """
@@ -1050,72 +1083,62 @@ def plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red,
     """
     fig1 = plt.figure(figsize=(10,10))
 
-    # lower_err = np.log10(phi_data - err_data)
-    # upper_err = np.log10(phi_data + err_data)
-    # lower_err = np.log10(phi_data) - lower_err
-    # upper_err = upper_err - np.log10(phi_data)
-    # asymmetric_err = [lower_err, upper_err]
     maxis_red_data, phi_red_data, err_red_data = red_data[0], red_data[1], \
         red_data[2]
     maxis_blue_data, phi_blue_data, err_blue_data = blue_data[0], blue_data[1], \
         blue_data[2]
-    lower_err = phi_red_data - err_red_data
-    upper_err = phi_red_data + err_red_data
-    lower_err = phi_red_data - lower_err
-    upper_err = upper_err - phi_red_data
+    lower_err = phi_red_data[:-1] - err_red_data
+    upper_err = phi_red_data[:-1] + err_red_data
+    lower_err = phi_red_data[:-1] - lower_err
+    upper_err = upper_err - phi_red_data[:-1]
     asymmetric_err = [lower_err, upper_err]
-    plt.errorbar(maxis_red_data,phi_red_data,yerr=asymmetric_err,color='r',fmt='s',
-        ecolor='r',markersize=5,capsize=5,capthick=0.5,
-        label='data',zorder=10)
-    lower_err = phi_blue_data - err_blue_data
-    upper_err = phi_blue_data + err_blue_data
-    lower_err = phi_blue_data - lower_err
-    upper_err = upper_err - phi_blue_data
+    plt.errorbar(maxis_red_data[:-1],phi_red_data[:-1],yerr=asymmetric_err,
+        color='darkred',fmt='s', ecolor='darkred',markersize=5,capsize=5,
+        capthick=0.5,label='data',zorder=10)
+    lower_err = phi_blue_data[:-1] - err_blue_data
+    upper_err = phi_blue_data[:-1] + err_blue_data
+    lower_err = phi_blue_data[:-1] - lower_err
+    upper_err = upper_err - phi_blue_data[:-1]
     asymmetric_err = [lower_err, upper_err]
-    plt.errorbar(maxis_blue_data,phi_blue_data,yerr=asymmetric_err,color='b',fmt='s',
-        ecolor='b',markersize=5,capsize=5,capthick=0.5,
-        label='data',zorder=10)
+    plt.errorbar(maxis_blue_data[:-1],phi_blue_data[:-1],yerr=asymmetric_err,
+        color='darkblue',fmt='s', ecolor='darkblue',markersize=5,capsize=5,
+        capthick=0.5,label='data',zorder=10)
     for idx in range(len(result[0][0])):
-        plt.plot(result[0][0][idx],result[0][1][idx],color='red',
+        plt.plot(result[0][0][idx],result[0][1][idx],color='indianred',
             linestyle='-',alpha=0.3,zorder=0,label='model')
     for idx in range(len(result[0][2])):
-        plt.plot(result[0][2][idx],result[0][3][idx],color='blue',
+        plt.plot(result[0][2][idx],result[0][3][idx],color='cornflowerblue',
             linestyle='-',alpha=0.3,zorder=0,label='model')
     for idx in range(len(result[1][0])):
-        plt.plot(result[1][0][idx],result[1][1][idx],color='red',
-            linestyle='-',alpha=0.3,zorder=1)
+        plt.plot(result[1][0][idx],result[1][1][idx],color='indianred',
+            linestyle='-',alpha=0.3,zorder=0)
     for idx in range(len(result[1][2])):
-        plt.plot(result[1][2][idx],result[1][3][idx],color='blue',
+        plt.plot(result[1][2][idx],result[1][3][idx],color='cornflowerblue',
             linestyle='-',alpha=0.3,zorder=0,label='model')
     for idx in range(len(result[2][0])):
-        plt.plot(result[2][0][idx],result[2][1][idx],color='red',
-            linestyle='-',alpha=0.3,zorder=2)
+        plt.plot(result[2][0][idx],result[2][1][idx],color='indianred',
+            linestyle='-',alpha=0.3,zorder=0)
     for idx in range(len(result[2][2])):
-        plt.plot(result[2][2][idx],result[2][3][idx],color='blue',
-            linestyle='-',alpha=0.3,zorder=2)
+        plt.plot(result[2][2][idx],result[2][3][idx],color='cornflowerblue',
+            linestyle='-',alpha=0.3,zorder=0)
     for idx in range(len(result[3][0])):
-        plt.plot(result[3][0][idx],result[3][1][idx],color='red',
-            linestyle='-',alpha=0.3,zorder=3)
+        plt.plot(result[3][0][idx],result[3][1][idx],color='indianred',
+            linestyle='-',alpha=0.3,zorder=0)
     for idx in range(len(result[3][2])):
-        plt.plot(result[3][2][idx],result[3][3][idx],color='blue',
-            linestyle='-',alpha=0.3,zorder=3)
+        plt.plot(result[3][2][idx],result[3][3][idx],color='cornflowerblue',
+            linestyle='-',alpha=0.3,zorder=0)
     for idx in range(len(result[4][0])):
-        plt.plot(result[4][0][idx],result[4][1][idx],color='red',
-            linestyle='-',alpha=0.3,zorder=4)
+        plt.plot(result[4][0][idx],result[4][1][idx],color='indianred',
+            linestyle='-',alpha=0.3,zorder=0)
     for idx in range(len(result[4][2])):
-        plt.plot(result[4][2][idx],result[4][3][idx],color='blue',
-            linestyle='-',alpha=0.3,zorder=4)
-    # lower_err = np.log10((10**phi_model_bf) - err_tot_model_bf)
-    # upper_err = np.log10((10**phi_model_bf) + err_tot_model_bf)
-    # lower_err = phi_model_bf - lower_err
-    # upper_err = upper_err - phi_model_bf
-    # asymmetric_err = [lower_err, upper_err]
+        plt.plot(result[4][2][idx],result[4][3][idx],color='cornflowerblue',
+            linestyle='-',alpha=0.3,zorder=0)
     # REMOVED BEST FIT ERROR
     plt.errorbar(maxis_bf_red,phi_bf_red,
-        color='r',fmt='-s',ecolor='r',markersize=3,lw=5,
+        color='darkred',fmt='-s',ecolor='darkred',markersize=3,lw=3,
         capsize=5,capthick=0.5,label='best fit',zorder=10)
     plt.errorbar(maxis_bf_blue,phi_bf_blue,
-        color='b',fmt='-s',ecolor='b',markersize=3,lw=5,
+        color='darkblue',fmt='-s',ecolor='darkblue',markersize=3,lw=3,
         capsize=5,capthick=0.5,label='best fit',zorder=10)
     plt.ylim(-5,-1)
     if mf_type == 'smf':
@@ -1183,51 +1206,77 @@ def plot_xmhm(result, gals_bf_red, halos_bf_red, gals_bf_blue, halos_bf_blue,
 
     fig1 = plt.figure(figsize=(10,10))
     # NOT PLOTTING DATA RELATION
-    plt.errorbar(x_data_red,y_data_red,yerr=y_std_err_data_red,color='r',fmt='s',\
-        ecolor='r',markersize=5,capsize=5,capthick=0.5,\
-            label='data',zorder=10)
-    plt.errorbar(x_data_blue,y_data_blue,yerr=y_std_err_data_blue,color='b',fmt='s',\
-        ecolor='b',markersize=5,capsize=5,capthick=0.5,\
-            label='data',zorder=10)
+    # plt.errorbar(x_data_red,y_data_red,yerr=y_std_err_data_red,color='r',fmt='s',\
+    #     ecolor='r',markersize=5,capsize=5,capthick=0.5,\
+    #         label='data',zorder=10)
+    # plt.errorbar(x_data_blue,y_data_blue,yerr=y_std_err_data_blue,color='b',fmt='s',\
+    #     ecolor='b',markersize=5,capsize=5,capthick=0.5,\
+    #         label='data',zorder=10)
 
+    # NOT PLOTTING BEHROOZI RELATION
     # plt.errorbar(x_b10,y_b10, color='k',fmt='--s',\
     #     markersize=3, label='Behroozi10', zorder=10, alpha=0.7)
 
-    # for idx in range(len(result[0][0])):
-    #     x_model,y_model,y_std_model,y_std_err_model = \
-    #         Stats_one_arr(result[0][4][idx],result[0][3][idx],base=0.4,\
-    #             bin_statval='center')
-    #     plt.plot(x_model,y_model,color='lightgray',linestyle='-',alpha=0.5,\
-    #         zorder=0,label='model')
-    # for idx in range(len(result[1][0])):
-    #     x_model,y_model,y_std_model,y_std_err_model = \
-    #         Stats_one_arr(result[1][4][idx],result[1][3][idx],base=0.4,\
-    #             bin_statval='center')
-    #     plt.plot(x_model,y_model,color='lightgray',linestyle='-',alpha=0.5,\
-    #         zorder=1)
-    # for idx in range(len(result[2][0])):
-    #     x_model,y_model,y_std_model,y_std_err_model = \
-    #         Stats_one_arr(result[2][4][idx],result[2][3][idx],base=0.4,\
-    #             bin_statval='center')
-    #     plt.plot(x_model,y_model,color='lightgray',linestyle='-',alpha=0.5,\
-    #         zorder=2)
-    # for idx in range(len(result[3][0])):
-    #     x_model,y_model,y_std_model,y_std_err_model = \
-    #         Stats_one_arr(result[3][4][idx],result[3][3][idx],base=0.4,\
-    #             bin_statval='center')
-    #     plt.plot(x_model,y_model,color='lightgray',linestyle='-',alpha=0.5,\
-    #         zorder=3)
-    # for idx in range(len(result[4][0])):
-    #     x_model,y_model,y_std_model,y_std_err_model = \
-    #         Stats_one_arr(result[4][4][idx],result[4][3][idx],base=0.4,\
-    #             bin_statval='center')
-    #     plt.plot(x_model,y_model,color='lightgray',linestyle='-',alpha=0.5,\
-    #         zorder=4)
+    for idx in range(len(result[0][0])):
+        x_model_red,y_model_red,y_std_model_red,y_std_err_model_red = \
+            Stats_one_arr(result[0][5][idx],result[0][4][idx],base=0.4,\
+                bin_statval='center')
+        plt.plot(x_model_red,y_model_red,color='indianred',linestyle='-', \
+            alpha=0.5, zorder=0,label='model')
+        x_model_blue,y_model_blue,y_std_model_blue,y_std_err_model_blue = \
+            Stats_one_arr(result[0][7][idx],result[0][6][idx],base=0.4,\
+                bin_statval='center')
+        plt.plot(x_model_blue,y_model_blue,color='cornflowerblue',linestyle='-',alpha=0.5,\
+            zorder=0,label='model')
+    for idx in range(len(result[1][0])):
+        x_model_red,y_model_red,y_std_model_red,y_std_err_model_red = \
+            Stats_one_arr(result[1][5][idx],result[1][4][idx],base=0.4,\
+                bin_statval='center')
+        plt.plot(x_model_red,y_model_red,color='indianred',linestyle='-',alpha=0.5,\
+            zorder=0,label='model')
+        x_model_blue,y_model_blue,y_std_model_blue,y_std_err_model_blue = \
+            Stats_one_arr(result[1][7][idx],result[1][6][idx],base=0.4,\
+                bin_statval='center')
+        plt.plot(x_model_blue,y_model_blue,color='cornflowerblue',linestyle='-',alpha=0.5,\
+            zorder=0,label='model')
+    for idx in range(len(result[2][0])):
+        x_model_red,y_model_red,y_std_model_red,y_std_err_model_red = \
+            Stats_one_arr(result[2][5][idx],result[2][4][idx],base=0.4,\
+                bin_statval='center')
+        plt.plot(x_model_red,y_model_red,color='indianred',linestyle='-',alpha=0.5,\
+            zorder=0,label='model')
+        x_model_blue,y_model_blue,y_std_model_blue,y_std_err_model_blue = \
+            Stats_one_arr(result[2][7][idx],result[2][6][idx],base=0.4,\
+                bin_statval='center')
+        plt.plot(x_model_blue,y_model_blue,color='cornflowerblue',linestyle='-',alpha=0.5,\
+            zorder=0,label='model')
+    for idx in range(len(result[3][0])):
+        x_model_red,y_model_red,y_std_model_red,y_std_err_model_red = \
+            Stats_one_arr(result[3][5][idx],result[3][4][idx],base=0.4,\
+                bin_statval='center')
+        plt.plot(x_model_red,y_model_red,color='indianred',linestyle='-',alpha=0.5,\
+            zorder=0,label='model')
+        x_model_blue,y_model_blue,y_std_model_blue,y_std_err_model_blue = \
+            Stats_one_arr(result[3][7][idx],result[3][6][idx],base=0.4,\
+                bin_statval='center')
+        plt.plot(x_model_blue,y_model_blue,color='cornflowerblue',linestyle='-',alpha=0.5,\
+            zorder=0,label='model')
+    for idx in range(len(result[4][0])):
+        x_model_red,y_model_red,y_std_model_red,y_std_err_model_red = \
+            Stats_one_arr(result[4][5][idx],result[4][4][idx],base=0.4,\
+                bin_statval='center')
+        plt.plot(x_model_red,y_model_red,color='indianred',linestyle='-',alpha=0.5,\
+            zorder=0,label='model')
+        x_model_blue,y_model_blue,y_std_model_blue,y_std_err_model_blue = \
+            Stats_one_arr(result[4][7][idx],result[4][6][idx],base=0.4,\
+                bin_statval='center')
+        plt.plot(x_model_blue,y_model_blue,color='cornflowerblue',linestyle='-',alpha=0.5,\
+            zorder=0,label='model')
 
     # REMOVED ERROR BAR ON BEST FIT
-    plt.errorbar(x_bf_red,y_bf_red,color='r',fmt='-s',ecolor='r',lw=5,\
+    plt.errorbar(x_bf_red,y_bf_red,color='darkred',fmt='-s',ecolor='darkred',lw=3,\
         markersize=4,capsize=5,capthick=0.5,label='best fit',zorder=10)
-    plt.errorbar(x_bf_blue,y_bf_blue,color='b',fmt='-s',ecolor='b',lw=5,\
+    plt.errorbar(x_bf_blue,y_bf_blue,color='darkblue',fmt='-s',ecolor='darkblue',lw=3,\
         markersize=4,capsize=5,capthick=0.5,label='best fit',zorder=10)
 
     if survey == 'resolvea' and mf_type == 'smf':
@@ -1267,6 +1316,7 @@ path_to_proc = dict_of_paths['proc_dir']
 path_to_interim = dict_of_paths['int_dir']
 path_to_figures = dict_of_paths['plot_dir']
 path_to_external = dict_of_paths['ext_dir']
+path_to_data = dict_of_paths['data_dir']
 
 global model_init
 global gals_df_
@@ -1274,7 +1324,7 @@ global gals_df_
 machine = 'mac'
 mf_type = 'smf'
 survey = 'eco'
-nproc = 2
+nproc = 32
 
 if machine == 'bender':
     halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
@@ -1282,12 +1332,12 @@ if machine == 'bender':
 elif machine == 'mac':
     halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
 
-chi2_file = path_to_proc + '{0}_colour_chi2.txt'.format(survey)
-chain_file = path_to_proc + 'mcmc_{0}_colour_raw.txt'.format(survey)
+chi2_file = path_to_proc + 'smhm_colour_run9/{0}_colour_chi2.txt'.format(survey)
+chain_file = path_to_proc + 'smhm_colour_run9/mcmc_{0}_colour_raw.txt'.format(survey)
 
 if survey == 'eco':
-    catl_file = path_to_raw + "eco_all.csv"
-    path_to_mocks = path_to_external + 'ECO_mvir_catls/'
+    catl_file = path_to_raw + "eco/eco_all.csv"
+    path_to_mocks = path_to_data + 'mocks/m200b/eco/'
 elif survey == 'resolvea' or survey == 'resolveb':
     catl_file = path_to_raw + "RESOLVE_liveJune2018.csv"
 
@@ -1315,7 +1365,7 @@ print('Measuring SMF for data')
 total_data, red_data, blue_data = measure_all_smf(catl, volume, True)
 
 print('Measuring error in data from mocks')
-total_data[2], red_data[2], blue_data[2] = \
+total_data, red_data[2], blue_data[2] = \
     get_err_data(survey, path_to_mocks)
 
 model_init = halocat_init(halo_catalog, z_median)
@@ -1325,8 +1375,8 @@ bf_params_shmr = np.array([12.32381675, 10.56581819, 0.4276319, 0.7457711,
     0.34784431])
 gals_df_ = populate_mock(bf_params_shmr, model_init)
 gals_df_ = assign_cen_sat_flag(gals_df_)
-gals_df_ = gals_df_[['stellar_mass', 'C_S', 'halo_mvir', 'halo_mvir_host_halo',
-    'halo_macc','halo_hostid', 'halo_id']]
+# gals_df_ = gals_df_[['stellar_mass', 'C_S', 'halo_mvir', 'halo_mvir_host_halo',\
+#     'halo_macc','halo_hostid', 'halo_id']]
 
 print('Multiprocessing')
 result = mp_init(mcmc_table_pctl, nproc)
