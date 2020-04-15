@@ -524,8 +524,6 @@ def populate_mock(theta, model):
     gals_df: pandas dataframe
         Dataframe of mock catalog
     """
-    """"""
-
     mhalo_characteristic, mstellar_characteristic, mlow_slope, mhigh_slope,\
         mstellar_scatter = theta
     model.param_dict['smhm_m1_0'] = mhalo_characteristic
