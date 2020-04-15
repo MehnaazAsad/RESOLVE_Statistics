@@ -19,9 +19,9 @@ dependencies:
   - seaborn
     #- sphinx>=1.6
   - pip
-  - emcee
+  - emcee=2.2.1
   - imagemagick
-  - pip:
+  - pip:    
       - GitPython
       - progressbar2
       - cosmo-utils
@@ -29,5 +29,7 @@ dependencies:
         #- sphinx-astropy
         #- sphinx_rtd_theme
         #- sphinx-automodapi
+        #- astroid<2.3
+        #- pylint<2.4
       - chainconsumer
-      - git+https://github.com/astropy/halotools.git
+      - git+https://github.com/astropy/halotools.git@master
