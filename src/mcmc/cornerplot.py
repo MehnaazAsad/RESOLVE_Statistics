@@ -41,38 +41,38 @@ else:
      mcmc_smf_1.mstellar_c = mcmc_smf_1.mstellar_c.astype(np.float64)
      mcmc_smf_1.lowmass_slope = mcmc_smf_1.lowmass_slope.astype(np.float64)
 
-chain_fname_bmf_1 = path_to_proc + 'bmhm_run3/combined_processed_{0}_raw.txt'.\
-     format(survey)
-mcmc_bmf_1 = pd.read_csv(chain_fname_bmf_1,
-    names=['mhalo_c','mstellar_c','lowmass_slope','highmass_slope','scatter'], 
-    header=None, delim_whitespace=True)
-# mcmc_bmf_1 = mcmc_bmf_1[mcmc_bmf_1.mhalo_c.values != '#']
-mcmc_bmf_1.mhalo_c = mcmc_bmf_1.mhalo_c.astype(np.float64)
-mcmc_bmf_1.mstellar_c = mcmc_bmf_1.mstellar_c.astype(np.float64)
-mcmc_bmf_1.lowmass_slope = mcmc_bmf_1.lowmass_slope.astype(np.float64)
+# chain_fname_bmf_1 = path_to_proc + 'bmhm_run3/combined_processed_{0}_raw.txt'.\
+#      format(survey)
+# mcmc_bmf_1 = pd.read_csv(chain_fname_bmf_1,
+#     names=['mhalo_c','mstellar_c','lowmass_slope','highmass_slope','scatter'], 
+#     header=None, delim_whitespace=True)
+# # mcmc_bmf_1 = mcmc_bmf_1[mcmc_bmf_1.mhalo_c.values != '#']
+# mcmc_bmf_1.mhalo_c = mcmc_bmf_1.mhalo_c.astype(np.float64)
+# mcmc_bmf_1.mstellar_c = mcmc_bmf_1.mstellar_c.astype(np.float64)
+# mcmc_bmf_1.lowmass_slope = mcmc_bmf_1.lowmass_slope.astype(np.float64)
 
 # Cases where last parameter was a NaN and its value was being written to 
 # the first element of the next line followed by 4 NaNs for the other parameters
-for idx,row in enumerate(mcmc_bmf_1.values):
-     if np.isnan(row)[4] == True and np.isnan(row)[3] == False:
-          scatter_val = mcmc_bmf_1.values[idx+1][0]
-          row[4] = scatter_val 
+# for idx,row in enumerate(mcmc_bmf_1.values):
+#      if np.isnan(row)[4] == True and np.isnan(row)[3] == False:
+#           scatter_val = mcmc_bmf_1.values[idx+1][0]
+#           row[4] = scatter_val 
 
 for idx,row in enumerate(mcmc_smf_1.values):
      if np.isnan(row)[4] == True and np.isnan(row)[3] == False:
           scatter_val = mcmc_smf_1.values[idx+1][0]
           row[4] = scatter_val
 
-mcmc_bmf_1 = mcmc_bmf_1.dropna(axis='index', how='any').reset_index(drop=True)
+# mcmc_bmf_1 = mcmc_bmf_1.dropna(axis='index', how='any').reset_index(drop=True)
 mcmc_smf_1 = mcmc_smf_1.dropna(axis='index', how='any').reset_index(drop=True)
 
-sampler_bmf_1 = mcmc_bmf_1.values.reshape(250,1000,5)
-sampler_smf_1 = mcmc_smf_1.values.reshape(250,1000,5)
+# sampler_bmf_1 = mcmc_bmf_1.values.reshape(250,1000,5)
+sampler_smf_1 = mcmc_smf_1.values.reshape(1000,250,5)
 
 # Removing burn-in
 ndim = 5
-samples_bmf_1 = sampler_bmf_1[:, 130:, :].reshape((-1, ndim))
-samples_smf_1 = sampler_smf_1[:, 130:, :].reshape((-1, ndim))
+# samples_bmf_1 = sampler_bmf_1[:, 130:, :].reshape((-1, ndim))
+samples_smf_1 = sampler_smf_1[130:, :, :].reshape((-1, ndim))
 
 survey = 'eco'
 file_ver = 2.0
@@ -129,14 +129,14 @@ behroozi10_param_vals = [12.35,10.72,0.44,0.57,0.15]
 # best_fit_eco_smhm = [12.356,10.601,0.446,0.62,0.315]
 
 c = ChainConsumer()
-# c.add_chain(samples_smf_1,parameters=[r"$\mathbf{M_{1}}$", \
-#      r"$\mathbf{M_{*(b),0}}$", r"$\boldsymbol{\beta}$",\
-#           r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$"],\
-#                name="ECO stellar", color='#E766EA', zorder=10)
-c.add_chain(samples_bmf_1,parameters=[r"$\mathbf{M_{1}}$", \
+c.add_chain(samples_smf_1,parameters=[r"$\mathbf{M_{1}}$", \
      r"$\mathbf{M_{*(b),0}}$", r"$\boldsymbol{\beta}$",\
           r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$"],\
-               name="ECO baryonic", color='#53A48D')
+               name="ECO stellar", color='#E766EA', zorder=10)
+# c.add_chain(samples_bmf_1,parameters=[r"$\mathbf{M_{1}}$", \
+#      r"$\mathbf{M_{*(b),0}}$", r"$\boldsymbol{\beta}$",\
+#           r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$"],\
+#                name="ECO baryonic", color='#53A48D')
 # c.add_chain(samples_smf_2,parameters=[r"$\mathbf{M_{1}}$", \
 #      r"$\mathbf{M_{*(b),0}}$", r"$\boldsymbol{\beta}$",\
 #           r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$"],\
