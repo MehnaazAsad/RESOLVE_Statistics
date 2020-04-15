@@ -5,6 +5,9 @@
 
 # Built-in/Generic Imports
 import time
+# import cProfile
+# import pstats
+# import io
 
 # Libs
 from halotools.empirical_models import PrebuiltSubhaloModelFactory
@@ -713,7 +716,7 @@ def lnprob(theta, phi_red, phi_blue, err, corr_mat_inv, gals_df):
     if theta[2] < 0:
         chi2 = -np.inf
         return -np.inf, chi2
-    if theta[3] < 0:
+    if theta[3] < 0 or theta[3] < 5:
         chi2 = -np.inf
         return -np.inf, chi2       
 
@@ -1189,5 +1192,17 @@ def main(args):
 # Main function
 if __name__ == '__main__':
     args = args_parser()
+    # pr = cProfile.Profile()
+    # pr.enable()
+
     main(args)
+
+    # pr.disable()
+    # s = io.StringIO()
+    # ps = pstats.Stats(pr, stream=s).sort_stats('tottime')
+    # ps.print_stats()
+
+    # with open('profile_eco_2p_16w_5s.txt', 'w+') as f:
+    #     f.write(s.getvalue())
+    
 
