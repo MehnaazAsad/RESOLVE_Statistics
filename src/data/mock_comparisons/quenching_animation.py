@@ -902,11 +902,11 @@ elif survey == 'resolvea':
 elif survey == 'resolveb':
     path_to_mocks = path_to_external + 'RESOLVE_B_mvir_catls/'
 
-chi2_file = path_to_proc + 'smhm_run3/{0}_chi2.txt'.format(survey)
-chain_file = path_to_proc + 'smhm_run3/mcmc_{0}.dat'.format(survey)
+chi2_file = path_to_proc + 'smhm_run6/{0}_chi2.txt'.format(survey)
+chain_file = path_to_proc + 'smhm_run6/mcmc_{0}.dat'.format(survey)
 
 if survey == 'eco':
-    catl_file = path_to_raw + "eco_all.csv"
+    catl_file = path_to_raw + "eco/eco_all.csv"
 elif survey == 'resolvea' or survey == 'resolveb':
     catl_file = path_to_raw + "RESOLVE_liveJune2018.csv"
 
@@ -956,10 +956,10 @@ counter = 0
 
 # parameter values from Table 1 of Zu and Mandelbaum 2015 "prior case"
 if model == 'hybrid':
-    Mh_q_arr = np.linspace(11.0, 15.5, 30) # Msun/h
-    Mstar_q_arr = np.linspace(9.0, 12.0, 30) # Msun/h
-    mu_arr = np.linspace(0.0, 3.0, 30)
-    nu_arr = np.linspace(0.0, 3.0, 30)
+    Mh_q_arr = np.linspace(11.0, 15.5, 5) # Msun/h
+    Mstar_q_arr = np.linspace(9.0, 12.0, 5) # Msun/h
+    mu_arr = np.linspace(0.0, 3.0, 5)
+    nu_arr = np.linspace(0.0, 10**5, 5)
 
 elif model == 'halo':
     Mh_qc_arr = np.linspace(11.0, 15.5, 30)
