@@ -264,8 +264,8 @@ def get_paramvals_percentile(mcmc_table, pctl, chi2):
         values[0][:4]
     bf_chi2 = mcmc_table_pctl.drop_duplicates().reset_index(drop=True).\
         values[0][4]
-    # Randomly sample 1000 lowest chi2 
-    mcmc_table_pctl = mcmc_table_pctl.drop_duplicates().sample(1000)
+    # Randomly sample 100 lowest chi2 
+    mcmc_table_pctl = mcmc_table_pctl.drop_duplicates().sample(100)
 
     return mcmc_table_pctl, bf_params, bf_chi2
 
@@ -849,12 +849,15 @@ def get_err_data(survey, path):
     # Covariance matrix for total phi (all galaxies)
     cov_mat = np.cov(phi_arr_total, rowvar=False) # default norm is N-1
     err_total = np.sqrt(cov_mat.diagonal())
-    cov_mat_red = np.cov(phi_arr_red, rowvar=False) # default norm is N-1
-    err_red = np.sqrt(cov_mat_red.diagonal())
+    # cov_mat_red = np.cov(phi_arr_red, rowvar=False) # default norm is N-1
+    # err_red = np.sqrt(cov_mat_red.diagonal())
     # colour_err_arr.append(err_red)
-    cov_mat_blue = np.cov(phi_arr_blue, rowvar=False) # default norm is N-1
-    err_blue = np.sqrt(cov_mat_blue.diagonal())
+    # cov_mat_blue = np.cov(phi_arr_blue, rowvar=False) # default norm is N-1
+    # err_blue = np.sqrt(cov_mat_blue.diagonal())
     # colour_err_arr.append(err_blue)
+
+    cov_mat_colour = np.cov(phi_arr_red,phi_arr_blue, rowvar=False)
+    err_colour = np.sqrt(cov_mat_colour.diagonal())
 
     # corr_mat_red = cov_mat_red / np.outer(err_red , err_red)
     # corr_mat_inv_red = np.linalg.inv(corr_mat_red)
@@ -868,7 +871,7 @@ def get_err_data(survey, path):
     # corr_mat_colour = cov_mat_colour / np.outer(err_colour, err_colour)                                                           
     # corr_mat_inv_colour = np.linalg.inv(corr_mat_colour)
 
-    return err_total, err_red, err_blue
+    return err_total, err_colour[0:5], err_colour[5:10]
 
 def get_best_fit_model(best_fit_params):
     """
@@ -1153,10 +1156,10 @@ def plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red,
         xy=(0.1, 0.1), xycoords='axes fraction', bbox=dict(boxstyle="square", 
         ec='k', fc='lightgray', alpha=0.5), size=15)
     plt.show()
-    if mf_type == 'smf':
-        plt.savefig(path_to_figures + 'smf_colour_{0}.png'.format(survey))
-    elif mf_type == 'bmf':
-        plt.savefig(path_to_figures + 'bmf_colour_{0}.png'.format(survey))
+    # if mf_type == 'smf':
+    #     plt.savefig(path_to_figures + 'smf_colour_{0}.png'.format(survey))
+    # elif mf_type == 'bmf':
+    #     plt.savefig(path_to_figures + 'bmf_colour_{0}.png'.format(survey))
 
 def plot_xmhm(result, gals_bf_red, halos_bf_red, gals_bf_blue, halos_bf_blue,
     gals_data_red, halos_data_red, gals_data_blue, 
@@ -1305,10 +1308,10 @@ def plot_xmhm(result, gals_bf_red, halos_bf_red, gals_bf_blue, halos_bf_blue,
         xy=(0.8, 0.1), xycoords='axes fraction', bbox=dict(boxstyle="square", 
         ec='k', fc='lightgray', alpha=0.5), size=15)
     plt.show()
-    if mf_type == 'smf':
-        plt.savefig(path_to_figures + 'smhm_emcee_{0}.png'.format(survey))
-    elif mf_type == 'bmf':
-        plt.savefig(path_to_figures + 'bmhm_emcee_{0}.png'.format(survey))
+    # if mf_type == 'smf':
+    #     plt.savefig(path_to_figures + 'smhm_emcee_{0}.png'.format(survey))
+    # elif mf_type == 'bmf':
+    #     plt.savefig(path_to_figures + 'bmhm_emcee_{0}.png'.format(survey))
 
 global model_init
 global gals_df_
@@ -1322,10 +1325,10 @@ path_to_figures = dict_of_paths['plot_dir']
 path_to_external = dict_of_paths['ext_dir']
 path_to_data = dict_of_paths['data_dir']
 
-machine = 'bender'
+machine = 'mac'
 mf_type = 'smf'
 survey = 'eco'
-nproc = 32
+nproc = 2
 
 if machine == 'bender':
     halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
@@ -1354,7 +1357,7 @@ catl, volume, cvar, z_median = read_data_catl(catl_file, survey)
 print('Getting data in specific percentile')
 mcmc_table_pctl, bf_params, bf_chi2 = \
     get_paramvals_percentile(mcmc_table, 68, chi2)
-
+print(bf_params)
 print('Assigning colour to data')
 catl = assign_colour_label_data(catl)
 
@@ -1366,7 +1369,7 @@ print('Measuring SMF for data')
 total_data, red_data, blue_data = measure_all_smf(catl, volume, True)
 
 print('Measuring error in data from mocks')
-total_data, red_data[2], blue_data[2] = \
+total_data[2], red_data[2], blue_data[2] = \
     get_err_data(survey, path_to_mocks)
 
 model_init = halocat_init(halo_catalog, z_median)
