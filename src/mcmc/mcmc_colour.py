@@ -716,7 +716,7 @@ def lnprob(theta, phi_red, phi_blue, err, corr_mat_inv, gals_df):
     if theta[2] < 0:
         chi2 = -np.inf
         return -np.inf, chi2
-    if theta[3] < 0 or theta[3] < 5:
+    if theta[3] < 0 or theta[3] > 5:
         chi2 = -np.inf
         return -np.inf, chi2       
 
