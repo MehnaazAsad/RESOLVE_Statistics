@@ -73,24 +73,26 @@ ndim = 4
 # samples_bmf_1 = sampler_bmf_1[:, 130:, :].reshape((-1, ndim))
 samples_smf_1 = sampler_smf_1[250:, :, :].reshape((-1, ndim))
 
-# survey = 'eco'
-# file_ver = 2.0
+survey = 'eco'
+file_ver = 2.0
 
-# if survey == 'eco' and file_ver == 1.0:
-#      chain_fname_smf_2 = path_to_proc + 'smhm_run4_errjk/mcmc_eco.dat'
-#      mcmc_smf_2 = pd.read_csv(chain_fname_smf_2,
-#           names=['mhalo_c','mstellar_c','lowmass_slope','highmass_slope',
-#           'scatter'],sep='\s+',dtype=np.float64)
-# else:
-#      chain_fname_smf_2 = path_to_proc + 'smhm_run5_errmock/mcmc_{0}_raw.txt'.\
-#           format(survey)
-#      mcmc_smf_2 = pd.read_csv(chain_fname_smf_2, 
-#           names=['mhalo_c','mstellar_c','lowmass_slope','highmass_slope',
-#           'scatter'],header=None, delim_whitespace=True)
-#      mcmc_smf_2 = mcmc_smf_2[mcmc_smf_2.mhalo_c.values != '#']
-#      mcmc_smf_2.mhalo_c = mcmc_smf_2.mhalo_c.astype(np.float64)
-#      mcmc_smf_2.mstellar_c = mcmc_smf_2.mstellar_c.astype(np.float64)
-#      mcmc_smf_2.lowmass_slope = mcmc_smf_2.lowmass_slope.astype(np.float64)
+if survey == 'eco' and file_ver == 1.0:
+     chain_fname_smf_2 = path_to_proc + 'smhm_run4_errjk/mcmc_eco.dat'
+     mcmc_smf_2 = pd.read_csv(chain_fname_smf_2,
+          names=['mhalo_c','mstellar_c','lowmass_slope','highmass_slope',
+          'scatter'],sep='\s+',dtype=np.float64)
+else:
+     chain_fname_smf_2 = '~/Desktop/mcmc_{0}_colour_raw.txt'.\
+          format(survey)
+     # chain_fname_smf_2 = path_to_proc + 'smhm_run5_errmock/mcmc_{0}_raw.txt'.\
+     #      format(survey)
+     mcmc_smf_2 = pd.read_csv(chain_fname_smf_2, 
+     names=['Mstar_q','Mhalo_q','mu','nu'],header=None, delim_whitespace=True)
+     mcmc_smf_2 = mcmc_smf_2[mcmc_smf_2.Mstar_q.values != '#']
+     mcmc_smf_2.Mstar_q = mcmc_smf_2.Mstar_q.astype(np.float64)
+     mcmc_smf_2.Mhalo_q = mcmc_smf_2.Mhalo_q.astype(np.float64)
+     mcmc_smf_2.mu = mcmc_smf_2.mu.astype(np.float64)
+     mcmc_smf_2.nu = mcmc_smf_2.nu.astype(np.float64)
 
 # chain_fname_bmf_2 = path_to_proc + 'bmhm_run3/combined_processed_{0}_raw.txt'.format(survey)
 # mcmc_bmf_2 = pd.read_csv(chain_fname_bmf_2,
@@ -108,37 +110,38 @@ samples_smf_1 = sampler_smf_1[250:, :, :].reshape((-1, ndim))
 #           scatter_val = mcmc_bmf_2.values[idx+1][0]
 #           row[4] = scatter_val 
 
-# for idx,row in enumerate(mcmc_smf_2.values):
-#      if np.isnan(row)[4] == True and np.isnan(row)[3] == False:
-#           scatter_val = mcmc_smf_2.values[idx+1][0]
-#           row[4] = scatter_val
+for idx,row in enumerate(mcmc_smf_1.values):
+     if np.isnan(row)[3] == True and np.isnan(row)[2] == False:
+          nu_val = mcmc_smf_1.values[idx+1][0]
+          row[3] = nu_val
 
 # mcmc_bmf_2 = mcmc_bmf_2.dropna(axis='index', how='any').reset_index(drop=True)
-# mcmc_smf_2 = mcmc_smf_2.dropna(axis='index', how='any').reset_index(drop=True)
+mcmc_smf_2 = mcmc_smf_2.dropna(axis='index', how='any').reset_index(drop=True)
+mcmc_smf_2.nu = np.log10(mcmc_smf_2.nu) # so that both run 9 and run 10 chains can be plotted 
 
 # sampler_bmf_2 = mcmc_bmf_2.values.reshape(250,1000,5)
-# sampler_smf_2 = mcmc_smf_2.values.reshape(250,1000,5)
+sampler_smf_2 = mcmc_smf_2.values.reshape(700,256,4)
 
 # Removing burn-in
-# ndim = 5
+ndim = 4
 # samples_bmf_2 = sampler_bmf_2[:, 130:, :].reshape((-1, ndim))
-# samples_smf_2 = sampler_smf_2[:, 120:, :].reshape((-1, ndim))
+samples_smf_2 = sampler_smf_2[200:, :, :].reshape((-1, ndim))
 
 zumandelbaum_param_vals = [10.5, 13.76, 0.69, 0.15]
 
 c = ChainConsumer()
-c.add_chain(samples_smf_1,parameters=[r"$\mathbf{M^{q}_{*}}$", \
-     r"$\mathbf{M^{q}_{h}}$", r"$\boldsymbol{\mu}$",\
-          r"$\boldsymbol{\nu}$"],\
-               name="ECO stellar", color='#E766EA', zorder=10)
+# c.add_chain(samples_smf_1,parameters=[r"$\mathbf{M^{q}_{*}}$", \
+#      r"$\mathbf{M^{q}_{h}}$", r"$\boldsymbol{\mu}$",\
+#           r"$\boldsymbol{\nu}$"],\
+#                name="ECO run 9", color='#E766EA', zorder=10)
 # c.add_chain(samples_bmf_1,parameters=[r"$\mathbf{M_{1}}$", \
 #      r"$\mathbf{M_{*(b),0}}$", r"$\boldsymbol{\beta}$",\
 #           r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$"],\
 #                name="ECO baryonic", color='#53A48D')
-# c.add_chain(samples_smf_2,parameters=[r"$\mathbf{M_{1}}$", \
-#      r"$\mathbf{M_{*(b),0}}$", r"$\boldsymbol{\beta}$",\
-#           r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$"],\
-#                name="ECO stellar err jknife", color='#E766EA', zorder=10)
+c.add_chain(samples_smf_2,parameters=[r"$\mathbf{M^{q}_{*}}$", \
+     r"$\mathbf{M^{q}_{h}}$", r"$\boldsymbol{\mu}$",\
+          r"$\boldsymbol{\nu}$"],\
+               name="ECO run 10", color='#53A48D', zorder=10)
 # c.add_chain(samples_bmf_2,parameters=[r"$\mathbf{M_{1}}$", \
 #      r"$\mathbf{M_{*(b),0}}$", r"$\boldsymbol{\beta}$",\
 #           r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$"],\
