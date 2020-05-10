@@ -1,3 +1,8 @@
+"""
+{This script implements the use of more than just one best fit shmr relation 
+ to model colour SMFs}
+"""
+
 from halotools.empirical_models import PrebuiltSubhaloModelFactory
 from cosmo_utils.utils.stats_funcs import Stats_one_arr
 from halotools.sim_manager import CachedHaloCatalog
