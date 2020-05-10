@@ -551,7 +551,7 @@ def populate_mock(theta, model):
             limit = np.round(np.log10((10**9.1) / 2.041), 1)
     sample_mask = model_init.mock.galaxy_table['stellar_mass'] >= 10**limit
     gals = model.mock.galaxy_table[sample_mask]
-    gals_df = gals.to_pandas()
+    gals_df = pd.DataFrame(np.array(gals))
 
     return gals_df
 
@@ -829,7 +829,7 @@ def assign_colour_label_mock(f_red_cen, f_red_sat, gals_df, drop_fred=False):
         # Saving to list
         color_label_arr[ii] = color_label
         rng_arr[ii] = rng
-    ##
+    
     ## Assigning to DataFrame
     df.loc[:, 'colour_label'] = color_label_arr
     df.loc[:, 'rng'] = rng_arr
@@ -1183,6 +1183,8 @@ def main(args):
     print('Populating halos using best fit shmr params')
     gals_df_ = populate_mock(bf_params, model_init)
     gals_df_ = assign_cen_sat_flag(gals_df_)
+    gals_df_ = gals_df_[['halo_mvir_host_halo','stellar_mass','C_S',
+        'halo_hostid','halo_id']]
     
 
     print('Running MCMC')
