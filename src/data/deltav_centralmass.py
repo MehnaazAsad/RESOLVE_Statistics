@@ -150,7 +150,7 @@ path_to_interim = dict_of_paths['int_dir']
 path_to_figures = dict_of_paths['plot_dir']
 
 
-eco = pd.read_csv(path_to_raw + 'eco_all.csv', delimiter=',', header=0)
+eco = pd.read_csv(path_to_raw + 'eco/eco_all.csv', delimiter=',', header=0)
 eco_nobuff = eco.loc[(eco.grpcz.values >= 3000) & 
     (eco.grpcz.values <= 7000) & (eco.absrmag.values <= -17.33) &
     (eco.logmstar.values >= 8.9)]
@@ -251,6 +251,7 @@ ax2.errorbar(stellar_mass_bins[:-1],std_red_cen_arr,yerr=std_red_cen_err,
     color='#f46542',fmt='s',ecolor='#f46542',markersize=4,capsize=5,
     capthick=0.5)
 ax2.set_ylabel(r'\boldmath$\sigma\ \left[km/s\right]$', fontsize=15)
+plt.show()
 
 #fig2 = plt.figure(figsize=(10,10))
 #plt.scatter(grpn_arr,deltav_arr,s=7,c=cen_colour_arr,cmap='RdBu_r')
@@ -288,3 +289,4 @@ plt.errorbar(stellar_mass_bins[:-1],std_red_cen_arr,yerr=std_red_cen_err,\
              capthick=0.5)
 plt.xlabel(r'$\mathbf{log\ M_{*,cen}}\ [\mathbf{M_{\odot}}]$')
 plt.ylabel(r'\boldmath$\sigma\ \left[km/s\right]$')
+plt.show()
