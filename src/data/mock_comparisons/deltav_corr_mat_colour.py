@@ -1,6 +1,9 @@
 """
-{This script plots stellar mass function for red and blue galaxies from data 
- AND mocks and also plots correlation matrices calculated two different ways.}
+{This script calculates velocity dispersion from mocks for red and blue galaxies
+ as well as smf for red and blue galaxies. It then calculates a full correlation
+ matrix using velocity dispersion and smf of both galaxy populations as well
+ as a correlation matrix of just velocity dispersion measurements of both 
+ galaxy populations.}
 """
 
 # Libs
