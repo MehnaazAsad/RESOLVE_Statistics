@@ -13,6 +13,7 @@ from halotools.empirical_models import PrebuiltSubhaloModelFactory
 from cosmo_utils.utils.stats_funcs import Stats_one_arr
 from halotools.sim_manager import CachedHaloCatalog
 from cosmo_utils.utils import work_paths as cwpaths
+from matplotlib.legend_handler import HandlerBase
 from collections import OrderedDict
 from multiprocessing import Pool
 import matplotlib.pyplot as plt
@@ -947,20 +948,20 @@ def measure_all_smf(table, volume, data_bool):
             diff_smf(table[logmstar_col], volume, False)
         max_red, phi_red, err_red, bins_red, counts_red = \
             diff_smf(table[logmstar_col].loc[table[colour_col] == 'R'], 
-            volume, False)
+            volume, False, 'R')
         max_blue, phi_blue, err_blue, bins_blue, counts_blue = \
             diff_smf(table[logmstar_col].loc[table[colour_col] == 'B'], 
-            volume, False)
+            volume, False, 'B')
     else:
         logmstar_col = 'stellar_mass'
         max_total, phi_total, err_total, bins_total, counts_total = \
             diff_smf(table[logmstar_col], volume, True)
         max_red, phi_red, err_red, bins_red, counts_red = \
             diff_smf(table[logmstar_col].loc[table[colour_col] == 'R'], 
-            volume, True)
+            volume, True, 'R')
         max_blue, phi_blue, err_blue, bins_blue, counts_blue = \
             diff_smf(table[logmstar_col].loc[table[colour_col] == 'B'], 
-            volume, True)
+            volume, True, 'B')
     
     return [max_total, phi_total, err_total, counts_total] , \
         [max_red, phi_red, err_red, counts_red] , \
@@ -1030,7 +1031,7 @@ def mp_init(mcmc_table_pctl,nproc):
     Parameters
     ----------
     mcmc_table_pctl: pandas dataframe
-        Mcmc chain dataframe of 1000 random samples
+        Mcmc chain dataframe of 100 random samples
 
     nproc: int
         Number of processes to use in multiprocessing
@@ -1084,26 +1085,50 @@ def plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red,
     ---------
     Nothing; SMF plot is saved in figures repository
     """
-    fig1 = plt.figure(figsize=(10,10))
+    class AnyObjectHandler(HandlerBase): 
+        def create_artists(self, legend, orig_handle, x0, y0, width, height, 
+            fontsize, trans):
+            if orig_handle[3]:
+                topcap_r = plt.Line2D([x0,x0+width*0.2], [0.8*height, 0.8*height], 
+                    linestyle='-', color='darkred') 
+                body_r = plt.Line2D([x0+width*0.1, x0+width*0.1], \
+                    [0.2*height, 0.8*height], linestyle='-', color='darkred')
+                bottomcap_r = plt.Line2D([x0, x0+width*0.2], \
+                    [0.2*height, 0.2*height], linestyle='-', color='darkred')
+                topcap_b = plt.Line2D([x0+width*0.4, x0+width*0.6], \
+                    [0.8*height, 0.8*height], linestyle='-', color='darkblue') 
+                body_b = plt.Line2D([x0+width*0.5, x0+width*0.5], \
+                    [0.2*height, 0.8*height], linestyle='-', color='darkblue')
+                bottomcap_b = plt.Line2D([x0+width*0.4, x0+width*0.6], \
+                    [0.2*height, 0.2*height], linestyle='-', color='darkblue')
+                return [topcap_r, body_r, bottomcap_r, topcap_b, body_b, bottomcap_b]
+            l1 = plt.Line2D([x0, x0+width], [0.7*height, 0.7*height], 
+                linestyle=orig_handle[2], color=orig_handle[0]) 
+            l2 = plt.Line2D([x0, x0+width], [0.3*height, 0.3*height],  
+                linestyle=orig_handle[2],
+                color=orig_handle[1])
+            return [l1, l2] 
+
+    fig1= plt.figure(figsize=(10,10))
 
     maxis_red_data, phi_red_data, err_red_data = red_data[0], red_data[1], \
         red_data[2]
     maxis_blue_data, phi_blue_data, err_blue_data = blue_data[0], blue_data[1], \
         blue_data[2]
-    lower_err = phi_red_data[:-1] - err_red_data
-    upper_err = phi_red_data[:-1] + err_red_data
-    lower_err = phi_red_data[:-1] - lower_err
-    upper_err = upper_err - phi_red_data[:-1]
+    lower_err = phi_red_data - err_red_data
+    upper_err = phi_red_data + err_red_data
+    lower_err = phi_red_data - lower_err
+    upper_err = upper_err - phi_red_data
     asymmetric_err = [lower_err, upper_err]
-    plt.errorbar(maxis_red_data[:-1],phi_red_data[:-1],yerr=asymmetric_err,
+    plt.errorbar(maxis_red_data,phi_red_data,yerr=asymmetric_err,
         color='darkred',fmt='s', ecolor='darkred',markersize=5,capsize=5,
         capthick=0.5,label='data',zorder=10)
-    lower_err = phi_blue_data[:-1] - err_blue_data
-    upper_err = phi_blue_data[:-1] + err_blue_data
-    lower_err = phi_blue_data[:-1] - lower_err
-    upper_err = upper_err - phi_blue_data[:-1]
+    lower_err = phi_blue_data - err_blue_data
+    upper_err = phi_blue_data + err_blue_data
+    lower_err = phi_blue_data - lower_err
+    upper_err = upper_err - phi_blue_data
     asymmetric_err = [lower_err, upper_err]
-    plt.errorbar(maxis_blue_data[:-1],phi_blue_data[:-1],yerr=asymmetric_err,
+    plt.errorbar(maxis_blue_data,phi_blue_data,yerr=asymmetric_err,
         color='darkblue',fmt='s', ecolor='darkblue',markersize=5,capsize=5,
         capthick=0.5,label='data',zorder=10)
     for idx in range(len(result[0][0])):
@@ -1117,7 +1142,7 @@ def plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red,
             linestyle='-',alpha=0.3,zorder=0)
     for idx in range(len(result[1][2])):
         plt.plot(result[1][2][idx],result[1][3][idx],color='cornflowerblue',
-            linestyle='-',alpha=0.3,zorder=0,label='model')
+            linestyle='-',alpha=0.3,zorder=0)
     for idx in range(len(result[2][0])):
         plt.plot(result[2][0][idx],result[2][1][idx],color='indianred',
             linestyle='-',alpha=0.3,zorder=0)
@@ -1149,9 +1174,10 @@ def plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red,
     elif mf_type == 'bmf':
         plt.xlabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=20)
     plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=20)
-    handles, labels = plt.gca().get_legend_handles_labels()
-    by_label = OrderedDict(zip(labels, handles))
-    plt.legend(by_label.values(), by_label.keys(), loc='best',prop={'size': 20})
+    plt.legend([("darkred", "darkblue", "-", False), \
+        ("indianred","cornflowerblue", "-", False), (0, 0, False, True)],\
+        ["best fit", "models", "data"], handler_map={tuple: AnyObjectHandler()},\
+        loc='best', prop={'size': 20})
     plt.annotate(r'$\boldsymbol\chi ^2 \approx$ {0}'.format(np.round(bf_chi2,2)), 
         xy=(0.1, 0.1), xycoords='axes fraction', bbox=dict(boxstyle="square", 
         ec='k', fc='lightgray', alpha=0.5), size=15)
@@ -1194,7 +1220,17 @@ def plot_xmhm(result, gals_bf_red, halos_bf_red, gals_bf_blue, halos_bf_blue,
     Returns
     ---------
     Nothing; SMHM plot is saved in figures repository
-    """    
+    """   
+    class AnyObjectHandler(HandlerBase): 
+        def create_artists(self, legend, orig_handle, x0, y0, width, height, 
+            fontsize, trans):
+            l1 = plt.Line2D([x0, x0+width], [0.7*height, 0.7*height], 
+                linestyle=orig_handle[2], color=orig_handle[0]) 
+            l2 = plt.Line2D([x0, x0+width], [0.3*height, 0.3*height],  
+                linestyle=orig_handle[2],
+                color=orig_handle[1])
+            return [l1, l2]  
+
     x_bf_red,y_bf_red,y_std_bf_red,y_std_err_bf_red = Stats_one_arr(halos_bf_red,\
     gals_bf_red,base=0.4,bin_statval='center')
     x_bf_blue,y_bf_blue,y_std_bf_blue,y_std_err_bf_blue = Stats_one_arr(halos_bf_blue,\
@@ -1301,9 +1337,13 @@ def plot_xmhm(result, gals_bf_red, halos_bf_red, gals_bf_blue, halos_bf_blue,
         elif survey == 'resolveb':
             plt.ylim(np.log10((10**9.1)/2.041),)
         plt.ylabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=20)
-    handles, labels = plt.gca().get_legend_handles_labels()
-    by_label = OrderedDict(zip(labels, handles))
-    plt.legend(by_label.values(), by_label.keys(), loc='best',prop={'size': 20})
+    # handles, labels = plt.gca().get_legend_handles_labels()
+    # by_label = OrderedDict(zip(labels, handles))
+    # plt.legend(by_label.values(), by_label.keys(), loc='best',prop={'size': 20})
+    plt.legend([("darkred", "darkblue", "-"), \
+        ("indianred","cornflowerblue", "-")],\
+        ["best fit", "models"], handler_map={tuple: AnyObjectHandler()},\
+        loc='best', prop={'size': 20})
     plt.annotate(r'$\boldsymbol\chi ^2 \approx$ {0}'.format(np.round(bf_chi2,2)), 
         xy=(0.8, 0.1), xycoords='axes fraction', bbox=dict(boxstyle="square", 
         ec='k', fc='lightgray', alpha=0.5), size=15)
@@ -1336,8 +1376,8 @@ if machine == 'bender':
 elif machine == 'mac':
     halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
 
-chi2_file = path_to_proc + 'smhm_colour_run9/{0}_colour_chi2.txt'.format(survey)
-chain_file = path_to_proc + 'smhm_colour_run9/mcmc_{0}_colour_raw.txt'.format(survey)
+chi2_file = path_to_proc + 'smhm_colour_run10/{0}_colour_chi2.txt'.format(survey)
+chain_file = path_to_proc + 'smhm_colour_run10/mcmc_{0}_colour_raw.txt'.format(survey)
 
 if survey == 'eco':
     catl_file = path_to_raw + "eco/eco_all.csv"
