@@ -309,8 +309,6 @@ def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
         path to the galaxy catalogue
     param_dict: python dictionary
         dictionary with `project` variables
-    proj_dict: python dictionary
-        Dictionary with current and new paths to project directories
     file_ext: string, optional (default = 'csv')
         file extension for the FoF file products
     Returns
@@ -408,43 +406,52 @@ def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
 
     return mockgal_pd_merged, mockgroup_pd
 
-global survey
-global mf_type
-global param_dict
-survey = 'eco'
-machine = 'mac'
-mf_type = 'smf'
+def main():
+    global survey
+    global mf_type
+    survey = 'eco'
+    machine = 'mac'
+    mf_type = 'smf'
 
-eco = {
-    'c': 3*10**5, 
-    'survey_vol': 151829.26, (Mpc/h)^3
-    'min_cz' : 3000,
-    'max_cz' : 7000,
-    'mag_limit' : -17.33,
-    'mstar_limit' : 8.9,
-    'zmin': 3000/3*10**5, # without buffer
-    'zmax': 7000/3*10**5,    
-    'l_perp': 0.07,
-    'l_para': 1.1,
-    'nmin': 1
-}
+    eco = {
+        'c': 3*10**5, 
+        'survey_vol': 151829.26, # [Mpc/h]^3
+        'min_cz' : 3000, # without buffer
+        'max_cz' : 7000, # without buffer
+        'mag_limit' : -17.33,
+        'mstar_limit' : 8.9,
+        'zmin': 3000/3*10**5, 
+        'zmax': 7000/3*10**5,  
+        'l_perp': 0.07,
+        'l_para': 1.1,
+        'nmin': 1
+    }
 
-# Changes string name of survey to variable so that the survey dict can 
-# be accessed
-param_dict = vars()[survey]
+    # Changes string name of survey to variable so that the survey dict can 
+    # be accessed
+    param_dict = vars()[survey]
 
-dict_of_paths = cwpaths.cookiecutter_paths()
-path_to_raw = dict_of_paths['raw_dir']
-path_to_data = dict_of_paths['data_dir']
+    dict_of_paths = cwpaths.cookiecutter_paths()
+    path_to_raw = dict_of_paths['raw_dir']
+    path_to_data = dict_of_paths['data_dir']
 
-halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
-    'vishnu/rockstar/vishnu_rockstar_test.hdf5'
+    halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
+        'vishnu/rockstar/vishnu_rockstar_test.hdf5'
 
-if survey == 'eco':
-    catl_file = path_to_raw + "eco/eco_all.csv"
+    if survey == 'eco':
+        catl_file = path_to_raw + "eco/eco_all.csv"
 
-catl, volume, cvar, z_median = read_data_catl(catl_file, survey)
-model_init = halocat_init(halo_catalog, z_median)
-params = np.array([12.32381675, 10.56581819, 0.4276319, 0.7457711, 0.34784431])
-gals_df = populate_mock(params, model_init)
-gals_df_rsd = apply_rsd(gals_df)
+    catl, volume, cvar, z_median = read_data_catl(catl_file, survey)
+    model_init = halocat_init(halo_catalog, z_median)
+    params = np.array([12.32381675, 10.56581819, 0.4276319, 0.7457711, \
+        0.34784431])
+    gals_df = populate_mock(params, model_init)
+    gals_rsd_df = apply_rsd(gals_df)
+    # Save above df as .dat in interim and upload to bender
+    gal_group_df, group_df = group_finding(gals_rsd_df, 
+        path_to_data + 'interim/galaxy_catalog_vishnu.dat', param_dict)
+    # Write above 2 DFs to .dat files in processed and download from bender
+
+# Main function
+if __name__ == '__main__':
+    main()
