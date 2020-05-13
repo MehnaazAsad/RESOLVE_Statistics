@@ -349,9 +349,8 @@ def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
         DataFrame with the info on each mock galaxy group
     """
     ## Constants
-    Prog_msg = param_dict['Prog_msg']
     if param_dict['verbose']:
-        print('{0} Group Finding ....'.format(Prog_msg))
+        print('Group Finding ....')
     # Speed of light - in km/s
     speed_c = param_dict['c']
     ##
@@ -424,15 +423,13 @@ def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
     mockgal_pd_merged.loc[:,'groupid'] -= 1
     ## Removing FoF files
     if param_dict['verbose']:
-        print('{0} Removing group-finding related files'.format(
-            param_dict['Prog_msg']))
+        print('Removing group-finding related files')
     os.remove(fof_file)
     os.remove(grep_file)
     os.remove(grep_g_file)
     os.remove(mock_coord_path)
-    Prog_msg = param_dict['Prog_msg']
     if param_dict['verbose']:
-        print('{0} Group Finding ....Done'.format(Prog_msg))
+        print('Group Finding ....Done')
 
     return mockgal_pd_merged, mockgroup_pd
 
@@ -453,7 +450,8 @@ def main():
         'zmax': 7000/3*10**5,  
         'l_perp': 0.07,
         'l_para': 1.1,
-        'nmin': 1
+        'nmin': 1,
+        'verbose': True
     }
 
     # Changes string name of survey to variable so that the survey dict can 
