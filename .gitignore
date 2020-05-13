@@ -88,3 +88,4 @@ src/tutorials
 *.sh
 *.txt
 *.hdf5
+data
