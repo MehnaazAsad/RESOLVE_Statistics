@@ -363,6 +363,8 @@ def get_err_data(survey, path):
                 mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & 
                     (mock_pd.cz.values <= max_cz) & 
                     (mock_pd.M_r.values <= mag_limit) &
+                    ## SHOULDN'T THIS NEXT LINE BE REMOVED AND CUT ONLY APPLIED 
+                    ## IN DIFF_SMF FUNCTION
                     (mock_pd.logmstar.values >= mstar_limit)]
 
                 logmstar_arr = mock_pd.logmstar.values 
