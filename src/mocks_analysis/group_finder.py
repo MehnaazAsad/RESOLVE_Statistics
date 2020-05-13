@@ -22,6 +22,36 @@ os.chdir('/fs1/masad/Research/Repositories/RESOLVE_Statistics')
 
 __author__ = '{Mehnaaz Asad}'
 
+def pandas_df_to_hdf5_file(data, hdf5_file, key=None, mode='w',
+        complevel=8):
+        """
+        Saves a pandas DataFrame into a normal or a `pandas` hdf5 file.
+
+        Parameters
+        ----------
+        data: pandas DataFrame object
+                DataFrame with the necessary data
+
+        hdf5_file: string
+                Path to output file (HDF5 format)
+
+        key: string
+                Location, under which to save the pandas DataFrame
+
+        mode: string, optional (default = 'w')
+                mode to handle the file.
+
+        complevel: int, range(0-9), optional (default = 8)
+                level of compression for the HDF5 file
+        """
+        ##
+        ## Saving DataFrame to HDF5 file
+        try:
+            data.to_hdf(hdf5_file, key, mode=mode, complevel=complevel)
+        except:
+            msg = 'Could not create HDF5 file'
+            raise ValueError(msg)
+
 def read_data_catl(path_to_file, survey):
     """
     Reads survey catalog from file
@@ -410,7 +440,6 @@ def main():
     global survey
     global mf_type
     survey = 'eco'
-    machine = 'mac'
     mf_type = 'smf'
 
     eco = {
@@ -434,6 +463,7 @@ def main():
     dict_of_paths = cwpaths.cookiecutter_paths()
     path_to_raw = dict_of_paths['raw_dir']
     path_to_data = dict_of_paths['data_dir']
+    path_to_processed = dict_of_paths['proc_dir']
 
     halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
         'vishnu/rockstar/vishnu_rockstar_test.hdf5'
@@ -447,10 +477,12 @@ def main():
         0.34784431])
     gals_df = populate_mock(params, model_init)
     gals_rsd_df = apply_rsd(gals_df)
-    # Save above df as .dat in interim and upload to bender
     gal_group_df, group_df = group_finding(gals_rsd_df, 
-        path_to_data + 'interim/galaxy_catalog_vishnu.dat', param_dict)
-    # Write above 2 DFs to .dat files in processed and download from bender
+        path_to_data + 'interim/', param_dict)
+    pandas_df_to_hdf5_file(data=gal_group_df,
+        hdf5_file=path_to_processed + 'gal_group.hdf5')
+    pandas_df_to_hdf5_file(data=group_df,
+        hdf5_file=path_to_processed + 'group.hdf5')
 
 # Main function
 if __name__ == '__main__':
