@@ -14,42 +14,10 @@ from tqdm import tqdm
 import pandas as pd
 import numpy as np
 import subprocess
-# import sys
-# import git
 import os
 
-
-# os.chdir('/fs1/caldervf/Repositories/Large_Scale_Structure/ECO/ECO_Mocks_Catls')
-# import src.data.utilities_python as cu
-# os.chdir('/fs1/masad/Research/Repositories/RESOLVE_Statistics') 
-
 __author__ = '{Mehnaaz Asad}'
-
-# def git_root_dir(path='./'):
-#     """
-#     Determines the path to the main `.git` folder of the project.
-#     Taken from:
-#     https://goo.gl/46y9v1
-
-#     Parameters
-#     -----------
-#     path: string, optional (default = './')
-#         path to the file within the `.git` repository
-
-#     Returns
-#     -----------
-#     git_root: string
-#         path to the main `.git` project repository
-#     """
-#     # Creating instance of Git Repo
-#     git_repo = git.Repo(os.path.abspath(path), search_parent_directories=True)
-#     # Root path
-#     git_root = git_repo.git.rev_parse("--show-toplevel")
-
-#     return git_root
-
-# sys.path.insert(0, os.path.realpath(git_root_dir(__file__)))
-
+__collaborator__ = '{Victor Calderon}'
 
 def pandas_df_to_hdf5_file(data, hdf5_file, key=None, mode='w',
         complevel=8):
@@ -703,6 +671,10 @@ def group_mass_assignment(mockgal_pd, mockgroup_pd, param_dict):
     ## Copies of DataFrames
     gal_pd   = mockgal_pd.copy()
     group_pd = mockgroup_pd.copy()
+
+    ## Changing stellar mass to log
+    gal_pd['logmstar'] = np.log10(gal_pd['stellar_mass'])
+    
     ## Constants
     Cens     = int(1)
     Sats     = int(0)
@@ -828,7 +800,7 @@ def main():
         'l_para': 1.1,
         'nmin': 1,
         'verbose': True,
-        'catl_type': 'mr'
+        'catl_type': 'mstar'
     }
 
     # Changes string name of survey to variable so that the survey dict can 
