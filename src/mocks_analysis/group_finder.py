@@ -644,36 +644,36 @@ def abundance_matching_f(dict1, dict2, dict1_names=None, dict2_names=None,
     # 1st property
     if dens1_opt:
         assert(len(dict1_names) == 2)
-        var1  = num.array(dict1[dict1_names[0]])
-        dens1 = num.array(dict1[dict1_names[1]])
+        var1  = np.array(dict1[dict1_names[0]])
+        dens1 = np.array(dict1[dict1_names[1]])
     else:
-        var1        = num.array(dict1)
+        var1        = np.array(dict1)
         assert(volume1 != None)
         ## Calculating Density for `var1`
         if reverse:
-            ncounts1 = num.array([num.where(var1<xx)[0].size for xx in var1])+1
+            ncounts1 = np.array([np.where(var1<xx)[0].size for xx in var1])+1
         else:
-            ncounts1 = num.array([num.where(var1>xx)[0].size for xx in var1])+1
+            ncounts1 = np.array([np.where(var1>xx)[0].size for xx in var1])+1
         dens1 = ncounts1.astype(float)/volume1
     # 2nd property
     if dens2_opt:
         assert(len(dict2_names) == 2)
-        var2  = num.array(dict2[dict2_names[0]])
-        dens2 = num.array(dict2[dict2_names[1]])
+        var2  = np.array(dict2[dict2_names[0]])
+        dens2 = np.array(dict2[dict2_names[1]])
     else:
-        var2        = num.array(dict2)
+        var2        = np.array(dict2)
         assert(volume2 != None)
         ## Calculating Density for `var1`
         if reverse:
-            ncounts2 = num.array([num.where(var2<xx)[0].size for xx in var2])+1
+            ncounts2 = np.array([np.where(var2<xx)[0].size for xx in var2])+1
         else:
-            ncounts2 = num.array([num.where(var2>xx)[0].size for xx in var2])+1
+            ncounts2 = np.array([np.where(var2>xx)[0].size for xx in var2])+1
         dens2 = ncounts2.astype(float)/volume2
     ##
     ## Interpolating densities and values
     interp_var2 = interp1d(dens2, var2, bounds_error=True,assume_sorted=False)
     # Value assignment
-    var1_ab = num.array([interp_var2(xx) for xx in dens1])
+    var1_ab = np.array([interp_var2(xx) for xx in dens1])
 
     return var1_ab
 
@@ -755,9 +755,8 @@ def group_mass_assignment(mockgal_pd, mockgroup_pd, param_dict):
     path_to_hmf = '/fs1/caldervf/Repositories/Large_Scale_Structure/ECO/'\
         'ECO_Mocks_Catls/data/interim/MF/Planck/ECO/Planck_H0_100.0_HMF_warren.csv'
 
-    hmf_pd = pd.read_csv(path_to_hmf, sep=',', index=False,
-        columns=['logM','ngtm'])
-        
+    hmf_pd = pd.read_csv(path_to_hmf, sep=',')
+
     ## Halo mass
     Mh_ab = abundance_matching_f(group_prop_arr,
                                     hmf_pd,
@@ -855,11 +854,12 @@ def main():
     gals_rsd_df = apply_rsd(gals_df)
     gal_group_df, group_df = group_finding(gals_rsd_df, 
         path_to_data + 'interim/', param_dict)
-    pandas_df_to_hdf5_file(data=gal_group_df,
+    gal_group_df_new, group_df_new = \
+        group_mass_assignment(gal_group_df, group_df, param_dict)
+    pandas_df_to_hdf5_file(data=gal_group_df_new,
         hdf5_file=path_to_processed + 'gal_group.hdf5', key='gal_group_df')
-    pandas_df_to_hdf5_file(data=group_df,
+    pandas_df_to_hdf5_file(data=group_df_new,
         hdf5_file=path_to_processed + 'group.hdf5', key='group_df')
-    group_mass_assignment()
 
 # Main function
 if __name__ == '__main__':
