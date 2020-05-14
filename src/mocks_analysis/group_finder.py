@@ -396,7 +396,7 @@ def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
                         sep=' ', header=None, index=False)
     # cu.File_Exists(mock_coord_path)
     ## Creating `FoF` command and executing it
-    fof_exe = os.path.join('/home/caldervf/Codes2/custom_utilities_c/', 'bin', 'fof9_ascii')
+    fof_exe = '/fs1/caldervf/custom_utilities_c/group_finder_fof/fof9_ascii'
     # cu.File_Exists(fof_exe)
     # FoF command
     fof_str = '{0} {1} {2} {3} {4} {5} {6} {7} > {8}'
