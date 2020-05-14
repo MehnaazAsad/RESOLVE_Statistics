@@ -44,11 +44,12 @@ dict_of_paths = cwpaths.cookiecutter_paths()
 path_to_raw = dict_of_paths['raw_dir']
 path_to_interim = dict_of_paths['int_dir']
 path_to_figures = dict_of_paths['plot_dir']
+path_to_data = dict_of_paths['data_dir']
 
 #HMF from hmfcalc; Warren et. al 2006
-cumunumdens_table = pd.read_csv('~/Desktop/all_plots/mVector_PLANCK-SMT .txt',\
-                                usecols=[0,8],names=['Mass','n'],comment='#',\
-                                delim_whitespace=True)
+cumunumdens_table = pd.read_csv(path_to_data + 'external/all_plots/'\
+    'mVector_PLANCK-SMT .txt', usecols=[0,8],names=['Mass','n'],comment='#',
+    delim_whitespace=True)
 
 halo_table = pd.read_csv(path_to_interim + 'id_macc.csv',header=0)
 v_sim = 130**3 #(Mpc/h)^3
