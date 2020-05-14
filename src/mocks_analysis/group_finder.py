@@ -14,13 +14,42 @@ from tqdm import tqdm
 import pandas as pd
 import numpy as np
 import subprocess
+import sys
+import git
 import os
 
-os.chdir('/fs1/caldervf/Repositories/Large_Scale_Structure/ECO/ECO_Mocks_Catls')
-import src.data.utilities_python as cu
-os.chdir('/fs1/masad/Research/Repositories/RESOLVE_Statistics') 
+
+# os.chdir('/fs1/caldervf/Repositories/Large_Scale_Structure/ECO/ECO_Mocks_Catls')
+
+# os.chdir('/fs1/masad/Research/Repositories/RESOLVE_Statistics') 
 
 __author__ = '{Mehnaaz Asad}'
+
+def git_root_dir(path='./'):
+    """
+    Determines the path to the main `.git` folder of the project.
+    Taken from:
+    https://goo.gl/46y9v1
+
+    Parameters
+    -----------
+    path: string, optional (default = './')
+        path to the file within the `.git` repository
+
+    Returns
+    -----------
+    git_root: string
+        path to the main `.git` project repository
+    """
+    # Creating instance of Git Repo
+    git_repo = git.Repo(os.path.abspath(path), search_parent_directories=True)
+    # Root path
+    git_root = git_repo.git.rev_parse("--show-toplevel")
+
+    return git_root
+
+sys.path.insert(0, os.path.realpath(git_root_dir(__file__)))
+import src.data.utilities_python as cu
 
 def pandas_df_to_hdf5_file(data, hdf5_file, key=None, mode='w',
         complevel=8):
@@ -200,7 +229,7 @@ def populate_mock(theta, model):
             limit = np.round(np.log10((10**8.7) / 2.041), 1)
         elif mf_type == 'bmf':
             limit = np.round(np.log10((10**9.1) / 2.041), 1)
-    sample_mask = model_init.mock.galaxy_table['stellar_mass'] >= 10**limit
+    sample_mask = model.mock.galaxy_table['stellar_mass'] >= 10**limit
     gals = model.mock.galaxy_table[sample_mask]
     gals_df = pd.DataFrame(np.array(gals))
 
@@ -433,6 +462,135 @@ def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
 
     return mockgal_pd_merged, mockgroup_pd
 
+def group_mass_assignment(mockgal_pd, mockgroup_pd, param_dict, proj_dict):
+    """
+    Assigns a theoretical halo mass to the group based on a group property
+    Parameters
+    -----------
+    mockgal_pd: pandas DataFrame
+        DataFrame containing information for each mock galaxy.
+        Includes galaxy properties + group ID
+    mockgroup_pd: pandas DataFrame
+        DataFame containing information for each galaxy group
+    param_dict: python dictionary
+        dictionary with `project` variables
+    proj_dict: python dictionary
+        Dictionary with current and new paths to project directories
+    Returns
+    -----------
+    mockgal_pd_new: pandas DataFrame
+        Original info + abundance matched mass of the group, M_group
+    mockgroup_pd_new: pandas DataFrame
+        Original info of `mockgroup_pd' + abundance matched mass, M_group
+    """
+    ## Constants
+    if param_dict['verbose']:
+        print('Group Mass Assign. ....')
+    ## Copies of DataFrames
+    gal_pd   = mockgal_pd.copy()
+    group_pd = mockgroup_pd.copy()
+    ## Constants
+    Cens     = int(1)
+    Sats     = int(0)
+    n_gals   = len(gal_pd  )
+    n_groups = len(group_pd)
+    ## Type of abundance matching
+    if param_dict['catl_type'] == 'mr':
+        prop_gal    = 'M_r'
+        reverse_opt = True
+    elif param_dict['catl_type'] == 'mstar':
+        prop_gal    = 'logmstar'
+        reverse_opt = False
+    # Absolute value of `prop_gal`
+    prop_gal_abs = prop_gal + '_abs'
+    ##
+    ## Selecting only a `few` columns
+    # Galaxies
+    gal_pd = gal_pd.loc[:,[prop_gal, 'groupid']]
+    # Groups
+    group_pd = group_pd[['ngals']]
+    ##
+    ## Total `prop_gal` for groups
+    group_prop_arr = [[] for x in range(n_groups)]
+    ## Looping over galaxy groups
+    # Mstar-based
+    if param_dict['catl_type'] == 'mstar':
+        for group_zz in tqdm(range(n_groups)):
+            ## Stellar mass
+            group_prop = gal_pd.loc[gal_pd['groupid']==group_zz, prop_gal]
+            group_log_prop_tot = np.log10(np.sum(10**group_prop))
+            ## Saving to array
+            group_prop_arr[group_zz] = group_log_prop_tot
+    # Luminosity-based
+    elif param_dict['catl_type'] == 'mr':
+        for group_zz in tqdm(range(n_groups)):
+            ## Total abs. magnitude of the group
+            group_prop = gal_pd.loc[gal_pd['groupid']==group_zz, prop_gal]
+            group_prop_tot = Mr_group_calc(group_prop)
+            ## Saving to array
+            group_prop_arr[group_zz] = group_prop_tot
+    ##
+    ## Saving to DataFrame
+    group_prop_arr            = np.asarray(group_prop_arr)
+    group_pd.loc[:, prop_gal] = group_prop_arr
+    if param_dict['verbose']:
+        print('Calculating group masses...Done')
+    ##
+    ## --- Halo Abundance Matching --- ##
+    ## Mass function for given cosmology
+    hmf_pd = param_dict['hmf_pd']
+    ## Halo mass
+    Mh_ab = cu.abundance_matching_f(group_prop_arr,
+                                    hmf_pd,
+                                    volume1=param_dict['survey_vol'],
+                                    reverse=reverse_opt,
+                                    dict2_names=['logM', 'ngtm'],
+                                    dens2_opt=True)
+    # Assigning to DataFrame
+    group_pd.loc[:, 'M_group'] = Mh_ab
+    ###
+    ### ---- Galaxies ---- ###
+    # Adding `M_group` to galaxy catalogue
+    gal_pd = pd.merge(gal_pd, group_pd[['M_group', 'ngals']],
+                        how='left', left_on='groupid', right_index=True)
+    # Remaining `ngals` column
+    gal_pd = gal_pd.rename(columns={'ngals':'g_ngal'})
+    #
+    # Selecting `central` and `satellite` galaxies
+    gal_pd.loc[:, prop_gal_abs] = np.abs(gal_pd[prop_gal])
+    gal_pd.loc[:, 'g_galtype']  = np.ones(n_gals).astype(int)*Sats
+    g_galtype_groups            = np.ones(n_groups)*Sats
+    ##
+    ## Looping over galaxy groups
+    for zz in tqdm(range(n_groups)):
+        gals_g = gal_pd.loc[gal_pd['groupid']==zz]
+        ## Determining group galaxy type
+        gals_g_max = gals_g.loc[gals_g[prop_gal_abs]==gals_g[prop_gal_abs].max()]
+        g_galtype_groups[zz] = int(np.random.choice(gals_g_max.index.values))
+    g_galtype_groups = np.asarray(g_galtype_groups).astype(int)
+    ## Assigning group galaxy type
+    gal_pd.loc[g_galtype_groups, 'g_galtype'] = Cens
+    ##
+    ## Dropping columns
+    # Galaxies
+    gal_col_arr = [prop_gal, prop_gal_abs, 'groupid']
+    gal_pd      = gal_pd.drop(gal_col_arr, axis=1)
+    # Groups
+    group_col_arr = ['ngals']
+    group_pd      = group_pd.drop(group_col_arr, axis=1)
+    ##
+    ## Merging to original DataFrames
+    # Galaxies
+    mockgal_pd_new = pd.merge(mockgal_pd, gal_pd, how='left', left_index=True,
+        right_index=True)
+    # Groups
+    mockgroup_pd_new = pd.merge(mockgroup_pd, group_pd, how='left',
+        left_index=True, right_index=True)
+    if param_dict['verbose']:
+        print('Group Mass Assign. ....Done')
+
+    return mockgal_pd_new, mockgroup_pd_new
+
 def main():
     global survey
     global mf_type
@@ -446,8 +604,8 @@ def main():
         'max_cz' : 7000, # without buffer
         'mag_limit' : -17.33,
         'mstar_limit' : 8.9,
-        'zmin': 3000/3*10**5, 
-        'zmax': 7000/3*10**5,  
+        'zmin': 3000/(3*10**5), 
+        'zmax': 7000/(3*10**5),  
         'l_perp': 0.07,
         'l_para': 1.1,
         'nmin': 1,
@@ -478,9 +636,9 @@ def main():
     gal_group_df, group_df = group_finding(gals_rsd_df, 
         path_to_data + 'interim/', param_dict)
     pandas_df_to_hdf5_file(data=gal_group_df,
-        hdf5_file=path_to_processed + 'gal_group.hdf5')
+        hdf5_file=path_to_processed + 'gal_group.hdf5', key='gal_group_df')
     pandas_df_to_hdf5_file(data=group_df,
-        hdf5_file=path_to_processed + 'group.hdf5')
+        hdf5_file=path_to_processed + 'group.hdf5', key='group_df')
 
 # Main function
 if __name__ == '__main__':
