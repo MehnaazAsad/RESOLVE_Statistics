@@ -718,16 +718,27 @@ def main():
     if survey == 'eco':
         catl_file = path_to_raw + "eco/eco_all.csv"
 
+    print('Reading survey data')
     catl, volume, cvar, z_median = read_data_catl(catl_file, survey)
+
+    print('Populating halos')
     model_init = halocat_init(halo_catalog, z_median)
     params = np.array([12.32381675, 10.56581819, 0.4276319, 0.7457711, \
         0.34784431])
     gals_df = populate_mock(params, model_init)
+
+    print('Applying RSD')
     gals_rsd_df = apply_rsd(gals_df)
-    gal_group_df, group_df = group_finding(gals_rsd_df, 
+    gals_rsd_subset_df = gals_rsd_df.loc[(gals_rsd_df.cz >= cz_inner) & \
+        (gals_rsd_df.cz <= cz_outer) & 
+        (gals_rsd_df.stellar_mass >= (10**8.9/2.041))] 
+
+    gal_group_df, group_df = group_finding(gals_rsd_subset_df, 
         path_to_data + 'interim/', param_dict)
     gal_group_df_new, group_df_new = \
         group_mass_assignment(gal_group_df, group_df, param_dict)
+
+    print('Writing to output files')
     pandas_df_to_hdf5_file(data=gal_group_df_new,
         hdf5_file=path_to_processed + 'gal_group.hdf5', key='gal_group_df')
     pandas_df_to_hdf5_file(data=group_df_new,
