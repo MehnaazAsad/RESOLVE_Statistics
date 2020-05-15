@@ -49,6 +49,13 @@ def pandas_df_to_hdf5_file(data, hdf5_file, key=None, mode='w',
             msg = 'Could not create HDF5 file'
             raise ValueError(msg)
 
+def kms_to_Mpc(H0,v): 
+    return v/H0 
+ 
+def vol_sphere(r): 
+    volume = (4/3)*np.pi*(r**3) 
+    return volume 
+
 def read_data_catl(path_to_file, survey):
     """
     Reads survey catalog from file
@@ -662,16 +669,30 @@ def main():
     global mf_type
     survey = 'eco'
     mf_type = 'smf'
+    machine = 'mac'
+
+    H0 = 100
+    cz_inner = 3000 # not starting at edge of box
+    cz_outer = 120*H0 # utilizing 120 Mpc of Vishnu box
+
+    dist_inner = kms_to_Mpc(H0,cz_inner) #Mpc/h
+    dist_outer = kms_to_Mpc(H0,cz_outer) #Mpc/h
+    
+    v_inner = vol_sphere(dist_inner) 
+    v_outer = vol_sphere(dist_outer) 
+    
+    v_sphere = v_outer-v_inner     
+    survey_vol = v_sphere/8          
 
     eco = {
         'c': 3*10**5, 
-        'survey_vol': 151829.26, # [Mpc/h]^3
-        'min_cz' : 3000, # without buffer
-        'max_cz' : 7000, # without buffer
+        'survey_vol': survey_vol,
+        'min_cz' : cz_inner, 
+        'max_cz' : cz_outer, 
         'mag_limit' : -17.33,
         'mstar_limit' : 8.9,
-        'zmin': 3000/(3*10**5), 
-        'zmax': 7000/(3*10**5),  
+        'zmin': cz_inner/(3*10**5), 
+        'zmax': cz_outer/(3*10**5),  
         'l_perp': 0.07,
         'l_para': 1.1,
         'nmin': 1,
@@ -688,8 +709,11 @@ def main():
     path_to_data = dict_of_paths['data_dir']
     path_to_processed = dict_of_paths['proc_dir']
 
-    halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
-        'vishnu/rockstar/vishnu_rockstar_test.hdf5'
+    if machine == 'bender':
+        halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
+                    'vishnu/rockstar/vishnu_rockstar_test.hdf5'
+    elif machine == 'mac':
+        halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
 
     if survey == 'eco':
         catl_file = path_to_raw + "eco/eco_all.csv"
