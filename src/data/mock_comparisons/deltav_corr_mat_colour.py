@@ -382,7 +382,7 @@ def diff_smf(mstar_arr, volume, h1_bool, colour_flag=False):
 
     return maxis, phi, err_tot, bins, counts
 
-def get_err_smf(survey, path):
+def get_err_smf_mocks(survey, path):
     """
     Calculate error in data SMF from mocks
 
@@ -754,9 +754,9 @@ deltav_red_mocks, deltav_blue_mocks, centers_red_mocks, \
     centers_blue_mocks = get_err_deltav_mocks(survey, path_to_mocks)
 
 deltav_red_data, deltav_blue_data, centers_red_data, \
-    centers_blue_data = get_deltav_data(survey, path_to_mocks)
+    centers_blue_data = get_deltav_data(catl)
 
-phi_red_arr, phi_blue_arr = get_err_smf(survey, path_to_mocks)
+phi_red_arr, phi_blue_arr = get_err_smf_mocks(survey, path_to_mocks)
 
 corr_mat_combined_bool = True
 if corr_mat_combined_bool:
