@@ -669,7 +669,7 @@ def main():
     global mf_type
     survey = 'eco'
     mf_type = 'smf'
-    machine = 'mac'
+    machine = 'bender'
 
     H0 = 100
     cz_inner = 3000 # not starting at edge of box
