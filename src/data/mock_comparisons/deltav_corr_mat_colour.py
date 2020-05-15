@@ -3,7 +3,10 @@
  as well as smf for red and blue galaxies. It then calculates a full correlation
  matrix using velocity dispersion and smf of both galaxy populations as well
  as a correlation matrix of just velocity dispersion measurements of both 
- galaxy populations.}
+ galaxy populations.
+ 
+ Mean velocity dispersion of red and blue galaxies in bins of central stellar
+ mass from data and mocks is also compared.}
 """
 
 # Libs
@@ -97,6 +100,219 @@ def reading_catls(filename, catl_format='.hdf5'):
         raise ValueError(msg)
 
     return mock_pd
+
+def read_data_catl(path_to_file, survey):
+    """
+    Reads survey catalog from file
+
+    Parameters
+    ----------
+    path_to_file: `string`
+        Path to survey catalog file
+
+    survey: `string`
+        Name of survey
+
+    Returns
+    ---------
+    catl: `pandas.DataFrame`
+        Survey catalog with grpcz, abs rmag and stellar mass limits
+    
+    volume: `float`
+        Volume of survey
+
+    cvar: `float`
+        Cosmic variance of survey
+
+    z_median: `float`
+        Median redshift of survey
+    """
+    if survey == 'eco':
+        # 13878 galaxies
+        eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0)
+
+        if mf_type == 'smf':
+            # 6456 galaxies                       
+            catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
+                (eco_buff.grpcz.values <= 7000) & 
+                (eco_buff.absrmag.values <= -17.33)]
+        elif mf_type == 'bmf':
+            catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
+                (eco_buff.grpcz.values <= 7000) & 
+                (eco_buff.absrmag.values <= -17.33)] 
+
+        volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
+        cvar = 0.125
+        z_median = np.median(catl.grpcz.values) / (3 * 10**5)
+        
+    elif survey == 'resolvea' or survey == 'resolveb':
+        # 2286 galaxies
+        resolve_live18 = pd.read_csv(path_to_file, delimiter=",", header=0)
+
+        if survey == 'resolvea':
+            if mf_type == 'smf':
+                catl = resolve_live18.loc[
+                    (resolve_live18.grpcz.values >= 4500) & 
+                    (resolve_live18.grpcz.values <= 7000) & 
+                    (resolve_live18.absrmag.values <= -17.33) & 
+                    (resolve_live18.logmstar.values >= 8.9)]
+            elif mf_type == 'bmf':
+                catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
+                    (resolve_live18.grpcz.values >= 4500) & 
+                    (resolve_live18.grpcz.values <= 7000) & 
+                    (resolve_live18.absrmag.values <= -17.33)]
+
+            volume = 13172.384  # Survey volume without buffer [Mpc/h]^3
+            cvar = 0.30
+            z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
+        
+        elif survey == 'resolveb':
+            if mf_type == 'smf':
+                # 487 - cz, 369 - grpcz
+                catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
+                    (resolve_live18.grpcz.values >= 4500) & 
+                    (resolve_live18.grpcz.values <= 7000) & 
+                    (resolve_live18.absrmag.values <= -17) & 
+                    (resolve_live18.logmstar.values >= 8.7)]
+            elif mf_type == 'bmf':
+                catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
+                    (resolve_live18.grpcz.values >= 4500) & 
+                    (resolve_live18.grpcz.values <= 7000) & 
+                    (resolve_live18.absrmag.values <= -17)]
+
+            volume = 4709.8373  # *2.915 #Survey volume without buffer [Mpc/h]^3
+            cvar = 0.58
+            z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
+
+    return catl,volume,cvar,z_median
+
+def assign_colour_label_data(catl):
+    """
+    Assign colour label to data
+
+    Parameters
+    ----------
+    catl: pandas Dataframe 
+        Data catalog
+
+    Returns
+    ---------
+    catl: pandas Dataframe
+        Data catalog with colour label assigned as new column
+    """
+
+    logmstar_arr = catl.logmstar.values
+    u_r_arr = catl.modelu_rcorr.values
+
+    colour_label_arr = np.empty(len(catl), dtype='str')
+    for idx, value in enumerate(logmstar_arr):
+
+        # Divisions taken from Moffett et al. 2015 equation 1
+        if value <= 9.1:
+            if u_r_arr[idx] > 1.457:
+                colour_label = 'R'
+            else:
+                colour_label = 'B'
+
+        if value > 9.1 and value < 10.1:
+            divider = 0.24 * value - 0.7
+            if u_r_arr[idx] > divider:
+                colour_label = 'R'
+            else:
+                colour_label = 'B'
+
+        if value >= 10.1:
+            if u_r_arr[idx] > 1.7:
+                colour_label = 'R'
+            else:
+                colour_label = 'B'
+            
+        colour_label_arr[idx] = colour_label
+    
+    catl['colour_label'] = colour_label_arr
+
+    return catl
+
+def get_deltav_data(catl):
+    """
+    Measure velocity dispersion separately for red and blue galaxies by 
+    binning up central stellar mass
+
+    Parameters
+    ----------
+    catl: pandas Dataframe 
+        Data catalog
+
+    Returns
+    ---------
+    deltav_red_data: numpy array
+        Velocity dispersion of red galaxies
+    centers_red_data: numpy array
+        Bin centers of central stellar mass for red galaxies
+    deltav_blue_data: numpy array
+        Velocity dispersion of blue galaxies
+    centers_blue_data: numpy array
+        Bin centers of central stellar mass for blue galaxies
+    """
+
+    red_subset = catl.loc[catl.colour_label == 'R']
+    blue_subset = catl.loc[catl.colour_label == 'B']
+
+    red_groups = red_subset.groupby('grp')
+    red_keys = red_groups.groups.keys()
+
+    # Calculating velocity dispersion for red galaxies in data
+    deltav_arr = []
+    cen_stellar_mass_arr = []
+    for key in red_keys: 
+        group = red_groups.get_group(key) 
+        if 1 in group.fc.values: 
+            cen_stellar_mass = group.logmstar.loc[group.fc.values \
+                == 1].values[0]
+            mean_cz_grp = np.round(np.mean(group.cz.values),2)
+            deltav = group.cz.values - len(group)*[mean_cz_grp]
+            for val in deltav:
+                deltav_arr.append(val)
+                cen_stellar_mass_arr.append(cen_stellar_mass)
+
+    deltav_red_data = []
+    edges_red_data = []
+    deltav_binned_red = binned_statistic(cen_stellar_mass_arr, deltav_arr,
+        bins=np.linspace(8.55,11.5,6)) 
+    deltav_red_data.append(deltav_binned_red[0]) 
+    edges_red_data.append(deltav_binned_red[1])
+
+    blue_groups = blue_subset.groupby('grp')
+    blue_keys = blue_groups.groups.keys()
+
+    # Calculating velocity dispersion for blue galaxies in data
+    deltav_arr = []
+    cen_stellar_mass_arr = []
+    deltav_blue_data = []
+    edges_blue_data = []
+    for key in blue_keys: 
+        group = blue_groups.get_group(key)  
+        if 1 in group.fc.values:
+            cen_stellar_mass = group.logmstar.loc[group.fc.values \
+                == 1].values[0]
+            mean_cz_grp = np.round(np.mean(group.cz.values),2)
+            deltav = group.cz.values - len(group)*[mean_cz_grp]
+            for val in deltav:
+                deltav_arr.append(val)
+                cen_stellar_mass_arr.append(cen_stellar_mass)
+
+    deltav_binned_blue = binned_statistic(cen_stellar_mass_arr, deltav_arr,
+        bins=np.linspace(8.55,10.5,6))             
+    deltav_blue_data.append(deltav_binned_blue[0])
+    edges_blue_data.append(deltav_binned_blue[1])
+
+    edg_red = edges_red_data[0]
+    edg_blue = edges_blue_data[0]
+    centers_red_data = 0.5 * (edg_red[1:] + edg_red[:-1])
+    centers_blue_data = 0.5 * (edg_blue[1:] + edg_blue[:-1])
+
+    return deltav_red_data, centers_red_data, deltav_blue_data, \
+        centers_blue_data
 
 def diff_smf(mstar_arr, volume, h1_bool, colour_flag=False):
     """
@@ -290,8 +506,28 @@ def get_err_smf(survey, path):
     
     return phi_arr_red, phi_arr_blue
 
-def get_err_deltav(survey, path):
+def get_err_deltav_mocks(survey, path):
+    """
+    Calculate error in data VD from mocks
 
+    Parameters
+    ----------
+    survey: string
+        Name of survey
+    path: string
+        Path to mock catalogs
+
+    Returns
+    ---------
+    deltav_binned_red_arr: numpy array
+        Velocity dispersion of red galaxies
+    centers_binned_red_arr: numpy array
+        Bin centers of central stellar mass for red galaxies
+    deltav_binned_blue_arr: numpy array
+        Velocity dispersion of blue galaxies
+    centers_binned_blue_arr: numpy array
+        Bin centers of central stellar mass for blue galaxies
+    """
     if survey == 'eco':
         mock_name = 'ECO'
         num_mocks = 8
@@ -317,14 +553,10 @@ def get_err_deltav(survey, path):
         mstar_limit = 8.7
         volume = 4709.8373  # Survey volume without buffer [Mpc/h]^3
 
-    # logmstar_min_red_arr = []
-    # logmstar_min_blue_arr = []
-    # logmstar_max_red_arr = []
-    # logmstar_max_blue_arr = []
     deltav_binned_red_arr = []
-    # logmstar_binned_red_arr = []
+    edges_binned_red_arr = []
     deltav_binned_blue_arr = []
-    # logmstar_binned_blue_arr = []
+    edges_binned_blue_arr = []
     box_id_arr = np.linspace(5001,5008,8)
     for box in box_id_arr:
         box = int(box)
@@ -393,6 +625,7 @@ def get_err_deltav(survey, path):
             deltav_binned_red = binned_statistic(cen_stellar_mass_arr, deltav_arr,
                 bins=np.linspace(8.55,11.5,6)) 
             deltav_binned_red_arr.append(deltav_binned_red[0]) 
+            edges_binned_red_arr.append(deltav_binned_red[1])
 
             blue_groups = blue_subset.groupby('groupid')
             blue_keys = blue_groups.groups.keys()
@@ -414,32 +647,23 @@ def get_err_deltav(survey, path):
             deltav_binned_blue = binned_statistic(cen_stellar_mass_arr, deltav_arr,
                 bins=np.linspace(8.55,10.5,6))             
             deltav_binned_blue_arr.append(deltav_binned_blue[0])
+            edges_binned_blue_arr.append(deltav_binned_blue[1])
 
-            # for index,val in enumerate(deltav_binned_blue[0]):
-            #     logmstar_binned_blue_arr.append(val)
-            #     deltav_binned_blue_arr.append(deltav_binned_blue[1][index])
-
-            # To get binning
-            # min_red = np.min(mock_pd.logmstar.loc[(mock_pd.colour_label == 'R') 
-            #     & (mock_pd.cs_flag == 1)])
-            # max_red = np.max(mock_pd.logmstar.loc[(mock_pd.colour_label == 'R') 
-            #     & (mock_pd.cs_flag == 1)])
-            # min_blue = np.min(mock_pd.logmstar.loc[(mock_pd.colour_label == 'B') 
-            #     & (mock_pd.cs_flag == 1)])
-            # max_blue = np.max(mock_pd.logmstar.loc[(mock_pd.colour_label == 'B') 
-            #     & (mock_pd.cs_flag == 1)])
-            
-            # logmstar_min_red_arr.append(min_red)
-            # logmstar_max_red_arr.append(max_red)
-            # logmstar_min_blue_arr.append(min_blue)
-            # logmstar_max_blue_arr.append(max_blue)
-
-    # logmstar_binned_red_arr = np.array(logmstar_binned_red_arr)
-    # logmstar_binned_blue_arr = np.array(logmstar_binned_blue_arr)
     deltav_binned_red_arr = np.array(deltav_binned_red_arr)
+    edges_binned_red_arr = np.array(edges_binned_red_arr)
     deltav_binned_blue_arr = np.array(deltav_binned_blue_arr)
+    edges_binned_blue_arr = np.array(edges_binned_blue_arr)
 
-    return deltav_binned_red_arr, deltav_binned_blue_arr
+    # Getting bin centers for plotting instead of bin edges
+    edg_red = edges_binned_red_arr[0]
+    edg_blue = edges_binned_blue_arr[0]
+    centers_binned_red_arr = 0.5 * (edg_red[1:] + edg_red[:-1])
+    centers_binned_blue_arr = 0.5 * (edg_blue[1:] + edg_blue[:-1])
+    centers_binned_red_arr = 64*[centers_binned_red_arr]
+    centers_binned_blue_arr = 64*[centers_binned_blue_arr]
+
+    return deltav_binned_red_arr, deltav_binned_blue_arr, centers_binned_red_arr,\
+        centers_binned_blue_arr
 
 def measure_all_smf(table, volume, data_bool):
     """
@@ -523,9 +747,17 @@ elif survey == 'resolvea':
 elif survey == 'resolveb':
     path_to_mocks = path_to_external + 'RESOLVE_B_mvir_catls/'
 
-deltav_binned_red_arr, deltav_binned_blue_arr = get_err_deltav(survey, 
-    path_to_mocks)
+catl, volume, cvar, z_median = read_data_catl(catl_file, survey)
+catl = assign_colour_label_data(catl)
+
+deltav_red_mocks, deltav_blue_mocks, centers_red_mocks, \
+    centers_blue_mocks = get_err_deltav_mocks(survey, path_to_mocks)
+
+deltav_red_data, deltav_blue_data, centers_red_data, \
+    centers_blue_data = get_deltav_data(survey, path_to_mocks)
+
 phi_red_arr, phi_blue_arr = get_err_smf(survey, path_to_mocks)
+
 corr_mat_combined_bool = True
 if corr_mat_combined_bool:
     phi_red_0 = phi_red_arr[:,0]
@@ -562,7 +794,7 @@ if corr_mat_combined_bool:
         'dv_blue_3':dv_blue_3, 'dv_blue_4':dv_blue_4})
 
 else:
-    cov_mat_colour = np.cov(deltav_binned_red_arr, deltav_binned_blue_arr, 
+    cov_mat_colour = np.cov(deltav_red_mocks, deltav_blue_mocks, 
         rowvar=False)
     err_colour = np.sqrt(cov_mat_colour.diagonal())
     corr_mat_colour = cov_mat_colour / np.outer(err_colour, err_colour)                                                           
@@ -589,4 +821,20 @@ plt.gca().invert_yaxis()
 plt.gca().xaxis.tick_bottom()
 fig2.colorbar(cax)
 plt.title(r'Combined \boldmath{$\delta$}v measurements')
+plt.show()
+
+# Plot of mean velocity dispersion of red and blue galaxies from data and mocks
+fig3 = plt.figure()
+for idx in range(len(centers_red_mocks)):
+    plt.scatter(centers_red_mocks[idx], deltav_red_mocks[idx], 
+        c='indianred')
+    plt.scatter(centers_blue_mocks[idx], deltav_blue_mocks[idx], 
+        c='cornflowerblue')
+plt.scatter(centers_red_data, deltav_red_data, marker='*', c='darkred')
+plt.scatter(centers_blue_data, deltav_blue_data, marker='*', c='darkblue')
+plt.xlabel(r'$\mathbf{log\ M_{*,cen}}\ [\mathbf{M_{\odot}}]$', labelpad=15, 
+    fontsize=25)
+plt.ylabel(r'\boldmath$<\Delta v\ > \left[km/s\right]$', labelpad=15, 
+    fontsize=25)
+plt.title(r'ECO mocks vs. data mean velocity dispersion')
 plt.show()
