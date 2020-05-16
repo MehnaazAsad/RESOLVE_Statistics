@@ -1,7 +1,7 @@
 """
-{This TEST script applies redshift-space distortions to Vishnu mock and runs 
- group finder so that velocity dispersion measurements can be obtained since 
- we are including that as a second observable in constraining red and blue 
+{This TEST script applies redshift-space distortions to Vishnu mock and runs
+ group finder so that velocity dispersion measurements can be obtained since
+ we are including that as a second observable in constraining red and blue
  SHMRs.}
 """
 
@@ -49,12 +49,12 @@ def pandas_df_to_hdf5_file(data, hdf5_file, key=None, mode='w',
             msg = 'Could not create HDF5 file'
             raise ValueError(msg)
 
-def kms_to_Mpc(H0,v): 
-    return v/H0 
- 
-def vol_sphere(r): 
-    volume = (4/3)*np.pi*(r**3) 
-    return volume 
+def kms_to_Mpc(H0,v):
+    return v/H0
+
+def vol_sphere(r):
+    volume = (4/3)*np.pi*(r**3)
+    return volume
 
 def read_data_catl(path_to_file, survey):
     """
@@ -72,7 +72,7 @@ def read_data_catl(path_to_file, survey):
     ---------
     catl: `pandas.DataFrame`
         Survey catalog with grpcz, abs rmag and stellar mass limits
-    
+
     volume: `float`
         Volume of survey
 
@@ -87,19 +87,19 @@ def read_data_catl(path_to_file, survey):
         eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0)
 
         if mf_type == 'smf':
-            # 6456 galaxies                       
-            catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
-                (eco_buff.grpcz.values <= 7000) & 
+            # 6456 galaxies
+            catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) &
+                (eco_buff.grpcz.values <= 7000) &
                 (eco_buff.absrmag.values <= -17.33)]
         elif mf_type == 'bmf':
-            catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
-                (eco_buff.grpcz.values <= 7000) & 
-                (eco_buff.absrmag.values <= -17.33)] 
+            catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) &
+                (eco_buff.grpcz.values <= 7000) &
+                (eco_buff.absrmag.values <= -17.33)]
 
         volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
         cvar = 0.125
         z_median = np.median(catl.grpcz.values) / (3 * 10**5)
-        
+
     elif survey == 'resolvea' or survey == 'resolveb':
         # 2286 galaxies
         resolve_live18 = pd.read_csv(path_to_file, delimiter=",", header=0)
@@ -107,32 +107,32 @@ def read_data_catl(path_to_file, survey):
         if survey == 'resolvea':
             if mf_type == 'smf':
                 catl = resolve_live18.loc[
-                    (resolve_live18.grpcz.values >= 4500) & 
-                    (resolve_live18.grpcz.values <= 7000) & 
-                    (resolve_live18.absrmag.values <= -17.33) & 
+                    (resolve_live18.grpcz.values >= 4500) &
+                    (resolve_live18.grpcz.values <= 7000) &
+                    (resolve_live18.absrmag.values <= -17.33) &
                     (resolve_live18.logmstar.values >= 8.9)]
             elif mf_type == 'bmf':
-                catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
-                    (resolve_live18.grpcz.values >= 4500) & 
-                    (resolve_live18.grpcz.values <= 7000) & 
+                catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) &
+                    (resolve_live18.grpcz.values >= 4500) &
+                    (resolve_live18.grpcz.values <= 7000) &
                     (resolve_live18.absrmag.values <= -17.33)]
 
             volume = 13172.384  # Survey volume without buffer [Mpc/h]^3
             cvar = 0.30
             z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
-        
+
         elif survey == 'resolveb':
             if mf_type == 'smf':
                 # 487 - cz, 369 - grpcz
-                catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
-                    (resolve_live18.grpcz.values >= 4500) & 
-                    (resolve_live18.grpcz.values <= 7000) & 
-                    (resolve_live18.absrmag.values <= -17) & 
+                catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) &
+                    (resolve_live18.grpcz.values >= 4500) &
+                    (resolve_live18.grpcz.values <= 7000) &
+                    (resolve_live18.absrmag.values <= -17) &
                     (resolve_live18.logmstar.values >= 8.7)]
             elif mf_type == 'bmf':
-                catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
-                    (resolve_live18.grpcz.values >= 4500) & 
-                    (resolve_live18.grpcz.values <= 7000) & 
+                catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) &
+                    (resolve_live18.grpcz.values >= 4500) &
+                    (resolve_live18.grpcz.values <= 7000) &
                     (resolve_live18.absrmag.values <= -17)]
 
             volume = 4709.8373  # *2.915 #Survey volume without buffer [Mpc/h]^3
@@ -149,7 +149,7 @@ def halocat_init(halo_catalog, z_median):
     ----------
     halo_catalog: string
         Path to halo catalog
-    
+
     z_median: float
         Median redshift of survey
 
@@ -173,7 +173,7 @@ def populate_mock(theta, model):
     ----------
     theta: array
         Array of parameter values
-    
+
     model: halotools model instance
         Model based on behroozi 2010 SMHM
 
@@ -212,16 +212,16 @@ def populate_mock(theta, model):
 
 def cart_to_spherical_coords(cart_arr, dist):
     """
-    Computes the right ascension and declination for the given 
+    Computes the right ascension and declination for the given
     point in (x,y,z) position
-    
+
     Parameters
     -----------
     cart_arr: numpy.ndarray, shape (3,)
         array with (x,y,z) positions
     dist: float
         dist to the point from observer's position
-        
+
     Returns
     -----------
     ra_val: float
@@ -229,7 +229,7 @@ def cart_to_spherical_coords(cart_arr, dist):
     dec_val: float
         declination of the point on the sky
     """
-    
+
     ## Reformatting coordinates
     # Cartesian coordinates
     (   x_val,
@@ -264,7 +264,7 @@ def apply_rsd(mock_catalog):
     ----------
     mock_catalog: Pandas dataframe
         Galaxy catalog
-    
+
     Returns
     ---------
     mock_catalog: Pandas dataframe
@@ -281,15 +281,15 @@ def apply_rsd(mock_catalog):
     omega_m = 0.25
     omega_b = 0.04
     Tcmb0 = 2.7255
-    
+
     redshift_arr = np.arange(z_min,z_max,dz)
     cosmo = LambdaCDM(H0,omega_m,omega_b,Tcmb0)
     como_dist = cosmo.comoving_distance(redshift_arr)
     comodist_z_interp = interp1d(como_dist,redshift_arr)
-    
+
     cart_gals = mock_catalog[['x','y','z']].values #Mpc/h
     vel_gals = mock_catalog[['vx','vy','vz']].values #km/s
-    
+
     dist_from_obs_arr = np.zeros(ngal)
     ra_arr = np.zeros(ngal)
     dec_arr = np.zeros(ngal)
@@ -306,7 +306,7 @@ def apply_rsd(mock_catalog):
         ra,dec = cart_to_spherical_coords(cart_gals[x],dist_from_obs)
         vr = np.dot(cart_gals[x], vel_gals[x])/dist_from_obs
         #this cz includes hubble flow and peculiar motion
-        cz_val += vr*(1+z_cosm) 
+        cz_val += vr*(1+z_cosm)
         vel_tot = (np.sum(vel_gals[x]**2))**.5
         vel_tan = (vel_tot**2 - vr**2)**.5
         vel_pec  = (cz_val - cz_cosm)/(1 + z_cosm)
@@ -318,7 +318,7 @@ def apply_rsd(mock_catalog):
         vel_tot_arr[x] = vel_tot
         vel_tan_arr[x] = vel_tan
         vel_pec_arr[x] = vel_pec
-    
+
     mock_catalog['r_dist'] = dist_from_obs_arr
     mock_catalog['ra'] = ra_arr
     mock_catalog['dec'] = dec_arr
@@ -332,12 +332,12 @@ def apply_rsd(mock_catalog):
 
 def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
     """
-    Runs the group finder `FoF` on the file, and assigns galaxies to 
+    Runs the group finder `FoF` on the file, and assigns galaxies to
     galaxy groups
     Parameters
     -----------
     mock_pd: pandas DataFrame
-        DataFrame with positions, velocities, and more for the 
+        DataFrame with positions, velocities, and more for the
         galaxies that made it into the catalogue
     mock_zz_file: string
         path to the galaxy catalogue
@@ -414,7 +414,7 @@ def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
     grep_pd.loc[:,'cz'] = grep_pd['z'] * speed_c
     grep_pd = grep_pd.drop('z', axis=1)
     # Galaxy groups
-    mockgroup_pd = pd.read_csv(grep_g_file, sep='\s+', header=None, 
+    mockgroup_pd = pd.read_csv(grep_g_file, sep='\s+', header=None,
         names=group_names)
     # Group centroid velocity
     mockgroup_pd.loc[:,'cen_cz'] = mockgroup_pd['cen_z'] * speed_c
@@ -437,8 +437,8 @@ def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
 
     return mockgal_pd_merged, mockgroup_pd
 
-def abundance_matching_f(dict1, dict2, dict1_names=None, dict2_names=None, 
-    volume1=None, volume2=None, reverse=True, dens1_opt=False, 
+def abundance_matching_f(dict1, dict2, dict1_names=None, dict2_names=None,
+    volume1=None, volume2=None, reverse=True, dens1_opt=False,
     dens2_opt=False):
     """
     Performs abundance matching based on two quantities (dict1 and dict2).
@@ -488,7 +488,7 @@ def abundance_matching_f(dict1, dict2, dict1_names=None, dict2_names=None,
     Returns
     -------
     var1_ab: array_like
-        numpy.array of elements matching those of `dict1`, after matching with 
+        numpy.array of elements matching those of `dict1`, after matching with
         dict2.
     """
     ## Checking input parameters
@@ -557,7 +557,7 @@ def group_mass_assignment(mockgal_pd, mockgroup_pd, param_dict):
 
     ## Changing stellar mass to log
     gal_pd['logmstar'] = np.log10(gal_pd['stellar_mass'])
-    
+
     ## Constants
     Cens     = int(1)
     Sats     = int(0)
@@ -673,26 +673,24 @@ def main():
 
     H0 = 100
     cz_inner = 3000 # not starting at edge of box
-    cz_outer = 120*H0 # utilizing 120 Mpc of Vishnu box
+    cz_outer = 120*H0 # utilizing until 120 Mpc of Vishnu box
 
     dist_inner = kms_to_Mpc(H0,cz_inner) #Mpc/h
     dist_outer = kms_to_Mpc(H0,cz_outer) #Mpc/h
-    
-    v_inner = vol_sphere(dist_inner) 
-    v_outer = vol_sphere(dist_outer) 
-    
-    v_sphere = v_outer-v_inner     
-    survey_vol = v_sphere/8          
+
+    v_inner = vol_sphere(dist_inner)
+    v_outer = vol_sphere(dist_outer)
+
+    v_sphere = v_outer-v_inner
+    survey_vol = v_sphere/8
 
     eco = {
-        'c': 3*10**5, 
+        'c': 3*10**5,
         'survey_vol': survey_vol,
-        'min_cz' : cz_inner, 
-        'max_cz' : cz_outer, 
-        'mag_limit' : -17.33,
-        'mstar_limit' : 8.9,
-        'zmin': cz_inner/(3*10**5), 
-        'zmax': cz_outer/(3*10**5),  
+        'min_cz' : cz_inner,
+        'max_cz' : cz_outer,
+        'zmin': cz_inner/(3*10**5),
+        'zmax': cz_outer/(3*10**5),
         'l_perp': 0.07,
         'l_para': 1.1,
         'nmin': 1,
@@ -700,7 +698,7 @@ def main():
         'catl_type': 'mstar'
     }
 
-    # Changes string name of survey to variable so that the survey dict can 
+    # Changes string name of survey to variable so that the survey dict can
     # be accessed
     param_dict = vars()[survey]
 
@@ -730,10 +728,10 @@ def main():
     print('Applying RSD')
     gals_rsd_df = apply_rsd(gals_df)
     gals_rsd_subset_df = gals_rsd_df.loc[(gals_rsd_df.cz >= cz_inner) & \
-        (gals_rsd_df.cz <= cz_outer) & 
-        (gals_rsd_df.stellar_mass >= (10**8.9/2.041))] 
+        (gals_rsd_df.cz <= cz_outer) &
+        (gals_rsd_df.stellar_mass >= (10**8.9/2.041))]
 
-    gal_group_df, group_df = group_finding(gals_rsd_subset_df, 
+    gal_group_df, group_df = group_finding(gals_rsd_subset_df,
         path_to_data + 'interim/', param_dict)
     gal_group_df_new, group_df_new = \
         group_mass_assignment(gal_group_df, group_df, param_dict)
