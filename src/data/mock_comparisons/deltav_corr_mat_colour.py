@@ -772,17 +772,17 @@ if corr_mat_combined_bool:
     phi_blue_3 = phi_blue_arr[:,3]
     phi_blue_4 = phi_blue_arr[:,4]
 
-    dv_red_0 = deltav_binned_red_arr[:,0]
-    dv_red_1 = deltav_binned_red_arr[:,1]
-    dv_red_2 = deltav_binned_red_arr[:,2]
-    dv_red_3 = deltav_binned_red_arr[:,3]
-    dv_red_4 = deltav_binned_red_arr[:,4]
+    dv_red_0 = deltav_red_mocks[:,0]
+    dv_red_1 = deltav_red_mocks[:,1]
+    dv_red_2 = deltav_red_mocks[:,2]
+    dv_red_3 = deltav_red_mocks[:,3]
+    dv_red_4 = deltav_red_mocks[:,4]
 
-    dv_blue_0 = deltav_binned_blue_arr[:,0]
-    dv_blue_1 = deltav_binned_blue_arr[:,1]
-    dv_blue_2 = deltav_binned_blue_arr[:,2]
-    dv_blue_3 = deltav_binned_blue_arr[:,3]
-    dv_blue_4 = deltav_binned_blue_arr[:,4]
+    dv_blue_0 = deltav_blue_mocks[:,0]
+    dv_blue_1 = deltav_blue_mocks[:,1]
+    dv_blue_2 = deltav_blue_mocks[:,2]
+    dv_blue_3 = deltav_blue_mocks[:,3]
+    dv_blue_4 = deltav_blue_mocks[:,4]
     combined_df = pd.DataFrame({'phi_red_0':phi_red_0, 'phi_red_1':phi_red_1,\
         'phi_red_2':phi_red_2, 'phi_red_3':phi_red_3, 'phi_red_4':phi_red_4, \
         'phi_blue_0':phi_blue_0, 'phi_blue_1':phi_blue_1, 
