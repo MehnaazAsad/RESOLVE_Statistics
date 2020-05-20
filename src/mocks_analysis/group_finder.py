@@ -671,8 +671,8 @@ def main():
     mf_type = 'smf'
     machine = 'bender'
 
-    H0 = 100
-    cz_inner = 3000 # not starting at edge of box
+    H0 = 100 # h(km/s)/Mpc
+    cz_inner = 3000 # not starting at corner of box
     cz_outer = 120*H0 # utilizing until 120 Mpc of Vishnu box
 
     dist_inner = kms_to_Mpc(H0,cz_inner) #Mpc/h
@@ -729,7 +729,7 @@ def main():
     gals_rsd_df = apply_rsd(gals_df)
     gals_rsd_subset_df = gals_rsd_df.loc[(gals_rsd_df.cz >= cz_inner) & \
         (gals_rsd_df.cz <= cz_outer) &
-        (gals_rsd_df.stellar_mass >= (10**8.9/2.041))]
+        (gals_rsd_df.stellar_mass >= (10**8.9/2.041))].reset_index(drop=True)
 
     gal_group_df, group_df = group_finding(gals_rsd_subset_df,
         path_to_data + 'interim/', param_dict)
