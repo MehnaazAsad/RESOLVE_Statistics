@@ -900,8 +900,6 @@ def get_best_fit_model(best_fit_params):
     cen_halos: array
         Array of central halo masses
     """   
-    v_sim = 130**3
-
     f_red_cen, f_red_sat = hybrid_quenching_model(best_fit_params, gals_df_)
     gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, gals_df_)
     v_sim = 130**3
