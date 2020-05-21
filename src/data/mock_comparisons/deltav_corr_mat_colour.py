@@ -506,7 +506,7 @@ def get_err_smf_mocks(survey, path):
     
     return phi_arr_red, phi_arr_blue
 
-def get_err_deltav_mocks(survey, path):
+def get_deltav_mocks(survey, path):
     """
     Calculate error in data VD from mocks
 
@@ -751,7 +751,7 @@ catl, volume, cvar, z_median = read_data_catl(catl_file, survey)
 catl = assign_colour_label_data(catl)
 
 deltav_red_mocks, deltav_blue_mocks, centers_red_mocks, \
-    centers_blue_mocks = get_err_deltav_mocks(survey, path_to_mocks)
+    centers_blue_mocks = get_deltav_mocks(survey, path_to_mocks)
 
 deltav_red_data, deltav_blue_data, centers_red_data, \
     centers_blue_data = get_deltav_data(catl)
