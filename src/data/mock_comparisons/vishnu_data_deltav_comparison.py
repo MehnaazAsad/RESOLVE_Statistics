@@ -757,12 +757,14 @@ deltav_red_vishnu, deltav_blue_vishnu, centers_red_vishnu, \
 deltav_red_mocks, deltav_blue_mocks, centers_red_mocks, \
     centers_blue_mocks = get_deltav_mocks(survey, path_to_mocks)
 
-fig1 = plt.figure()
+fig,(ax1,ax2) = plt.subplots(2,1,sharex=True,sharey=False,figsize=(12,10),\
+     gridspec_kw = {'height_ratios':[7,3]})
 # for idx in range(len(centers_red_mocks)):
 #     plt.scatter(centers_red_mocks[idx], deltav_red_mocks[idx], 
 #         c='indianred')
 #     plt.scatter(centers_blue_mocks[idx], deltav_blue_mocks[idx], 
 #         c='cornflowerblue')
+plt.sca(ax1) # required for plt.gca() to pick up labels
 plt.scatter(centers_red_data, deltav_red_data, marker='*', c='indianred', \
     s=100, label='data')
 plt.scatter(centers_blue_data, deltav_blue_data, marker='*', \
@@ -771,12 +773,25 @@ plt.scatter(centers_red_vishnu, deltav_red_vishnu, marker='o', \
     facecolors='none', edgecolors='indianred', s=100, label='vishnu')
 plt.scatter(centers_blue_vishnu, deltav_blue_vishnu, marker='o', \
     facecolors='none', edgecolors='cornflowerblue', s=100, label='vishnu')
-plt.xlabel(r'$\mathbf{log\ M_{*,cen}}\ [\mathbf{M_{\odot}}]$', labelpad=15, 
-    fontsize=25)
 plt.ylabel(r'\boldmath$<\Delta v\ > \left[km/s\right]$', labelpad=15, 
     fontsize=25)
-plt.title(r'Vishnu mock vs. data mean velocity dispersion')
 handles, labels = plt.gca().get_legend_handles_labels()
 by_label = OrderedDict(zip(labels, handles))
-plt.legend(by_label.values(), by_label.keys(), loc='best',prop={'size': 20})
-plt.show()
+
+red_residual = deltav_red_vishnu/deltav_red_data
+blue_residual = deltav_blue_vishnu/deltav_blue_data
+
+ax2.scatter(centers_red_data,red_residual,c='indianred')
+ax2.scatter(centers_blue_data,blue_residual,c='cornflowerblue')
+xmin, xmax = ax2.get_xlim()
+ax2.plot(np.linspace(xmin, xmax, 6), 6*[0], ls='--', c='k')
+ax2.set_ylim(-2,1)
+ax2.set_xlabel(r'$\mathbf{log\ M_{*,cen}}\ [\mathbf{M_{\odot}}]$', labelpad=15, 
+    fontsize=25)
+ax2.set_ylabel(r'$\mathbf{\frac{vishnu}{data}}$', labelpad=30, 
+    fontsize=25)
+
+ax1.set_title(r'Vishnu mock vs. data mean velocity dispersion')
+ax1.legend(by_label.values(), by_label.keys(), loc='best',prop={'size': 20})
+fig.tight_layout()
+fig.show()
