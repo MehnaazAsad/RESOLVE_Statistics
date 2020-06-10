@@ -235,14 +235,14 @@ fig1 = plt.figure(figsize=(10,10))
 gs = gridspec.GridSpec(1, 1)
 ax1 = plt.subplot(gs[0,0])
 plt.scatter(cen_stellar_mass_arr, deltav_arr, s=7, c=cen_colour_arr, 
-    cmap='RdBu_r')
+    cmap='coolwarm')
 cbar = plt.colorbar()
 cbar.set_label(r'$\mathbf{(u-r)^e_{cen}}$', labelpad=15, fontsize=20)
-plt.xlabel(r'$\mathbf{log\ M_{*,cen}}\ [\mathbf{M_{\odot}}]$', labelpad=15, 
-    fontsize=20)
-plt.ylabel(r'\boldmath$\Delta v\ \left[km/s\right]$', labelpad=15, fontsize=20)
+plt.xlabel(r'$\mathbf{log_{10}\ M_{*,cen}}\ [\mathbf{M_{\odot}}]$', labelpad=10, 
+    fontsize=25)
+plt.ylabel(r'\boldmath$\Delta v\ \left[km/s\right]$', labelpad=10, fontsize=25)
 
-left, bottom, width, height = [0.20, 0.17, 0.25, 0.25]
+left, bottom, width, height = [0.25, 0.20, 0.25, 0.25]
 ax2 = fig1.add_axes([left, bottom, width, height])
 ax2.errorbar(stellar_mass_bins[:-1],std_blue_cen_arr,yerr=std_blue_cen_err,
     color='#2d77e5',fmt='s',ecolor='#2d77e5',markersize=4,capsize=5,
@@ -250,7 +250,8 @@ ax2.errorbar(stellar_mass_bins[:-1],std_blue_cen_arr,yerr=std_blue_cen_err,
 ax2.errorbar(stellar_mass_bins[:-1],std_red_cen_arr,yerr=std_red_cen_err,
     color='#f46542',fmt='s',ecolor='#f46542',markersize=4,capsize=5,
     capthick=0.5)
-ax2.set_ylabel(r'\boldmath$\sigma\ \left[km/s\right]$', fontsize=15)
+ax2.set_ylabel(r'\boldmath$\sigma\ \left[km/s\right]$', fontsize=20)
+fig1.tight_layout()
 plt.show()
 
 #fig2 = plt.figure(figsize=(10,10))
