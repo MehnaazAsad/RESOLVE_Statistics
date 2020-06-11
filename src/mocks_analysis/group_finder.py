@@ -71,7 +71,8 @@ def read_data_catl(path_to_file, survey):
     Returns
     ---------
     catl: `pandas.DataFrame`
-        Survey catalog with grpcz, abs rmag and stellar mass limits
+        Survey catalog with grpcz, abs rmag and stellar mass limits and data 
+        in h=0.7
 
     volume: `float`
         Volume of survey
