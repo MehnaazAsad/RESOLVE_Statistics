@@ -1,6 +1,6 @@
 """
-{This script calculates velocity dispersion for red and blue galaxies from 
- Vishnu mock and compares with measurement from data.}
+{This script calculates spread (sigma) in velocity dispersion for red and blue 
+ galaxies from Vishnu mock and compares with measurement from data.}
 """
 
 from cosmo_utils.utils import work_paths as cwpaths
@@ -74,8 +74,7 @@ def read_data_catl(path_to_file, survey):
                 catl = resolve_live18.loc[
                     (resolve_live18.grpcz.values >= 4500) & 
                     (resolve_live18.grpcz.values <= 7000) & 
-                    (resolve_live18.absrmag.values <= -17.33) & 
-                    (resolve_live18.logmstar.values >= 8.9)]
+                    (resolve_live18.absrmag.values <= -17.33)]
             elif mf_type == 'bmf':
                 catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
                     (resolve_live18.grpcz.values >= 4500) & 
@@ -457,6 +456,31 @@ def assign_colour_label_mock(f_red_cen, f_red_sat, gals_df, drop_fred=False):
 
     return df
 
+def std_func(bins, mass_arr, vel_arr):
+
+    last_index = len(bins)-1
+    i = 0
+    std_arr = []
+    for index1, bin_edge in enumerate(bins):
+        cen_deltav_arr = []
+        if index1 == last_index:
+            break
+        for index2, stellar_mass in enumerate(mass_arr):
+            if stellar_mass >= bin_edge and stellar_mass < bins[index1+1]:
+                cen_deltav_arr.append(vel_arr[index2])
+        N = len(cen_deltav_arr)
+        mean = 0
+        diff_sqrd_arr = []
+        for value in cen_deltav_arr:
+            diff = value - mean
+            diff_sqrd = diff**2
+            diff_sqrd_arr.append(diff_sqrd)
+        mean_diff_sqrd = np.mean(diff_sqrd_arr)
+        std = np.sqrt(mean_diff_sqrd)
+        std_arr.append(std)
+
+    return std_arr
+
 def get_deltav(df, df_type):
     """
     Measure velocity dispersion separately for red and blue galaxies by 
@@ -503,8 +527,8 @@ def get_deltav(df, df_type):
     red_keys = red_groups.groups.keys()
 
     # Calculating velocity dispersion for red galaxies in data
-    deltav_arr = []
-    cen_stellar_mass_arr = []
+    red_deltav_arr = []
+    red_cen_stellar_mass_arr = []
     for key in red_keys: 
         group = red_groups.get_group(key) 
         if 1 in group[cs_colname].values: 
@@ -513,22 +537,19 @@ def get_deltav(df, df_type):
             mean_cz_grp = np.round(np.mean(group[cz_colname].values),2)
             deltav = group[cz_colname].values - len(group)*[mean_cz_grp]
             for val in deltav:
-                deltav_arr.append(val)
-                cen_stellar_mass_arr.append(cen_stellar_mass)
+                red_deltav_arr.append(val)
+                red_cen_stellar_mass_arr.append(cen_stellar_mass)
 
-    red_bin_min = np.log10((10**8.55) / 2.041)
-    red_bin_max = np.log10((10**11.5) / 2.041)
-    deltav_binned_red = binned_statistic(cen_stellar_mass_arr, deltav_arr,
-        bins=np.linspace(red_bin_min,red_bin_max,6)) 
-    deltav_red = deltav_binned_red[0]
-    edges_red = deltav_binned_red[1]
-
+    red_stellar_mass_bins = np.arange(8.6,11.5,0.25)
+    std_red = std_func(red_stellar_mass_bins, red_cen_stellar_mass_arr, 
+        red_deltav_arr)                                                           
+    
     blue_groups = blue_subset.groupby(grp_id_colname)
     blue_keys = blue_groups.groups.keys()
 
     # Calculating velocity dispersion for blue galaxies in data
-    deltav_arr = []
-    cen_stellar_mass_arr = []
+    blue_deltav_arr = []
+    blue_cen_stellar_mass_arr = []
     for key in blue_keys: 
         group = blue_groups.get_group(key)  
         if 1 in group[cs_colname].values: 
@@ -537,20 +558,20 @@ def get_deltav(df, df_type):
             mean_cz_grp = np.round(np.mean(group[cz_colname].values),2)
             deltav = group[cz_colname].values - len(group)*[mean_cz_grp]
             for val in deltav:
-                deltav_arr.append(val)
-                cen_stellar_mass_arr.append(cen_stellar_mass)
+                blue_deltav_arr.append(val)
+                blue_cen_stellar_mass_arr.append(cen_stellar_mass)
 
-    blue_bin_min = np.log10((10**8.55) / 2.041)
-    blue_bin_max = np.log10((10**10.5) / 2.041)
-    deltav_binned_blue = binned_statistic(cen_stellar_mass_arr, deltav_arr,
-        bins=np.linspace(blue_bin_min,blue_bin_max,6))             
-    deltav_blue = deltav_binned_blue[0]
-    edges_blue = deltav_binned_blue[1]
+    blue_stellar_mass_bins = np.arange(8.6,11,0.25)
+    std_blue = std_func(blue_stellar_mass_bins, blue_cen_stellar_mass_arr, 
+        blue_deltav_arr)    
 
-    centers_red = 0.5 * (edges_red[1:] + edges_red[:-1])
-    centers_blue = 0.5 * (edges_blue[1:] + edges_blue[:-1])
+    centers_red = 0.5 * (red_stellar_mass_bins[1:] + red_stellar_mass_bins[:-1])
+    centers_blue = 0.5 * (blue_stellar_mass_bins[1:] + blue_stellar_mass_bins[:-1])
 
-    return deltav_red, deltav_blue, centers_red, centers_blue
+    std_red, std_blue = np.array(std_red), np.array(std_blue)
+    
+    return std_red, std_blue, centers_red, centers_blue, red_stellar_mass_bins, \
+        blue_stellar_mass_bins, red_cen_stellar_mass_arr, blue_cen_stellar_mass_arr
 
 def get_deltav_mocks(survey, path):
     """
@@ -748,14 +769,15 @@ mcmc_table_pctl, bf_params, bf_chi2 = \
 f_red_cen, f_red_sat = hybrid_quenching_model(bf_params, gal_group_df)
 gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, gal_group_df)
 
-deltav_red_data, deltav_blue_data, centers_red_data, \
-    centers_blue_data = get_deltav(catl, 'data')
+std_red_data, std_blue_data, centers_red_data, \
+    centers_blue_data, red_bins_data, blue_bins_data = get_deltav(catl, 'data')
 
-deltav_red_vishnu, deltav_blue_vishnu, centers_red_vishnu, \
-    centers_blue_vishnu = get_deltav(gals_df, 'mock')
+std_red_vishnu, std_blue_vishnu, centers_red_vishnu, \
+    centers_blue_vishnu, red_bins_vishnu, blue_bins_vishnu \
+    = get_deltav(gals_df, 'mock')
 
-deltav_red_mocks, deltav_blue_mocks, centers_red_mocks, \
-    centers_blue_mocks = get_deltav_mocks(survey, path_to_mocks)
+# deltav_red_mocks, deltav_blue_mocks, centers_red_mocks, \
+#     centers_blue_mocks = get_deltav_mocks(survey, path_to_mocks)
 
 fig,(ax1,ax2) = plt.subplots(2,1,sharex=True,sharey=False,figsize=(12,10),\
      gridspec_kw = {'height_ratios':[7,3]})
@@ -765,33 +787,58 @@ fig,(ax1,ax2) = plt.subplots(2,1,sharex=True,sharey=False,figsize=(12,10),\
 #     plt.scatter(centers_blue_mocks[idx], deltav_blue_mocks[idx], 
 #         c='cornflowerblue')
 plt.sca(ax1) # required for plt.gca() to pick up labels
-plt.scatter(centers_red_data, deltav_red_data, marker='*', c='indianred', \
+plt.scatter(centers_red_data, std_red_data, marker='*', c='indianred', \
     s=100, label='data')
-plt.scatter(centers_blue_data, deltav_blue_data, marker='*', \
+plt.scatter(centers_blue_data, std_blue_data, marker='*', \
     c='cornflowerblue', s=100, label='data')
-plt.scatter(centers_red_vishnu, deltav_red_vishnu, marker='o', \
+plt.scatter(centers_red_vishnu, std_red_vishnu, marker='o', \
     facecolors='none', edgecolors='indianred', s=100, label='vishnu')
-plt.scatter(centers_blue_vishnu, deltav_blue_vishnu, marker='o', \
+plt.scatter(centers_blue_vishnu, std_blue_vishnu, marker='o', \
     facecolors='none', edgecolors='cornflowerblue', s=100, label='vishnu')
 plt.ylabel(r'\boldmath$<\Delta v\ > \left[km/s\right]$', labelpad=15, 
     fontsize=25)
 handles, labels = plt.gca().get_legend_handles_labels()
 by_label = OrderedDict(zip(labels, handles))
 
-red_residual = deltav_red_vishnu/deltav_red_data
-blue_residual = deltav_blue_vishnu/deltav_blue_data
+red_residual = std_red_vishnu/std_red_data
+blue_residual = std_blue_vishnu/std_blue_data
 
 ax2.scatter(centers_red_data,red_residual,c='indianred')
 ax2.scatter(centers_blue_data,blue_residual,c='cornflowerblue')
 xmin, xmax = ax2.get_xlim()
 ax2.plot(np.linspace(xmin, xmax, 6), 6*[0], ls='--', c='k')
-ax2.set_ylim(-2,1)
+ax2.set_ylim(-1,2.5)
 ax2.set_xlabel(r'$\mathbf{log\ M_{*,cen}}\ [\mathbf{M_{\odot}}]$', labelpad=15, 
     fontsize=25)
 ax2.set_ylabel(r'$\mathbf{\frac{vishnu}{data}}$', labelpad=30, 
     fontsize=25)
 
 ax1.set_title(r'Vishnu mock vs. data mean velocity dispersion')
-ax1.legend(by_label.values(), by_label.keys(), loc='best',prop={'size': 20})
+ax1.legend(by_label.values(), by_label.keys(), loc='best', prop={'size': 20})
 fig.tight_layout()
 fig.show()
+
+# Histogram of red and blue galaxies in data vs mock
+
+red_cen_mass_data = np.log10(10**(catl.logmstar.loc[(catl.fc == 1) & \
+    (catl.colour_label == 'R')])/2.041)
+blue_cen_mass_data = np.log10(10**(catl.logmstar.loc[(catl.fc == 1) & \
+    (catl.colour_label == 'B')])/2.041)
+red_cen_mass_vishnu = gals_df.stellar_mass.loc[(gals_df.g_galtype == 1) & \
+    (gals_df.colour_label == 'R')]
+blue_cen_mass_vishnu = gals_df.stellar_mass.loc[(gals_df.g_galtype == 1) & \
+    (gals_df.colour_label == 'B')]
+
+fig2 = plt.figure(figsize=(10,8))
+plt.hist(red_cen_mass_data, red_bins_data, histtype='step', color='indianred', 
+    ls='--', lw=5, label='data')
+plt.hist(blue_cen_mass_data, blue_bins_data, histtype='step', color='cornflowerblue', 
+    ls='--', lw=5)
+plt.hist(np.log10(red_cen_mass_vishnu), red_bins_vishnu, histtype='step', color='indianred', 
+    ls='-', lw=5, label='vishnu')
+plt.hist(np.log10(blue_cen_mass_vishnu), blue_bins_vishnu, histtype='step', color='cornflowerblue', 
+    ls='-', lw=5)
+plt.xlabel(r'$\mathbf{log\ M_{*,cen}}\ [\mathbf{M_{\odot}}]$', labelpad=15, 
+    fontsize=25)
+plt.legend(loc='best', prop={'size': 20})
+plt.show()
