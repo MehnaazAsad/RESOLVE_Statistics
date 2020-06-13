@@ -18,8 +18,6 @@ def behroozi10(logmstar, theta):
 
     return logmh
 
-global logmstar
-
 mstar_min = np.round(np.log10((10**8)/2.041),1) 
 mstar_max = np.round(np.log10((10**12)/2.041),1) 
 logmstar = np.linspace(mstar_min, mstar_max, 500)
