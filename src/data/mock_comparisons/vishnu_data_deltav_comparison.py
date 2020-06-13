@@ -795,7 +795,7 @@ plt.scatter(centers_red_vishnu, std_red_vishnu, marker='o', \
     facecolors='none', edgecolors='indianred', s=100, label='vishnu')
 plt.scatter(centers_blue_vishnu, std_blue_vishnu, marker='o', \
     facecolors='none', edgecolors='cornflowerblue', s=100, label='vishnu')
-plt.ylabel(r'\boldmath$<\Delta v\ > \left[km/s\right]$', labelpad=15, 
+plt.ylabel(r'\boldmath$\sigma \left[km/s\right]$', labelpad=15, 
     fontsize=25)
 handles, labels = plt.gca().get_legend_handles_labels()
 by_label = OrderedDict(zip(labels, handles))
@@ -813,7 +813,7 @@ ax2.set_xlabel(r'$\mathbf{log\ M_{*,cen}}\ [\mathbf{M_{\odot}}]$', labelpad=15,
 ax2.set_ylabel(r'$\mathbf{\frac{vishnu}{data}}$', labelpad=30, 
     fontsize=25)
 
-ax1.set_title(r'Vishnu mock vs. data mean velocity dispersion')
+ax1.set_title(r'Vishnu mock vs. data spread in velocity dispersion')
 ax1.legend(by_label.values(), by_label.keys(), loc='best', prop={'size': 20})
 fig.tight_layout()
 fig.show()
