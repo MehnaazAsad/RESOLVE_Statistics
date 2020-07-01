@@ -886,7 +886,7 @@ def assign_colour_label_data(catl):
 
     return catl
 
-def get_err_data(survey, path):
+def get_smf_err_data(survey, path):
     """
     Calculate error in data SMF from mocks
 
@@ -1022,7 +1022,7 @@ def get_err_data(survey, path):
     corr_mat_inv_colour = np.linalg.inv(corr_mat_colour)
 
     return err_colour, corr_mat_inv_colour
-
+     
 def measure_all_smf(table, volume, data_bool):
     """
     Calculates differential stellar mass function for all, red and blue galaxies
@@ -1174,7 +1174,7 @@ def main(args):
     total_data, red_data, blue_data = measure_all_smf(catl, volume, True)
 
     print('Measuring error in data from mocks')
-    sigma, corr_mat_inv = get_err_data(survey, path_to_mocks)
+    sigma, corr_mat_inv = get_smf_err_data(survey, path_to_mocks)
     # print('sigma: ', sigma)
     # print('corr mat inverse: ', corr_mat_inv)
     # print('Loading halo catalog')
