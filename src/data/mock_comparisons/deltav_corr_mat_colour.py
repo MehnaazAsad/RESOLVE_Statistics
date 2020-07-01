@@ -1,26 +1,21 @@
 """
-{This script calculates velocity dispersion from mocks for red and blue galaxies
- as well as smf for red and blue galaxies. It then calculates a full correlation
- matrix using velocity dispersion and smf of both galaxy populations as well
- as a correlation matrix of just velocity dispersion measurements of both 
- galaxy populations.
+{This script calculates spread in velocity dispersion (sigma) from mocks for 
+ red and blue galaxies as well as smf for red and blue galaxies. It then 
+ calculates a full correlation matrix using sigma and smf of both galaxy 
+ populations as well as a correlation matrix of just sigma
+ measurements of both galaxy populations.
  
  Mean velocity dispersion of red and blue galaxies in bins of central stellar
  mass from data and mocks is also compared.}
 """
 
 # Libs
-from cosmo_utils.utils.stats_funcs import Stats_one_arr
 from cosmo_utils.utils import work_paths as cwpaths
-from scipy.stats import binned_statistic
 import matplotlib.pyplot as plt
 from matplotlib import cm as cm
 from matplotlib import rc
-import seaborn as sns
 import pandas as pd
 import numpy as np
-import argparse
-import math
 import os
 
 __author__ = '{Mehnaaz Asad}'
@@ -233,7 +228,32 @@ def assign_colour_label_data(catl):
 
     return catl
 
-def get_deltav_data(catl):
+def std_func(bins, mass_arr, vel_arr):
+
+    last_index = len(bins)-1
+    i = 0
+    std_arr = []
+    for index1, bin_edge in enumerate(bins):
+        cen_deltav_arr = []
+        if index1 == last_index:
+            break
+        for index2, stellar_mass in enumerate(mass_arr):
+            if stellar_mass >= bin_edge and stellar_mass < bins[index1+1]:
+                cen_deltav_arr.append(vel_arr[index2])
+        N = len(cen_deltav_arr)
+        mean = 0
+        diff_sqrd_arr = []
+        for value in cen_deltav_arr:
+            diff = value - mean
+            diff_sqrd = diff**2
+            diff_sqrd_arr.append(diff_sqrd)
+        mean_diff_sqrd = np.mean(diff_sqrd_arr)
+        std = np.sqrt(mean_diff_sqrd)
+        std_arr.append(std)
+
+    return std_arr
+
+def get_deltav_sigma_data(catl):
     """
     Measure velocity dispersion separately for red and blue galaxies by 
     binning up central stellar mass
@@ -261,58 +281,50 @@ def get_deltav_data(catl):
     red_groups = red_subset.groupby('grp')
     red_keys = red_groups.groups.keys()
 
-    # Calculating velocity dispersion for red galaxies in data
-    deltav_arr = []
-    cen_stellar_mass_arr = []
+    red_deltav_arr = []
+    red_cen_stellar_mass_arr = []
     for key in red_keys: 
         group = red_groups.get_group(key) 
         if 1 in group.fc.values: 
-            cen_stellar_mass = group.logmstar.loc[group.fc.values \
-                == 1].values[0]
+            cen_stellar_mass = group.logmstar.loc[group.fc.\
+                values == 1].values[0]
             mean_cz_grp = np.round(np.mean(group.cz.values),2)
             deltav = group.cz.values - len(group)*[mean_cz_grp]
             for val in deltav:
-                deltav_arr.append(val)
-                cen_stellar_mass_arr.append(cen_stellar_mass)
+                red_deltav_arr.append(val)
+                red_cen_stellar_mass_arr.append(cen_stellar_mass)
 
-    deltav_red_data = []
-    edges_red_data = []
-    deltav_binned_red = binned_statistic(cen_stellar_mass_arr, deltav_arr,
-        bins=np.linspace(8.55,11.5,6)) 
-    deltav_red_data.append(deltav_binned_red[0]) 
-    edges_red_data.append(deltav_binned_red[1])
-
+    red_stellar_mass_bins = np.arange(8.6,11.5,0.25)
+    std_red = std_func(red_stellar_mass_bins, red_cen_stellar_mass_arr, 
+        red_deltav_arr)
+    std_red = np.array(std_red)                                                      
+    
     blue_groups = blue_subset.groupby('grp')
     blue_keys = blue_groups.groups.keys()
 
-    # Calculating velocity dispersion for blue galaxies in data
-    deltav_arr = []
-    cen_stellar_mass_arr = []
-    deltav_blue_data = []
-    edges_blue_data = []
+    # Calculating spread in velocity dispersion for blue galaxies
+    blue_deltav_arr = []
+    blue_cen_stellar_mass_arr = []
     for key in blue_keys: 
         group = blue_groups.get_group(key)  
-        if 1 in group.fc.values:
-            cen_stellar_mass = group.logmstar.loc[group.fc.values \
-                == 1].values[0]
+        if 1 in group.fc.values: 
+            cen_stellar_mass = group.logmstar.loc[group.fc\
+                .values == 1].values[0]
             mean_cz_grp = np.round(np.mean(group.cz.values),2)
             deltav = group.cz.values - len(group)*[mean_cz_grp]
             for val in deltav:
-                deltav_arr.append(val)
-                cen_stellar_mass_arr.append(cen_stellar_mass)
+                blue_deltav_arr.append(val)
+                blue_cen_stellar_mass_arr.append(cen_stellar_mass)
 
-    deltav_binned_blue = binned_statistic(cen_stellar_mass_arr, deltav_arr,
-        bins=np.linspace(8.55,10.5,6))             
-    deltav_blue_data.append(deltav_binned_blue[0])
-    edges_blue_data.append(deltav_binned_blue[1])
+    blue_stellar_mass_bins = np.arange(8.6,11,0.25)
+    std_blue = std_func(blue_stellar_mass_bins, blue_cen_stellar_mass_arr, 
+        blue_deltav_arr)    
+    std_blue = np.array(std_blue)
 
-    edg_red = edges_red_data[0]
-    edg_blue = edges_blue_data[0]
-    centers_red_data = 0.5 * (edg_red[1:] + edg_red[:-1])
-    centers_blue_data = 0.5 * (edg_blue[1:] + edg_blue[:-1])
+    centers_red = 0.5 * (red_stellar_mass_bins[1:] + red_stellar_mass_bins[:-1])
+    centers_blue = 0.5 * (blue_stellar_mass_bins[1:] + blue_stellar_mass_bins[:-1])
 
-    return deltav_red_data, centers_red_data, deltav_blue_data, \
-        centers_blue_data
+    return std_red, centers_red, std_blue, centers_blue
 
 def diff_smf(mstar_arr, volume, h1_bool, colour_flag=False):
     """
@@ -506,9 +518,9 @@ def get_err_smf_mocks(survey, path):
     
     return phi_arr_red, phi_arr_blue
 
-def get_deltav_mocks(survey, path):
+def get_deltav_sigma_mocks(survey, path):
     """
-    Calculate error in data VD from mocks
+    Calculate spread in velocity dispersion from mocks
 
     Parameters
     ----------
@@ -553,10 +565,10 @@ def get_deltav_mocks(survey, path):
         mstar_limit = 8.7
         volume = 4709.8373  # Survey volume without buffer [Mpc/h]^3
 
-    deltav_binned_red_arr = []
-    edges_binned_red_arr = []
-    deltav_binned_blue_arr = []
-    edges_binned_blue_arr = []
+    std_red_arr = []
+    centers_red_arr = []
+    std_blue_arr = []
+    centers_blue_arr = []
     box_id_arr = np.linspace(5001,5008,8)
     for box in box_id_arr:
         box = int(box)
@@ -608,62 +620,62 @@ def get_deltav_mocks(survey, path):
             red_groups = red_subset.groupby('groupid')
             red_keys = red_groups.groups.keys()
 
-            # Calculating velocity dispersion for red galaxies in mock
-            deltav_arr = []
-            cen_stellar_mass_arr = []
+            # Calculating spread in velocity dispersion for red galaxies
+            red_deltav_arr = []
+            red_cen_stellar_mass_arr = []
             for key in red_keys: 
                 group = red_groups.get_group(key) 
                 if 1 in group.cs_flag.values: 
-                    cen_stellar_mass = group.logmstar.loc[group.cs_flag.values \
-                        == 1].values[0]
+                    cen_stellar_mass = group.logmstar.loc[group.cs_flag.\
+                        values == 1].values[0]
                     mean_cz_grp = np.round(np.mean(group.cz.values),2)
                     deltav = group.cz.values - len(group)*[mean_cz_grp]
                     for val in deltav:
-                        deltav_arr.append(val)
-                        cen_stellar_mass_arr.append(cen_stellar_mass)
+                        red_deltav_arr.append(val)
+                        red_cen_stellar_mass_arr.append(cen_stellar_mass)
 
-            deltav_binned_red = binned_statistic(cen_stellar_mass_arr, deltav_arr,
-                bins=np.linspace(8.55,11.5,6)) 
-            deltav_binned_red_arr.append(deltav_binned_red[0]) 
-            edges_binned_red_arr.append(deltav_binned_red[1])
-
+            red_stellar_mass_bins = np.arange(8.6,11.5,0.25)
+            std_red = std_func(red_stellar_mass_bins, red_cen_stellar_mass_arr, 
+                red_deltav_arr)
+            std_red = np.array(std_red)
+            std_red_arr.append(std_red)                                                       
+            
             blue_groups = blue_subset.groupby('groupid')
             blue_keys = blue_groups.groups.keys()
 
-            # Calculating velocity dispersion for blue galaxies in mock
-            deltav_arr = []
-            cen_stellar_mass_arr = []
+            # Calculating spread in velocity dispersion for blue galaxies
+            blue_deltav_arr = []
+            blue_cen_stellar_mass_arr = []
             for key in blue_keys: 
                 group = blue_groups.get_group(key)  
-                if 1 in group.cs_flag.values:
-                    cen_stellar_mass = group.logmstar.loc[group.cs_flag.values \
-                        == 1].values[0]
+                if 1 in group.cs_flag.values: 
+                    cen_stellar_mass = group.logmstar.loc[group.cs_flag\
+                        .values == 1].values[0]
                     mean_cz_grp = np.round(np.mean(group.cz.values),2)
                     deltav = group.cz.values - len(group)*[mean_cz_grp]
                     for val in deltav:
-                        deltav_arr.append(val)
-                        cen_stellar_mass_arr.append(cen_stellar_mass)
+                        blue_deltav_arr.append(val)
+                        blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+
+            blue_stellar_mass_bins = np.arange(8.6,11,0.25)
+            std_blue = std_func(blue_stellar_mass_bins, blue_cen_stellar_mass_arr, 
+                blue_deltav_arr)    
+            std_blue = np.array(std_blue)
+            std_blue_arr.append(std_blue)
+
+            centers_red = 0.5 * (red_stellar_mass_bins[1:] + red_stellar_mass_bins[:-1])
+            centers_blue = 0.5 * (blue_stellar_mass_bins[1:] + blue_stellar_mass_bins[:-1])
             
-            deltav_binned_blue = binned_statistic(cen_stellar_mass_arr, deltav_arr,
-                bins=np.linspace(8.55,10.5,6))             
-            deltav_binned_blue_arr.append(deltav_binned_blue[0])
-            edges_binned_blue_arr.append(deltav_binned_blue[1])
+            centers_red_arr.append(centers_red)
+            centers_blue_arr.append(centers_blue)
 
-    deltav_binned_red_arr = np.array(deltav_binned_red_arr)
-    edges_binned_red_arr = np.array(edges_binned_red_arr)
-    deltav_binned_blue_arr = np.array(deltav_binned_blue_arr)
-    edges_binned_blue_arr = np.array(edges_binned_blue_arr)
+    std_red_arr = np.array(std_red_arr)
+    centers_red_arr = np.array(centers_red_arr)
+    std_blue_arr = np.array(std_blue_arr)
+    centers_blue_arr = np.array(centers_blue_arr)
+            
 
-    # Getting bin centers for plotting instead of bin edges
-    edg_red = edges_binned_red_arr[0]
-    edg_blue = edges_binned_blue_arr[0]
-    centers_binned_red_arr = 0.5 * (edg_red[1:] + edg_red[:-1])
-    centers_binned_blue_arr = 0.5 * (edg_blue[1:] + edg_blue[:-1])
-    centers_binned_red_arr = 64*[centers_binned_red_arr]
-    centers_binned_blue_arr = 64*[centers_binned_blue_arr]
-
-    return deltav_binned_red_arr, deltav_binned_blue_arr, centers_binned_red_arr,\
-        centers_binned_blue_arr
+    return std_red_arr, std_blue_arr, centers_red_arr, centers_blue_arr
 
 def measure_all_smf(table, volume, data_bool):
     """
@@ -750,11 +762,11 @@ elif survey == 'resolveb':
 catl, volume, cvar, z_median = read_data_catl(catl_file, survey)
 catl = assign_colour_label_data(catl)
 
-deltav_red_mocks, deltav_blue_mocks, centers_red_mocks, \
-    centers_blue_mocks = get_deltav_mocks(survey, path_to_mocks)
+std_red_mocks, std_blue_mocks, centers_red_mocks, \
+    centers_blue_mocks = get_deltav_sigma_mocks(survey, path_to_mocks)
 
-deltav_red_data, deltav_blue_data, centers_red_data, \
-    centers_blue_data = get_deltav_data(catl)
+std_red_data, centers_red_data, std_blue_data, centers_blue_data = \
+    get_deltav_sigma_data(catl)
 
 phi_red_arr, phi_blue_arr = get_err_smf_mocks(survey, path_to_mocks)
 
@@ -772,17 +784,17 @@ if corr_mat_combined_bool:
     phi_blue_3 = phi_blue_arr[:,3]
     phi_blue_4 = phi_blue_arr[:,4]
 
-    dv_red_0 = deltav_red_mocks[:,0]
-    dv_red_1 = deltav_red_mocks[:,1]
-    dv_red_2 = deltav_red_mocks[:,2]
-    dv_red_3 = deltav_red_mocks[:,3]
-    dv_red_4 = deltav_red_mocks[:,4]
+    dv_red_0 = std_red_mocks[:,0]
+    dv_red_1 = std_red_mocks[:,1]
+    dv_red_2 = std_red_mocks[:,2]
+    dv_red_3 = std_red_mocks[:,3]
+    dv_red_4 = std_red_mocks[:,4]
 
-    dv_blue_0 = deltav_blue_mocks[:,0]
-    dv_blue_1 = deltav_blue_mocks[:,1]
-    dv_blue_2 = deltav_blue_mocks[:,2]
-    dv_blue_3 = deltav_blue_mocks[:,3]
-    dv_blue_4 = deltav_blue_mocks[:,4]
+    dv_blue_0 = std_blue_mocks[:,0]
+    dv_blue_1 = std_blue_mocks[:,1]
+    dv_blue_2 = std_blue_mocks[:,2]
+    dv_blue_3 = std_blue_mocks[:,3]
+    dv_blue_4 = std_blue_mocks[:,4]
     combined_df = pd.DataFrame({'phi_red_0':phi_red_0, 'phi_red_1':phi_red_1,\
         'phi_red_2':phi_red_2, 'phi_red_3':phi_red_3, 'phi_red_4':phi_red_4, \
         'phi_blue_0':phi_blue_0, 'phi_blue_1':phi_blue_1, 
@@ -793,48 +805,47 @@ if corr_mat_combined_bool:
         'dv_blue_0':dv_blue_0, 'dv_blue_1':dv_blue_1, 'dv_blue_2':dv_blue_2, \
         'dv_blue_3':dv_blue_3, 'dv_blue_4':dv_blue_4})
 
+    # Correlation matrix of phi and deltav colour measurements combined
+    fig1 = plt.figure()
+    ax1 = fig1.add_subplot(111)
+    cmap = cm.get_cmap('Spectral')
+    cax = ax1.matshow(combined_df.corr(), cmap=cmap)
+    plt.gca().invert_yaxis() 
+    plt.gca().xaxis.tick_bottom()
+    fig1.colorbar(cax)
+    plt.title(r'Combined \boldmath{$\Phi$} and \boldmath{$\sigma$} measurements')
+    plt.show()
+
 else:
-    cov_mat_colour = np.cov(deltav_red_mocks, deltav_blue_mocks, 
+    cov_mat_colour = np.cov(std_red_mocks, std_blue_mocks, 
         rowvar=False)
     err_colour = np.sqrt(cov_mat_colour.diagonal())
     corr_mat_colour = cov_mat_colour / np.outer(err_colour, err_colour)                                                           
     corr_mat_inv_colour = np.linalg.inv(corr_mat_colour)
 
-
-# Correlation matrix of phi and deltav colour measurements combined
-fig1 = plt.figure()
-ax1 = fig1.add_subplot(111)
-cmap = cm.get_cmap('Spectral')
-cax = ax1.matshow(combined_df.corr(), cmap=cmap)
-plt.gca().invert_yaxis() 
-plt.gca().xaxis.tick_bottom()
-fig1.colorbar(cax)
-plt.title(r'Combined \boldmath{$\Phi$} and \boldmath{$\Delta$}v measurements')
-plt.show()
-
-# Correlation matrix of just deltav measurements combined
-fig2 = plt.figure()
-ax1 = fig2.add_subplot(111)
-cmap = cm.get_cmap('Spectral')
-cax = ax1.matshow(corr_mat_colour, cmap=cmap)
-plt.gca().invert_yaxis() 
-plt.gca().xaxis.tick_bottom()
-fig2.colorbar(cax)
-plt.title(r'Combined \boldmath{$\delta$}v measurements')
-plt.show()
+    # Correlation matrix of just deltav measurements combined
+    fig1 = plt.figure()
+    ax1 = fig1.add_subplot(111)
+    cmap = cm.get_cmap('Spectral')
+    cax = ax1.matshow(corr_mat_colour, cmap=cmap)
+    plt.gca().invert_yaxis() 
+    plt.gca().xaxis.tick_bottom()
+    fig1.colorbar(cax)
+    plt.title(r'Combined \boldmath{$\delta$}v measurements')
+    plt.show()
 
 # Plot of mean velocity dispersion of red and blue galaxies from data and mocks
-fig3 = plt.figure()
+fig2 = plt.figure()
 for idx in range(len(centers_red_mocks)):
-    plt.scatter(centers_red_mocks[idx], deltav_red_mocks[idx], 
+    plt.scatter(centers_red_mocks[idx], std_red_mocks[idx], 
         c='indianred')
-    plt.scatter(centers_blue_mocks[idx], deltav_blue_mocks[idx], 
+    plt.scatter(centers_blue_mocks[idx], std_blue_mocks[idx], 
         c='cornflowerblue')
-plt.scatter(centers_red_data, deltav_red_data, marker='*', c='darkred')
-plt.scatter(centers_blue_data, deltav_blue_data, marker='*', c='darkblue')
+plt.scatter(centers_red_data, std_red_data, marker='*', c='darkred')
+plt.scatter(centers_blue_data, std_blue_data, marker='*', c='darkblue')
 plt.xlabel(r'$\mathbf{log\ M_{*,cen}}\ [\mathbf{M_{\odot}}]$', labelpad=15, 
     fontsize=25)
-plt.ylabel(r'\boldmath$<\Delta v\ > \left[km/s\right]$', labelpad=15, 
+plt.ylabel(r'\boldmath$\sigma \left[km/s\right]$', labelpad=15, 
     fontsize=25)
-plt.title(r'ECO mocks vs. data mean velocity dispersion')
+plt.title(r'ECO mocks vs. data $\sigma$')
 plt.show()
