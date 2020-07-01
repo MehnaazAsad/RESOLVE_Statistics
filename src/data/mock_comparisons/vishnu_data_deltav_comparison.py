@@ -782,9 +782,9 @@ std_red_mocks, std_blue_mocks, centers_red_mocks, \
 fig,(ax1,ax2) = plt.subplots(2,1,sharex=True,sharey=False,figsize=(12,10),\
      gridspec_kw = {'height_ratios':[7,3]})
 for idx in range(len(centers_red_mocks)):
-    plt.scatter(centers_red_mocks[idx], deltav_red_mocks[idx], 
+    plt.scatter(centers_red_mocks[idx], std_red_mocks[idx], 
         c='indianred')
-    plt.scatter(centers_blue_mocks[idx], deltav_blue_mocks[idx], 
+    plt.scatter(centers_blue_mocks[idx], std_blue_mocks[idx], 
         c='cornflowerblue')
 plt.sca(ax1) # required for plt.gca() to pick up labels
 plt.scatter(centers_red_data, std_red_data, marker='*', c='indianred', \
