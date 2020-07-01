@@ -255,8 +255,8 @@ def std_func(bins, mass_arr, vel_arr):
 
 def get_deltav_sigma_data(catl):
     """
-    Measure velocity dispersion separately for red and blue galaxies by 
-    binning up central stellar mass
+    Measure spread in velocity dispersion separately for red and blue galaxies 
+    by binning up central stellar mass
 
     Parameters
     ----------
@@ -265,13 +265,13 @@ def get_deltav_sigma_data(catl):
 
     Returns
     ---------
-    deltav_red_data: numpy array
-        Velocity dispersion of red galaxies
-    centers_red_data: numpy array
+    std_red: numpy array
+        Spread in velocity dispersion of red galaxies
+    centers_red: numpy array
         Bin centers of central stellar mass for red galaxies
-    deltav_blue_data: numpy array
-        Velocity dispersion of blue galaxies
-    centers_blue_data: numpy array
+    std_blue: numpy array
+        Spread in velocity dispersion of blue galaxies
+    centers_blue: numpy array
         Bin centers of central stellar mass for blue galaxies
     """
 
@@ -520,7 +520,7 @@ def get_err_smf_mocks(survey, path):
 
 def get_deltav_sigma_mocks(survey, path):
     """
-    Calculate spread in velocity dispersion from mocks
+    Calculate spread in velocity dispersion from survey mocks
 
     Parameters
     ----------
@@ -531,13 +531,13 @@ def get_deltav_sigma_mocks(survey, path):
 
     Returns
     ---------
-    deltav_binned_red_arr: numpy array
-        Velocity dispersion of red galaxies
-    centers_binned_red_arr: numpy array
+    std_red_arr: numpy array
+        Spread in velocity dispersion of red galaxies
+    centers_red_arr: numpy array
         Bin centers of central stellar mass for red galaxies
-    deltav_binned_blue_arr: numpy array
-        Velocity dispersion of blue galaxies
-    centers_binned_blue_arr: numpy array
+    std_blue_arr: numpy array
+        Spread in velocity dispersion of blue galaxies
+    centers_blue_arr: numpy array
         Bin centers of central stellar mass for blue galaxies
     """
     if survey == 'eco':
@@ -674,7 +674,6 @@ def get_deltav_sigma_mocks(survey, path):
     std_blue_arr = np.array(std_blue_arr)
     centers_blue_arr = np.array(centers_blue_arr)
             
-
     return std_red_arr, std_blue_arr, centers_red_arr, centers_blue_arr
 
 def measure_all_smf(table, volume, data_bool):
