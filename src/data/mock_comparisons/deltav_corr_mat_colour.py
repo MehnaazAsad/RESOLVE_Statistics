@@ -281,6 +281,7 @@ def get_deltav_sigma_data(catl):
     red_groups = red_subset.groupby('grp')
     red_keys = red_groups.groups.keys()
 
+    # Calculating spread in velocity dispersion for red galaxies
     red_deltav_arr = []
     red_cen_stellar_mass_arr = []
     for key in red_keys: 
