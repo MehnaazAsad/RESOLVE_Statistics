@@ -253,14 +253,14 @@ def std_func(bins, mass_arr, vel_arr):
 
     return std_arr
 
-def get_deltav_sigma_data(catl):
+def get_deltav_sigma_data(df):
     """
     Measure spread in velocity dispersion separately for red and blue galaxies 
     by binning up central stellar mass
 
     Parameters
     ----------
-    catl: pandas Dataframe 
+    df: pandas Dataframe 
         Data catalog
 
     Returns
@@ -274,56 +274,60 @@ def get_deltav_sigma_data(catl):
     centers_blue: numpy array
         Bin centers of central stellar mass for blue galaxies
     """
+    catl = df.copy()
+    catl = catl.loc[catl.logmstar >= 8.9]
+    catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
+   
+    red_subset_grpids = np.unique(catl.grp.loc[(catl.\
+        colour_label == 'R') & (catl.fc == 1)].values)  
+    blue_subset_grpids = np.unique(catl.grp.loc[(catl.\
+        colour_label == 'B') & (catl.fc == 1)].values)
 
-    red_subset = catl.loc[catl.colour_label == 'R']
-    blue_subset = catl.loc[catl.colour_label == 'B']
 
-    red_groups = red_subset.groupby('grp')
-    red_keys = red_groups.groups.keys()
+    # Calculating spread in velocity dispersion for galaxies in groups with a 
+    # red central
 
-    # Calculating spread in velocity dispersion for red galaxies
     red_deltav_arr = []
     red_cen_stellar_mass_arr = []
-    for key in red_keys: 
-        group = red_groups.get_group(key) 
-        if 1 in group.fc.values: 
-            cen_stellar_mass = group.logmstar.loc[group.fc.\
-                values == 1].values[0]
-            mean_cz_grp = np.round(np.mean(group.cz.values),2)
-            deltav = group.cz.values - len(group)*[mean_cz_grp]
-            for val in deltav:
-                red_deltav_arr.append(val)
-                red_cen_stellar_mass_arr.append(cen_stellar_mass)
+    for key in red_subset_grpids: 
+        group = catl.loc[catl.grp == key]
+        cen_stellar_mass = group.logmstar.loc[group.fc.\
+            values == 1].values[0]
+        mean_cz_grp = np.round(np.mean(group.cz.values),2)
+        deltav = group.cz.values - len(group)*[mean_cz_grp]
+        for val in deltav:
+            red_deltav_arr.append(val)
+            red_cen_stellar_mass_arr.append(cen_stellar_mass)
 
-    red_stellar_mass_bins = np.arange(8.6,11.5,0.25)
+    red_stellar_mass_bins = np.linspace(8.6,11.5,6)
     std_red = std_func(red_stellar_mass_bins, red_cen_stellar_mass_arr, 
         red_deltav_arr)
-    std_red = np.array(std_red)                                                      
-    
-    blue_groups = blue_subset.groupby('grp')
-    blue_keys = blue_groups.groups.keys()
+    std_red = np.array(std_red)
 
-    # Calculating spread in velocity dispersion for blue galaxies
+    # Calculating spread in velocity dispersion for galaxies in groups with a 
+    # blue central
+
     blue_deltav_arr = []
     blue_cen_stellar_mass_arr = []
-    for key in blue_keys: 
-        group = blue_groups.get_group(key)  
-        if 1 in group.fc.values: 
-            cen_stellar_mass = group.logmstar.loc[group.fc\
-                .values == 1].values[0]
-            mean_cz_grp = np.round(np.mean(group.cz.values),2)
-            deltav = group.cz.values - len(group)*[mean_cz_grp]
-            for val in deltav:
-                blue_deltav_arr.append(val)
-                blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+    for key in blue_subset_grpids: 
+        group = catl.loc[catl.grp == key]
+        cen_stellar_mass = group.logmstar.loc[group.fc\
+            .values == 1].values[0]
+        mean_cz_grp = np.round(np.mean(group.cz.values),2)
+        deltav = group.cz.values - len(group)*[mean_cz_grp]
+        for val in deltav:
+            blue_deltav_arr.append(val)
+            blue_cen_stellar_mass_arr.append(cen_stellar_mass)
 
-    blue_stellar_mass_bins = np.arange(8.6,11,0.25)
+    blue_stellar_mass_bins = np.linspace(8.6,10.5,6)
     std_blue = std_func(blue_stellar_mass_bins, blue_cen_stellar_mass_arr, 
         blue_deltav_arr)    
     std_blue = np.array(std_blue)
 
-    centers_red = 0.5 * (red_stellar_mass_bins[1:] + red_stellar_mass_bins[:-1])
-    centers_blue = 0.5 * (blue_stellar_mass_bins[1:] + blue_stellar_mass_bins[:-1])
+    centers_red = 0.5 * (red_stellar_mass_bins[1:] + \
+        red_stellar_mass_bins[:-1])
+    centers_blue = 0.5 * (blue_stellar_mass_bins[1:] + \
+        blue_stellar_mass_bins[:-1])
 
     return std_red, centers_red, std_blue, centers_blue
 
@@ -583,7 +587,8 @@ def get_deltav_sigma_mocks(survey, path):
             # Using the same survey definition as in mcmc smf i.e excluding the 
             # buffer
             mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & \
-                (mock_pd.cz.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
+                (mock_pd.cz.values <= max_cz) & \
+                (mock_pd.M_r.values <= mag_limit) & \
                 (mock_pd.logmstar.values >= mstar_limit)]
 
             logmstar_arr = mock_pd.logmstar.values 
@@ -615,116 +620,67 @@ def get_deltav_sigma_mocks(survey, path):
 
             mock_pd['colour_label'] = colour_label_arr
             mock_pd.logmstar = np.log10((10**mock_pd.logmstar) / 2.041)
-            red_subset = mock_pd.loc[mock_pd.colour_label == 'R']
-            blue_subset = mock_pd.loc[mock_pd.colour_label == 'B']
+            red_subset_grpids = np.unique(mock_pd.groupid.loc[(mock_pd.\
+                colour_label == 'R') & (mock_pd.g_galtype == 1)].values)  
+            blue_subset_grpids = np.unique(mock_pd.groupid.loc[(mock_pd.\
+                colour_label == 'B') & (mock_pd.g_galtype == 1)].values)
 
-            red_groups = red_subset.groupby('groupid')
-            red_keys = red_groups.groups.keys()
+            # Calculating spread in velocity dispersion for galaxies in groups
+            # with a red central
 
-            # Calculating spread in velocity dispersion for red galaxies
             red_deltav_arr = []
             red_cen_stellar_mass_arr = []
-            for key in red_keys: 
-                group = red_groups.get_group(key) 
-                if 1 in group.cs_flag.values: 
-                    cen_stellar_mass = group.logmstar.loc[group.cs_flag.\
-                        values == 1].values[0]
-                    mean_cz_grp = np.round(np.mean(group.cz.values),2)
-                    deltav = group.cz.values - len(group)*[mean_cz_grp]
-                    for val in deltav:
-                        red_deltav_arr.append(val)
-                        red_cen_stellar_mass_arr.append(cen_stellar_mass)
+            for key in red_subset_grpids: 
+                group = mock_pd.loc[mock_pd.groupid == key]
+                cen_stellar_mass = group.logmstar.loc[group.g_galtype.\
+                    values == 1].values[0]
+                mean_cz_grp = np.round(np.mean(group.cz.values),2)
+                deltav = group.cz.values - len(group)*[mean_cz_grp]
+                for val in deltav:
+                    red_deltav_arr.append(val)
+                    red_cen_stellar_mass_arr.append(cen_stellar_mass)
 
-            red_stellar_mass_bins = np.arange(8.6,11.5,0.25)
+            red_stellar_mass_bins = np.linspace(8.6,11.5,6)
             std_red = std_func(red_stellar_mass_bins, red_cen_stellar_mass_arr, 
                 red_deltav_arr)
             std_red = np.array(std_red)
-            std_red_arr.append(std_red)                                                       
-            
-            blue_groups = blue_subset.groupby('groupid')
-            blue_keys = blue_groups.groups.keys()
+            std_red_arr.append(std_red)
 
-            # Calculating spread in velocity dispersion for blue galaxies
+            # Calculating spread in velocity dispersion for galaxies in groups 
+            # with a blue central
+
             blue_deltav_arr = []
             blue_cen_stellar_mass_arr = []
-            for key in blue_keys: 
-                group = blue_groups.get_group(key)  
-                if 1 in group.cs_flag.values: 
-                    cen_stellar_mass = group.logmstar.loc[group.cs_flag\
-                        .values == 1].values[0]
-                    mean_cz_grp = np.round(np.mean(group.cz.values),2)
-                    deltav = group.cz.values - len(group)*[mean_cz_grp]
-                    for val in deltav:
-                        blue_deltav_arr.append(val)
-                        blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+            for key in blue_subset_grpids: 
+                group = mock_pd.loc[mock_pd.groupid == key]
+                cen_stellar_mass = group.logmstar.loc[group.g_galtype\
+                    .values == 1].values[0]
+                mean_cz_grp = np.round(np.mean(group.cz.values),2)
+                deltav = group.cz.values - len(group)*[mean_cz_grp]
+                for val in deltav:
+                    blue_deltav_arr.append(val)
+                    blue_cen_stellar_mass_arr.append(cen_stellar_mass)
 
-            blue_stellar_mass_bins = np.arange(8.6,11,0.25)
-            std_blue = std_func(blue_stellar_mass_bins, blue_cen_stellar_mass_arr, 
-                blue_deltav_arr)    
+            blue_stellar_mass_bins = np.linspace(8.6,10.5,6)
+            std_blue = std_func(blue_stellar_mass_bins, \
+                blue_cen_stellar_mass_arr, blue_deltav_arr)    
             std_blue = np.array(std_blue)
             std_blue_arr.append(std_blue)
 
-            centers_red = 0.5 * (red_stellar_mass_bins[1:] + red_stellar_mass_bins[:-1])
-            centers_blue = 0.5 * (blue_stellar_mass_bins[1:] + blue_stellar_mass_bins[:-1])
+            centers_red = 0.5 * (red_stellar_mass_bins[1:] + \
+                red_stellar_mass_bins[:-1])
+            centers_blue = 0.5 * (blue_stellar_mass_bins[1:] + \
+                blue_stellar_mass_bins[:-1])
             
             centers_red_arr.append(centers_red)
             centers_blue_arr.append(centers_blue)
-
+    
     std_red_arr = np.array(std_red_arr)
     centers_red_arr = np.array(centers_red_arr)
     std_blue_arr = np.array(std_blue_arr)
     centers_blue_arr = np.array(centers_blue_arr)
             
     return std_red_arr, std_blue_arr, centers_red_arr, centers_blue_arr
-
-def measure_all_smf(table, volume, data_bool):
-    """
-    Calculates differential stellar mass function for all, red and blue galaxies
-    from mock/data
-
-    Parameters
-    ----------
-    table: pandas Dataframe
-        Dataframe of either mock or data 
-    volume: float
-        Volume of simulation/survey
-    cvar: float
-        Cosmic variance error
-    data_bool: Boolean
-        Data or mock
-
-    Returns
-    ---------
-    3 multidimensional arrays of stellar mass, phi, total error in SMF and 
-    counts per bin for all, red and blue galaxies
-    """
-
-    colour_col = 'colour_label'
-
-    if data_bool:
-        logmstar_col = 'logmstar'
-        max_total, phi_total, err_total, bins_total, counts_total = \
-            diff_smf(table[logmstar_col], volume, False)
-        max_red, phi_red, err_red, bins_red, counts_red = \
-            diff_smf(table[logmstar_col].loc[table[colour_col] == 'R'], 
-            volume, False, 'R')
-        max_blue, phi_blue, err_blue, bins_blue, counts_blue = \
-            diff_smf(table[logmstar_col].loc[table[colour_col] == 'B'], 
-            volume, False, 'B')
-    else:
-        logmstar_col = 'stellar_mass'
-        max_total, phi_total, err_total, bins_total, counts_total = \
-            diff_smf(table[logmstar_col], volume, True)
-        max_red, phi_red, err_red, bins_red, counts_red = \
-            diff_smf(table[logmstar_col].loc[table[colour_col] == 'R'], 
-            volume, True, 'R')
-        max_blue, phi_blue, err_blue, bins_blue, counts_blue = \
-            diff_smf(table[logmstar_col].loc[table[colour_col] == 'B'], 
-            volume, True, 'B')
-    
-    return [max_total, phi_total, err_total, counts_total] , \
-        [max_red, phi_red, err_red, counts_red] , \
-            [max_blue, phi_blue, err_blue, counts_blue]
 
 global model_init
 global survey
@@ -838,11 +794,11 @@ else:
 fig2 = plt.figure()
 for idx in range(len(centers_red_mocks)):
     plt.scatter(centers_red_mocks[idx], std_red_mocks[idx], 
-        c='indianred')
+        c='indianred', s=80)
     plt.scatter(centers_blue_mocks[idx], std_blue_mocks[idx], 
-        c='cornflowerblue')
-plt.scatter(centers_red_data, std_red_data, marker='*', c='darkred')
-plt.scatter(centers_blue_data, std_blue_data, marker='*', c='darkblue')
+        c='cornflowerblue', s=80)
+plt.scatter(centers_red_data, std_red_data, marker='*', c='darkred', s=80)
+plt.scatter(centers_blue_data, std_blue_data, marker='*', c='darkblue', s=80)
 plt.xlabel(r'$\mathbf{log\ M_{*,cen}}\ [\mathbf{M_{\odot}}]$', labelpad=15, 
     fontsize=25)
 plt.ylabel(r'\boldmath$\sigma \left[km/s\right]$', labelpad=15, 
