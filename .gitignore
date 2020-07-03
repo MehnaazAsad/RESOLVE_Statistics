@@ -88,3 +88,5 @@ src/tutorials
 *.txt
 *.hdf5
 data
+src/single_use/figures/8point6_binning.png
+src/single_use/figures/8point55_binning.png
