@@ -52,24 +52,20 @@ The `.ff` files are required by `eco_mocks_create.py` to make mocks which involv
 
    
 
-2. Halobias was run on `.bgc2` files, located in  `/zpool0/fs2/lss/LasDamas/Resolve/`, from boxes 5001-5008 for a specific halo definition (M<sub>200</sub>). The halobias script used was `halobias_so_part_extra`located in`/fs1/masad/Research/Repositories/RESOLVE_Statistics/data/raw`.  This was originally `halobias_so_part` located in`/fs1/szewciw/galaxy_clustering/codes/bin` , but it was modified to include three additional columns that are required to execute the mock-making script - `halo_mass`, `central_satellite_flag`, and `halo_id`.
+2. Halobias was run on `.bgc2` files, located in  `/zpool0/fs2/lss/LasDamas/Resolve/`, from boxes 5001-5008 for a specific halo definition (M<sub>200</sub>). The halobias script used was `halobias_so_part_extra` located in`/fs1/masad/Research/Repositories/RESOLVE_Statistics/data/raw`.  This was originally `halobias_so_part` located in`/fs1/szewciw/galaxy_clustering/codes/bin` , but it was modified to include three additional columns that are required to execute the mock-making script - `halo_mass`, `central_satellite_flag`, and `halo_id`. A sample execution of halobias is shown below:
 
+   
 
-
-> Sample halobias executable run:
->
 > `./halobias_so_part_extra 3 4 1 10.81 0.2 10.0 12.05 1.0 1 0. 1. outputfile.pnm -1 /zpool0/fs2/lss/LasDamas/Resolve/5003/rockstar/so_m200b/*.bgc2 > /fs1/masad/Research/Repositories/RESOLVE_Statistics/data/raw/ff_files/m200b/5003_200b_outfile.ff`
 
 
 
 3. Resulting `.ff` files located in `/fs1/masad/Research/Repositories/RESOLVE_Statistics/data/raw/ff_files/m200b` were required as input to `eco_mocks_create.py` located in `/fs1/masad/Research/Repositories/ECO_Mocks_Catls/src/data/mocks_create`.
 
-4. Since mocks **without** the buffer region were required, the cz ranges in `eco_mocks_create.py` were modified (lines `2250` and `2251`). `RA` and `DEC` ranges remained the same. 
+4. Since mocks **without** the buffer region were required, the cz ranges in `eco_mocks_create.py` were modified (lines `2250` and `2251`). `RA` and `DEC` ranges remained the same. A sample execution of `eco_mocks_create` for ECO is shown below :
 
 
 
-> Sample  execution of `eco_mocks_create` for ECO :
->
 > `make clean`
 >
 > `make delete_mock_catls`
