@@ -24,7 +24,7 @@
 
 The `.ff` files are required by `eco_mocks_create.py` to make mocks which involves:
 
-- CLF & abundance matching with ECO to get M<sub>r</sub>.
+- CLF and abundance matching with ECO survey to get M<sub>r</sub>.
 - Matching to closest M<sub>r</sub> in survey to assign all other galaxy properties to mock galaxies.
 - Carving out the geometry of the survey.
 - Calculating redshift-space distortions and distances.
