@@ -1,5 +1,10 @@
 # Making new ECO & RESOLVE mocks
 
+```elixir
+author: Mehnaaz Asad
+date: today
+```
+
 
 
 ### Notes about the general process, using ECO as an example
