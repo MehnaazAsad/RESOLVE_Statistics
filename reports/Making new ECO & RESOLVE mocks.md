@@ -44,11 +44,11 @@ The `.ff` files are required by `eco_mocks_create.py` to make mocks which involv
 
    | HOD parameter                                                | Value |
    | ------------------------------------------------------------ | ----- |
-   | log M<sub>min</sub>                                          | 10.81 |
-   | ![equation](http://www.sciweavers.org/tex2img.php?eq=%20%5Csigma%20&bc=White&fc=Black&im=jpg&fs=12&ff=arev&edit=0)log M | 0.2   |
-   | log M<sub>0</sub>                                            | 10.0  |
-   | log M<sub>1</sub>                                            | 12.05 |
-   | ![equation](http://www.sciweavers.org/tex2img.php?eq=%20%5Calpha%20&bc=White&fc=Black&im=jpg&fs=12&ff=arev&edit=0) | 1.0   |
+   | <img src="https://render.githubusercontent.com/render/math?math=\log \M_{min}"> | 10.81 |
+   | <img src="https://render.githubusercontent.com/render/math?math=\alpha \log \M"> | 0.2   |
+   | <img src="https://render.githubusercontent.com/render/math?math=\log \M_{0}"> | 10.0  |
+   | <img src="https://render.githubusercontent.com/render/math?math=\log \M_{1}"> | 12.05 |
+   | <img src="https://render.githubusercontent.com/render/math?math=\alpha"> | 1.0   |
 
    
 
