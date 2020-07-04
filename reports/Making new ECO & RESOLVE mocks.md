@@ -40,19 +40,19 @@ The `.ff` files are required by `eco_mocks_create.py` to make mocks which involv
 
 
 
-1. The HOD parameter values that match chosen `n` of ECO down to RESOLVE B M<sub>r</sub> limit, **n = 0.0831 (Mpc/h)^-3^**, are shown below:
+1. The HOD parameter values that match chosen `n` of ECO down to RESOLVE B M<sub>r</sub> limit, **n = 0.0831 (Mpc/h)<sup>-3</sup>**, are shown below:
 
    | HOD parameter                                                | Value |
    | ------------------------------------------------------------ | ----- |
-   | log M~min~                                                   | 10.81 |
-   | ![equation](http://www.sciweavers.org/tex2img.php?eq=%20%5Csigma%20&bc=White&fc=Black&im=jpg&fs=12&ff=arev&edit=0) log M | 0.2   |
-   | log M~0~                                                     | 10.0  |
-   | log M~1~                                                     | 12.05 |
-   | $\alpha$                                                     | 1.0   |
+   | log M<sub>min</sub>                                          | 10.81 |
+   | ![equation](http://www.sciweavers.org/tex2img.php?eq=%20%5Csigma%20&bc=White&fc=Black&im=jpg&fs=12&ff=arev&edit=0)log M | 0.2   |
+   | log M<sub>0</sub>                                            | 10.0  |
+   | log M<sub>1</sub>                                            | 12.05 |
+   | ![equation](http://www.sciweavers.org/tex2img.php?eq=%20%5Calpha%20&bc=White&fc=Black&im=jpg&fs=12&ff=arev&edit=0) | 1.0   |
 
    
 
-2. Halobias was run on `.bgc2` files, located in  `/zpool0/fs2/lss/LasDamas/Resolve/`, from boxes 5001-5008 for a specific halo definition (M~200~). The halobias script used was `halobias_so_part_extra`located in`/fs1/masad/Research/Repositories/RESOLVE_Statistics/data/raw`.  This was originally `halobias_so_part` located in`/fs1/szewciw/galaxy_clustering/codes/bin` , but it was modified to include three additional columns that are required to execute the mock-making script - `halo_mass`, `central_satellite_flag`, and `halo_id`.
+2. Halobias was run on `.bgc2` files, located in  `/zpool0/fs2/lss/LasDamas/Resolve/`, from boxes 5001-5008 for a specific halo definition (M<sub>200</sub>). The halobias script used was `halobias_so_part_extra`located in`/fs1/masad/Research/Repositories/RESOLVE_Statistics/data/raw`.  This was originally `halobias_so_part` located in`/fs1/szewciw/galaxy_clustering/codes/bin` , but it was modified to include three additional columns that are required to execute the mock-making script - `halo_mass`, `central_satellite_flag`, and `halo_id`.
 
 
 
@@ -62,7 +62,7 @@ The `.ff` files are required by `eco_mocks_create.py` to make mocks which involv
 
 
 
-3. Resulting `.ff` files located in `/fs1/masad/Research/Repositories/RESOLVE_Statistics/data/raw/ff_files/m200b` were used as input to `eco_mocks_create.py` located in `/fs1/masad/Research/Repositories/ECO_Mocks_Catls/src/data/mocks_create`.
+3. Resulting `.ff` files located in `/fs1/masad/Research/Repositories/RESOLVE_Statistics/data/raw/ff_files/m200b` were required as input to `eco_mocks_create.py` located in `/fs1/masad/Research/Repositories/ECO_Mocks_Catls/src/data/mocks_create`.
 
 4. Since mocks **without** the buffer region were required, the cz ranges in `eco_mocks_create.py` were modified (lines `2250` and `2251`). `RA` and `DEC` ranges remained the same. 
 
@@ -83,7 +83,7 @@ Relevant arguments of `eco_mocks_create.py` which can be modified from the comma
 | Argument       | Definition                                                   | Specified options (if applicable)      | Default value         |
 | -------------- | ------------------------------------------------------------ | -------------------------------------- | --------------------- |
 | `size_cube`    | Length of simulation cube in Mpc/h                           |                                        | 180                   |
-| `catl_type`    | Type of abundance matching used in catalog                   | [`mr` , `mstar`]                       | M~r~                  |
+| `catl_type`    | Type of abundance matching used in catalog                   | [`mr` , `mstar`]                       | M<sub>r</sub>         |
 | `zmedian`      | Median redshift of the survey                                |                                        | 0                     |
 | `survey`       | Type of survey to produce                                    | [`A`, `B`, `ECO`]                      | ECO                   |
 | `halotype`     | Type of halo definition                                      | [`mvir`, `m200b`]                      | mvir                  |
