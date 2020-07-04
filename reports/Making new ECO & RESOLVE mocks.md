@@ -25,10 +25,10 @@
 The `.ff` files are required by `eco_mocks_create.py` to make mocks which involves:
 
 - CLF & abundance matching with ECO to get M<sub>r</sub>.
-- Matching to closest M~r~ in survey to assign all other galaxy properties to mock galaxies.
+- Matching to closest M<sub>r</sub> in survey to assign all other galaxy properties to mock galaxies.
 - Carving out the geometry of the survey.
 - Calculating redshift-space distortions and distances.
-- Carrying out group finding and group mass assignment which also includes group galaxy type and group M~r~ / M~*~ being calculated depending on the type of abundance matching that was carried out. 
+- Carrying out group finding and group mass assignment which also includes group galaxy type and group M<sub>r</sub> / M<sub>*</sub> being calculated depending on the type of abundance matching that was carried out. 
 
 
 
@@ -40,15 +40,15 @@ The `.ff` files are required by `eco_mocks_create.py` to make mocks which involv
 
 
 
-1. The HOD parameter values that match chosen `n` of ECO down to RESOLVE B M~r~ limit, **n = 0.0831 (Mpc/h)^-3^**, are shown below:
+1. The HOD parameter values that match chosen `n` of ECO down to RESOLVE B M<sub>r</sub> limit, **n = 0.0831 (Mpc/h)^-3^**, are shown below:
 
-   | HOD parameter  | Value |
-   | -------------- | ----- |
-   | log M~min~     | 10.81 |
-   | $\sigma$ log M | 0.2   |
-   | log M~0~       | 10.0  |
-   | log M~1~       | 12.05 |
-   | $\alpha$       | 1.0   |
+   | HOD parameter                                                | Value |
+   | ------------------------------------------------------------ | ----- |
+   | log M~min~                                                   | 10.81 |
+   | [img]http://www.sciweavers.org/tex2img.php?eq=%20%5Csigma%20&bc=White&fc=Black&im=jpg&fs=12&ff=arev&edit=0[/img] log M | 0.2   |
+   | log M~0~                                                     | 10.0  |
+   | log M~1~                                                     | 12.05 |
+   | $\alpha$                                                     | 1.0   |
 
    
 
