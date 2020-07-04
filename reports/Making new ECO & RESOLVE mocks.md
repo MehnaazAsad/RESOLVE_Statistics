@@ -10,7 +10,7 @@
 
   
 
-- `.bgc2` files are particle and halo files obtained from simulation boxes after running a halo finder. 
+- `.bgc2` files are particle and halo files obtained from simulation boxes after running the Rockstar halo finder. 
 
   
 
@@ -18,7 +18,7 @@
 
   
 
-- The `.bgc2` files are used as input to the halobias code along with the HOD parameters and the output are `.ff` files, which contain galaxy positions and velocities.
+- The `.bgc2` files are used as input to the halobias code along with the HOD parameters and the output are `.ff`  (fast food format) files, which contain galaxy positions and velocities.
 
 
 
@@ -40,7 +40,7 @@ The `.ff` files are required by `eco_mocks_create.py` to make mocks which involv
 
 
 
-1. The HOD parameter values that match `n` of ECO down to RESOLVE B M<sub>r</sub> limit, **n = 0.0831 (Mpc/h)<sup>-3</sup>**, are shown below:
+1. The HOD parameter values that match `n` of ECO down to RESOLVE B M<sub>r</sub> limit, **n = 0.0831 (Mpc h<sup>-1</sup>)<sup>-3</sup>**, are shown below:
 
    | HOD parameter                                                | Value |
    | ------------------------------------------------------------ | ----- |
@@ -52,7 +52,7 @@ The `.ff` files are required by `eco_mocks_create.py` to make mocks which involv
 
    
 
-2. Halobias was run on `.bgc2` files, located in  `/zpool0/fs2/lss/LasDamas/Resolve/`, from boxes 5001-5008 for a specific halo definition (M<sub>200</sub>). The halobias script used was `halobias_so_part_extra` located in`/fs1/masad/Research/Repositories/RESOLVE_Statistics/data/raw`.  This was originally `halobias_so_part` located in`/fs1/szewciw/galaxy_clustering/codes/bin` , but it was modified to include three additional columns that are required to execute the mock-making script - `halo_mass`, `central_satellite_flag`, and `halo_id`. A sample execution of halobias is shown below:
+2. Halobias was run on `.bgc2` files, located in  `/zpool0/fs2/lss/LasDamas/Resolve/`, from boxes 5001-5008 for a specific halo definition (M<sub>200</sub>). The halobias executable used was `halobias_so_part_extra` located in`/fs1/masad/Research/Repositories/RESOLVE_Statistics/data/raw`.  This was originally `halobias_so_part` located in`/fs1/szewciw/galaxy_clustering/codes/halobias` , but it was modified to include three additional columns that are required to execute the mock-making script - `halo_mass`, `central_satellite_flag`, and `halo_id`. A sample execution of halobias is shown below:
 
    
 
@@ -60,7 +60,35 @@ The `.ff` files are required by `eco_mocks_create.py` to make mocks which involv
 
 
 
-3. Resulting `.ff` files located in `/fs1/masad/Research/Repositories/RESOLVE_Statistics/data/raw/ff_files/m200b` were required as input to `eco_mocks_create.py` located in `/fs1/masad/Research/Repositories/ECO_Mocks_Catls/src/data/mocks_create`.
+​	   A more general usage example is shown below:
+
+> `halobias_so_part Ncenopt Nsatopt PNNopt logMmin siglogM logM0 logM1 alpha center Dgamma Dv PNMfile seed Halofiles > Galaxies`
+
+
+
+​       The arguments along with their definitions and options are shown below:
+
+| Argument    | Definition                                                   | Specified options (if applicable)                            |
+| ----------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| `Ncenopt`   | The mean occupation function of central galaxies             | 0 : Ncen = 0<br /><br />1 : Ncen = 1 for M > M<sub>min</sub><br /><br />2 : \<Ncen> = <img src="https://render.githubusercontent.com/render/math?math=exp(-M_{min}/M)"> (Zehavi et al. 2005; Tinker et al. 2005)<br /><br />3 : \<Ncen> = <img src="https://render.githubusercontent.com/render/math?math=0.5*[1"> +<img src="https://render.githubusercontent.com/render/math?math=\erf((\log M - \log M_{min})/\sigma \log M)]">  (Zheng, Coil, & Zehavi 2007) |
+| `Nsatopt`   | The mean occupation of satellite galaxies, for M > M<sub>0</sub> | 0 : Nsat = 0<br /><br />1 : \<Nsat> = <img src="https://render.githubusercontent.com/render/math?math=(M/M_{1})^\alpha \ \for M > M_{min} "> (Kravtsov et al. 2004)<br />2 : \<Nsat> = <img src="https://render.githubusercontent.com/render/math?math=(M/M_{1})^\alpha \ \for M > M_{0} "><br /><br />3 : \<Nsat> =<img src="https://render.githubusercontent.com/render/math?math=exp(-M_{0}/(M - M_{min}))(M / M_{1})">(Zehavi et al. 2005; Tinker et al. 2005)<br /><br />4 : \<Nsat> = <img src="https://render.githubusercontent.com/render/math?math=0.5*[1">+<img src="https://render.githubusercontent.com/render/math?math=\erf((\log M -\log M_{min})/\sigma \log M)]*"> <img src="https://render.githubusercontent.com/render/math?math=((M - M_{0})/M_{1})^\alpha"> (Zheng, Coil & Zehavi 2007) |
+| `Pnnopt`    | Second moment of the occupation number which for satellites is assumed to be a poisson distribution | 0 : Average  (Nsat = nint(\<Nsat>) - with frequencies to preserve mean)<br /><br />1 : Poisson  (Nsat drawn from Poisson distribution)<br /><br />2 : Binomial (Nsat drawn from a Binomial distribution)<br /><br />3 : Negative Binomial (Nsat drawn from a Negative Binomial distribution) |
+| `logMmin`   | Minimum mass of halo that can contain a galaxy (in units of M<sub>sun</sub>h<sup>-1</sup>) |                                                              |
+| `siglogM`   | Width of cutoff at M<sub>min</sub> (scatter in the mass-luminosity relation) |                                                              |
+| `logM0`     | Minimum halo mass that can contain a satellite galaxy (in units of M<sub>sun</sub>h<sup>-1</sup>) |                                                              |
+| `logM1`     | Halo mass for which \<Nsat>=1 (in units of M<sub>sun</sub>h<sup>-1</sup>) |                                                              |
+| `alpha`     | Slope of the \<Nsat> - M relation                            |                                                              |
+| `center`    | Position of central galaxy relative to its halo              | 0 : Don't force the "central" galaxy to be at center of its halo<br /><br />1 : Force the "central" galaxy to be at center of its halo |
+| `Dgamma`    | Difference between galaxy and mass density profiles (gamma<sub>g</sub>-gamma<sub>m</sub>) |                                                              |
+| `Dv`        | Difference between galaxy and mass velocity profiles (v<sub>g</sub> - v<sub>c</sub>)/(v<sub>m</sub> - v<sub>c</sub>) |                                                              |
+| `PNMfile`   | Output file containing number of galaxies selected for each halo |                                                              |
+| `seed`      | Seed for gsl rng                                             |                                                              |
+| `Halofiles` | Halo particle distribution files (`.bgc2 `)                  |                                                              |
+| `Galaxies`  | Biased galaxy distribution (`.ff`)                           |                                                              |
+
+
+
+3. Resulting `.ff` files located in `/fs1/masad/Research/Repositories/RESOLVE_Statistics/data/raw/ff_files/m200b` were required as input for the mock-making script, `eco_mocks_create.py`, located in `/fs1/masad/Research/Repositories/ECO_Mocks_Catls/src/data/mocks_create`.
 
 4. Since mocks **without** the buffer region were required, the cz ranges in `eco_mocks_create.py` were modified (lines `2250` and `2251`). `RA` and `DEC` ranges remained the same. A sample execution of `eco_mocks_create` for ECO is shown below :
 
@@ -78,7 +106,7 @@ Relevant arguments of `eco_mocks_create.py` which can be modified from the comma
 
 | Argument       | Definition                                                   | Specified options (if applicable)      | Default value         |
 | -------------- | ------------------------------------------------------------ | -------------------------------------- | --------------------- |
-| `size_cube`    | Length of simulation cube in Mpc/h                           |                                        | 180                   |
+| `size_cube`    | Length of simulation cube in Mpc h<sup>-1</sup>              |                                        | 180                   |
 | `catl_type`    | Type of abundance matching used in catalog                   | [`mr` , `mstar`]                       | M<sub>r</sub>         |
 | `zmedian`      | Median redshift of the survey                                |                                        | 0                     |
 | `survey`       | Type of survey to produce                                    | [`A`, `B`, `ECO`]                      | ECO                   |
