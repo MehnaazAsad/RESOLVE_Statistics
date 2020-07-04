@@ -45,7 +45,7 @@ The `.ff` files are required by `eco_mocks_create.py` to make mocks which involv
    | HOD parameter                                                | Value |
    | ------------------------------------------------------------ | ----- |
    | log M~min~                                                   | 10.81 |
-   | [img]http://www.sciweavers.org/tex2img.php?eq=%20%5Csigma%20&bc=White&fc=Black&im=jpg&fs=12&ff=arev&edit=0[/img] log M | 0.2   |
+   | ![equation](http://www.sciweavers.org/tex2img.php?eq=%20%5Csigma%20&bc=White&fc=Black&im=jpg&fs=12&ff=arev&edit=0) log M | 0.2   |
    | log M~0~                                                     | 10.0  |
    | log M~1~                                                     | 12.05 |
    | $\alpha$                                                     | 1.0   |
