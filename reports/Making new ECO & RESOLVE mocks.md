@@ -40,7 +40,7 @@ The `.ff` files are required by `eco_mocks_create.py` to make mocks which involv
 
 
 
-1. The HOD parameter values that match chosen `n` of ECO down to RESOLVE B M<sub>r</sub> limit, **n = 0.0831 (Mpc/h)<sup>-3</sup>**, are shown below:
+1. The HOD parameter values that match `n` of ECO down to RESOLVE B M<sub>r</sub> limit, **n = 0.0831 (Mpc/h)<sup>-3</sup>**, are shown below:
 
    | HOD parameter                                                | Value |
    | ------------------------------------------------------------ | ----- |
