@@ -62,7 +62,7 @@ The `.ff` files are required by `eco_mocks_create.py` to make mocks which involv
 
 ​	   A more general usage example is shown below:
 
-> `halobias_so_part Ncenopt Nsatopt PNNopt logMmin siglogM logM0 logM1 alpha center Dgamma Dv PNMfile seed Halofiles > Galaxies`
+> `halobias_so_part_extra Ncenopt Nsatopt PNNopt logMmin siglogM logM0 logM1 alpha center Dgamma Dv PNMfile seed Halofiles > Galaxies`
 
 
 
