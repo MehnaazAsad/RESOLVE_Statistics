@@ -790,7 +790,8 @@ else:
     plt.title(r'Combined \boldmath{$\delta$}v measurements')
     plt.show()
 
-# Plot of mean velocity dispersion of red and blue galaxies from data and mocks
+# Plot of spread in velocity dispersion of red and blue galaxies from data and 
+# mocks
 fig2 = plt.figure()
 for idx in range(len(centers_red_mocks)):
     plt.scatter(centers_red_mocks[idx], std_red_mocks[idx], 
