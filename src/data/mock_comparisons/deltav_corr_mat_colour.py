@@ -806,3 +806,33 @@ plt.ylabel(r'\boldmath$\sigma \left[km/s\right]$', labelpad=15,
     fontsize=25)
 plt.title(r'ECO mocks vs. data $\sigma$')
 plt.show()
+
+## Histogram of red and blue sigma in bins of central stellar mass
+nrows = 2
+ncols = 5
+red_stellar_mass_bins = np.linspace(8.6,11.5,6)
+blue_stellar_mass_bins = np.linspace(8.6,10.5,6)
+fig3, axs = plt.subplots(nrows, ncols)
+for i in range(0, nrows, 1):
+    for j in range(0, ncols, 1):
+        if i == 0: # row 1 for all red bins
+            axs[i, j].hist(std_red_mocks.T[j], histtype='step', \
+                color='indianred', linewidth=4, linestyle='-') # first red bin
+            axs[i, j].set_title('[{0}-{1}]'.format(red_stellar_mass_bins[j], \
+                red_stellar_mass_bins[j+1]), fontsize=20)
+        else: # row 2 for all blue bins
+            axs[i, j].hist(std_blue_mocks.T[j], histtype='step', \
+                color='cornflowerblue', linewidth=4, linestyle='-')
+            axs[i, j].set_title('[{0}-{1}]'.format(blue_stellar_mass_bins[j], \
+                blue_stellar_mass_bins[j+1]), fontsize=20)
+
+for ax in axs.flat:
+    ax.set(xlabel=r'\boldmath$\sigma \left[km/s\right]$')
+
+for ax in axs.flat:
+    ax.label_outer()
+
+plt.show()
+
+
+
