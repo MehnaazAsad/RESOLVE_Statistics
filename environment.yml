@@ -14,10 +14,10 @@ dependencies:
   - numpy
   - pandas
   - scipy
-    # Removed halotools to install from source instead
-    # - halotools
+ # Removed halotools to install it from source instead
+ #- halotools
   - seaborn
-    #- sphinx>=1.6
+ #- sphinx>=1.6
   - pip
   - emcee=2.2.1
   - imagemagick
@@ -26,10 +26,10 @@ dependencies:
       - progressbar2
       - cosmo-utils
       - configparser
-        #- sphinx-astropy
-        #- sphinx_rtd_theme
-        #- sphinx-automodapi
-        #- astroid<2.3
-        #- pylint<2.4
+     #- sphinx-astropy
+     #- sphinx_rtd_theme
+     #- sphinx-automodapi
+     #- astroid<2.3
+     #- pylint<2.4
       - chainconsumer
       - git+https://github.com/astropy/halotools.git@master
