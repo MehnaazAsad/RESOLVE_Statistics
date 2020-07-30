@@ -11,6 +11,7 @@
 
 # Libs
 from cosmo_utils.utils import work_paths as cwpaths
+from scipy.stats import normaltest as nt
 import matplotlib.pyplot as plt
 from matplotlib import cm as cm
 from matplotlib import rc
@@ -275,7 +276,10 @@ def get_deltav_sigma_data(df):
         Bin centers of central stellar mass for blue galaxies
     """
     catl = df.copy()
-    catl = catl.loc[catl.logmstar >= 8.9]
+    if survey == 'eco' or survey == 'resolvea':
+        catl = catl.loc[catl.logmstar >= 8.9]
+    elif survey == 'resolveb':
+        catl = catl.loc[catl.logmstar >= 8.7]
     catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
    
     red_subset_grpids = np.unique(catl.grp.loc[(catl.\
@@ -299,7 +303,11 @@ def get_deltav_sigma_data(df):
             red_deltav_arr.append(val)
             red_cen_stellar_mass_arr.append(cen_stellar_mass)
 
-    red_stellar_mass_bins = np.linspace(8.6,11.5,6)
+    if survey == 'eco' or survey == 'resolvea':
+        # TODO : check if this is actually correct for resolve a
+        red_stellar_mass_bins = np.linspace(8.6,11.5,6)
+    elif survey == 'resolveb':
+        red_stellar_mass_bins = np.linspace(8.4,11.0,6)
     std_red = std_func(red_stellar_mass_bins, red_cen_stellar_mass_arr, 
         red_deltav_arr)
     std_red = np.array(std_red)
@@ -319,7 +327,11 @@ def get_deltav_sigma_data(df):
             blue_deltav_arr.append(val)
             blue_cen_stellar_mass_arr.append(cen_stellar_mass)
 
-    blue_stellar_mass_bins = np.linspace(8.6,10.5,6)
+    if survey == 'eco' or survey == 'resolvea':
+        # TODO : check if this is actually correct for resolve a
+        blue_stellar_mass_bins = np.linspace(8.6,10.5,6)
+    elif survey == 'resolveb':
+        blue_stellar_mass_bins = np.linspace(8.4,10.4,6)
     std_blue = std_func(blue_stellar_mass_bins, blue_cen_stellar_mass_arr, 
         blue_deltav_arr)    
     std_blue = np.array(std_blue)
@@ -639,8 +651,13 @@ def get_deltav_sigma_mocks(survey, path):
                 for val in deltav:
                     red_deltav_arr.append(val)
                     red_cen_stellar_mass_arr.append(cen_stellar_mass)
+            # print(max(red_cen_stellar_mass_arr))
 
-            red_stellar_mass_bins = np.linspace(8.6,11.5,6)
+            if survey == 'eco' or survey == 'resolvea':
+                # TODO : check if this is actually correct for resolve a
+                red_stellar_mass_bins = np.linspace(8.6,11.5,6)
+            elif survey == 'resolveb':
+                red_stellar_mass_bins = np.linspace(8.4,11.0,6)
             std_red = std_func(red_stellar_mass_bins, red_cen_stellar_mass_arr, 
                 red_deltav_arr)
             std_red = np.array(std_red)
@@ -660,8 +677,13 @@ def get_deltav_sigma_mocks(survey, path):
                 for val in deltav:
                     blue_deltav_arr.append(val)
                     blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+            # print(max(blue_cen_stellar_mass_arr))
 
-            blue_stellar_mass_bins = np.linspace(8.6,10.5,6)
+            if survey == 'eco' or survey == 'resolvea':
+                # TODO : check if this is actually correct for resolve a
+                blue_stellar_mass_bins = np.linspace(8.6,10.5,6)
+            elif survey == 'resolveb':
+                blue_stellar_mass_bins = np.linspace(8.4,10.4,6)
             std_blue = std_func(blue_stellar_mass_bins, \
                 blue_cen_stellar_mass_arr, blue_deltav_arr)    
             std_blue = np.array(std_blue)
@@ -687,7 +709,7 @@ global survey
 global path_to_proc
 global mf_type
 
-survey = 'eco'
+survey = 'resolveb'
 machine = 'mac'
 mf_type = 'smf'
 
@@ -711,9 +733,9 @@ elif survey == 'resolvea' or survey == 'resolveb':
 if survey == 'eco':
     path_to_mocks = path_to_data + 'mocks/m200b/eco/'
 elif survey == 'resolvea':
-    path_to_mocks = path_to_external + 'RESOLVE_A_mvir_catls/'
+    path_to_mocks = path_to_data + 'mocks/m200b/resolvea/'
 elif survey == 'resolveb':
-    path_to_mocks = path_to_external + 'RESOLVE_B_mvir_catls/'
+    path_to_mocks = path_to_data + 'mocks/m200b/resolveb/'
 
 catl, volume, cvar, z_median = read_data_catl(catl_file, survey)
 catl = assign_colour_label_data(catl)
@@ -804,28 +826,40 @@ plt.xlabel(r'$\mathbf{log\ M_{*,cen}}\ [\mathbf{M_{\odot}}]$', labelpad=15,
     fontsize=25)
 plt.ylabel(r'\boldmath$\sigma \left[km/s\right]$', labelpad=15, 
     fontsize=25)
-plt.title(r'ECO mocks vs. data $\sigma$')
+plt.title(r'mocks vs. data $\sigma$')
 plt.show()
 
-## Histogram of red and blue sigma in bins of central stellar mass
+## Histogram of red and blue sigma in bins of central stellar mass to see if the
+## distribution of values to take std of is normal or lognormal
 nrows = 2
 ncols = 5
-red_stellar_mass_bins = np.linspace(8.6,11.5,6)
-blue_stellar_mass_bins = np.linspace(8.6,10.5,6)
+if survey == 'eco' or survey == 'resolvea':
+    red_stellar_mass_bins = np.linspace(8.6,11.5,6)
+    blue_stellar_mass_bins = np.linspace(8.6,10.5,6)
+elif survey == 'resolveb':
+    red_stellar_mass_bins = np.linspace(8.4,11.0,6)
+    blue_stellar_mass_bins = np.linspace(8.4,10.4,6)
 fig3, axs = plt.subplots(nrows, ncols)
 for i in range(0, nrows, 1):
     for j in range(0, ncols, 1):
         if i == 0: # row 1 for all red bins
             axs[i, j].hist(std_red_mocks.T[j], histtype='step', \
                 color='indianred', linewidth=4, linestyle='-') # first red bin
-            axs[i, j].set_title('[{0}-{1}]'.format(red_stellar_mass_bins[j], \
-                red_stellar_mass_bins[j+1]), fontsize=20)
+            axs[i, j].set_title('[{0}-{1}]'.format(np.round(
+                red_stellar_mass_bins[j],2), np.round(
+                red_stellar_mass_bins[j+1],2)), fontsize=20)
+            # k2, p = nt(np.log10(std_red_mocks.T[j]), nan_policy="omit")
+            # axs[i, j].text(0.7, 0.7, "{0}".format(np.round(p, 2)),
+            #     transform=axs[i, j].transAxes)
         else: # row 2 for all blue bins
             axs[i, j].hist(std_blue_mocks.T[j], histtype='step', \
                 color='cornflowerblue', linewidth=4, linestyle='-')
-            axs[i, j].set_title('[{0}-{1}]'.format(blue_stellar_mass_bins[j], \
-                blue_stellar_mass_bins[j+1]), fontsize=20)
-
+            axs[i, j].set_title('[{0}-{1}]'.format(np.round(
+                blue_stellar_mass_bins[j],2), np.round(
+                blue_stellar_mass_bins[j+1],2)), fontsize=20)
+            # k2, p = nt(np.log10(std_blue_mocks.T[j]), nan_policy="omit")
+            # axs[i, j].text(0.7, 0.7, "{0}".format(np.round(p, 2)), 
+            #     transform=axs[i, j].transAxes)
 for ax in axs.flat:
     ax.set(xlabel=r'\boldmath$\sigma \left[km/s\right]$')
 
@@ -833,6 +867,20 @@ for ax in axs.flat:
     ax.label_outer()
 
 plt.show()
+
+p_red_arr = []
+p_blue_arr = []
+for idx in range(len(std_red_mocks.T)):
+    k2, p = nt(np.log10(std_red_mocks.T[idx]), nan_policy="omit")
+    p_red_arr.append(p)
+for idx in range(len(std_blue_mocks.T)):
+    k2, p = nt(std_blue_mocks.T[idx]), nan_policy="omit")
+    p_blue_arr.append(p)
+
+# * resolve B - neither log or linear passed null hypothesis of normal dist.
+# * eco - log passed null hypothesis 
+
+
 
 
 
