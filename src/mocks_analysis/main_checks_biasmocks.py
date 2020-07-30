@@ -197,8 +197,8 @@ def measure_lum_funcs(catl, path_to_mocks):
     mag_n_arr = []
     mag_err_arr = []
     # box_id_arr = np.linspace(5001,5008,8)
-    box_id_arr = [5001]
-    mock_dir_arr = glob.glob(path_to_mocks + 'ECO*')
+    box_id_arr = np.array([0,1,2,3])
+    mock_dir_arr = glob.glob(path_to_mocks + 'ECO_mvir*')
     for mock_dir in mock_dir_arr:
         for num in range(temp_dict.get('num_mocks')):
             filename = mock_dir + '/{0}_cat_{1}_Planck_memb_cat.hdf5'.\
@@ -221,6 +221,9 @@ def measure_lum_funcs(catl, path_to_mocks):
     mag_n_arr = np.array(mag_n_arr)
     mag_err_arr = np.array(mag_err_arr)
 
+    # Added this max cut so that it matches the data luminosity function used
+    # for abundance matching in Victor's mock-making script
+    catl = catl.loc[catl.absrmag.values >= -23.5]
     mag_cen, mag_edg, mag_n, mag_err, bw = cumu_num_dens(catl.absrmag.
         values, None, volume, True)    
 
@@ -237,7 +240,7 @@ def measure_lum_funcs(catl, path_to_mocks):
     plt.yscale('log')
     plt.gca().invert_xaxis() 
     plt.xlabel(r'\boldmath $M_{r}$')
-    plt.ylabel(r'\boldmath $\mathrm{(n < M_{r})} [\mathrm{h}^{3}'
+    plt.ylabel(r'\boldmath $\mathrm{n(< M_{r})} [\mathrm{h}^{3}'
         r'\mathrm{Mpc}^{-3}]$')
     if survey == 'resolvea' or survey == 'resolveb':
         plt.title(r'RESOLVE-{0} Luminosity Function'.\
@@ -254,8 +257,8 @@ def measure_num_dens(catl, path_to_mocks):
     num_arr = [] 
     box_arr = [] 
     # box_id_arr = np.linspace(5001,5008,8)
-    box_id_arr = np.array([0,1,2])
-    mock_dir_arr = glob.glob(path_to_mocks + 'ECO*')
+    box_id_arr = np.array([0,1,2,3])
+    mock_dir_arr = glob.glob(path_to_mocks + 'ECO_mvir*')
     for idx, mock_dir in enumerate(mock_dir_arr): 
         box = box_id_arr[idx]
         num_arr_temp = [] 
@@ -280,8 +283,8 @@ def measure_num_dens(catl, path_to_mocks):
     colors = ['salmon', 'orangered','darkorange','mediumorchid','cornflowerblue',
         'gold', 'mediumslateblue','mediumturquoise'] 
     fig7 = plt.figure(figsize=(10,8))
-    x_arr = np.array([0,1,2]) 
-    my_xticks = [r'$\Delta v=0.8$',r'fiducial',r'$\Delta v=1.2$']
+    x_arr = np.array([0,1,2,3]) 
+    my_xticks = [r'$\Delta v=0.8$',r'$\Delta v=1.2$',r'center=0',r'fiducial']
     for i in x_arr: 
         i = int(i) 
         plt.scatter(box_arr[i],num_dens_arr[i],marker=ms[i],
