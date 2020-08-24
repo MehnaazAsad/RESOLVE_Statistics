@@ -80,6 +80,7 @@ target/
 reports/figures/
 src/debug
 src/tutorials
+src/single_use
 .vscode
 
 # File extensions
