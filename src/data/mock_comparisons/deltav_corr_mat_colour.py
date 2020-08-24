@@ -874,7 +874,7 @@ for idx in range(len(std_red_mocks.T)):
     k2, p = nt(np.log10(std_red_mocks.T[idx]), nan_policy="omit")
     p_red_arr.append(p)
 for idx in range(len(std_blue_mocks.T)):
-    k2, p = nt(std_blue_mocks.T[idx]), nan_policy="omit")
+    k2, p = nt(np.log10(std_blue_mocks.T[idx]), nan_policy="omit")
     p_blue_arr.append(p)
 
 # * resolve B - neither log or linear passed null hypothesis of normal dist.
