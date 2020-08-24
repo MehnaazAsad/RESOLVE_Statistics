@@ -709,7 +709,7 @@ global survey
 global path_to_proc
 global mf_type
 
-survey = 'resolveb'
+survey = 'eco'
 machine = 'mac'
 mf_type = 'smf'
 
@@ -843,23 +843,23 @@ fig3, axs = plt.subplots(nrows, ncols)
 for i in range(0, nrows, 1):
     for j in range(0, ncols, 1):
         if i == 0: # row 1 for all red bins
-            axs[i, j].hist(std_red_mocks.T[j], histtype='step', \
+            axs[i, j].hist(np.log10(std_red_mocks.T[j]), histtype='step', \
                 color='indianred', linewidth=4, linestyle='-') # first red bin
             axs[i, j].set_title('[{0}-{1}]'.format(np.round(
                 red_stellar_mass_bins[j],2), np.round(
                 red_stellar_mass_bins[j+1],2)), fontsize=20)
-            # k2, p = nt(np.log10(std_red_mocks.T[j]), nan_policy="omit")
-            # axs[i, j].text(0.7, 0.7, "{0}".format(np.round(p, 2)),
-            #     transform=axs[i, j].transAxes)
+            k2, p = nt(np.log10(std_red_mocks.T[j]), nan_policy="omit")
+            axs[i, j].text(0.7, 0.7, "{0}".format(np.round(p, 2)),
+                transform=axs[i, j].transAxes)
         else: # row 2 for all blue bins
-            axs[i, j].hist(std_blue_mocks.T[j], histtype='step', \
+            axs[i, j].hist(np.log10(std_blue_mocks.T[j]), histtype='step', \
                 color='cornflowerblue', linewidth=4, linestyle='-')
             axs[i, j].set_title('[{0}-{1}]'.format(np.round(
                 blue_stellar_mass_bins[j],2), np.round(
                 blue_stellar_mass_bins[j+1],2)), fontsize=20)
-            # k2, p = nt(np.log10(std_blue_mocks.T[j]), nan_policy="omit")
-            # axs[i, j].text(0.7, 0.7, "{0}".format(np.round(p, 2)), 
-            #     transform=axs[i, j].transAxes)
+            k2, p = nt(np.log10(std_blue_mocks.T[j]), nan_policy="omit")
+            axs[i, j].text(0.7, 0.7, "{0}".format(np.round(p, 2)), 
+                transform=axs[i, j].transAxes)
 for ax in axs.flat:
     ax.set(xlabel=r'\boldmath$\sigma \left[km/s\right]$')
 
