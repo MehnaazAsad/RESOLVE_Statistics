@@ -638,7 +638,8 @@ def get_deltav_sigma_mocks(survey, path):
             # Using the same survey definition as in mcmc smf i.e excluding the 
             # buffer
             mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & \
-                (mock_pd.cz.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
+                (mock_pd.cz.values <= max_cz) & \
+                (mock_pd.M_r.values <= mag_limit) & \
                 (mock_pd.logmstar.values >= mstar_limit)]
 
             logmstar_arr = mock_pd.logmstar.values 
@@ -670,61 +671,71 @@ def get_deltav_sigma_mocks(survey, path):
 
             mock_pd['colour_label'] = colour_label_arr
             mock_pd.logmstar = np.log10((10**mock_pd.logmstar) / 2.041)
-            red_subset = mock_pd.loc[mock_pd.colour_label == 'R']
-            blue_subset = mock_pd.loc[mock_pd.colour_label == 'B']
+            red_subset_grpids = np.unique(mock_pd.groupid.loc[(mock_pd.\
+                colour_label == 'R') & (mock_pd.g_galtype == 1)].values)  
+            blue_subset_grpids = np.unique(mock_pd.groupid.loc[(mock_pd.\
+                colour_label == 'B') & (mock_pd.g_galtype == 1)].values)
 
-            red_groups = red_subset.groupby('groupid')
-            red_keys = red_groups.groups.keys()
+            # Calculating spread in velocity dispersion for galaxies in groups
+            # with a red central
 
-            # Calculating spread in velocity dispersion for red galaxies
             red_deltav_arr = []
             red_cen_stellar_mass_arr = []
-            for key in red_keys: 
-                group = red_groups.get_group(key) 
-                if 1 in group.cs_flag.values: 
-                    cen_stellar_mass = group.logmstar.loc[group.cs_flag.\
-                        values == 1].values[0]
-                    mean_cz_grp = np.round(np.mean(group.cz.values),2)
-                    deltav = group.cz.values - len(group)*[mean_cz_grp]
-                    for val in deltav:
-                        red_deltav_arr.append(val)
-                        red_cen_stellar_mass_arr.append(cen_stellar_mass)
+            for key in red_subset_grpids: 
+                group = mock_pd.loc[mock_pd.groupid == key]
+                cen_stellar_mass = group.logmstar.loc[group.g_galtype.\
+                    values == 1].values[0]
+                mean_cz_grp = np.round(np.mean(group.cz.values),2)
+                deltav = group.cz.values - len(group)*[mean_cz_grp]
+                for val in deltav:
+                    red_deltav_arr.append(val)
+                    red_cen_stellar_mass_arr.append(cen_stellar_mass)
+            # print(max(red_cen_stellar_mass_arr))
 
-            red_stellar_mass_bins = np.arange(8.6,11.5,0.25)
+            if survey == 'eco' or survey == 'resolvea':
+                # TODO : check if this is actually correct for resolve a
+                red_stellar_mass_bins = np.linspace(8.6,11.5,6)
+            elif survey == 'resolveb':
+                red_stellar_mass_bins = np.linspace(8.4,11.0,6)
             std_red = std_func(red_stellar_mass_bins, red_cen_stellar_mass_arr, 
                 red_deltav_arr)
             std_red = np.array(std_red)
-            std_red_arr.append(std_red)                                                       
-            
-            blue_groups = blue_subset.groupby('groupid')
-            blue_keys = blue_groups.groups.keys()
+            std_red_arr.append(std_red)
 
-            # Calculating spread in velocity dispersion for blue galaxies
+            # Calculating spread in velocity dispersion for galaxies in groups 
+            # with a blue central
+
             blue_deltav_arr = []
             blue_cen_stellar_mass_arr = []
-            for key in blue_keys: 
-                group = blue_groups.get_group(key)  
-                if 1 in group.cs_flag.values: 
-                    cen_stellar_mass = group.logmstar.loc[group.cs_flag\
-                        .values == 1].values[0]
-                    mean_cz_grp = np.round(np.mean(group.cz.values),2)
-                    deltav = group.cz.values - len(group)*[mean_cz_grp]
-                    for val in deltav:
-                        blue_deltav_arr.append(val)
-                        blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+            for key in blue_subset_grpids: 
+                group = mock_pd.loc[mock_pd.groupid == key]
+                cen_stellar_mass = group.logmstar.loc[group.g_galtype\
+                    .values == 1].values[0]
+                mean_cz_grp = np.round(np.mean(group.cz.values),2)
+                deltav = group.cz.values - len(group)*[mean_cz_grp]
+                for val in deltav:
+                    blue_deltav_arr.append(val)
+                    blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+            # print(max(blue_cen_stellar_mass_arr))
 
-            blue_stellar_mass_bins = np.arange(8.6,11,0.25)
-            std_blue = std_func(blue_stellar_mass_bins, blue_cen_stellar_mass_arr, 
-                blue_deltav_arr)    
+            if survey == 'eco' or survey == 'resolvea':
+                # TODO : check if this is actually correct for resolve a
+                blue_stellar_mass_bins = np.linspace(8.6,10.5,6)
+            elif survey == 'resolveb':
+                blue_stellar_mass_bins = np.linspace(8.4,10.4,6)
+            std_blue = std_func(blue_stellar_mass_bins, \
+                blue_cen_stellar_mass_arr, blue_deltav_arr)    
             std_blue = np.array(std_blue)
             std_blue_arr.append(std_blue)
 
-            centers_red = 0.5 * (red_stellar_mass_bins[1:] + red_stellar_mass_bins[:-1])
-            centers_blue = 0.5 * (blue_stellar_mass_bins[1:] + blue_stellar_mass_bins[:-1])
+            centers_red = 0.5 * (red_stellar_mass_bins[1:] + \
+                red_stellar_mass_bins[:-1])
+            centers_blue = 0.5 * (blue_stellar_mass_bins[1:] + \
+                blue_stellar_mass_bins[:-1])
             
             centers_red_arr.append(centers_red)
             centers_blue_arr.append(centers_blue)
-
+    
     std_red_arr = np.array(std_red_arr)
     centers_red_arr = np.array(centers_red_arr)
     std_blue_arr = np.array(std_blue_arr)
