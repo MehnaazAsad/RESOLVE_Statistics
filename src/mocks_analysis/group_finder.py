@@ -788,6 +788,7 @@ def group_mass_assignment(mockgal_pd, mockgroup_pd, param_dict):
 def main():
     global survey
     global mf_type
+    global ver
     survey = 'eco'
     mf_type = 'smf'
     machine = 'bender'
