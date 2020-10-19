@@ -142,6 +142,111 @@ def read_data_catl(path_to_file, survey):
 
     return catl,volume,cvar,z_median
 
+def read_chi2(path_to_file):
+    """
+    Reads chi-squared values from file
+
+    Parameters
+    ----------
+    path_to_file: string
+        Path to chi-squared values file
+
+    Returns
+    ---------
+    chi2: array
+        Array of reshaped chi^2 values to match chain values
+    """
+    chi2_df = pd.read_csv(path_to_file,header=None,names=['chisquared'])
+
+    # Applies to runs prior to run 5?
+    if mf_type == 'smf' and survey == 'eco' and ver==1.0:
+        # Needed to reshape since flattened along wrong axis, 
+        # didn't correspond to chain
+        test_reshape = chi2_df.chisquared.values.reshape((1000,250))
+        chi2 = np.ndarray.flatten(np.array(test_reshape),'F')
+    
+    else:
+        chi2 = chi2_df.chisquared.values
+
+    return chi2
+
+def read_mcmc(path_to_file):
+    """
+    Reads mcmc chain from file
+
+    Parameters
+    ----------
+    path_to_file: string
+        Path to mcmc chain file
+
+    Returns
+    ---------
+    emcee_table: pandas dataframe
+        Dataframe of mcmc chain values with NANs removed
+    """
+    colnames = ['mhalo_c','mstellar_c','lowmass_slope','highmass_slope',\
+        'scatter']
+    
+    if mf_type == 'smf' and survey == 'eco' and ver==1.0:
+        emcee_table = pd.read_csv(path_to_file,names=colnames,sep='\s+',\
+            dtype=np.float64)
+
+    else:
+        emcee_table = pd.read_csv(path_to_file, names=colnames, 
+            delim_whitespace=True, header=None)
+
+        emcee_table = emcee_table[emcee_table.mhalo_c.values != '#']
+        emcee_table.mhalo_c = emcee_table.mhalo_c.astype(np.float64)
+        emcee_table.mstellar_c = emcee_table.mstellar_c.astype(np.float64)
+        emcee_table.lowmass_slope = emcee_table.lowmass_slope.astype(np.float64)
+
+    # Cases where last parameter was a NaN and its value was being written to 
+    # the first element of the next line followed by 4 NaNs for the other 
+    # parameters
+    for idx,row in enumerate(emcee_table.values):
+        if np.isnan(row)[4] == True and np.isnan(row)[3] == False:
+            scatter_val = emcee_table.values[idx+1][0]
+            row[4] = scatter_val
+    
+    # Cases where rows of NANs appear
+    emcee_table = emcee_table.dropna(axis='index', how='any').\
+        reset_index(drop=True)
+    
+    return emcee_table
+
+def get_paramvals_percentile(table, percentile, chi2_arr):
+    """
+    Isolates 68th percentile lowest chi^2 values and takes random 1000 sample
+
+    Parameters
+    ----------
+    table: pandas dataframe
+        Mcmc chain dataframe
+
+    pctl: int
+        Percentile to use
+
+    chi2_arr: array
+        Array of chi^2 values
+
+    Returns
+    ---------
+    subset: ndarray
+        Random 100 sample of param values from 68th percentile
+    """ 
+    percentile = percentile/100
+    table['chi2'] = chi2_arr
+    table = table.sort_values('chi2').reset_index(drop=True)
+    slice_end = int(percentile*len(table))
+    mcmc_table_pctl = table[:slice_end]
+    # Best fit params are the parameters that correspond to the smallest chi2
+    bf_params = mcmc_table_pctl.drop_duplicates().reset_index(drop=True).\
+        values[0][:5]
+    subset = mcmc_table_pctl.drop_duplicates().sample(100).values[:,:5] 
+    subset = np.insert(subset, 0, bf_params, axis=0)
+
+    return subset
+
 def halocat_init(halo_catalog, z_median):
     """
     Initial population of halo catalog using populate_mock function
@@ -195,20 +300,35 @@ def populate_mock(theta, model):
 
     model.mock.populate()
 
-    if survey == 'eco' or survey == 'resolvea':
-        if mf_type == 'smf':
-            limit = np.round(np.log10((10**8.9) / 2.041), 1)
-        elif mf_type == 'bmf':
-            limit = np.round(np.log10((10**9.4) / 2.041), 1)
-    elif survey == 'resolveb':
-        if mf_type == 'smf':
-            limit = np.round(np.log10((10**8.7) / 2.041), 1)
-        elif mf_type == 'bmf':
-            limit = np.round(np.log10((10**9.1) / 2.041), 1)
-    sample_mask = model.mock.galaxy_table['stellar_mass'] >= 10**limit
-    gals = model.mock.galaxy_table[sample_mask]
+    gals = model.mock.galaxy_table
     gals_df = pd.DataFrame(np.array(gals))
 
+    return gals_df
+
+def assign_cen_sat_flag(gals_df):
+    """
+    Assign centrals and satellites flag to dataframe
+
+    Parameters
+    ----------
+    gals_df: pandas dataframe
+        Mock catalog
+
+    Returns
+    ---------
+    gals_df: pandas dataframe
+        Mock catalog with centrals/satellites flag as new column
+    """
+
+    C_S = []
+    for idx in range(len(gals_df)):
+        if gals_df['halo_hostid'][idx] == gals_df['halo_id'][idx]:
+            C_S.append(1)
+        else:
+            C_S.append(0)
+
+    C_S = np.array(C_S)
+    gals_df['cs_flag'] = C_S
     return gals_df
 
 def cart_to_spherical_coords(cart_arr, dist):
@@ -671,6 +791,7 @@ def main():
     survey = 'eco'
     mf_type = 'smf'
     machine = 'bender'
+    ver = 2.0
 
     H0 = 100 # h(km/s)/Mpc
     cz_inner = 3000 # not starting at corner of box
@@ -717,17 +838,49 @@ def main():
     if survey == 'eco':
         catl_file = path_to_raw + "eco/eco_all.csv"
 
+    chi2_file = path_to_processed + 'smhm_run6/{0}_chi2.txt'.format(survey)
+    if mf_type == 'smf' and survey == 'eco' and ver == 1.0:
+        chain_file = path_to_processed + 'mcmc_{0}.dat'.format(survey)
+    else:
+        chain_file = path_to_processed + 'smhm_run6/mcmc_{0}_raw.txt'.\
+            format(survey)
+
+    print('Reading chi-squared file')
+    chi2 = read_chi2(chi2_file)
+
+    print('Reading mcmc chain file')
+    mcmc_table = read_mcmc(chain_file)
+
+    print('Getting data in specific percentile')
+    mcmc_table_subset = get_paramvals_percentile(mcmc_table, 68, chi2)
+
     print('Reading survey data')
     catl, volume, cvar, z_median = read_data_catl(catl_file, survey)
 
     print('Populating halos')
     model_init = halocat_init(halo_catalog, z_median)
-    params = np.array([12.32381675, 10.56581819, 0.4276319, 0.7457711, \
-        0.34784431])
-    gals_df = populate_mock(params, model_init)
+    bf_params = mcmc_table_subset[0]
+    gals_df_ = populate_mock(bf_params, model_init)
+    gals_df_ = assign_cen_sat_flag(gals_df_)
+    gals_df_ = gals_df_[['halo_mvir_host_halo','cs_flag',
+        'halo_hostid','halo_id','stellar_mass']]
+    gals_df_ = gals_df_.rename(columns={"stellar_mass": "1"})
+    gals_df_ = gals_df_.sort_values(by='halo_mvir_host_halo')
+
+    i=2
+    for params in mcmc_table_subset[1:]:
+        mock = populate_mock(params, model_init)
+        mock = mock.sort_values(by='halo_mvir_host_halo')
+        gals_df_['{0}'.format(i)] = mock.stellar_mass.values
+        i+=1
+    gals_df_.reset_index(inplace=True, drop=True)
+
+    h5File = path_to_processed + "mocks101.h5"
+    gals_df_.to_hdf(h5File, "/gals_df_/d1")
 
     print('Applying RSD')
-    gals_rsd_df = apply_rsd(gals_df)
+    gals_df_ = pd.read_hdf(h5File, "/gals_df_/d1")
+    gals_rsd_df = apply_rsd(gals_df_)
     gals_rsd_subset_df = gals_rsd_df.loc[(gals_rsd_df.cz >= cz_inner) & \
         (gals_rsd_df.cz <= cz_outer) &
         (gals_rsd_df.stellar_mass >= (10**8.9/2.041))].reset_index(drop=True)
