@@ -864,7 +864,7 @@ def main():
     gals_df_ = populate_mock(bf_params, model_init)
     gals_df_ = assign_cen_sat_flag(gals_df_)
     gals_df_ = gals_df_[['halo_mvir_host_halo','cs_flag',
-        'halo_hostid','halo_id','stellar_mass']]
+        'halo_hostid','halo_id','cz','groupid','g_galtype','stellar_mass']]
     gals_df_ = gals_df_.rename(columns={"stellar_mass": "1"})
     gals_df_ = gals_df_.sort_values(by='halo_mvir_host_halo')
 
