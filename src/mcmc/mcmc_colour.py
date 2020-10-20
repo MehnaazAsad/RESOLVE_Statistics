@@ -734,7 +734,7 @@ def lnprob(theta, phi_red_data, phi_blue_data, std_red_data, std_blue_data,
     try:
         randint_logmstar = random.randint(1,101) 
         randint_file = open("randint_logmstar.txt", "a")
-        andint_file.write("{0}".format(randint_logmstar)) 
+        randint_file.write("{0}".format(randint_logmstar)) 
         randint_file.write("\n")
         randint_file.close()
         f_red_cen, f_red_sat = hybrid_quenching_model(theta, gals_df, 'vishnu', \
