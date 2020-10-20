@@ -448,8 +448,8 @@ def halocat_init(halo_catalog, z_median):
 
     return model
 
-def mcmc(nproc, nwalkers, nsteps, phi_red, phi_blue, std_red, std_blue, err, 
-    corr_mat_inv, gals_df):
+def mcmc(nproc, nwalkers, nsteps, phi_red_data, phi_blue_data, std_red_data, 
+    std_blue_data, err, corr_mat_inv, gals_df):
     """
     MCMC analysis
 
@@ -490,8 +490,8 @@ def mcmc(nproc, nwalkers, nsteps, phi_red, phi_blue, std_red, std_blue, err,
 
     with Pool(processes=nproc) as pool:
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, 
-            args=(phi_red, phi_blue, std_red, std_blue, err, corr_mat_inv, 
-                gals_df), pool=pool)
+            args=(phi_red_data, phi_blue_data, std_red_data, std_blue_data, 
+                err, corr_mat_inv, gals_df), pool=pool)
         start = time.time()
         for i,result in enumerate(sampler.sample(p0, iterations=nsteps, 
             storechain=False)):
@@ -689,8 +689,8 @@ def chi_squared(data, model, err_data, inv_corr_mat):
 
     return chi_squared[0][0]
 
-def lnprob(theta, phi_red, phi_blue, std_red, std_blue, err, corr_mat_inv, 
-    gals_df):
+def lnprob(theta, phi_red_data, phi_blue_data, std_red_data, std_blue_data, 
+    err, corr_mat_inv, gals_df):
     """
     Calculates log probability for emcee
 
@@ -742,10 +742,10 @@ def lnprob(theta, phi_red, phi_blue, std_red, std_blue, err, corr_mat_inv,
         std_red_model, std_blue_model, centers_red_model, centers_blue_model = \
             get_deltav_sigma_vishnu_qmcolour(gals_df, randint_logmstar)
         data_arr = []
-        data_arr.append(phi_red)
-        data_arr.append(phi_blue)
-        data_arr.append(std_red)
-        data_arr.append(std_blue)
+        data_arr.append(phi_red_data)
+        data_arr.append(phi_blue_data)
+        data_arr.append(std_red_data)
+        data_arr.append(std_blue_data)
         model_arr = []
         model_arr.append(red_model[1])
         model_arr.append(blue_model[1])   
@@ -1108,7 +1108,7 @@ def std_func(bins, mass_arr, vel_arr):
 def get_deltav_sigma_data(df):
     """
     Measure spread in velocity dispersion separately for red and blue galaxies 
-    by binning up central stellar mass
+    by binning up central stellar mass (changes logmstar units from h=0.7 to h=1)
 
     Parameters
     ----------
@@ -1196,7 +1196,8 @@ def get_deltav_sigma_data(df):
 
 def get_deltav_sigma_mocks_qmcolour(survey, path):
     """
-    Calculate spread in velocity dispersion from survey mocks
+    Calculate spread in velocity dispersion from survey mocks (logmstar converted
+    to h=1 units before analysis)
 
     Parameters
     ----------
@@ -1347,7 +1348,8 @@ def get_deltav_sigma_mocks_qmcolour(survey, path):
 
 def get_deltav_sigma_vishnu_qmcolour(gals_df, randint):
     """
-    Calculate spread in velocity dispersion from Vishnu mock
+    Calculate spread in velocity dispersion from Vishnu mock (logmstar already 
+    in h=1)
 
     Parameters
     ----------
@@ -1554,7 +1556,7 @@ def main(args):
         Input arguments to the script
 
     """
-    global model_init
+    # global model_init
     global survey
     global path_to_proc
     global mf_type
@@ -1594,20 +1596,20 @@ def main(args):
     elif survey == 'resolveb':
         path_to_mocks = path_to_external + 'RESOLVE_B_mvir_catls/'
 
-    chi2_file = path_to_proc + 'smhm_run6/{0}_chi2.txt'.format(survey)
-    if mf_type == 'smf' and survey == 'eco' and ver == 1.0:
-        chain_file = path_to_proc + 'mcmc_{0}.dat'.format(survey)
-    else:
-        chain_file = path_to_proc + 'smhm_run6/mcmc_{0}_raw.txt'.format(survey)
+    # chi2_file = path_to_proc + 'smhm_run6/{0}_chi2.txt'.format(survey)
+    # if mf_type == 'smf' and survey == 'eco' and ver == 1.0:
+    #     chain_file = path_to_proc + 'mcmc_{0}.dat'.format(survey)
+    # else:
+    #     chain_file = path_to_proc + 'smhm_run6/mcmc_{0}_raw.txt'.format(survey)
 
-    print('Reading chi-squared file')
-    chi2 = read_chi2(chi2_file)
+    # print('Reading chi-squared file')
+    # chi2 = read_chi2(chi2_file)
 
-    print('Reading mcmc chain file')
-    mcmc_table = read_mcmc(chain_file)
+    # print('Reading mcmc chain file')
+    # mcmc_table = read_mcmc(chain_file)
 
-    print('Getting data in specific percentile')
-    mcmc_table_subset = get_paramvals_percentile(mcmc_table, 68, chi2)
+    # print('Getting data in specific percentile')
+    # mcmc_table_subset = get_paramvals_percentile(mcmc_table, 68, chi2)
 
     print('Reading catalog')
     catl, volume, z_median = read_data_catl(catl_file, survey)
@@ -1625,7 +1627,7 @@ def main(args):
     sigma, corr_mat_inv = get_err_data(survey, path_to_mocks)
 
     # REDUNDANT?
-    model_init = halocat_init(halo_catalog, z_median)
+    # model_init = halocat_init(halo_catalog, z_median)
 
     print('Reading vishnu group catalog')
     gal_group_df = reading_catls(path_to_proc + "gal_group.hdf5") 
