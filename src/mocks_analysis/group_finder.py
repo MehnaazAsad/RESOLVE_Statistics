@@ -110,8 +110,7 @@ def read_data_catl(path_to_file, survey):
                 catl = resolve_live18.loc[
                     (resolve_live18.grpcz.values >= 4500) &
                     (resolve_live18.grpcz.values <= 7000) &
-                    (resolve_live18.absrmag.values <= -17.33) &
-                    (resolve_live18.logmstar.values >= 8.9)]
+                    (resolve_live18.absrmag.values <= -17.33)]
             elif mf_type == 'bmf':
                 catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) &
                     (resolve_live18.grpcz.values >= 4500) &
@@ -128,8 +127,7 @@ def read_data_catl(path_to_file, survey):
                 catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) &
                     (resolve_live18.grpcz.values >= 4500) &
                     (resolve_live18.grpcz.values <= 7000) &
-                    (resolve_live18.absrmag.values <= -17) &
-                    (resolve_live18.logmstar.values >= 8.7)]
+                    (resolve_live18.absrmag.values <= -17)]
             elif mf_type == 'bmf':
                 catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) &
                     (resolve_live18.grpcz.values >= 4500) &
@@ -785,6 +783,176 @@ def group_mass_assignment(mockgal_pd, mockgroup_pd, param_dict):
 
     return mockgal_pd_new, mockgroup_pd_new
 
+def group_mass_assignment_rev(mockgal_pd, mockgroup_pd, param_dict):
+    """
+    Assigns a theoretical halo mass to the group based on a group property
+    Parameters
+    -----------
+    mockgal_pd: pandas DataFrame
+        DataFrame containing information for each mock galaxy.
+        Includes galaxy properties + group ID
+    mockgroup_pd: pandas DataFrame
+        DataFame containing information for each galaxy group
+    param_dict: python dictionary
+        dictionary with `project` variables
+
+    Returns
+    -----------
+    mockgal_pd_new: pandas DataFrame
+        Original info + abundance matched mass of the group, M_group
+    mockgroup_pd_new: pandas DataFrame
+        Original info of `mockgroup_pd' + abundance matched mass, M_group
+    """
+    ## Constants
+    # if param_dict['verbose']:
+    #     print('Group Mass Assign. ....')
+    ## Copies of DataFrames
+    gal_pd   = mockgal_pd.copy()
+    group_pd = mockgroup_pd.copy()
+
+    col_idxs = [str(int(x)) for x in np.linspace(1,101,101)]   
+    stellar_mass_cols = gal_pd.loc[:, gal_pd.columns.isin(col_idxs)]
+
+    for idx in range(len(col_idxs)):
+        idx+=1
+        ## Changing stellar mass to log
+        gal_pd_temp = gal_pd.copy()
+        group_pd_temp = group_pd.copy()
+
+        gal_pd['{0}'.format(idx)] = np.log10(gal_pd['{0}'.format(idx)])
+
+        ## Constants
+        Cens     = int(1)
+        Sats     = int(0)
+        n_gals   = len(gal_pd  )
+        n_groups = len(group_pd)
+        ## Type of abundance matching
+        if param_dict['catl_type'] == 'mr':
+            prop_gal    = 'M_r'
+            reverse_opt = True
+        elif param_dict['catl_type'] == 'mstar':
+            prop_gal    = '{0}'.format(idx)
+            reverse_opt = False
+        # Absolute value of `prop_gal`
+        prop_gal_abs = prop_gal + '_abs'
+        ##
+        ## Selecting only a `few` columns
+        # Galaxies
+        gal_pd_temp = gal_pd_temp.loc[:,[prop_gal, 'groupid']]
+        # Groups
+        group_pd_temp = group_pd_temp[['ngals']]
+        
+        gal_pd_temp = pd.merge(gal_pd_temp, group_pd_temp[['ngals']],
+                    how='left', left_on='groupid', right_index=True)
+        # Remaining `ngals` column
+        gal_pd_temp = gal_pd_temp.rename(columns={'ngals':'g_ngal'})
+        #
+        # Selecting `central` and `satellite` galaxies
+        gal_pd_temp.loc[:, prop_gal_abs] = np.abs(gal_pd_temp[prop_gal])
+        gal_pd.loc[:, 'g_galtype_{0}'.format(idx)]  = np.ones(n_gals).astype(int)*Sats
+        g_galtype_groups            = np.ones(n_groups)*Sats
+        ##
+        ## Looping over galaxy groups
+        for zz in tqdm(range(n_groups)):
+            gals_g = gal_pd_temp.loc[gal_pd_temp['groupid']==zz]
+            ## Determining group galaxy type
+            gals_g_max = gals_g.loc[gals_g[prop_gal_abs]==gals_g[prop_gal_abs].max()]
+            g_galtype_groups[zz] = int(np.random.choice(gals_g_max.index.values))
+        g_galtype_groups = np.asarray(g_galtype_groups).astype(int)
+        ## Assigning group galaxy type
+        gal_pd.loc[g_galtype_groups, 'g_galtype_{0}'.format(idx)] = Cens
+        ##
+        ## Dropping columns
+        # Galaxies
+        # gal_col_arr = [prop_gal, prop_gal_abs, 'groupid']
+        # gal_pd_temp      = gal_pd_temp.drop(gal_col_arr, axis=1)
+        # Groups
+        # group_col_arr = ['ngals']
+        # group_pd_temp      = group_pd_temp.drop(group_col_arr, axis=1)
+        
+    ## Merging to original DataFrames
+    # Galaxies
+    col_idxs_new = ['g_galtype_'+str(int(x)) for x in np.linspace(1,101,101)] 
+    mockgal_pd_new = pd.merge(mockgal_pd, gal_pd[col_idxs_new], how='left', left_index=True,
+        right_index=True)
+    # Groups
+    # mockgroup_pd_new = pd.merge(mockgroup_pd, group_pd, how='left',
+    #     left_index=True, right_index=True)
+    # if param_dict['verbose']:
+    #     print('Group Mass Assign. ....Done')
+
+    return mockgal_pd_new, mockgroup_pd
+
+def diff_smf_mod(mstar_arr, volume, h1_bool, colour_flag=False):
+    """
+    Calculates differential stellar mass function in units of h=1.0
+
+    Parameters
+    ----------
+    mstar_arr: numpy array
+        Array of stellar masses
+
+    volume: float
+        Volume of survey or simulation
+
+    h1_bool: boolean
+        True if units of masses are h=1, False if units of masses are not h=1
+
+    Returns
+    ---------
+    maxis: array
+        Array of x-axis mass values
+
+    phi: array
+        Array of y-axis values
+
+    err_tot: array
+        Array of error values per bin
+    
+    bins: array
+        Array of bin edge values
+    """
+    if not h1_bool:
+        # changing from h=0.7 to h=1 assuming h^-2 dependence
+        logmstar_arr = np.log10((10**mstar_arr) / 2.041)
+    else:
+        logmstar_arr = np.log10(mstar_arr)
+
+    if survey == 'eco' or survey == 'resolvea':
+        bin_min = np.round(np.log10((10**8.9) / 2.041), 1)
+        if survey == 'eco' and colour_flag == 'R':
+            bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
+            bin_num = 6
+        elif survey == 'eco' and colour_flag == 'B':
+            bin_max = np.round(np.log10((10**11) / 2.041), 1)
+            bin_num = 6
+        elif survey == 'resolvea':
+            # different to avoid nan in inverse corr mat
+            bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
+            bin_num = 7
+        else:
+            bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
+            bin_num = 7
+        bins = np.linspace(bin_min, bin_max, bin_num)
+    elif survey == 'resolveb':
+        bin_min = np.round(np.log10((10**8.7) / 2.041), 1)
+        bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
+        bins = np.linspace(bin_min, bin_max, 7)
+    # Unnormalized histogram and bin edges
+    counts, edg = np.histogram(logmstar_arr[~np.isnan(logmstar_arr)], bins=bins)
+    # counts, edg = np.histogram(logmstar_arr, bins=bins)  # paper used 17 bins
+    dm = edg[1] - edg[0]  # Bin width
+    maxis = 0.5 * (edg[1:] + edg[:-1])  # Mass axis i.e. bin centers
+    # Normalized to volume and bin width
+    err_poiss = np.sqrt(counts) / (volume * dm)
+    err_tot = err_poiss
+    phi = counts / (volume * dm)  # not a log quantity
+
+    phi = np.log10(phi)
+
+    return maxis, phi, err_tot, bins, counts
+
+
 def main():
     global survey
     global mf_type
@@ -794,7 +962,7 @@ def main():
     machine = 'bender'
     ver = 2.0
 
-    H0 = 100 # h(km/s)/Mpc
+    H0 = 100 # (km/s)/Mpc
     cz_inner = 3000 # not starting at corner of box
     cz_outer = 120*H0 # utilizing until 120 Mpc of Vishnu box
 
@@ -852,22 +1020,23 @@ def main():
     print('Reading mcmc chain file')
     mcmc_table = read_mcmc(chain_file)
 
-    print('Getting data in specific percentile')
+    print('Getting subset of 100 Behroozi parameters')
     mcmc_table_subset = get_paramvals_percentile(mcmc_table, 68, chi2)
 
     print('Reading survey data')
+    # No M* cut
     catl, volume, cvar, z_median = read_data_catl(catl_file, survey)
 
     print('Populating halos')
+    # Populating halos with best fit set of params
     model_init = halocat_init(halo_catalog, z_median)
     bf_params = mcmc_table_subset[0]
     gals_df_ = populate_mock(bf_params, model_init)
     gals_df_ = assign_cen_sat_flag(gals_df_)
-    gals_df_ = gals_df_[['halo_mvir_host_halo','cs_flag',
-        'halo_hostid','halo_id','cz','groupid','g_galtype','stellar_mass']]
     gals_df_ = gals_df_.rename(columns={"stellar_mass": "1"})
     gals_df_ = gals_df_.sort_values(by='halo_mvir_host_halo')
 
+    # Populating 100 out of the 101 set of params
     i=2
     for params in mcmc_table_subset[1:]:
         mock = populate_mock(params, model_init)
@@ -882,14 +1051,19 @@ def main():
     print('Applying RSD')
     gals_df_ = pd.read_hdf(h5File, "/gals_df_/d1")
     gals_rsd_df = apply_rsd(gals_df_)
+
+    print('Applying velocity and stellar mass cuts')
+    col_idxs = [str(int(x)) for x in np.linspace(1,101,101)]   
     gals_rsd_subset_df = gals_rsd_df.loc[(gals_rsd_df.cz >= cz_inner) & \
-        (gals_rsd_df.cz <= cz_outer) &
-        (gals_rsd_df.stellar_mass >= (10**8.9/2.041))].reset_index(drop=True)
+        (gals_rsd_df.cz <= cz_outer)]
+    
+    for col in col_idxs:
+        gals_rsd_subset_df.loc[gals_rsd_subset_df[col]<10**8.6, col] = np.NaN
 
     gal_group_df, group_df = group_finding(gals_rsd_subset_df,
         path_to_data + 'interim/', param_dict)
     gal_group_df_new, group_df_new = \
-        group_mass_assignment(gal_group_df, group_df, param_dict)
+        group_mass_assignment_rev(gal_group_df, group_df, param_dict)
 
     print('Writing to output files')
     pandas_df_to_hdf5_file(data=gal_group_df_new,
