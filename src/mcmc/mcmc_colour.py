@@ -685,7 +685,7 @@ def chi_squared(data, model, err_data, inv_corr_mat):
 
     print('data: \n', data)
     print('model: \n', model)
-    
+
     first_term = ((data - model) / (err_data)).reshape(1,data.size)
     third_term = np.transpose(first_term)
 
@@ -1605,6 +1605,19 @@ def main(args):
     gal_group_df = reading_catls(path_to_proc + "gal_group.hdf5") 
     # gal_group_subset_df = gal_group_df[['halo_mvir_host_halo','cs_flag',
     #     'halo_hostid','halo_id','cz','groupid','g_galtype','stellar_mass']]
+
+    col_idxs = [str(int(x)) for x in np.linspace(1,101,101)] 
+    cols_to_keep = [] 
+    for idx in range(len(col_idxs)): 
+        idx+=1 
+        cols_to_keep.append('g_galtype_{0}'.format(idx)) 
+        cols_to_keep.append('groupid_{0}'.format(idx)) 
+        cols_to_keep.append('{0}_y'.format(idx)) 
+    cols_to_keep.append('cz') 
+    cols_to_keep.append('halo_mvir')
+    cols_to_keep.append('cs_flag')
+
+    gal_group_df = gal_group_df[cols_to_keep]
 
     print('Running MCMC')
     sampler = mcmc(nproc, nwalkers, nsteps, red_data[1], blue_data[1], std_red,
