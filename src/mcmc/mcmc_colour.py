@@ -451,7 +451,7 @@ def halocat_init(halo_catalog, z_median):
     return model
 
 def mcmc(nproc, nwalkers, nsteps, phi_red_data, phi_blue_data, std_red_data, 
-    std_blue_data, err, corr_mat_inv, gals_df):
+    std_blue_data, err, corr_mat_inv, gals_df_1, gals_df_2):
     """
     MCMC analysis
 
@@ -493,7 +493,7 @@ def mcmc(nproc, nwalkers, nsteps, phi_red_data, phi_blue_data, std_red_data,
     with Pool(processes=nproc) as pool:
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, 
             args=(phi_red_data, phi_blue_data, std_red_data, std_blue_data, 
-                err, corr_mat_inv, gals_df), pool=pool)
+                err, corr_mat_inv, gals_df_1, gals_df_2), pool=pool)
         start = time.time()
         for i,result in enumerate(sampler.sample(p0, iterations=nsteps, 
             storechain=False)):
@@ -695,7 +695,7 @@ def chi_squared(data, model, err_data, inv_corr_mat):
     return chi_squared[0][0]
 
 def lnprob(theta, phi_red_data, phi_blue_data, std_red_data, std_blue_data, 
-    err, corr_mat_inv, gals_df):
+    err, corr_mat_inv, gals_df_1, gals_df_2):
     """
     Calculates log probability for emcee
 
@@ -742,14 +742,22 @@ def lnprob(theta, phi_red_data, phi_blue_data, std_red_data, std_blue_data,
         randint_file.write("{0}".format(randint_logmstar)) 
         randint_file.write("\n")
         randint_file.close()
+
         cols_to_use = ['halo_mvir', 'cs_flag', 'cz', \
             '{0}_y'.format(randint_logmstar), \
             'g_galtype_{0}'.format(randint_logmstar), \
             'groupid_{0}'.format(randint_logmstar)]
-        gals_df_mock = gals_df.loc[gals_df['{0}_y'.\
-            format(randint_logmstar)] >= 8.6][cols_to_use]
+        
+        if randint_logmstar < 51:
+            gals_df_mock = gals_df_1.loc[gals_df_1['{0}_y'.\
+                format(randint_logmstar)] >= 8.6][cols_to_use]
+        else:
+            gals_df_mock = gals_df_2.loc[gals_df_2['{0}_y'.\
+                format(randint_logmstar)] >= 8.6][cols_to_use]
+
         gals_df_mock = gals_df_mock.rename(columns=\
             {'{0}_y'.format(randint_logmstar):'{0}'.format(randint_logmstar)})
+            
         f_red_cen, f_red_sat = hybrid_quenching_model(theta, gals_df_mock, \
             'vishnu', randint_logmstar)
         gals_df_mock = assign_colour_label_mock(f_red_cen, f_red_sat, \
@@ -1607,21 +1615,37 @@ def main(args):
     #     'halo_hostid','halo_id','cz','groupid','g_galtype','stellar_mass']]
 
     col_idxs = [str(int(x)) for x in np.linspace(1,101,101)] 
-    cols_to_keep = [] 
+    cols_to_keep_set_one = [] 
     for idx in range(len(col_idxs)): 
         idx+=1 
-        cols_to_keep.append('g_galtype_{0}'.format(idx)) 
-        cols_to_keep.append('groupid_{0}'.format(idx)) 
-        cols_to_keep.append('{0}_y'.format(idx)) 
-    cols_to_keep.append('cz') 
-    cols_to_keep.append('halo_mvir')
-    cols_to_keep.append('cs_flag')
+        cols_to_keep_set_one.append('g_galtype_{0}'.format(idx)) 
+        cols_to_keep_set_one.append('groupid_{0}'.format(idx)) 
+        cols_to_keep_set_one.append('{0}_y'.format(idx)) 
+        if idx == 50:
+            break
+    cols_to_keep_set_one.append('cz') 
+    cols_to_keep_set_one.append('halo_mvir')
+    cols_to_keep_set_one.append('cs_flag')
 
-    gal_group_df = gal_group_df[cols_to_keep]
+    cols_to_keep_set_two = [] 
+    for idx in range(len(col_idxs)): 
+        idx+=51
+        cols_to_keep_set_two.append('g_galtype_{0}'.format(idx)) 
+        cols_to_keep_set_two.append('groupid_{0}'.format(idx)) 
+        cols_to_keep_set_two.append('{0}_y'.format(idx)) 
+        if idx == 101:
+            break
+    cols_to_keep_set_two.append('cz') 
+    cols_to_keep_set_two.append('halo_mvir')
+    cols_to_keep_set_two.append('cs_flag')
+
+    gal_group_df_one = gal_group_df[cols_to_keep_set_one]
+    gal_group_df_two = gal_group_df[cols_to_keep_set_two]
+
 
     print('Running MCMC')
     sampler = mcmc(nproc, nwalkers, nsteps, red_data[1], blue_data[1], std_red,
-        std_blue, sigma, corr_mat_inv, gal_group_df)
+        std_blue, sigma, corr_mat_inv, gal_group_df_one, gal_group_df_two)
 
 # Main function
 if __name__ == '__main__':
