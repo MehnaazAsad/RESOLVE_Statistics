@@ -683,8 +683,8 @@ def chi_squared(data, model, err_data, inv_corr_mat):
     data = data.flatten() # from (2,5) to (1,10)
     model = model.flatten() # same as above
 
-    print('data: \n', data)
-    print('model: \n', model)
+    # print('data: \n', data)
+    # print('model: \n', model)
 
     first_term = ((data - model) / (err_data)).reshape(1,data.size)
     third_term = np.transpose(first_term)
