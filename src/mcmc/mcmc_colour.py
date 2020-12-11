@@ -451,7 +451,7 @@ def halocat_init(halo_catalog, z_median):
     return model
 
 def mcmc(nproc, nwalkers, nsteps, phi_red_data, phi_blue_data, std_red_data, 
-    std_blue_data, err, corr_mat_inv, gals_df_1, gals_df_2):
+    std_blue_data, err, corr_mat_inv):
     """
     MCMC analysis
 
