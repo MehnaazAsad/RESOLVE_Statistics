@@ -230,6 +230,7 @@ def assign_colour_label_data(catl):
     return catl
 
 def std_func(bins, mass_arr, vel_arr):
+    ## Calculate std from mean=0
 
     last_index = len(bins)-1
     i = 0
@@ -305,7 +306,7 @@ def get_deltav_sigma_data(df):
 
     if survey == 'eco' or survey == 'resolvea':
         # TODO : check if this is actually correct for resolve a
-        red_stellar_mass_bins = np.linspace(8.6,11.5,6)
+        red_stellar_mass_bins = np.linspace(8.6,11.2,6)
     elif survey == 'resolveb':
         red_stellar_mass_bins = np.linspace(8.4,11.0,6)
     std_red = std_func(red_stellar_mass_bins, red_cen_stellar_mass_arr, 
@@ -329,7 +330,7 @@ def get_deltav_sigma_data(df):
 
     if survey == 'eco' or survey == 'resolvea':
         # TODO : check if this is actually correct for resolve a
-        blue_stellar_mass_bins = np.linspace(8.6,10.5,6)
+        blue_stellar_mass_bins = np.linspace(8.6,10.7,6)
     elif survey == 'resolveb':
         blue_stellar_mass_bins = np.linspace(8.4,10.4,6)
     std_blue = std_func(blue_stellar_mass_bins, blue_cen_stellar_mass_arr, 
@@ -535,7 +536,7 @@ def get_err_smf_mocks(survey, path):
     
     return phi_arr_red, phi_arr_blue
 
-def get_deltav_sigma_mocks(survey, path):
+def get_deltav_sigma_mocks_urcolour(survey, path):
     """
     Calculate spread in velocity dispersion from survey mocks
 
@@ -704,6 +705,310 @@ def get_deltav_sigma_mocks(survey, path):
             
     return std_red_arr, std_blue_arr, centers_red_arr, centers_blue_arr
 
+def get_deltav_sigma_mocks_qmcolour(survey, path):
+    """
+    Calculate spread in velocity dispersion from survey mocks
+
+    Parameters
+    ----------
+    survey: string
+        Name of survey
+    path: string
+        Path to mock catalogs
+
+    Returns
+    ---------
+    std_red_arr: numpy array
+        Spread in velocity dispersion of red galaxies
+    centers_red_arr: numpy array
+        Bin centers of central stellar mass for red galaxies
+    std_blue_arr: numpy array
+        Spread in velocity dispersion of blue galaxies
+    centers_blue_arr: numpy array
+        Bin centers of central stellar mass for blue galaxies
+    """
+    if survey == 'eco':
+        mock_name = 'ECO'
+        num_mocks = 8
+        min_cz = 3000
+        max_cz = 7000
+        mag_limit = -17.33
+        mstar_limit = 8.9
+        volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
+    elif survey == 'resolvea':
+        mock_name = 'A'
+        num_mocks = 59
+        min_cz = 4500
+        max_cz = 7000
+        mag_limit = -17.33
+        mstar_limit = 8.9
+        volume = 13172.384  # Survey volume without buffer [Mpc/h]^3 
+    elif survey == 'resolveb':
+        mock_name = 'B'
+        num_mocks = 104
+        min_cz = 4500
+        max_cz = 7000
+        mag_limit = -17
+        mstar_limit = 8.7
+        volume = 4709.8373  # Survey volume without buffer [Mpc/h]^3
+
+    std_red_arr = []
+    centers_red_arr = []
+    std_blue_arr = []
+    centers_blue_arr = []
+    box_id_arr = np.linspace(5001,5008,8)
+    for box in box_id_arr:
+        box = int(box)
+        temp_path = path + '{0}/{1}_m200b_catls/'.format(box, 
+            mock_name) 
+        for num in range(num_mocks):
+            filename = temp_path + '{0}_cat_{1}_Planck_memb_cat.hdf5'.format(
+                mock_name, num)
+            mock_pd = reading_catls(filename) 
+
+            # Using the same survey definition as in mcmc smf i.e excluding the 
+            # buffer
+            mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & \
+                (mock_pd.cz.values <= max_cz) & \
+                (mock_pd.M_r.values <= mag_limit) & \
+                (mock_pd.logmstar.values >= mstar_limit)]
+
+            f_red_c, f_red_s = hybrid_quenching_model(mock_pd)
+            mock_pd = assign_colour_label_mock(f_red_c, f_red_s, mock_pd)
+
+            mock_pd.logmstar = np.log10((10**mock_pd.logmstar) / 2.041)
+            red_subset_grpids = np.unique(mock_pd.groupid.loc[(mock_pd.\
+                colour_label == 'R') & (mock_pd.g_galtype == 1)].values)  
+            blue_subset_grpids = np.unique(mock_pd.groupid.loc[(mock_pd.\
+                colour_label == 'B') & (mock_pd.g_galtype == 1)].values)
+
+            # Calculating spread in velocity dispersion for galaxies in groups
+            # with a red central
+
+            red_deltav_arr = []
+            red_cen_stellar_mass_arr = []
+            for key in red_subset_grpids: 
+                group = mock_pd.loc[mock_pd.groupid == key]
+                cen_stellar_mass = group.logmstar.loc[group.g_galtype.\
+                    values == 1].values[0]
+                mean_cz_grp = np.round(np.mean(group.cz.values),2)
+                deltav = group.cz.values - len(group)*[mean_cz_grp]
+                for val in deltav:
+                    red_deltav_arr.append(val)
+                    red_cen_stellar_mass_arr.append(cen_stellar_mass)
+            # print(max(red_cen_stellar_mass_arr))
+
+            if survey == 'eco' or survey == 'resolvea':
+                # TODO : check if this is actually correct for resolve a
+                red_stellar_mass_bins = np.linspace(8.6,11.2,6)
+            elif survey == 'resolveb':
+                red_stellar_mass_bins = np.linspace(8.4,11.0,6)
+            std_red = std_func(red_stellar_mass_bins, red_cen_stellar_mass_arr, 
+                red_deltav_arr)
+            std_red = np.array(std_red)
+            std_red_arr.append(std_red)
+
+            # Calculating spread in velocity dispersion for galaxies in groups 
+            # with a blue central
+
+            blue_deltav_arr = []
+            blue_cen_stellar_mass_arr = []
+            for key in blue_subset_grpids: 
+                group = mock_pd.loc[mock_pd.groupid == key]
+                cen_stellar_mass = group.logmstar.loc[group.g_galtype\
+                    .values == 1].values[0]
+                mean_cz_grp = np.round(np.mean(group.cz.values),2)
+                deltav = group.cz.values - len(group)*[mean_cz_grp]
+                for val in deltav:
+                    blue_deltav_arr.append(val)
+                    blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+            # print(max(blue_cen_stellar_mass_arr))
+
+            if survey == 'eco' or survey == 'resolvea':
+                # TODO : check if this is actually correct for resolve a
+                blue_stellar_mass_bins = np.linspace(8.6,10.7,6)
+            elif survey == 'resolveb':
+                blue_stellar_mass_bins = np.linspace(8.4,10.4,6)
+            std_blue = std_func(blue_stellar_mass_bins, \
+                blue_cen_stellar_mass_arr, blue_deltav_arr)    
+            std_blue = np.array(std_blue)
+            std_blue_arr.append(std_blue)
+
+            centers_red = 0.5 * (red_stellar_mass_bins[1:] + \
+                red_stellar_mass_bins[:-1])
+            centers_blue = 0.5 * (blue_stellar_mass_bins[1:] + \
+                blue_stellar_mass_bins[:-1])
+            
+            centers_red_arr.append(centers_red)
+            centers_blue_arr.append(centers_blue)
+    
+    std_red_arr = np.array(std_red_arr)
+    centers_red_arr = np.array(centers_red_arr)
+    std_blue_arr = np.array(std_blue_arr)
+    centers_blue_arr = np.array(centers_blue_arr)
+            
+    return std_red_arr, std_blue_arr, centers_red_arr, centers_blue_arr
+
+def get_host_halo_mock(gals_df):
+    """
+    Get host halo mass from mock catalog
+
+    Parameters
+    ----------
+    gals_df: pandas dataframe
+        Mock catalog
+
+    Returns
+    ---------
+    cen_halos: array
+        Array of central host halo masses
+    sat_halos: array
+        Array of satellite host halo masses
+    """
+
+    df = gals_df.copy()
+
+    cen_halos = []
+    sat_halos = []
+
+    groups = df.groupby('haloid')
+    keys = groups.groups.keys()
+
+    for key in keys:
+        group = groups.get_group(key)
+        for index, value in enumerate(group.cs_flag):
+            if value == 1:
+                cen_halos.append(group.loghalom.values[index])
+            else:
+                sat_halos.append(group.loghalom.values[index])
+
+    cen_halos = np.array(cen_halos)
+    sat_halos = np.array(sat_halos)
+
+    return cen_halos, sat_halos
+
+def get_stellar_mock(gals_df):
+    """
+    Get stellar mass from mock catalog
+
+    Parameters
+    ----------
+    gals_df: pandas dataframe
+        Mock catalog
+
+    Returns
+    ---------
+    cen_gals: array
+        Array of central stellar masses
+    sat_gals: array
+        Array of satellite stellar masses
+    """
+
+    df = gals_df.copy()
+
+    cen_gals = []
+    sat_gals = []
+    for idx,value in enumerate(df['cs_flag']):
+        if value == 1:
+            cen_gals.append(df['logmstar'].values[idx])
+        elif value == 0:
+            sat_gals.append(df['logmstar'].values[idx])
+
+    cen_gals = np.array(cen_gals)
+    sat_gals = np.array(sat_gals)
+
+    return cen_gals, sat_gals
+
+def hybrid_quenching_model(gals_df):
+    """
+    Apply hybrid quenching model from Zu and Mandelbaum 2015
+
+    Parameters
+    ----------
+    gals_df: pandas dataframe
+        Mock catalog
+
+    Returns
+    ---------
+    f_red_cen: array
+        Array of central red fractions
+    f_red_sat: array
+        Array of satellite red fractions
+    """
+
+    # parameter values from Table 1 of Zu and Mandelbaum 2015 "prior case"
+    Mstar_q = 10.5 # Msun/h
+    Mh_q = 13.76 # Msun/h
+    mu = 0.69
+    nu = 0.15
+
+    cen_hosthalo_mass_arr, sat_hosthalo_mass_arr = get_host_halo_mock(gals_df)
+    cen_stellar_mass_arr, sat_stellar_mass_arr = get_stellar_mock(gals_df)
+
+    f_red_cen = 1 - np.exp(-(((10**cen_stellar_mass_arr)/(10**Mstar_q))**mu))
+
+    g_Mstar = np.exp(-(((10**sat_stellar_mass_arr)/(10**Mstar_q))**mu))
+    h_Mh = np.exp(-(((10**sat_hosthalo_mass_arr)/(10**Mh_q))**nu))
+    f_red_sat = 1 - (g_Mstar * h_Mh)
+
+    return f_red_cen, f_red_sat
+
+def assign_colour_label_mock(f_red_cen, f_red_sat, gals_df, drop_fred=False):
+    """
+    Assign colour label to mock catalog
+
+    Parameters
+    ----------
+    f_red_cen: array
+        Array of central red fractions
+    f_red_sat: array
+        Array of satellite red fractions
+    gals_df: pandas Dataframe
+        Mock catalog
+    drop_fred: boolean
+        Whether or not to keep red fraction column after colour has been
+        assigned
+
+    Returns
+    ---------
+    df: pandas Dataframe
+        Dataframe with colour label and random number assigned as 
+        new columns
+    """
+
+    # Copy of dataframe
+    df = gals_df.copy()
+    # Saving labels
+    color_label_arr = [[] for x in range(len(df))]
+    rng_arr = [[] for x in range(len(df))]
+    # Adding columns for f_red to df
+    df.loc[:, 'f_red'] = np.zeros(len(df))
+    df.loc[df['cs_flag'] == 1, 'f_red'] = f_red_cen
+    df.loc[df['cs_flag'] == 0, 'f_red'] = f_red_sat
+    # Converting to array
+    f_red_arr = df['f_red'].values
+    # Looping over galaxies
+    for ii, cs_ii in enumerate(df['cs_flag']):
+        # Draw a random number
+        rng = np.random.uniform()
+        # Comparing against f_red
+        if (rng >= f_red_arr[ii]):
+            color_label = 'B'
+        else:
+            color_label = 'R'
+        # Saving to list
+        color_label_arr[ii] = color_label
+        rng_arr[ii] = rng
+    
+    ## Assigning to DataFrame
+    df.loc[:, 'colour_label'] = color_label_arr
+    df.loc[:, 'rng'] = rng_arr
+    # Dropping 'f_red` column
+    if drop_fred:
+        df.drop('f_red', axis=1, inplace=True)
+
+    return df
+
 global model_init
 global survey
 global path_to_proc
@@ -741,7 +1046,10 @@ catl, volume, cvar, z_median = read_data_catl(catl_file, survey)
 catl = assign_colour_label_data(catl)
 
 std_red_mocks, std_blue_mocks, centers_red_mocks, \
-    centers_blue_mocks = get_deltav_sigma_mocks(survey, path_to_mocks)
+    centers_blue_mocks = get_deltav_sigma_mocks_urcolour(survey, path_to_mocks)
+
+std_red_mocks2, std_blue_mocks2, centers_red_mocks2, \
+    centers_blue_mocks2 = get_deltav_sigma_mocks_qmcolour(survey, path_to_mocks)
 
 std_red_data, centers_red_data, std_blue_data, centers_blue_data = \
     get_deltav_sigma_data(catl)
@@ -749,6 +1057,51 @@ std_red_data, centers_red_data, std_blue_data, centers_blue_data = \
 phi_red_arr, phi_blue_arr = get_err_smf_mocks(survey, path_to_mocks)
 
 corr_mat_combined_bool = True
+if corr_mat_combined_bool:
+    phi_red_0 = phi_red_arr[:,0]
+    phi_red_1 = phi_red_arr[:,1]
+    phi_red_2 = phi_red_arr[:,2]
+    phi_red_3 = phi_red_arr[:,3]
+    phi_red_4 = phi_red_arr[:,4]
+
+    phi_blue_0 = phi_blue_arr[:,0]
+    phi_blue_1 = phi_blue_arr[:,1]
+    phi_blue_2 = phi_blue_arr[:,2]
+    phi_blue_3 = phi_blue_arr[:,3]
+    phi_blue_4 = phi_blue_arr[:,4]
+
+    dv_red_0 = std_red_mocks2[:,0]
+    dv_red_1 = std_red_mocks2[:,1]
+    dv_red_2 = std_red_mocks2[:,2]
+    dv_red_3 = std_red_mocks2[:,3]
+    dv_red_4 = std_red_mocks2[:,4]
+
+    dv_blue_0 = std_blue_mocks2[:,0]
+    dv_blue_1 = std_blue_mocks2[:,1]
+    dv_blue_2 = std_blue_mocks2[:,2]
+    dv_blue_3 = std_blue_mocks2[:,3]
+    dv_blue_4 = std_blue_mocks2[:,4]
+    combined_df = pd.DataFrame({'phi_red_0':phi_red_0, 'phi_red_1':phi_red_1,\
+        'phi_red_2':phi_red_2, 'phi_red_3':phi_red_3, 'phi_red_4':phi_red_4, \
+        'phi_blue_0':phi_blue_0, 'phi_blue_1':phi_blue_1, 
+        'phi_blue_2':phi_blue_2, 'phi_blue_3':phi_blue_3, 
+        'phi_blue_4':phi_blue_4, \
+        'dv_red_0':dv_red_0, 'dv_red_1':dv_red_1, 'dv_red_2':dv_red_2, \
+        'dv_red_3':dv_red_3, 'dv_red_4':dv_red_4, \
+        'dv_blue_0':dv_blue_0, 'dv_blue_1':dv_blue_1, 'dv_blue_2':dv_blue_2, \
+        'dv_blue_3':dv_blue_3, 'dv_blue_4':dv_blue_4})
+
+    # Correlation matrix of phi and deltav colour measurements combined
+    fig1 = plt.figure()
+    ax1 = fig1.add_subplot(111)
+    cmap = cm.get_cmap('Spectral')
+    cax = ax1.matshow(combined_df.corr(), cmap=cmap)
+    plt.gca().invert_yaxis() 
+    plt.gca().xaxis.tick_bottom()
+    fig1.colorbar(cax)
+    plt.title(r'Combined \boldmath{$\Phi$} and \boldmath{$\sigma$} measurements using ZuMand15 colours')
+    plt.show()
+
 if corr_mat_combined_bool:
     phi_red_0 = phi_red_arr[:,0]
     phi_red_1 = phi_red_arr[:,1]
@@ -879,8 +1232,3 @@ for idx in range(len(std_blue_mocks.T)):
 
 # * resolve B - neither log or linear passed null hypothesis of normal dist.
 # * eco - log passed null hypothesis 
-
-
-
-
-
