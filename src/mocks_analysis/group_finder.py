@@ -745,7 +745,7 @@ def group_mass_assignment(mockgal_pd, mockgroup_pd, param_dict):
     # Adding `M_group` to galaxy catalogue
     gal_pd = pd.merge(gal_pd, group_pd[['M_group', 'ngals']],
                         how='left', left_on='groupid', right_index=True)
-    # Remaining `ngals` column
+    # Renaming `ngals` column
     gal_pd = gal_pd.rename(columns={'ngals':'g_ngal'})
     #
     # Selecting `central` and `satellite` galaxies
@@ -783,7 +783,7 @@ def group_mass_assignment(mockgal_pd, mockgroup_pd, param_dict):
 
     return mockgal_pd_new, mockgroup_pd_new
 
-def group_mass_assignment_rev(mockgal_pd, mockgroup_pd, param_dict):
+def group_mass_assignment_rev(mockgal_pd, mockgroup_pd, param_dict, mock_num):
     """
     Assigns a theoretical halo mass to the group based on a group property
     Parameters
@@ -810,78 +810,79 @@ def group_mass_assignment_rev(mockgal_pd, mockgroup_pd, param_dict):
     gal_pd   = mockgal_pd.copy()
     group_pd = mockgroup_pd.copy()
 
-    col_idxs = [str(int(x)) for x in np.linspace(1,101,101)]   
-    stellar_mass_cols = gal_pd.loc[:, gal_pd.columns.isin(col_idxs)]
+    ## Changing stellar mass to log
+    gal_pd['{0}'.format(mock_num)] = np.log10(gal_pd['{0}'.format(mock_num)])
 
-    for idx in range(len(col_idxs)):
-        idx+=1
-        ## Changing stellar mass to log
-        gal_pd_temp = gal_pd.copy()
-        group_pd_temp = group_pd.copy()
+    ## Constants
+    Cens     = int(1)
+    Sats     = int(0)
+    n_gals   = len(gal_pd)
+    n_groups = len(group_pd)
+    ## Type of abundance matching
+    if param_dict['catl_type'] == 'mr':
+        prop_gal    = 'M_r'
+        reverse_opt = True
+    elif param_dict['catl_type'] == 'mstar':
+        prop_gal    = '{0}'.format(mock_num)
+        reverse_opt = False
+    # Absolute value of `prop_gal`
+    prop_gal_abs = prop_gal + '_abs'
+    ##
+    ## Selecting only a `few` columns
+    # Galaxies
+    gal_pd = gal_pd.loc[:,[prop_gal, 'groupid', 'index']]
+    # Groups
+    group_pd = group_pd[['ngals']]
+    
+    gal_pd = pd.merge(gal_pd, group_pd[['ngals']],
+                how='left', left_on='groupid', right_index=True)
+    # Renaming `ngals` column
+    gal_pd = gal_pd.rename(columns={'ngals':'g_ngal_{0}'.format(mock_num)})
+    
+    #
+    # Selecting `central` and `satellite` galaxies
+    gal_pd.loc[:, prop_gal_abs] = np.abs(gal_pd[prop_gal])
+    gal_pd.loc[:, 'g_galtype_{0}'.format(mock_num)] = np.ones(n_gals).astype(int)*Sats
+    g_galtype_groups = np.ones(n_groups)*Sats
+    ##
+    ## Looping over galaxy groups
+    for zz in tqdm(range(n_groups)):
+        gals_g = gal_pd.loc[gal_pd['groupid']==zz]
+        ## Determining group galaxy type
+        gals_g_max = gals_g.loc[gals_g[prop_gal_abs]==gals_g[prop_gal_abs].max()]
+        g_galtype_groups[zz] = int(np.random.choice(gals_g_max.index.values))
+    g_galtype_groups = np.asarray(g_galtype_groups).astype(int)
 
-        gal_pd['{0}'.format(idx)] = np.log10(gal_pd['{0}'.format(idx)])
-
-        ## Constants
-        Cens     = int(1)
-        Sats     = int(0)
-        n_gals   = len(gal_pd  )
-        n_groups = len(group_pd)
-        ## Type of abundance matching
-        if param_dict['catl_type'] == 'mr':
-            prop_gal    = 'M_r'
-            reverse_opt = True
-        elif param_dict['catl_type'] == 'mstar':
-            prop_gal    = '{0}'.format(idx)
-            reverse_opt = False
-        # Absolute value of `prop_gal`
-        prop_gal_abs = prop_gal + '_abs'
-        ##
-        ## Selecting only a `few` columns
-        # Galaxies
-        gal_pd_temp = gal_pd_temp.loc[:,[prop_gal, 'groupid']]
-        # Groups
-        group_pd_temp = group_pd_temp[['ngals']]
-        
-        gal_pd_temp = pd.merge(gal_pd_temp, group_pd_temp[['ngals']],
-                    how='left', left_on='groupid', right_index=True)
-        # Remaining `ngals` column
-        gal_pd_temp = gal_pd_temp.rename(columns={'ngals':'g_ngal'})
-        #
-        # Selecting `central` and `satellite` galaxies
-        gal_pd_temp.loc[:, prop_gal_abs] = np.abs(gal_pd_temp[prop_gal])
-        gal_pd.loc[:, 'g_galtype_{0}'.format(idx)]  = np.ones(n_gals).astype(int)*Sats
-        g_galtype_groups            = np.ones(n_groups)*Sats
-        ##
-        ## Looping over galaxy groups
-        for zz in tqdm(range(n_groups)):
-            gals_g = gal_pd_temp.loc[gal_pd_temp['groupid']==zz]
-            ## Determining group galaxy type
-            gals_g_max = gals_g.loc[gals_g[prop_gal_abs]==gals_g[prop_gal_abs].max()]
-            g_galtype_groups[zz] = int(np.random.choice(gals_g_max.index.values))
-        g_galtype_groups = np.asarray(g_galtype_groups).astype(int)
-        ## Assigning group galaxy type
-        gal_pd.loc[g_galtype_groups, 'g_galtype_{0}'.format(idx)] = Cens
-        ##
-        ## Dropping columns
-        # Galaxies
-        # gal_col_arr = [prop_gal, prop_gal_abs, 'groupid']
-        # gal_pd_temp      = gal_pd_temp.drop(gal_col_arr, axis=1)
-        # Groups
-        # group_col_arr = ['ngals']
-        # group_pd_temp      = group_pd_temp.drop(group_col_arr, axis=1)
+    ## Assigning group galaxy type
+    gal_pd.loc[g_galtype_groups, 'g_galtype_{0}'.format(mock_num)] = Cens
+    
+    ## Renaming 'groupid' column
+    gal_pd = gal_pd.rename(columns={'groupid':'groupid_{0}'.format(mock_num)})
+    ## Dropping 'prop_gal_abs' column
+    gal_pd = gal_pd.loc[:,['{0}'.format(mock_num), \
+        'g_galtype_{0}'.format(mock_num), 'groupid_{0}'.format(mock_num), \
+        'g_ngal_{0}'.format(mock_num), 'index']]
+    ##
+    ## Dropping columns
+    # Galaxies
+    # gal_col_arr = [prop_gal, prop_gal_abs, 'groupid']
+    # gal_pd_temp      = gal_pd_temp.drop(gal_col_arr, axis=1)
+    # Groups
+    # group_col_arr = ['ngals']
+    # group_pd_temp      = group_pd_temp.drop(group_col_arr, axis=1)
         
     ## Merging to original DataFrames
     # Galaxies
-    col_idxs_new = ['g_galtype_'+str(int(x)) for x in np.linspace(1,101,101)] 
-    mockgal_pd_new = pd.merge(mockgal_pd, gal_pd[col_idxs_new], how='left', left_index=True,
-        right_index=True)
+    # col_idxs_new = ['g_galtype_'+str(int(x)) for x in np.linspace(1,101,101)] 
+    # mockgal_pd_new = pd.merge(mockgal_pd, gal_pd[col_idxs_new], how='left', left_index=True,
+    #     right_index=True)
     # Groups
     # mockgroup_pd_new = pd.merge(mockgroup_pd, group_pd, how='left',
     #     left_index=True, right_index=True)
     # if param_dict['verbose']:
     #     print('Group Mass Assign. ....Done')
 
-    return mockgal_pd_new, mockgroup_pd
+    return gal_pd, group_pd
 
 def diff_smf_mod(mstar_arr, volume, h1_bool, colour_flag=False):
     """
@@ -951,7 +952,6 @@ def diff_smf_mod(mstar_arr, volume, h1_bool, colour_flag=False):
     phi = np.log10(phi)
 
     return maxis, phi, err_tot, bins, counts
-
 
 def main():
     global survey
@@ -1055,21 +1055,29 @@ def main():
     print('Applying velocity and stellar mass cuts')
     col_idxs = [str(int(x)) for x in np.linspace(1,101,101)]   
     gals_rsd_subset_df = gals_rsd_df.loc[(gals_rsd_df.cz >= cz_inner) & \
-        (gals_rsd_df.cz <= cz_outer)]
+        (gals_rsd_df.cz <= cz_outer)].reset_index(drop=True)
     
     for col in col_idxs:
-        gals_rsd_subset_df.loc[gals_rsd_subset_df[col]<10**8.6, col] = np.NaN
+        print('{0} out of {1}'.format(col, len(col_idxs)))
+        # Keep track of index from gals_rsd_subset_df
+        gals_rsd_grpfinder_df = gals_rsd_subset_df.loc[gals_rsd_subset_df\
+            [col]>10**8.6][['{0}'.format(col),'ra','dec','cz']].\
+            reset_index(drop=False)
+        # * Make sure that df that group finding is run on has its indices reset
+        gal_group_df, group_df = group_finding(gals_rsd_grpfinder_df,
+            path_to_data + 'interim/', param_dict)
+        gal_group_df_new, group_df_new = \
+            group_mass_assignment_rev(gal_group_df, group_df, param_dict, col)
+        gals_rsd_subset_df = pd.merge(gals_rsd_subset_df, gal_group_df_new, 
+            how='left', left_on = gals_rsd_subset_df.index, right_on='index')
 
-    gal_group_df, group_df = group_finding(gals_rsd_subset_df,
-        path_to_data + 'interim/', param_dict)
-    gal_group_df_new, group_df_new = \
-        group_mass_assignment_rev(gal_group_df, group_df, param_dict)
+    gals_final = gals_rsd_subset_df.drop(columns=['index_x', 'index_y']) 
 
     print('Writing to output files')
-    pandas_df_to_hdf5_file(data=gal_group_df_new,
+    pandas_df_to_hdf5_file(data=gals_final,
         hdf5_file=path_to_processed + 'gal_group.hdf5', key='gal_group_df')
-    pandas_df_to_hdf5_file(data=group_df_new,
-        hdf5_file=path_to_processed + 'group.hdf5', key='group_df')
+    # pandas_df_to_hdf5_file(data=group_df_new,
+    #     hdf5_file=path_to_processed + 'group.hdf5', key='group_df')
 
 # Main function
 if __name__ == '__main__':
