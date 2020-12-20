@@ -498,12 +498,12 @@ def mcmc(nproc, nwalkers, nsteps, phi_red_data, phi_blue_data, std_red_data,
         for i,result in enumerate(sampler.sample(p0, iterations=nsteps, 
             storechain=False)):
             position = result[0]
-            chi2 = np.array(result[3])
-            mock_num = np.array(result[4])
-            print(mock_num)
+            chi2 = np.array(result[3])[:,0]
+            mock_num = np.array(result[3])[:,1].astype(int)
             print("Iteration number {0} of {1}".format(i+1,nsteps))
             chain_fname = open("mcmc_{0}_colour_raw.txt".format(survey), "a")
             chi2_fname = open("{0}_colour_chi2.txt".format(survey), "a")
+            mocknum_fname = open("{0}_colour_mocknum.txt".format(survey), "a")
             for k in range(position.shape[0]):
                 chain_fname.write(str(position[k]).strip("[]"))
                 chain_fname.write("\n")
@@ -511,8 +511,12 @@ def mcmc(nproc, nwalkers, nsteps, phi_red_data, phi_blue_data, std_red_data,
             for k in range(chi2.shape[0]):
                 chi2_fname.write(str(chi2[k]).strip("[]"))
                 chi2_fname.write("\n")
+            for k in range(mock_num.shape[0]):
+                mocknum_fname.write(str(mock_num[k]).strip("[]"))
+                mocknum_fname.write("\n")
             chain_fname.close()
             chi2_fname.close()
+            mocknum_fname.close()
         end = time.time()
         multi_time = end - start
         print("Multiprocessing took {0:.1f} seconds".format(multi_time))
@@ -739,11 +743,6 @@ def lnprob(theta, phi_red_data, phi_blue_data, std_red_data, std_blue_data,
     warnings.simplefilter("error", (UserWarning, RuntimeWarning))
     try: 
         randint_logmstar = random.randint(1,101)
-        # randint_file = open("randint_logmstar.txt", "a")
-        # randint_file.write("{0}".format(randint_logmstar)) 
-        # randint_file.write("\n")
-        # randint_file.close()
-
         cols_to_use = ['halo_mvir', 'cs_flag', 'cz', \
             '{0}_y'.format(randint_logmstar), \
             'g_galtype_{0}'.format(randint_logmstar), \
@@ -790,7 +789,7 @@ def lnprob(theta, phi_red_data, phi_blue_data, std_red_data, std_blue_data,
         lnp = -np.inf
         chi2 = np.inf
 
-    return lnp, chi2, randint_logmstar
+    return lnp, [chi2, randint_logmstar]
 
 def hybrid_quenching_model(theta, gals_df, mock, randint=None):
     """
@@ -1579,7 +1578,7 @@ def main(args):
     elif survey == 'resolvea' or survey == 'resolveb':
         catl_file = path_to_raw + "resolve/RESOLVE_liveJune2018.csv"
     
-    mocknum_file = path_to_int + 'precalc_mock_num.txt'
+    # mocknum_file = path_to_int + 'precalc_mock_num.txt'
 
     if survey == 'eco':
         path_to_mocks = path_to_data + 'mocks/m200b/eco/'
