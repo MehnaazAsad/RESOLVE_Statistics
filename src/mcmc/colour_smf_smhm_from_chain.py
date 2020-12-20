@@ -170,15 +170,19 @@ def read_data_catl(path_to_file, survey):
     volume: `float`
         Volume of survey
 
-    cvar: `float`
-        Cosmic variance of survey
-
     z_median: `float`
         Median redshift of survey
     """
     if survey == 'eco':
+        # columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
+        #             'logmstar', 'logmgas', 'grp', 'grpn', 'logmh', 'logmh_s', 
+        #             'fc', 'grpmb', 'grpms','modelu_rcorr']
+
         # 13878 galaxies
-        eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0)
+        # eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0, \
+        #     usecols=columns)
+
+        eco_buff = reading_catls(path_to_file)
 
         if mf_type == 'smf':
             # 6456 galaxies                       
@@ -191,20 +195,23 @@ def read_data_catl(path_to_file, survey):
                 (eco_buff.absrmag.values <= -17.33)] 
 
         volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
-        cvar = 0.125
+        # cvar = 0.125
         z_median = np.median(catl.grpcz.values) / (3 * 10**5)
         
     elif survey == 'resolvea' or survey == 'resolveb':
+        columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
+                    'logmstar', 'logmgas', 'grp', 'grpn', 'grpnassoc', 'logmh', 
+                    'logmh_s', 'fc', 'grpmb', 'grpms', 'f_a', 'f_b']
         # 2286 galaxies
-        resolve_live18 = pd.read_csv(path_to_file, delimiter=",", header=0)
+        resolve_live18 = pd.read_csv(path_to_file, delimiter=",", header=0, \
+            usecols=columns)
 
         if survey == 'resolvea':
             if mf_type == 'smf':
-                catl = resolve_live18.loc[
+                catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
                     (resolve_live18.grpcz.values >= 4500) & 
                     (resolve_live18.grpcz.values <= 7000) & 
-                    (resolve_live18.absrmag.values <= -17.33) & 
-                    (resolve_live18.logmstar.values >= 8.9)]
+                    (resolve_live18.absrmag.values <= -17.33)]
             elif mf_type == 'bmf':
                 catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
                     (resolve_live18.grpcz.values >= 4500) & 
@@ -212,7 +219,7 @@ def read_data_catl(path_to_file, survey):
                     (resolve_live18.absrmag.values <= -17.33)]
 
             volume = 13172.384  # Survey volume without buffer [Mpc/h]^3
-            cvar = 0.30
+            # cvar = 0.30
             z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
         
         elif survey == 'resolveb':
@@ -221,8 +228,7 @@ def read_data_catl(path_to_file, survey):
                 catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
                     (resolve_live18.grpcz.values >= 4500) & 
                     (resolve_live18.grpcz.values <= 7000) & 
-                    (resolve_live18.absrmag.values <= -17) & 
-                    (resolve_live18.logmstar.values >= 8.7)]
+                    (resolve_live18.absrmag.values <= -17)]
             elif mf_type == 'bmf':
                 catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
                     (resolve_live18.grpcz.values >= 4500) & 
@@ -230,12 +236,12 @@ def read_data_catl(path_to_file, survey):
                     (resolve_live18.absrmag.values <= -17)]
 
             volume = 4709.8373  # *2.915 #Survey volume without buffer [Mpc/h]^3
-            cvar = 0.58
+            # cvar = 0.58
             z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
 
-    return catl,volume,cvar,z_median
+    return catl, volume, z_median
 
-def get_paramvals_percentile(mcmc_table, pctl, chi2):
+def get_paramvals_percentile(mcmc_table, pctl, chi2, randint_filepath):
     """
     Isolates 68th percentile lowest chi^2 values and takes random 100 sample
 
@@ -338,7 +344,7 @@ def diff_smf(mstar_arr, volume, h1_bool, colour_flag=False):
 
     return maxis, phi, err_tot, bins, counts
 
-def hybrid_quenching_model(theta, gals_df):
+def hybrid_quenching_model(theta, gals_df, mock, randint=None):
     """
     Apply hybrid quenching model from Zu and Mandelbaum 2015
 
@@ -361,13 +367,15 @@ def hybrid_quenching_model(theta, gals_df):
     mu = theta[2]
     nu = theta[3]
 
-    cen_hosthalo_mass_arr, sat_hosthalo_mass_arr = get_host_halo_mock(gals_df)
-    cen_stellar_mass_arr, sat_stellar_mass_arr = get_stellar_mock(gals_df)
+    cen_hosthalo_mass_arr, sat_hosthalo_mass_arr = get_host_halo_mock(gals_df, \
+        mock)
+    cen_stellar_mass_arr, sat_stellar_mass_arr = get_stellar_mock(gals_df, mock, \
+        randint)
 
     f_red_cen = 1 - np.exp(-((cen_stellar_mass_arr/(10**Mstar_q))**mu))
 
     g_Mstar = np.exp(-((sat_stellar_mass_arr/(10**Mstar_q))**mu))
-    h_Mh = np.exp(-((sat_hosthalo_mass_arr/10**(Mh_q))**nu))
+    h_Mh = np.exp(-((sat_hosthalo_mass_arr/(10**Mh_q))**nu))
     f_red_sat = 1 - (g_Mstar * h_Mh)
 
     return f_red_cen, f_red_sat
@@ -402,12 +410,12 @@ def assign_colour_label_mock(f_red_cen, f_red_sat, gals_df, drop_fred=False):
     rng_arr = [[] for x in range(len(df))]
     # Adding columns for f_red to df
     df.loc[:, 'f_red'] = np.zeros(len(df))
-    df.loc[df['C_S'] == 1, 'f_red'] = f_red_cen
-    df.loc[df['C_S'] == 0, 'f_red'] = f_red_sat
+    df.loc[df['cs_flag'] == 1, 'f_red'] = f_red_cen
+    df.loc[df['cs_flag'] == 0, 'f_red'] = f_red_sat
     # Converting to array
     f_red_arr = df['f_red'].values
     # Looping over galaxies
-    for ii, cs_ii in enumerate(df['C_S']):
+    for ii, cs_ii in enumerate(df['cs_flag']):
         # Draw a random number
         rng = np.random.uniform()
         # Comparing against f_red
@@ -418,7 +426,7 @@ def assign_colour_label_mock(f_red_cen, f_red_sat, gals_df, drop_fred=False):
         # Saving to list
         color_label_arr[ii] = color_label
         rng_arr[ii] = rng
-    ##
+    
     ## Assigning to DataFrame
     df.loc[:, 'colour_label'] = color_label_arr
     df.loc[:, 'rng'] = rng_arr
@@ -528,18 +536,18 @@ def populate_mock(theta, model):
 
     model.mock.populate()
 
-    if survey == 'eco' or survey == 'resolvea':
-        if mf_type == 'smf':
-            limit = np.round(np.log10((10**8.9) / 2.041), 1)
-        elif mf_type == 'bmf':
-            limit = np.round(np.log10((10**9.4) / 2.041), 1)
-    elif survey == 'resolveb':
-        if mf_type == 'smf':
-            limit = np.round(np.log10((10**8.7) / 2.041), 1)
-        elif mf_type == 'bmf':
-            limit = np.round(np.log10((10**9.1) / 2.041), 1)
-    sample_mask = model_init.mock.galaxy_table['stellar_mass'] >= 10**limit
-    gals = model.mock.galaxy_table[sample_mask]
+    # if survey == 'eco' or survey == 'resolvea':
+    #     if mf_type == 'smf':
+    #         limit = np.round(np.log10((10**8.9) / 2.041), 1)
+    #     elif mf_type == 'bmf':
+    #         limit = np.round(np.log10((10**9.4) / 2.041), 1)
+    # elif survey == 'resolveb':
+    #     if mf_type == 'smf':
+    #         limit = np.round(np.log10((10**8.7) / 2.041), 1)
+    #     elif mf_type == 'bmf':
+    #         limit = np.round(np.log10((10**9.1) / 2.041), 1)
+    # sample_mask = model_init.mock.galaxy_table['stellar_mass'] >= 10**limit
+    gals = model.mock.galaxy_table#[sample_mask]
     gals_df = gals.to_pandas()
 
     return gals_df
@@ -567,7 +575,7 @@ def assign_cen_sat_flag(gals_df):
             C_S.append(0)
     
     C_S = np.array(C_S)
-    gals_df['C_S'] = C_S
+    gals_df['cs_flag'] = C_S
     return gals_df
 
 def get_host_halo_mock(gals_df):
@@ -591,7 +599,7 @@ def get_host_halo_mock(gals_df):
 
     cen_halos = []
     sat_halos = []
-    for idx,value in enumerate(df['C_S']):
+    for idx,value in enumerate(df['cs_flag']):
         if value == 1:
             cen_halos.append(df['halo_mvir_host_halo'][idx])
         elif value == 0:
@@ -602,7 +610,7 @@ def get_host_halo_mock(gals_df):
 
     return cen_halos, sat_halos
 
-def get_stellar_mock(gals_df):
+def get_stellar_mock(gals_df, mock, randint=None):
     """
     Get stellar mass from mock catalog
 
@@ -620,14 +628,23 @@ def get_stellar_mock(gals_df):
     """
 
     df = gals_df.copy()
+    if mock == 'vishnu':
+        cen_gals = []
+        sat_gals = []
+        for idx,value in enumerate(df.cs_flag):
+            if value == 1:
+                cen_gals.append(df['{0}'.format(randint)].values[idx])
+            elif value == 0:
+                sat_gals.append(df['{0}'.format(randint)].values[idx])
 
-    cen_gals = []
-    sat_gals = []
-    for idx,value in enumerate(df['C_S']):
-        if value == 1:
-            cen_gals.append(df['stellar_mass'][idx])
-        elif value == 0:
-            sat_gals.append(df['stellar_mass'][idx])
+    else:
+        cen_gals = []
+        sat_gals = []
+        for idx,value in enumerate(df.cs_flag):
+            if value == 1:
+                cen_gals.append(df.logmstar.values[idx])
+            elif value == 0:
+                sat_gals.append(df.logmstar.values[idx])
 
     cen_gals = np.array(cen_gals)
     sat_gals = np.array(sat_gals)
@@ -916,7 +933,7 @@ def get_best_fit_model(best_fit_params):
     return max_red, phi_red, max_blue, phi_blue, cen_gals_red, cen_halos_red,\
         cen_gals_blue, cen_halos_blue
 
-def measure_all_smf(table, volume, data_bool):
+def measure_all_smf(table, volume, data_bool, randint_logmstar=None):
     """
     Calculates differential stellar mass function for all, red and blue galaxies
     from mock/data
@@ -951,7 +968,8 @@ def measure_all_smf(table, volume, data_bool):
             diff_smf(table[logmstar_col].loc[table[colour_col] == 'B'], 
             volume, False, 'B')
     else:
-        logmstar_col = 'stellar_mass'
+        # logmstar_col = 'stellar_mass'
+        logmstar_col = '{0}'.format(randint_logmstar)
         max_total, phi_total, err_total, bins_total, counts_total = \
             diff_smf(table[logmstar_col], volume, True)
         max_red, phi_red, err_red, bins_red, counts_red = \
@@ -1374,11 +1392,14 @@ if machine == 'bender':
 elif machine == 'mac':
     halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
 
-chi2_file = path_to_proc + 'smhm_colour_run10/{0}_colour_chi2.txt'.format(survey)
-chain_file = path_to_proc + 'smhm_colour_run10/mcmc_{0}_colour_raw.txt'.format(survey)
+chi2_file = path_to_proc + 'smhm_colour_run12/{0}_colour_chi2.txt'.format(survey)
+chain_file = path_to_proc + 'smhm_colour_run12/mcmc_{0}_colour_raw.txt'.format(survey)
+randint_file = path_to_proc + 'smhm_colour_run12/randint_logmstar.txt'
 
 if survey == 'eco':
-    catl_file = path_to_raw + "eco/eco_all.csv"
+    # catl_file = path_to_raw + "eco/eco_all.csv"
+    ## New catalog with group finder run on subset after applying M* and cz cuts
+    catl_file = path_to_proc + "gal_group_eco_data.hdf5"
     path_to_mocks = path_to_data + 'mocks/m200b/eco/'
 elif survey == 'resolvea' or survey == 'resolveb':
     catl_file = path_to_raw + "RESOLVE_liveJune2018.csv"
@@ -1390,11 +1411,11 @@ print('Reading mcmc chain file')
 mcmc_table = read_mcmc(chain_file)
 
 print('Reading catalog')
-catl, volume, cvar, z_median = read_data_catl(catl_file, survey)
+catl, volume, z_median = read_data_catl(catl_file, survey)
 
 print('Getting data in specific percentile')
 mcmc_table_pctl, bf_params, bf_chi2 = \
-    get_paramvals_percentile(mcmc_table, 68, chi2)
+    get_paramvals_percentile(mcmc_table, 68, chi2, randint_file)
 print(bf_params)
 print('Assigning colour to data')
 catl = assign_colour_label_data(catl)
@@ -1407,12 +1428,14 @@ print('Measuring SMF for data')
 total_data, red_data, blue_data = measure_all_smf(catl, volume, True)
 
 print('Measuring error in data from mocks')
+# TODO : change function
 total_data[2], red_data[2], blue_data[2] = \
     get_err_data(survey, path_to_mocks)
 
 model_init = halocat_init(halo_catalog, z_median)
 
 print('Populating halos using best fit shmr params')
+# TODO : use randint_logmstar 
 bf_params_shmr = np.array([12.32381675, 10.56581819, 0.4276319, 0.7457711, 
     0.34784431])
 gals_df_ = populate_mock(bf_params_shmr, model_init)
