@@ -29,7 +29,9 @@ survey = 'eco'
 file_ver = 2.0
 
 
-chain_fname_smf_1 = path_to_proc + 'smhm_colour_run9/mcmc_{0}_colour_raw.txt'.\
+# chain_fname_smf_1 = path_to_proc + 'smhm_colour_run10/mcmc_{0}_colour_raw.txt'.\
+#     format(survey)
+chain_fname_smf_1 = '~/Desktop/mcmc_{0}_colour_raw.txt'.\
     format(survey)
 mcmc_smf_1 = pd.read_csv(chain_fname_smf_1, 
     names=['Mstar_q','Mhalo_q','mu','nu'],header=None, delim_whitespace=True)
@@ -63,15 +65,15 @@ for idx,row in enumerate(mcmc_smf_1.values):
 
 # mcmc_bmf_1 = mcmc_bmf_1.dropna(axis='index', how='any').reset_index(drop=True)
 mcmc_smf_1 = mcmc_smf_1.dropna(axis='index', how='any').reset_index(drop=True)
-mcmc_smf_1.nu = np.log10(mcmc_smf_1.nu)
+# mcmc_smf_1.nu = np.log10(mcmc_smf_1.nu)
 
 # sampler_bmf_1 = mcmc_bmf_1.values.reshape(250,1000,5)
-sampler_smf_1 = mcmc_smf_1.values.reshape(700,256,4)
+sampler_smf_1 = mcmc_smf_1.values.reshape(1000,260,4)
 
 # Removing burn-in
 ndim = 4
 # samples_bmf_1 = sampler_bmf_1[:, 130:, :].reshape((-1, ndim))
-samples_smf_1 = sampler_smf_1[250:, :, :].reshape((-1, ndim))
+samples_smf_1 = sampler_smf_1[200:, :, :].reshape((-1, ndim))
 
 survey = 'eco'
 file_ver = 2.0
@@ -120,7 +122,7 @@ mcmc_smf_2 = mcmc_smf_2.dropna(axis='index', how='any').reset_index(drop=True)
 mcmc_smf_2.nu = np.log10(mcmc_smf_2.nu) # so that both run 9 and run 10 chains can be plotted 
 
 # sampler_bmf_2 = mcmc_bmf_2.values.reshape(250,1000,5)
-sampler_smf_2 = mcmc_smf_2.values.reshape(700,256,4)
+sampler_smf_2 = mcmc_smf_2.values.reshape(1000,260,4)
 
 # Removing burn-in
 ndim = 4
@@ -128,27 +130,28 @@ ndim = 4
 samples_smf_2 = sampler_smf_2[200:, :, :].reshape((-1, ndim))
 
 zumandelbaum_param_vals = [10.5, 13.76, 0.69, 0.15]
+optimizer_best_fit_eco_smf = [10.39, 14.85, 0.65, 0.16]
 
 c = ChainConsumer()
-# c.add_chain(samples_smf_1,parameters=[r"$\mathbf{M^{q}_{*}}$", \
-#      r"$\mathbf{M^{q}_{h}}$", r"$\boldsymbol{\mu}$",\
-#           r"$\boldsymbol{\nu}$"],\
-#                name="ECO run 9", color='#E766EA', zorder=10)
+c.add_chain(samples_smf_1,parameters=[r"$\mathbf{M^{q}_{*}}$", \
+     r"$\mathbf{M^{q}_{h}}$", r"$\boldsymbol{\mu}$",\
+          r"$\boldsymbol{\nu}$"],\
+               name="ECO run 11", color='#E766EA', zorder=10)
 # c.add_chain(samples_bmf_1,parameters=[r"$\mathbf{M_{1}}$", \
 #      r"$\mathbf{M_{*(b),0}}$", r"$\boldsymbol{\beta}$",\
 #           r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$"],\
 #                name="ECO baryonic", color='#53A48D')
-c.add_chain(samples_smf_2,parameters=[r"$\mathbf{M^{q}_{*}}$", \
-     r"$\mathbf{M^{q}_{h}}$", r"$\boldsymbol{\mu}$",\
-          r"$\boldsymbol{\nu}$"],\
-               name="ECO run 10", color='#53A48D', zorder=10)
+# c.add_chain(samples_smf_2,parameters=[r"$\mathbf{M^{q}_{*}}$", \
+#      r"$\mathbf{M^{q}_{h}}$", r"$\boldsymbol{\mu}$",\
+#           r"$\boldsymbol{\nu}$"],\
+#                name="ECO run 11", color='#53A48D', zorder=10)
 # c.add_chain(samples_bmf_2,parameters=[r"$\mathbf{M_{1}}$", \
 #      r"$\mathbf{M_{*(b),0}}$", r"$\boldsymbol{\beta}$",\
 #           r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$"],\
 #                name="RESOLVE A BMHM", color='b')
 # c.configure(shade_gradient=[0.1, 3.0], colors=['r', 'b'], \
 #      sigmas=[1,2], shade_alpha=0.4)
-c.configure(smooth=True,label_font_size=20, tick_font_size=8,summary=True,\
+c.configure(smooth=True,label_font_size=20,tick_font_size=8,summary=True,\
      sigma2d=True, sigmas=[1, 2]) #1d gaussian showing 68%,95% conf intervals
 fig2 = c.plotter.plot(display=True,truth=zumandelbaum_param_vals)
 # fig2 = c.plotter.plot(filename=path_to_figures+'emcee_cc_mp_eco_corrscatter.png',\
