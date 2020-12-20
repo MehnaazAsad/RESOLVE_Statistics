@@ -25,7 +25,7 @@ path_to_interim = dict_of_paths['int_dir']
 path_to_figures = dict_of_paths['plot_dir']
 
 survey = 'eco'
-mf_type = 'bmf'
+mf_type = 'smf'
 file_ver = 2.0 # Writing to files as chain runs
 
 if mf_type == 'smf':
@@ -68,24 +68,24 @@ if mf_type == 'smf' and survey == 'eco' and file_ver == 1.0:
             iteration_id_arr[idx] = counter_itid
 
 else:
-    chain_fname = path_to_proc + 'combined_processed_{0}_raw.txt'.format(survey)
-    # chain_fname = path_to_proc + 'mcmc_{0}_raw.txt'.format(survey)
+    # chain_fname = path_to_proc + 'combined_processed_{0}_raw.txt'.format(survey)
+    chain_fname = path_to_proc + 'mcmc_{0}_raw.txt'.format(survey)
 
     emcee_table = pd.read_csv(chain_fname, delim_whitespace=True, 
         names=['halo','stellar','lowmass','highmass','scatter'], 
         header=None)
 
-    # emcee_table = emcee_table[emcee_table.halo.values != '#']
-    # emcee_table.halo = emcee_table.halo.astype(np.float64)
-    # emcee_table.stellar = emcee_table.stellar.astype(np.float64)
-    # emcee_table.lowmass = emcee_table.lowmass.astype(np.float64)
+    emcee_table = emcee_table[emcee_table.halo.values != '#']
+    emcee_table.halo = emcee_table.halo.astype(np.float64)
+    emcee_table.stellar = emcee_table.stellar.astype(np.float64)
+    emcee_table.lowmass = emcee_table.lowmass.astype(np.float64)
 
-    # for idx,row in enumerate(emcee_table.values):
-    #     if np.isnan(row)[4] == True and np.isnan(row)[3] == False:
-    #         scatter_val = emcee_table.values[idx+1][0]
-    #         row[4] = scatter_val 
-    # emcee_table = emcee_table.dropna(axis='index', how='any').\
-    #     reset_index(drop=True)
+    for idx,row in enumerate(emcee_table.values):
+        if np.isnan(row)[4] == True and np.isnan(row)[3] == False:
+            scatter_val = emcee_table.values[idx+1][0]
+            row[4] = scatter_val 
+    emcee_table = emcee_table.dropna(axis='index', how='any').\
+        reset_index(drop=True)
 
     # Each chunk is now a step and within each chunk, each row is a walker
     # Different from what it used to be where each chunk was a walker and 
