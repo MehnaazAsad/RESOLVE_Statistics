@@ -13,7 +13,7 @@ import time
 from halotools.empirical_models import PrebuiltSubhaloModelFactory
 from halotools.sim_manager import CachedHaloCatalog
 from cosmo_utils.utils import work_paths as cwpaths
-from multiprocessing import Pool
+from multiprocessing import Pool, Queue
 import pandas as pd
 import numpy as np
 import argparse
@@ -259,7 +259,7 @@ def read_mcmc(path_to_file):
 
 def get_paramvals_percentile(table, percentile, chi2_arr):
     """
-    Isolates 68th percentile lowest chi^2 values and takes random 1000 sample
+    Isolates 68th percentile lowest chi^2 values and takes random 100 sample
 
     Parameters
     ----------
@@ -499,6 +499,8 @@ def mcmc(nproc, nwalkers, nsteps, phi_red_data, phi_blue_data, std_red_data,
             storechain=False)):
             position = result[0]
             chi2 = np.array(result[3])
+            mock_num = np.array(result[4])
+            print(mock_num)
             print("Iteration number {0} of {1}".format(i+1,nsteps))
             chain_fname = open("mcmc_{0}_colour_raw.txt".format(survey), "a")
             chi2_fname = open("{0}_colour_chi2.txt".format(survey), "a")
@@ -511,7 +513,6 @@ def mcmc(nproc, nwalkers, nsteps, phi_red_data, phi_blue_data, std_red_data,
                 chi2_fname.write("\n")
             chain_fname.close()
             chi2_fname.close()
-        # sampler.run_mcmc(p0, nsteps)
         end = time.time()
         multi_time = end - start
         print("Multiprocessing took {0:.1f} seconds".format(multi_time))
@@ -736,12 +737,12 @@ def lnprob(theta, phi_red_data, phi_blue_data, std_red_data, std_blue_data,
         return -np.inf, chi2       
 
     warnings.simplefilter("error", (UserWarning, RuntimeWarning))
-    try:
-        randint_logmstar = random.randint(1,101) 
-        randint_file = open("randint_logmstar.txt", "a")
-        randint_file.write("{0}".format(randint_logmstar)) 
-        randint_file.write("\n")
-        randint_file.close()
+    try: 
+        randint_logmstar = random.randint(1,101)
+        # randint_file = open("randint_logmstar.txt", "a")
+        # randint_file.write("{0}".format(randint_logmstar)) 
+        # randint_file.write("\n")
+        # randint_file.close()
 
         cols_to_use = ['halo_mvir', 'cs_flag', 'cz', \
             '{0}_y'.format(randint_logmstar), \
@@ -782,15 +783,14 @@ def lnprob(theta, phi_red_data, phi_blue_data, std_red_data, std_blue_data,
         data_arr, model_arr = np.array(data_arr), np.array(model_arr)
         chi2 = chi_squared(data_arr, model_arr, err_arr, corr_mat_inv)
         lnp = -chi2 / 2
-    # print('chi2: ', chi2)
-    # print('lnp: ', lnp)
+
         if math.isnan(lnp):
             raise ValueError
     except (ValueError, RuntimeWarning, UserWarning):
         lnp = -np.inf
         chi2 = np.inf
 
-    return lnp, chi2
+    return lnp, chi2, randint_logmstar
 
 def hybrid_quenching_model(theta, gals_df, mock, randint=None):
     """
@@ -1115,7 +1115,23 @@ def get_err_data(survey, path):
     return err_colour, corr_mat_inv_colour
 
 def std_func(bins, mass_arr, vel_arr):
-    ## Calculate std from mean=0
+    """
+    Calculate std from mean = 0
+
+    Parameters
+    ----------
+    bins: array
+        Array of bins
+    mass_arr: array
+        Array of masses to be binned
+    vel_arr: array
+        Array of velocities
+
+    Returns
+    ---------
+    std_arr: array
+        Standard deviation from 0 of velocity values in each mass bin
+    """
 
     last_index = len(bins)-1
     i = 0
@@ -1511,11 +1527,10 @@ def args_parser():
     parser.add_argument('mf_type', type=str, \
         help='Options: smf/bmf')
     parser.add_argument('nproc', type=int, nargs='?', 
-        help='Number of processes', default=20)
+        help='Number of processes')
     parser.add_argument('nwalkers', type=int, nargs='?', 
-        help='Number of walkers', default=260)
-    parser.add_argument('nsteps', type=int, nargs='?', help='Number of steps',
-        default=1000)
+        help='Number of walkers')
+    parser.add_argument('nsteps', type=int, nargs='?', help='Number of steps')
     args = parser.parse_args()
     return args
 
@@ -1534,6 +1549,7 @@ def main(args):
     global path_to_proc
     global mf_type
     global ver
+    # global mocknum_queue
 
     rseed = 12
     np.random.seed(rseed)
@@ -1550,6 +1566,7 @@ def main(args):
     path_to_proc = dict_of_paths['proc_dir']
     path_to_external = dict_of_paths['ext_dir']
     path_to_data = dict_of_paths['data_dir']
+    path_to_int = dict_of_paths['int_dir']
     
     if machine == 'bender':
         halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
@@ -1558,10 +1575,11 @@ def main(args):
         halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
 
     if survey == 'eco':
-        # catl_file = path_to_raw + "eco/eco_all.csv"
         catl_file = path_to_proc + "gal_group_eco_data.hdf5"
     elif survey == 'resolvea' or survey == 'resolveb':
         catl_file = path_to_raw + "resolve/RESOLVE_liveJune2018.csv"
+    
+    mocknum_file = path_to_int + 'precalc_mock_num.txt'
 
     if survey == 'eco':
         path_to_mocks = path_to_data + 'mocks/m200b/eco/'
@@ -1570,20 +1588,11 @@ def main(args):
     elif survey == 'resolveb':
         path_to_mocks = path_to_external + 'RESOLVE_B_mvir_catls/'
 
-    # chi2_file = path_to_proc + 'smhm_run6/{0}_chi2.txt'.format(survey)
-    # if mf_type == 'smf' and survey == 'eco' and ver == 1.0:
-    #     chain_file = path_to_proc + 'mcmc_{0}.dat'.format(survey)
-    # else:
-    #     chain_file = path_to_proc + 'smhm_run6/mcmc_{0}_raw.txt'.format(survey)
-
-    # print('Reading chi-squared file')
-    # chi2 = read_chi2(chi2_file)
-
-    # print('Reading mcmc chain file')
-    # mcmc_table = read_mcmc(chain_file)
-
-    # print('Getting data in specific percentile')
-    # mcmc_table_subset = get_paramvals_percentile(mcmc_table, 68, chi2)
+    # print('Reading mock number file and starting queue')
+    # mocknum_df = pd.read_csv(mocknum_file, header=None, names=['mock_num'])
+    # mocknum_arr = mocknum_df['mock_num'].values
+    # mocknum_queue = Queue()
+    # mocknum_queue.put(mocknum_arr)
 
     print('Reading catalog') #No Mstar cut
     catl, volume, z_median = read_data_catl(catl_file, survey)
@@ -1606,13 +1615,9 @@ def main(args):
     print('blue phi data: \n', blue_data[1])
     print('red std data: \n', std_red)
     print('blue std data: \n', std_blue)
-    # REDUNDANT?
-    # model_init = halocat_init(halo_catalog, z_median)
 
     print('Reading vishnu group catalog')
     gal_group_df = reading_catls(path_to_proc + "gal_group.hdf5") 
-    # gal_group_subset_df = gal_group_df[['halo_mvir_host_halo','cs_flag',
-    #     'halo_hostid','halo_id','cz','groupid','g_galtype','stellar_mass']]
 
     col_idxs = [str(int(x)) for x in np.linspace(1,101,101)] 
     cols_to_keep_set_one = [] 
