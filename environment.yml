@@ -19,7 +19,7 @@ dependencies:
   - seaborn
  #- sphinx>=1.6
   - pip
-  - emcee=2.2.1
+  - emcee #==2.2.1
   - imagemagick
   - pip:    
       - GitPython
