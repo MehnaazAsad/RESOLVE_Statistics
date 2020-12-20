@@ -80,8 +80,8 @@ target/
 reports/figures/
 src/debug
 src/tutorials
-src/single_use
 data/
+src/single_use/figures
 .vscode
 
 # File extensions
@@ -89,6 +89,4 @@ data/
 *.sh
 *.txt
 *.hdf5
-src/single_use/figures/8point6_binning.png
-src/single_use/figures/8point55_binning.png
 src/template.py
