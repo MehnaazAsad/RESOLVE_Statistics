@@ -957,7 +957,6 @@ path_to_data = dict_of_paths['data_dir']
 global volume
 survey = 'eco'
 mf_type = 'smf'
-# catl_file = path_to_raw + "eco/eco_all.csv"
 catl_file = path_to_proc + "gal_group_eco_data.hdf5"
 path_to_mocks = path_to_data + 'mocks/m200b/eco/'
 catl, volume, z_median = read_data_catl(catl_file, survey)
