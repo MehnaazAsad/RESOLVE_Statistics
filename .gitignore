@@ -90,3 +90,4 @@ src/single_use/figures
 *.txt
 *.hdf5
 src/template.py
+resolve_statistics.code-workspace
