@@ -727,22 +727,25 @@ def lnprob(theta, phi_red_data, phi_blue_data, std_red_data, std_blue_data,
         Value of chi-squared given a model 
         
     """
+    # Moved to outside the try clause for cases where parameter values are 
+    # outside the prior (specific one was when theta[1] was > 14)
+    randint_logmstar = random.randint(1,101)
+
     if theta[0] < 0:
         chi2 = -np.inf
-        return -np.inf, chi2
+        return -np.inf, [chi2, randint_logmstar]
     if theta[1] < 0 or theta[1] > 14:
         chi2 = -np.inf
-        return -np.inf, chi2
+        return -np.inf, [chi2, randint_logmstar]
     if theta[2] < 0:
         chi2 = -np.inf
-        return -np.inf, chi2
+        return -np.inf, [chi2, randint_logmstar]
     if theta[3] < 0 or theta[3] > 5:
         chi2 = -np.inf
-        return -np.inf, chi2       
+        return -np.inf, [chi2, randint_logmstar]       
 
     warnings.simplefilter("error", (UserWarning, RuntimeWarning))
     try: 
-        randint_logmstar = random.randint(1,101)
         cols_to_use = ['halo_mvir', 'cs_flag', 'cz', \
             '{0}_y'.format(randint_logmstar), \
             'g_galtype_{0}'.format(randint_logmstar), \
@@ -1673,3 +1676,4 @@ if __name__ == '__main__':
 
 
 
+nproc, nwalkers, nsteps, phi_red_data, phi_blue_data, std_red_data, std_blue_data, err, corr_mat_inv = nproc, nwalkers, nsteps, red_data[1], blue_data[1], std_red, std_blue, sigma, corr_mat_inv
