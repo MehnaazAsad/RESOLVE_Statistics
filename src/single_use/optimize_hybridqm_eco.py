@@ -89,6 +89,97 @@ def reading_catls(filename, catl_format='.hdf5'):
 
     return mock_pd
 
+def read_data_catl(path_to_file, survey):
+    """
+    Reads survey catalog from file
+
+    Parameters
+    ----------
+    path_to_file: `string`
+        Path to survey catalog file
+
+    survey: `string`
+        Name of survey
+
+    Returns
+    ---------
+    catl: `pandas.DataFrame`
+        Survey catalog with grpcz, abs rmag and stellar mass limits
+    
+    volume: `float`
+        Volume of survey
+
+    z_median: `float`
+        Median redshift of survey
+    """
+    if survey == 'eco':
+        # columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
+        #             'logmstar', 'logmgas', 'grp', 'grpn', 'logmh', 'logmh_s', 
+        #             'fc', 'grpmb', 'grpms','modelu_rcorr']
+
+        # 13878 galaxies
+        # eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0, \
+        #     usecols=columns)
+
+        eco_buff = reading_catls(path_to_file)
+
+        if mf_type == 'smf':
+            # 6456 galaxies                       
+            catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
+                (eco_buff.grpcz.values <= 7000) & 
+                (eco_buff.absrmag.values <= -17.33)]
+        elif mf_type == 'bmf':
+            catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
+                (eco_buff.grpcz.values <= 7000) & 
+                (eco_buff.absrmag.values <= -17.33)] 
+
+        volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
+        # cvar = 0.125
+        z_median = np.median(catl.grpcz.values) / (3 * 10**5)
+        
+    elif survey == 'resolvea' or survey == 'resolveb':
+        columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
+                    'logmstar', 'logmgas', 'grp', 'grpn', 'grpnassoc', 'logmh', 
+                    'logmh_s', 'fc', 'grpmb', 'grpms', 'f_a', 'f_b']
+        # 2286 galaxies
+        resolve_live18 = pd.read_csv(path_to_file, delimiter=",", header=0, \
+            usecols=columns)
+
+        if survey == 'resolvea':
+            if mf_type == 'smf':
+                catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
+                    (resolve_live18.grpcz.values >= 4500) & 
+                    (resolve_live18.grpcz.values <= 7000) & 
+                    (resolve_live18.absrmag.values <= -17.33)]
+            elif mf_type == 'bmf':
+                catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
+                    (resolve_live18.grpcz.values >= 4500) & 
+                    (resolve_live18.grpcz.values <= 7000) & 
+                    (resolve_live18.absrmag.values <= -17.33)]
+
+            volume = 13172.384  # Survey volume without buffer [Mpc/h]^3
+            # cvar = 0.30
+            z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
+        
+        elif survey == 'resolveb':
+            if mf_type == 'smf':
+                # 487 - cz, 369 - grpcz
+                catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
+                    (resolve_live18.grpcz.values >= 4500) & 
+                    (resolve_live18.grpcz.values <= 7000) & 
+                    (resolve_live18.absrmag.values <= -17)]
+            elif mf_type == 'bmf':
+                catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
+                    (resolve_live18.grpcz.values >= 4500) & 
+                    (resolve_live18.grpcz.values <= 7000) & 
+                    (resolve_live18.absrmag.values <= -17)]
+
+            volume = 4709.8373  # *2.915 #Survey volume without buffer [Mpc/h]^3
+            # cvar = 0.58
+            z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
+
+    return catl, volume, z_median
+
 def std_func(bins, mass_arr, vel_arr):
     ## Calculate std from mean=0
 
@@ -388,7 +479,8 @@ def lnprob(theta, phi_red_data, phi_blue_data, std_red_data, std_blue_data,
         
     """
     
-    f_red_cen, f_red_sat = hybrid_quenching_model(theta, gals_df)
+    f_red_cen, f_red_sat, cen_mstar, sat_hosthalom, sat_mstar = \
+        hybrid_quenching_model(theta, gals_df)
     gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, gals_df)
     v_survey = volume
     total_model, red_model, blue_model = measure_all_smf(gals_df, v_survey 
@@ -856,96 +948,6 @@ def get_stellar_mock(catl):
 
     return cen_gals, sat_gals
 
-def read_data_catl(path_to_file, survey):
-    """
-    Reads survey catalog from file
-
-    Parameters
-    ----------
-    path_to_file: `string`
-        Path to survey catalog file
-
-    survey: `string`
-        Name of survey
-
-    Returns
-    ---------
-    catl: `pandas.DataFrame`
-        Survey catalog with grpcz, abs rmag and stellar mass limits
-    
-    volume: `float`
-        Volume of survey
-
-    z_median: `float`
-        Median redshift of survey
-    """
-    if survey == 'eco':
-        # columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
-        #             'logmstar', 'logmgas', 'grp', 'grpn', 'logmh', 'logmh_s', 
-        #             'fc', 'grpmb', 'grpms','modelu_rcorr']
-
-        # 13878 galaxies
-        # eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0, \
-        #     usecols=columns)
-
-        eco_buff = reading_catls(path_to_file)
-
-        if mf_type == 'smf':
-            # 6456 galaxies                       
-            catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
-                (eco_buff.grpcz.values <= 7000) & 
-                (eco_buff.absrmag.values <= -17.33)]
-        elif mf_type == 'bmf':
-            catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
-                (eco_buff.grpcz.values <= 7000) & 
-                (eco_buff.absrmag.values <= -17.33)] 
-
-        volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
-        # cvar = 0.125
-        z_median = np.median(catl.grpcz.values) / (3 * 10**5)
-        
-    elif survey == 'resolvea' or survey == 'resolveb':
-        columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
-                    'logmstar', 'logmgas', 'grp', 'grpn', 'grpnassoc', 'logmh', 
-                    'logmh_s', 'fc', 'grpmb', 'grpms', 'f_a', 'f_b']
-        # 2286 galaxies
-        resolve_live18 = pd.read_csv(path_to_file, delimiter=",", header=0, \
-            usecols=columns)
-
-        if survey == 'resolvea':
-            if mf_type == 'smf':
-                catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
-                    (resolve_live18.grpcz.values >= 4500) & 
-                    (resolve_live18.grpcz.values <= 7000) & 
-                    (resolve_live18.absrmag.values <= -17.33)]
-            elif mf_type == 'bmf':
-                catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
-                    (resolve_live18.grpcz.values >= 4500) & 
-                    (resolve_live18.grpcz.values <= 7000) & 
-                    (resolve_live18.absrmag.values <= -17.33)]
-
-            volume = 13172.384  # Survey volume without buffer [Mpc/h]^3
-            # cvar = 0.30
-            z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
-        
-        elif survey == 'resolveb':
-            if mf_type == 'smf':
-                # 487 - cz, 369 - grpcz
-                catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
-                    (resolve_live18.grpcz.values >= 4500) & 
-                    (resolve_live18.grpcz.values <= 7000) & 
-                    (resolve_live18.absrmag.values <= -17)]
-            elif mf_type == 'bmf':
-                catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
-                    (resolve_live18.grpcz.values >= 4500) & 
-                    (resolve_live18.grpcz.values <= 7000) & 
-                    (resolve_live18.absrmag.values <= -17)]
-
-            volume = 4709.8373  # *2.915 #Survey volume without buffer [Mpc/h]^3
-            # cvar = 0.58
-            z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
-
-    return catl, volume, z_median
 
 dict_of_paths = cwpaths.cookiecutter_paths()
 path_to_raw = dict_of_paths['raw_dir']
@@ -977,16 +979,21 @@ res80 = minimize(lnprob, x0, args=(red_data[1], blue_data[1], sigma_red,
     sigma_blue, err_data_colour, corr_mat_colour_inv, catl), 
     method='nelder-mead', options={'maxiter':80, 'disp': True})
 
+best_fit = res80.x
+
 ## After running minimize for 10, 20, 40 and 80 iterations
 catl = catl.loc[catl.logmstar.values >= 8.9]
-f_red_cen_fid, f_red_sat_fid, mstar_cen_fid, sat_hosthalo_fid, mstar_sat_fid = hybrid_quenching_model(x0, catl)
-f_red_cen, f_red_sat, mstar_cen, sat_hosthalo, mstar_sat = hybrid_quenching_model(res80.x, catl)
+f_red_cen_fid, f_red_sat_fid, mstar_cen_fid, sat_hosthalo_fid, mstar_sat_fid = \
+    hybrid_quenching_model(x0, catl)
+f_red_cen, f_red_sat, mstar_cen, sat_hosthalo, mstar_sat = \
+    hybrid_quenching_model(best_fit, catl)
 
 gals_df_fid = assign_colour_label_mock(f_red_cen_fid, f_red_sat_fid, catl)
 v_survey = volume
-total_model_fid, red_model_fid, blue_model_fid = measure_all_smf(gals_df_fid, v_survey, True)     
-std_red_model_fid, centers_red_model_fid, std_blue_model_fid, centers_blue_model_fid = \
-    get_deltav_sigma_data(gals_df_fid)
+total_model_fid, red_model_fid, blue_model_fid = measure_all_smf(gals_df_fid, 
+    v_survey, True)     
+std_red_model_fid, centers_red_model_fid, std_blue_model_fid, \
+    centers_blue_model_fid = get_deltav_sigma_data(gals_df_fid)
 
 gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, catl)
 v_survey = volume
@@ -1010,7 +1017,8 @@ plt.colorbar()
 plt.legend(loc='best')
 plt.show()
 
-plt.scatter(mstar_sat_fid, f_red_sat_fid, c=10**sat_hosthalo_fid, label='fiducial')
+plt.scatter(mstar_sat_fid, f_red_sat_fid, c=10**sat_hosthalo_fid, 
+    label='fiducial')
 plt.ylabel(r'$f_{red}$', fontsize=30)
 plt.xlabel(r'$M_{*, sat}$',fontsize=20)
 plt.legend(loc='best')
@@ -1018,11 +1026,13 @@ plt.show()
 
 ## SMF plot - data vs best fit
 # plt.plot(total_model[0], total_model[1], c='k', linestyle='--', linewidth=5, label='model')
-plt.plot(red_model[0], red_model[1], c='maroon', linestyle='--', linewidth=5, label='model')
+plt.plot(red_model[0], red_model[1], c='maroon', linestyle='--', linewidth=5, 
+    label='model')
 plt.plot(blue_model[0], blue_model[1], c='mediumblue', linestyle='--', 
     linewidth=5)
 # plt.plot(total_data[0], total_data[1], c='k', linestyle='-', linewidth=5, label='data')
-plt.plot(red_data[0], red_data[1], c='indianred', linestyle='-', linewidth=5, label='data')
+plt.plot(red_data[0], red_data[1], c='indianred', linestyle='-', linewidth=5, 
+    label='data')
 plt.plot(blue_data[0], blue_data[1], c='cornflowerblue', linestyle='-', 
     linewidth=5)
 yerr_red = err_data_colour[0:5]
@@ -1032,14 +1042,18 @@ plt.fill_between(x=red_data[0], y1=red_data[1]+yerr_red,
 plt.fill_between(x=blue_data[0], y1=blue_data[1]+yerr_blue, 
     y2=blue_data[1]-yerr_blue, color='b', alpha=0.3)
 plt.legend(loc='best')
-plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=20)
-plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=20)
-plt.title(r'ECO SMF ($\chi^2$\ = {0})'.format(np.round(res80.fun, 2)))
+plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, '
+    r'\mathrm{h}^{-1} \right]$', fontsize=20)
+plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,'
+    r'\mathrm{h}^{3} \right]$', fontsize=20)
+plt.title(r'ECO SMF ($\chi^2$\ = {0}) (best-fit vs data)'.\
+    format(np.round(res80.fun, 2)))
 plt.show()
 
 ## Spread in velocity difference plot - data vs best fit
-plt.scatter(centers_red_model, std_red_model, c='maroon', s=50)
-plt.scatter(centers_blue_model, std_blue_model, c='mediumblue', s=50)
+plt.scatter(centers_red_model, std_red_model, c='maroon', s=50, label='model')
+plt.scatter(centers_blue_model, std_blue_model, c='mediumblue', s=50, 
+    label='model')
 plt.scatter(cen_red, sigma_red, c='indianred', s=50, label='data')
 plt.scatter(cen_blue, sigma_blue, c='cornflowerblue', s=50, label='data')
 yerr_red = err_data_colour[10:15]
@@ -1049,18 +1063,21 @@ plt.fill_between(x=cen_red, y1=sigma_red+yerr_red,
 plt.fill_between(x=cen_blue, y1=sigma_blue+yerr_blue, 
     y2=sigma_blue-yerr_blue, color='b', alpha=0.3)
 plt.legend(loc='best')
-plt.xlabel(r'\boldmath$\log_{10}\ M_{\star,cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=20)
+plt.xlabel(r'\boldmath$\log_{10}\ M_{\star,cen} \left[\mathrm{M_\odot}\, '
+    r'\mathrm{h}^{-1} \right]$', fontsize=20)
 plt.ylabel(r'\boldmath$\sigma$', fontsize=30)
-plt.title(r'ECO spread in $\delta v$')
+plt.title(r'ECO spread in $\delta v$\ (best-fit vs data)')
 plt.show()
 
 ## SMF plot - fiducial vs best fit
 # plt.plot(total_model[0], total_model[1], c='k', linestyle='--', linewidth=5, label='model')
-plt.plot(red_model_fid[0], red_model_fid[1], c='maroon', linestyle='--', linewidth=5, label='fiducial')
+plt.plot(red_model_fid[0], red_model_fid[1], c='maroon', linestyle='--', 
+    linewidth=5, label='fiducial')
 plt.plot(blue_model_fid[0], blue_model_fid[1], c='mediumblue', linestyle='--', 
     linewidth=5)
 # plt.plot(total_data[0], total_data[1], c='k', linestyle='-', linewidth=5, label='data')
-plt.plot(red_model[0], red_model[1], c='indianred', linestyle='-', linewidth=5, label='best fit')
+plt.plot(red_model[0], red_model[1], c='indianred', linestyle='-', linewidth=5, 
+    label='best fit')
 plt.plot(blue_model[0], blue_model[1], c='cornflowerblue', linestyle='-', 
     linewidth=5)
 yerr_red = err_data_colour[0:5]
@@ -1070,16 +1087,22 @@ plt.fill_between(x=red_data[0], y1=red_data[1]+yerr_red,
 plt.fill_between(x=blue_data[0], y1=blue_data[1]+yerr_blue, 
     y2=blue_data[1]-yerr_blue, color='b', alpha=0.3)
 plt.legend(loc='best')
-plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=20)
-plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=20)
+plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, '
+    r'\mathrm{h}^{-1} \right]$', fontsize=20)
+plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,'
+    r'\mathrm{h}^{3} \right]$', fontsize=20)
 plt.title(r'ECO SMF ($\chi^2$\ = {0})'.format(np.round(res80.fun, 2)))
 plt.show()
 
 ## Spread in velocity difference plot - fiducial vs best fit
-plt.scatter(centers_red_model_fid, std_red_model_fid, c='maroon', s=50, label='fiducial')
-plt.scatter(centers_blue_model_fid, std_blue_model_fid, c='mediumblue', s=50, label='fiducial')
-plt.scatter(centers_red_model, std_red_model, c='indianred', s=50, label='best fit')
-plt.scatter(centers_blue_model, std_blue_model, c='cornflowerblue', s=50, label='best fit')
+plt.scatter(centers_red_model_fid, std_red_model_fid, c='maroon', s=50, 
+    label='fiducial')
+plt.scatter(centers_blue_model_fid, std_blue_model_fid, c='mediumblue', s=50, 
+    label='fiducial')
+plt.scatter(centers_red_model, std_red_model, c='indianred', s=50, 
+    label='best fit')
+plt.scatter(centers_blue_model, std_blue_model, c='cornflowerblue', s=50, 
+    label='best fit')
 yerr_red = err_data_colour[10:15]
 yerr_blue = err_data_colour[15:20]
 plt.fill_between(x=cen_red, y1=sigma_red+yerr_red, 
@@ -1087,7 +1110,8 @@ plt.fill_between(x=cen_red, y1=sigma_red+yerr_red,
 plt.fill_between(x=cen_blue, y1=sigma_blue+yerr_blue, 
     y2=sigma_blue-yerr_blue, color='b', alpha=0.3)
 plt.legend(loc='best')
-plt.xlabel(r'\boldmath$\log_{10}\ M_{\star,cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=20)
+plt.xlabel(r'\boldmath$\log_{10}\ M_{\star,cen} \left[\mathrm{M_\odot}\, '
+    r'\mathrm{h}^{-1} \right]$', fontsize=20)
 plt.ylabel(r'\boldmath$\sigma$', fontsize=30)
 plt.title(r'ECO spread in $\delta v$')
 plt.show()
@@ -1107,7 +1131,8 @@ plt.hist(gals_df.logmstar.loc[gals_df.colour_label == 'B'],
     bins=np.linspace(8.9, 11.5, 8), label='best-fit', 
     histtype='step', color='cornflowerblue', lw=5)
 plt.legend(loc='best')
-plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=20)
+plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, '
+    r'\mathrm{h}^{-1} \right]$', fontsize=20)
 plt.show()
 
 ## Histogram of u-r colours of galaxies labeled red and blue in data and model
@@ -1144,7 +1169,7 @@ ax1.set_ylabel(r'$\mathbf{M^{q}_{*}}$')
 ax1.xaxis.set_major_locator(MaxNLocator(integer=True))
 ax1.legend(loc='best', prop={'size': 8}, title='Iterations')
 
-ax2.scatter([1,2,3,4], [res10.x[1], res20.x[1], res40.x[1], res80.x[1]], 
+ax2.scatter([1,2,3,4], [res10.x[1], res20.x[1], res40.x[1], best_fit[1]], 
     c=['indianred', 'yellowgreen', 'cornflowerblue', 'orchid'], s=100)
 ax2.axhline(x0[1], ls='--', color='k')
 ax2.minorticks_on()
@@ -1154,7 +1179,7 @@ ax2.grid(which='minor', linestyle=':', linewidth='0.5', color='black')
 ax2.set_ylabel(r'$\mathbf{M^{q}_{h}}$')
 ax2.xaxis.set_major_locator(MaxNLocator(integer=True))
 
-ax3.scatter([1,2,3,4], [res10.x[2], res20.x[2], res40.x[2], res80.x[2]], 
+ax3.scatter([1,2,3,4], [res10.x[2], res20.x[2], res40.x[2], best_fit[2]], 
     c=['indianred', 'yellowgreen', 'cornflowerblue', 'orchid'], s=100)
 ax3.axhline(x0[2], ls='--', color='k')
 ax3.minorticks_on()
@@ -1164,7 +1189,7 @@ ax3.grid(which='minor', linestyle=':', linewidth='0.5', color='black')
 ax3.set_ylabel(r'$\boldsymbol{\mu}$')
 ax3.xaxis.set_major_locator(MaxNLocator(integer=True))
 
-ax4.scatter([1,2,3,4], [res10.x[3], res20.x[3], res40.x[3], res80.x[3]], 
+ax4.scatter([1,2,3,4], [res10.x[3], res20.x[3], res40.x[3], best_fit[3]], 
     c=['indianred', 'yellowgreen', 'cornflowerblue', 'orchid'], s=100)
 ax4.axhline(x0[3], ls='--', color='k')
 ax4.minorticks_on()
@@ -1720,19 +1745,22 @@ plt.errorbar(x_bf,y_bf,color='mediumorchid',fmt='-s',
         label=r'best-fit',zorder=20)
 
 
-plt.xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=20)
+plt.xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, '
+    r'\mathrm{h}^{-1} \right]$',fontsize=20)
 if mf_type == 'smf':
     if survey == 'eco' or survey == 'resolvea':
         plt.ylim(np.log10((10**8.9)/2.041),)
     elif survey == 'resolveb':
         plt.ylim(np.log10((10**8.7)/2.041),)
-    plt.ylabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=20)
+    plt.ylabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, '
+        r'\mathrm{h}^{-1} \right]$',fontsize=20)
 elif mf_type == 'bmf':
     if survey == 'eco' or survey == 'resolvea':
         plt.ylim(np.log10((10**9.4)/2.041),)
     elif survey == 'resolveb':
         plt.ylim(np.log10((10**9.1)/2.041),)
-    plt.ylabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=20)
+    plt.ylabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, '
+        r'\mathrm{h}^{-1} \right]$',fontsize=20)
 handles, labels = plt.gca().get_legend_handles_labels()
 by_label = OrderedDict(zip(labels, handles))
 plt.legend(by_label.values(), by_label.keys(), loc='best',prop={'size': 15})
