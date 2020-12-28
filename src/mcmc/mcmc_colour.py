@@ -478,11 +478,11 @@ def mcmc(nproc, nwalkers, nsteps, phi_red_data, phi_blue_data, std_red_data,
         Result of running emcee 
 
     """
-    ## Starting at zu and mandelbaum 2015 priors
-    Mstar_q = 10.5 # Msun/h
-    Mh_q = 13.76 # Msun/h
+    ## Starting at best-fit values found in optimize_hybridqm_eco.py
+    Mstar_q = 10.49 # Msun/h
+    Mh_q = 14.03 # Msun/h
     mu = 0.69
-    nu = 0.15
+    nu = 0.148
 
     hybrid_param_vals = [Mstar_q, Mh_q, mu, nu]
 
