@@ -1002,7 +1002,7 @@ def get_err_data(survey, path):
                 (mock_pd.cz.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
                 (mock_pd.logmstar.values >= mstar_limit)]
 
-            ## Using best-fit found for ECO data using optimize_hybridqm_eco,py
+            ## Using best-fit found for old ECO data using optimize_hybridqm_eco,py
             Mstar_q = 10.39 # Msun/h
             Mh_q = 14.85 # Msun/h
             mu = 0.65
