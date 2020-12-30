@@ -54,7 +54,34 @@ def read_chi2(path_to_file):
 
     return chi2
 
-def reading_mock_catl(filename, catl_format='.hdf5'):
+def read_mcmc(path_to_file):
+    """
+    Reads mcmc chain from file
+
+    Parameters
+    ----------
+    path_to_file: string
+        Path to mcmc chain file
+
+    Returns
+    ---------
+    emcee_table: pandas dataframe
+        Dataframe of mcmc chain values with NANs removed
+    """
+    colnames = ['mstar_q','mh_q','mu','nu']
+    
+    emcee_table = pd.read_csv(path_to_file, names=colnames, 
+        delim_whitespace=True, header=None)
+
+    emcee_table = emcee_table[emcee_table.mstar_q.values != '#']
+    emcee_table.mstar_q = emcee_table.mstar_q.astype(np.float64)
+    emcee_table.mh_q = emcee_table.mh_q.astype(np.float64)
+    emcee_table.mu = emcee_table.mu.astype(np.float64)
+    emcee_table.nu = emcee_table.nu.astype(np.float64)
+    
+    return emcee_table
+
+def read_mock_catl(filename, catl_format='.hdf5'):
     """
     Function to read ECO/RESOLVE catalogues.
 
@@ -123,33 +150,6 @@ def reading_mock_catl(filename, catl_format='.hdf5'):
 
     return mock_pd
 
-def read_mcmc(path_to_file):
-    """
-    Reads mcmc chain from file
-
-    Parameters
-    ----------
-    path_to_file: string
-        Path to mcmc chain file
-
-    Returns
-    ---------
-    emcee_table: pandas dataframe
-        Dataframe of mcmc chain values with NANs removed
-    """
-    colnames = ['mstar_q','mh_q','mu','nu']
-    
-    emcee_table = pd.read_csv(path_to_file, names=colnames, 
-        delim_whitespace=True, header=None)
-
-    emcee_table = emcee_table[emcee_table.mstar_q.values != '#']
-    emcee_table.mstar_q = emcee_table.mstar_q.astype(np.float64)
-    emcee_table.mh_q = emcee_table.mh_q.astype(np.float64)
-    emcee_table.mu = emcee_table.mu.astype(np.float64)
-    emcee_table.nu = emcee_table.nu.astype(np.float64)
-    
-    return emcee_table
-
 def read_data_catl(path_to_file, survey):
     """
     Reads survey catalog from file
@@ -182,7 +182,7 @@ def read_data_catl(path_to_file, survey):
         # eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0, \
         #     usecols=columns)
 
-        eco_buff = reading_catls(path_to_file)
+        eco_buff = read_mock_catl(path_to_file)
 
         if mf_type == 'smf':
             # 6456 galaxies                       
@@ -261,6 +261,7 @@ def get_paramvals_percentile(mcmc_table, pctl, chi2, randint_filepath):
     mcmc_table_pctl: pandas dataframe
         Sample of 100 68th percentile lowest chi^2 values
     """ 
+    # TODO : change body to include the mock number file contents
     pctl = pctl/100
     mcmc_table['chi2'] = chi2
     mcmc_table = mcmc_table.sort_values('chi2').reset_index(drop=True)
@@ -275,6 +276,106 @@ def get_paramvals_percentile(mcmc_table, pctl, chi2, randint_filepath):
     mcmc_table_pctl = mcmc_table_pctl.drop_duplicates().sample(100)
 
     return mcmc_table_pctl, bf_params, bf_chi2
+
+def assign_colour_label_data(catl):
+    """
+    Assign colour label to data
+
+    Parameters
+    ----------
+    catl: pandas Dataframe 
+        Data catalog
+
+    Returns
+    ---------
+    catl: pandas Dataframe
+        Data catalog with colour label assigned as new column
+    """
+
+    logmstar_arr = catl.logmstar.values
+    u_r_arr = catl.modelu_rcorr.values
+
+    colour_label_arr = np.empty(len(catl), dtype='str')
+    for idx, value in enumerate(logmstar_arr):
+
+        # Divisions taken from Moffett et al. 2015 equation 1
+        if value <= 9.1:
+            if u_r_arr[idx] > 1.457:
+                colour_label = 'R'
+            else:
+                colour_label = 'B'
+
+        if value > 9.1 and value < 10.1:
+            divider = 0.24 * value - 0.7
+            if u_r_arr[idx] > divider:
+                colour_label = 'R'
+            else:
+                colour_label = 'B'
+
+        if value >= 10.1:
+            if u_r_arr[idx] > 1.7:
+                colour_label = 'R'
+            else:
+                colour_label = 'B'
+            
+        colour_label_arr[idx] = colour_label
+    
+    catl['colour_label'] = colour_label_arr
+
+    return catl
+
+def get_centrals_data(catl):
+    """
+    Get centrals from survey catalog
+
+    Parameters
+    ----------
+    catl: pandas dataframe
+        Survey catalog
+
+    Returns
+    ---------
+    cen_gals: array
+        Array of central galaxy masses
+
+    cen_halos: array
+        Array of central halo masses
+    """ 
+    # cen_gals = []
+    # cen_halos = []
+    # for idx,val in enumerate(catl.fc.values):
+    #     if val == 1:
+    #         stellar_mass_h07 = catl.logmstar.values[idx]
+    #         stellar_mass_h1 = np.log10((10**stellar_mass_h07) / 2.041)
+    #         halo_mass_h07 = catl.logmh_s.values[idx]
+    #         halo_mass_h1 = np.log10((10**halo_mass_h07) / 2.041)
+    #         cen_gals.append(stellar_mass_h1)
+    #         cen_halos.append(halo_mass_h1)
+    
+    if mf_type == 'smf':
+        cen_gals_red = np.log10(10**catl.logmstar.loc[(catl.fc.values == 1)&
+            (catl.colour_label.values == 'R')]/2.041)
+        cen_halos_red = np.log10(10**catl.logmh_s.loc[(catl.fc.values == 1)&
+            (catl.colour_label.values == 'R')]/2.041)
+        cen_gals_blue = np.log10(10**catl.logmstar.loc[(catl.fc.values == 1)&
+            (catl.colour_label.values == 'B')]/2.041)
+        cen_halos_blue = np.log10(10**catl.logmh_s.loc[(catl.fc.values == 1)&
+            (catl.colour_label.values == 'B')]/2.041)
+    # elif mf_type == 'bmf':
+    #     logmstar = catl.logmstar.loc[catl.fc.values == 1]
+    #     logmgas = catl.logmgas.loc[catl.fc.values == 1]
+    #     logmbary = calc_bary(logmstar, logmgas)
+    #     catl['logmbary'] = logmbary
+    #     if survey == 'eco' or survey == 'resolvea':
+    #         limit = 9.4
+    #     elif survey == 'resolveb':
+    #         limit = 9.1
+    #     cen_gals = np.log10((10**(catl.logmbary.loc[(catl.fc.values == 1) & 
+    #         (catl.logmbary.values >= limit)]))/2.041)
+    #     cen_halos = np.log10((10**(catl.logmh_s.loc[(catl.fc.values == 1) & 
+    #         (catl.logmbary.values >= limit)]))/2.041)
+
+    return cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue
 
 def diff_smf(mstar_arr, volume, h1_bool, colour_flag=False):
     """
@@ -344,412 +445,56 @@ def diff_smf(mstar_arr, volume, h1_bool, colour_flag=False):
 
     return maxis, phi, err_tot, bins, counts
 
-def hybrid_quenching_model(theta, gals_df, mock, randint=None):
+def measure_all_smf(table, volume, data_bool, randint_logmstar=None):
     """
-    Apply hybrid quenching model from Zu and Mandelbaum 2015
+    Calculates differential stellar mass function for all, red and blue galaxies
+    from mock/data
 
     Parameters
     ----------
-    gals_df: pandas dataframe
-        Mock catalog
+    table: pandas Dataframe
+        Dataframe of either mock or data 
+    volume: float
+        Volume of simulation/survey
+    cvar: float
+        Cosmic variance error
+    data_bool: Boolean
+        Data or mock
 
     Returns
     ---------
-    f_red_cen: array
-        Array of central red fractions
-    f_red_sat: array
-        Array of satellite red fractions
+    3 multidimensional arrays of stellar mass, phi, total error in SMF and 
+    counts per bin for all, red and blue galaxies
     """
 
-    # parameter values from Table 1 of Zu and Mandelbaum 2015 "prior case"
-    Mstar_q = theta[0] # Msun/h
-    Mh_q = theta[1] # Msun/h
-    mu = theta[2]
-    nu = theta[3]
+    colour_col = 'colour_label'
 
-    cen_hosthalo_mass_arr, sat_hosthalo_mass_arr = get_host_halo_mock(gals_df, \
-        mock)
-    cen_stellar_mass_arr, sat_stellar_mass_arr = get_stellar_mock(gals_df, mock, \
-        randint)
-
-    f_red_cen = 1 - np.exp(-((cen_stellar_mass_arr/(10**Mstar_q))**mu))
-
-    g_Mstar = np.exp(-((sat_stellar_mass_arr/(10**Mstar_q))**mu))
-    h_Mh = np.exp(-((sat_hosthalo_mass_arr/(10**Mh_q))**nu))
-    f_red_sat = 1 - (g_Mstar * h_Mh)
-
-    return f_red_cen, f_red_sat
-
-def assign_colour_label_mock(f_red_cen, f_red_sat, gals_df, drop_fred=False):
-    """
-    Assign colour label to mock catalog
-
-    Parameters
-    ----------
-    f_red_cen: array
-        Array of central red fractions
-    f_red_sat: array
-        Array of satellite red fractions
-    gals_df: pandas Dataframe
-        Mock catalog
-    drop_fred: boolean
-        Whether or not to keep red fraction column after colour has been
-        assigned
-
-    Returns
-    ---------
-    df: pandas Dataframe
-        Dataframe with colour label and random number assigned as 
-        new columns
-    """
-
-    # Copy of dataframe
-    df = gals_df.copy()
-    # Saving labels
-    color_label_arr = [[] for x in range(len(df))]
-    rng_arr = [[] for x in range(len(df))]
-    # Adding columns for f_red to df
-    df.loc[:, 'f_red'] = np.zeros(len(df))
-    df.loc[df['cs_flag'] == 1, 'f_red'] = f_red_cen
-    df.loc[df['cs_flag'] == 0, 'f_red'] = f_red_sat
-    # Converting to array
-    f_red_arr = df['f_red'].values
-    # Looping over galaxies
-    for ii, cs_ii in enumerate(df['cs_flag']):
-        # Draw a random number
-        rng = np.random.uniform()
-        # Comparing against f_red
-        if (rng >= f_red_arr[ii]):
-            color_label = 'B'
-        else:
-            color_label = 'R'
-        # Saving to list
-        color_label_arr[ii] = color_label
-        rng_arr[ii] = rng
-    
-    ## Assigning to DataFrame
-    df.loc[:, 'colour_label'] = color_label_arr
-    df.loc[:, 'rng'] = rng_arr
-    # Dropping 'f_red` column
-    if drop_fred:
-        df.drop('f_red', axis=1, inplace=True)
-
-    return df
-
-def assign_colour_label_data(catl):
-    """
-    Assign colour label to data
-
-    Parameters
-    ----------
-    catl: pandas Dataframe 
-        Data catalog
-
-    Returns
-    ---------
-    catl: pandas Dataframe
-        Data catalog with colour label assigned as new column
-    """
-
-    logmstar_arr = catl.logmstar.values
-    u_r_arr = catl.modelu_rcorr.values
-
-    colour_label_arr = np.empty(len(catl), dtype='str')
-    for idx, value in enumerate(logmstar_arr):
-
-        # Divisions taken from Moffett et al. 2015 equation 1
-        if value <= 9.1:
-            if u_r_arr[idx] > 1.457:
-                colour_label = 'R'
-            else:
-                colour_label = 'B'
-
-        if value > 9.1 and value < 10.1:
-            divider = 0.24 * value - 0.7
-            if u_r_arr[idx] > divider:
-                colour_label = 'R'
-            else:
-                colour_label = 'B'
-
-        if value >= 10.1:
-            if u_r_arr[idx] > 1.7:
-                colour_label = 'R'
-            else:
-                colour_label = 'B'
-            
-        colour_label_arr[idx] = colour_label
-    
-    catl['colour_label'] = colour_label_arr
-
-    return catl
-
-def halocat_init(halo_catalog, z_median):
-    """
-    Initial population of halo catalog using populate_mock function
-
-    Parameters
-    ----------
-    halo_catalog: string
-        Path to halo catalog
-    
-    z_median: float
-        Median redshift of survey
-
-    Returns
-    ---------
-    model: halotools model instance
-        Model based on behroozi 2010 SMHM
-    """
-    halocat = CachedHaloCatalog(fname=halo_catalog, update_cached_fname=True)
-    model = PrebuiltSubhaloModelFactory('behroozi10', redshift=z_median, \
-        prim_haloprop_key='halo_macc')
-    model.populate_mock(halocat,seed=5)
-
-    return model
-
-def populate_mock(theta, model):
-    """
-    Populate mock based on five SMHM parameter values and model
-
-    Parameters
-    ----------
-    theta: array
-        Array of parameter values
-    
-    model: halotools model instance
-        Model based on behroozi 2010 SMHM
-
-    Returns
-    ---------
-    gals_df: pandas dataframe
-        Dataframe of mock catalog
-    """
-    """"""
-
-    mhalo_characteristic, mstellar_characteristic, mlow_slope, mhigh_slope,\
-        mstellar_scatter = theta
-    model.param_dict['smhm_m1_0'] = mhalo_characteristic
-    model.param_dict['smhm_m0_0'] = mstellar_characteristic
-    model.param_dict['smhm_beta_0'] = mlow_slope
-    model.param_dict['smhm_delta_0'] = mhigh_slope
-    model.param_dict['scatter_model_param1'] = mstellar_scatter
-
-    model.mock.populate()
-
-    # if survey == 'eco' or survey == 'resolvea':
-    #     if mf_type == 'smf':
-    #         limit = np.round(np.log10((10**8.9) / 2.041), 1)
-    #     elif mf_type == 'bmf':
-    #         limit = np.round(np.log10((10**9.4) / 2.041), 1)
-    # elif survey == 'resolveb':
-    #     if mf_type == 'smf':
-    #         limit = np.round(np.log10((10**8.7) / 2.041), 1)
-    #     elif mf_type == 'bmf':
-    #         limit = np.round(np.log10((10**9.1) / 2.041), 1)
-    # sample_mask = model_init.mock.galaxy_table['stellar_mass'] >= 10**limit
-    gals = model.mock.galaxy_table#[sample_mask]
-    gals_df = gals.to_pandas()
-
-    return gals_df
-
-def assign_cen_sat_flag(gals_df):
-    """
-    Assign centrals and satellites flag to dataframe
-
-    Parameters
-    ----------
-    gals_df: pandas dataframe
-        Mock catalog
-
-    Returns
-    ---------
-    gals_df: pandas dataframe
-        Mock catalog with centrals/satellites flag as new column
-    """
-
-    C_S = []
-    for idx in range(len(gals_df)):
-        if gals_df['halo_hostid'][idx] == gals_df['halo_id'][idx]:
-            C_S.append(1)
-        else:
-            C_S.append(0)
-    
-    C_S = np.array(C_S)
-    gals_df['cs_flag'] = C_S
-    return gals_df
-
-def get_host_halo_mock(gals_df):
-    """
-    Get host halo mass from mock catalog
-
-    Parameters
-    ----------
-    gals_df: pandas dataframe
-        Mock catalog
-
-    Returns
-    ---------
-    cen_halos: array
-        Array of central host halo masses
-    sat_halos: array
-        Array of satellite host halo masses
-    """
-
-    df = gals_df.copy()
-
-    cen_halos = []
-    sat_halos = []
-    for idx,value in enumerate(df['cs_flag']):
-        if value == 1:
-            cen_halos.append(df['halo_mvir_host_halo'][idx])
-        elif value == 0:
-            sat_halos.append(df['halo_mvir_host_halo'][idx])
-
-    cen_halos = np.array(cen_halos)
-    sat_halos = np.array(sat_halos)
-
-    return cen_halos, sat_halos
-
-def get_stellar_mock(gals_df, mock, randint=None):
-    """
-    Get stellar mass from mock catalog
-
-    Parameters
-    ----------
-    gals_df: pandas dataframe
-        Mock catalog
-
-    Returns
-    ---------
-    cen_gals: array
-        Array of central stellar masses
-    sat_gals: array
-        Array of satellite stellar masses
-    """
-
-    df = gals_df.copy()
-    if mock == 'vishnu':
-        cen_gals = []
-        sat_gals = []
-        for idx,value in enumerate(df.cs_flag):
-            if value == 1:
-                cen_gals.append(df['{0}'.format(randint)].values[idx])
-            elif value == 0:
-                sat_gals.append(df['{0}'.format(randint)].values[idx])
-
+    if data_bool:
+        logmstar_col = 'logmstar'
+        max_total, phi_total, err_total, bins_total, counts_total = \
+            diff_smf(table[logmstar_col], volume, False)
+        max_red, phi_red, err_red, bins_red, counts_red = \
+            diff_smf(table[logmstar_col].loc[table[colour_col] == 'R'], 
+            volume, False, 'R')
+        max_blue, phi_blue, err_blue, bins_blue, counts_blue = \
+            diff_smf(table[logmstar_col].loc[table[colour_col] == 'B'], 
+            volume, False, 'B')
     else:
-        cen_gals = []
-        sat_gals = []
-        for idx,value in enumerate(df.cs_flag):
-            if value == 1:
-                cen_gals.append(df.logmstar.values[idx])
-            elif value == 0:
-                sat_gals.append(df.logmstar.values[idx])
-
-    cen_gals = np.array(cen_gals)
-    sat_gals = np.array(sat_gals)
-
-    return cen_gals, sat_gals
-
-def get_centrals_mock(gals_df):
-    """
-    Get centrals from mock catalog
-
-    Parameters
-    ----------
-    gals_df: pandas dataframe
-        Mock catalog
-
-    Returns
-    ---------
-    cen_gals: array
-        Array of central galaxy masses
-
-    cen_halos: array
-        Array of central halo masses
-    """
-    C_S = []
-    for idx in range(len(gals_df)):
-        if gals_df['halo_hostid'][idx] == gals_df['halo_id'][idx]:
-            C_S.append(1)
-        else:
-            C_S.append(0)
+        # logmstar_col = 'stellar_mass'
+        logmstar_col = '{0}'.format(randint_logmstar)
+        ## Changed to 10**X because Behroozi mocks now have M* values in log
+        max_total, phi_total, err_total, bins_total, counts_total = \
+            diff_smf(10**(table[logmstar_col]), volume, True)
+        max_red, phi_red, err_red, bins_red, counts_red = \
+            diff_smf(10**(table[logmstar_col].loc[table[colour_col] == 'R']), 
+            volume, True, 'R')
+        max_blue, phi_blue, err_blue, bins_blue, counts_blue = \
+            diff_smf(10**(table[logmstar_col].loc[table[colour_col] == 'B']), 
+            volume, True, 'B')
     
-    C_S = np.array(C_S)
-    gals_df['C_S'] = C_S
-    cen_gals_red = []
-    cen_halos_red = []
-    cen_gals_blue = []
-    cen_halos_blue = []
-
-    for idx,value in enumerate(gals_df['C_S']):
-        if value == 1:
-            if gals_df['colour_label'][idx] == 'R':
-                cen_gals_red.append(gals_df['stellar_mass'][idx])
-                cen_halos_red.append(gals_df['halo_mvir'][idx])
-            elif gals_df['colour_label'][idx] == 'B':
-                cen_gals_blue.append(gals_df['stellar_mass'][idx])
-                cen_halos_blue.append(gals_df['halo_mvir'][idx])
-
-    cen_gals_red = np.log10(np.array(cen_gals_red))
-    cen_halos_red = np.log10(np.array(cen_halos_red))
-    cen_gals_blue = np.log10(np.array(cen_gals_blue))
-    cen_halos_blue = np.log10(np.array(cen_halos_blue))
-
-    return cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue
-
-def get_centrals_data(catl):
-    """
-    Get centrals from survey catalog
-
-    Parameters
-    ----------
-    catl: pandas dataframe
-        Survey catalog
-
-    Returns
-    ---------
-    cen_gals: array
-        Array of central galaxy masses
-
-    cen_halos: array
-        Array of central halo masses
-    """ 
-    # cen_gals = []
-    # cen_halos = []
-    # for idx,val in enumerate(catl.fc.values):
-    #     if val == 1:
-    #         stellar_mass_h07 = catl.logmstar.values[idx]
-    #         stellar_mass_h1 = np.log10((10**stellar_mass_h07) / 2.041)
-    #         halo_mass_h07 = catl.logmh_s.values[idx]
-    #         halo_mass_h1 = np.log10((10**halo_mass_h07) / 2.041)
-    #         cen_gals.append(stellar_mass_h1)
-    #         cen_halos.append(halo_mass_h1)
-    
-    if mf_type == 'smf':
-        cen_gals_red = np.log10(10**catl.logmstar.loc[(catl.fc.values == 1)&
-            (catl.colour_label.values == 'R')]/2.041)
-        cen_halos_red = np.log10(10**catl.logmh_s.loc[(catl.fc.values == 1)&
-            (catl.colour_label.values == 'R')]/2.041)
-        cen_gals_blue = np.log10(10**catl.logmstar.loc[(catl.fc.values == 1)&
-            (catl.colour_label.values == 'B')]/2.041)
-        cen_halos_blue = np.log10(10**catl.logmh_s.loc[(catl.fc.values == 1)&
-            (catl.colour_label.values == 'B')]/2.041)
-    # elif mf_type == 'bmf':
-    #     logmstar = catl.logmstar.loc[catl.fc.values == 1]
-    #     logmgas = catl.logmgas.loc[catl.fc.values == 1]
-    #     logmbary = calc_bary(logmstar, logmgas)
-    #     catl['logmbary'] = logmbary
-    #     if survey == 'eco' or survey == 'resolvea':
-    #         limit = 9.4
-    #     elif survey == 'resolveb':
-    #         limit = 9.1
-    #     cen_gals = np.log10((10**(catl.logmbary.loc[(catl.fc.values == 1) & 
-    #         (catl.logmbary.values >= limit)]))/2.041)
-    #     cen_halos = np.log10((10**(catl.logmh_s.loc[(catl.fc.values == 1) & 
-    #         (catl.logmbary.values >= limit)]))/2.041)
-
-    return cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue
+    return [max_total, phi_total, err_total, counts_total] , \
+        [max_red, phi_red, err_red, counts_red] , \
+            [max_blue, phi_blue, err_blue, counts_blue]
 
 def get_err_data(survey, path):
     """
@@ -810,7 +555,7 @@ def get_err_data(survey, path):
         for num in range(num_mocks):
             filename = temp_path + '{0}_cat_{1}_Planck_memb_cat.hdf5'.format(
                 mock_name, num)
-            mock_pd = reading_mock_catl(filename) 
+            mock_pd = read_mock_catl(filename) 
 
             # Using the same survey definition as in mcmc smf i.e excluding the 
             # buffer
@@ -891,101 +636,132 @@ def get_err_data(survey, path):
 
     return err_total, err_colour[0:5], err_colour[5:10]
 
-def get_best_fit_model(best_fit_params):
+def halocat_init(halo_catalog, z_median):
     """
-    Get SMF and SMHM information of best fit model given a survey
+    Initial population of halo catalog using populate_mock function
 
     Parameters
     ----------
-    survey: string
-        Name of survey
-
-    Returns
-    ---------
-    max_model: array
-        Array of x-axis mass values
-
-    phi_model: array
-        Array of y-axis values
-
-    err_tot_model: array
-        Array of error values per bin
-
-    cen_gals: array
-        Array of central galaxy masses
-
-    cen_halos: array
-        Array of central halo masses
-    """   
-    f_red_cen, f_red_sat = hybrid_quenching_model(best_fit_params, gals_df_)
-    gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, gals_df_)
-    v_sim = 130**3
-    total_model, red_model, blue_model = measure_all_smf(gals_df, v_sim 
-    , False)     
-    cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue = \
-        get_centrals_mock(gals_df)
-
-    max_red = red_model[0]
-    phi_red = red_model[1]
-    max_blue = blue_model[0]
-    phi_blue = blue_model[1]
-
-    return max_red, phi_red, max_blue, phi_blue, cen_gals_red, cen_halos_red,\
-        cen_gals_blue, cen_halos_blue
-
-def measure_all_smf(table, volume, data_bool, randint_logmstar=None):
-    """
-    Calculates differential stellar mass function for all, red and blue galaxies
-    from mock/data
-
-    Parameters
-    ----------
-    table: pandas Dataframe
-        Dataframe of either mock or data 
-    volume: float
-        Volume of simulation/survey
-    cvar: float
-        Cosmic variance error
-    data_bool: Boolean
-        Data or mock
-
-    Returns
-    ---------
-    3 multidimensional arrays of stellar mass, phi, total error in SMF and 
-    counts per bin for all, red and blue galaxies
-    """
-
-    colour_col = 'colour_label'
-
-    if data_bool:
-        logmstar_col = 'logmstar'
-        max_total, phi_total, err_total, bins_total, counts_total = \
-            diff_smf(table[logmstar_col], volume, False)
-        max_red, phi_red, err_red, bins_red, counts_red = \
-            diff_smf(table[logmstar_col].loc[table[colour_col] == 'R'], 
-            volume, False, 'R')
-        max_blue, phi_blue, err_blue, bins_blue, counts_blue = \
-            diff_smf(table[logmstar_col].loc[table[colour_col] == 'B'], 
-            volume, False, 'B')
-    else:
-        # logmstar_col = 'stellar_mass'
-        logmstar_col = '{0}'.format(randint_logmstar)
-        max_total, phi_total, err_total, bins_total, counts_total = \
-            diff_smf(table[logmstar_col], volume, True)
-        max_red, phi_red, err_red, bins_red, counts_red = \
-            diff_smf(table[logmstar_col].loc[table[colour_col] == 'R'], 
-            volume, True, 'R')
-        max_blue, phi_blue, err_blue, bins_blue, counts_blue = \
-            diff_smf(table[logmstar_col].loc[table[colour_col] == 'B'], 
-            volume, True, 'B')
+    halo_catalog: string
+        Path to halo catalog
     
-    return [max_total, phi_total, err_total, counts_total] , \
-        [max_red, phi_red, err_red, counts_red] , \
-            [max_blue, phi_blue, err_blue, counts_blue]
+    z_median: float
+        Median redshift of survey
+
+    Returns
+    ---------
+    model: halotools model instance
+        Model based on behroozi 2010 SMHM
+    """
+    halocat = CachedHaloCatalog(fname=halo_catalog, update_cached_fname=True)
+    model = PrebuiltSubhaloModelFactory('behroozi10', redshift=z_median, \
+        prim_haloprop_key='halo_macc')
+    model.populate_mock(halocat,seed=5)
+
+    return model
+
+def populate_mock(theta, model):
+    """
+    Populate mock based on five SMHM parameter values and model
+
+    Parameters
+    ----------
+    theta: array
+        Array of parameter values
+    
+    model: halotools model instance
+        Model based on behroozi 2010 SMHM
+
+    Returns
+    ---------
+    gals_df: pandas dataframe
+        Dataframe of mock catalog
+    """
+    """"""
+
+    mhalo_characteristic, mstellar_characteristic, mlow_slope, mhigh_slope,\
+        mstellar_scatter = theta
+    model.param_dict['smhm_m1_0'] = mhalo_characteristic
+    model.param_dict['smhm_m0_0'] = mstellar_characteristic
+    model.param_dict['smhm_beta_0'] = mlow_slope
+    model.param_dict['smhm_delta_0'] = mhigh_slope
+    model.param_dict['scatter_model_param1'] = mstellar_scatter
+
+    model.mock.populate()
+
+    # if survey == 'eco' or survey == 'resolvea':
+    #     if mf_type == 'smf':
+    #         limit = np.round(np.log10((10**8.9) / 2.041), 1)
+    #     elif mf_type == 'bmf':
+    #         limit = np.round(np.log10((10**9.4) / 2.041), 1)
+    # elif survey == 'resolveb':
+    #     if mf_type == 'smf':
+    #         limit = np.round(np.log10((10**8.7) / 2.041), 1)
+    #     elif mf_type == 'bmf':
+    #         limit = np.round(np.log10((10**9.1) / 2.041), 1)
+    # sample_mask = model_init.mock.galaxy_table['stellar_mass'] >= 10**limit
+    gals = model.mock.galaxy_table#[sample_mask]
+    gals_df = pd.DataFrame(np.array(gals))
+
+    return gals_df
+
+def assign_cen_sat_flag(gals_df):
+    """
+    Assign centrals and satellites flag to dataframe
+
+    Parameters
+    ----------
+    gals_df: pandas dataframe
+        Mock catalog
+
+    Returns
+    ---------
+    gals_df: pandas dataframe
+        Mock catalog with centrals/satellites flag as new column
+    """
+
+    C_S = []
+    for idx in range(len(gals_df)):
+        if gals_df['halo_hostid'][idx] == gals_df['halo_id'][idx]:
+            C_S.append(1)
+        else:
+            C_S.append(0)
+    
+    C_S = np.array(C_S)
+    gals_df['cs_flag'] = C_S
+    return gals_df
+
+def mp_init(mcmc_table_pctl,nproc):
+    """
+    Initializes multiprocessing of mocks and smf and smhm measurements
+
+    Parameters
+    ----------
+    mcmc_table_pctl: pandas dataframe
+        Mcmc chain dataframe of 100 random samples
+
+    nproc: int
+        Number of processes to use in multiprocessing
+
+    Returns
+    ---------
+    result: multidimensional array
+        Array of smf and smhm data
+    """
+    start = time.time()
+    chunks = np.array([mcmc_table_pctl.iloc[:,:4].values[i::5] \
+        for i in range(5)])
+    pool = Pool(processes=nproc)
+    result = pool.map(mp_func, chunks)
+    end = time.time()
+    multi_time = end - start
+    print("Multiprocessing took {0:.1f} seconds".format(multi_time))
+
+    return result
 
 def mp_func(a_list):
     """
-    Populate mock based on five parameter values
+    Apply hybrid quenching model based on four parameter values
 
     Parameters
     ----------
@@ -1021,6 +797,7 @@ def mp_func(a_list):
     cen_halos_blue_arr = []
 
     for theta in a_list:  
+        # TODO : Use randint to first populate mock
         f_red_cen, f_red_sat = hybrid_quenching_model(theta, gals_df_)
         gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, gals_df_)
         v_sim = 130**3
@@ -1028,6 +805,7 @@ def mp_func(a_list):
         , False)     
         cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue = \
             get_centrals_mock(gals_df)
+        # TODO : also measure spread in deltav and return those measurements
         maxis_red_arr.append(red_model[0])
         phi_red_arr.append(red_model[1])
         maxis_blue_arr.append(blue_model[0])
@@ -1040,33 +818,282 @@ def mp_func(a_list):
     return [maxis_red_arr, phi_red_arr, maxis_blue_arr, phi_blue_arr, 
     cen_gals_red_arr, cen_halos_red_arr, cen_gals_blue_arr, cen_halos_blue_arr]
 
-def mp_init(mcmc_table_pctl,nproc):
+def hybrid_quenching_model(theta, gals_df, mock, randint=None):
     """
-    Initializes multiprocessing of mocks and smf and smhm measurements
+    Apply hybrid quenching model from Zu and Mandelbaum 2015
 
     Parameters
     ----------
-    mcmc_table_pctl: pandas dataframe
-        Mcmc chain dataframe of 100 random samples
 
-    nproc: int
-        Number of processes to use in multiprocessing
+    gals_df: pandas dataframe
+        Mock catalog
 
     Returns
     ---------
-    result: multidimensional array
-        Array of smf and smhm data
+    f_red_cen: array
+        Array of central red fractions
+    f_red_sat: array
+        Array of satellite red fractions
     """
-    start = time.time()
-    chunks = np.array([mcmc_table_pctl.iloc[:,:4].values[i::5] \
-        for i in range(5)])
-    pool = Pool(processes=nproc)
-    result = pool.map(mp_func, chunks)
-    end = time.time()
-    multi_time = end - start
-    print("Multiprocessing took {0:.1f} seconds".format(multi_time))
 
-    return result
+    # parameter values from Table 1 of Zu and Mandelbaum 2015 "prior case"
+    Mstar_q = theta[0] # Msun/h
+    Mh_q = theta[1] # Msun/h
+    mu = theta[2]
+    nu = theta[3]
+
+    cen_hosthalo_mass_arr, sat_hosthalo_mass_arr = get_host_halo_mock(gals_df, \
+        mock)
+    cen_stellar_mass_arr, sat_stellar_mass_arr = get_stellar_mock(gals_df, mock, \
+        randint)
+
+    f_red_cen = 1 - np.exp(-((cen_stellar_mass_arr/(10**Mstar_q))**mu))
+
+    g_Mstar = np.exp(-((sat_stellar_mass_arr/(10**Mstar_q))**mu))
+    h_Mh = np.exp(-((sat_hosthalo_mass_arr/(10**Mh_q))**nu))
+    f_red_sat = 1 - (g_Mstar * h_Mh)
+
+    return f_red_cen, f_red_sat
+
+def get_host_halo_mock(gals_df, mock):
+    """
+    Get host halo mass from mock catalog
+
+    Parameters
+    ----------
+    gals_df: pandas dataframe
+        Mock catalog
+
+    Returns
+    ---------
+    cen_halos: array
+        Array of central host halo masses
+    sat_halos: array
+        Array of satellite host halo masses
+    """
+
+    df = gals_df.copy()
+
+    # groups = df.groupby('halo_id')
+    # keys = groups.groups.keys()
+
+    # for key in keys:
+    #     group = groups.get_group(key)
+    # for index, value in enumerate(group.cs_flag):
+    #     if value == 1:
+    #         cen_halos.append(group.loghalom.values[index])
+    #     else:
+    #         sat_halos.append(group.loghalom.values[index])
+
+    if mock == 'vishnu':
+        cen_halos = []
+        sat_halos = []
+        for index, value in enumerate(df.cs_flag):
+            if value == 1:
+                cen_halos.append(df.halo_mvir.values[index])
+            else:
+                sat_halos.append(df.halo_mvir.values[index])
+    else:
+        cen_halos = []
+        sat_halos = []
+        for index, value in enumerate(df.cs_flag):
+            if value == 1:
+                cen_halos.append(10**(df.loghalom.values[index]))
+            else:
+                sat_halos.append(10**(df.loghalom.values[index]))
+
+    cen_halos = np.array(cen_halos)
+    sat_halos = np.array(sat_halos)
+
+    return cen_halos, sat_halos
+
+def get_stellar_mock(gals_df, mock, randint=None):
+    """
+    Get stellar mass from mock catalog
+
+    Parameters
+    ----------
+    gals_df: pandas dataframe
+        Mock catalog
+
+    Returns
+    ---------
+    cen_gals: array
+        Array of central stellar masses
+    sat_gals: array
+        Array of satellite stellar masses
+    """
+    # TODO : check if masses are log or not log before this point
+    df = gals_df.copy()
+    if mock == 'vishnu':
+        cen_gals = []
+        sat_gals = []
+        for idx,value in enumerate(df.cs_flag):
+            if value == 1:
+                cen_gals.append(10**(df['{0}'.format(randint)].values[idx]))
+            elif value == 0:
+                sat_gals.append(10**(df['{0}'.format(randint)].values[idx]))
+
+    else:
+        cen_gals = []
+        sat_gals = []
+        for idx,value in enumerate(df.cs_flag):
+            if value == 1:
+                cen_gals.append(10**(df.logmstar.values[idx]))
+            elif value == 0:
+                sat_gals.append(10**(df.logmstar.values[idx]))
+
+    cen_gals = np.array(cen_gals)
+    sat_gals = np.array(sat_gals)
+
+    return cen_gals, sat_gals
+
+def assign_colour_label_mock(f_red_cen, f_red_sat, gals_df, drop_fred=False):
+    """
+    Assign colour label to mock catalog
+
+    Parameters
+    ----------
+    f_red_cen: array
+        Array of central red fractions
+    f_red_sat: array
+        Array of satellite red fractions
+    gals_df: pandas Dataframe
+        Mock catalog
+    drop_fred: boolean
+        Whether or not to keep red fraction column after colour has been
+        assigned
+
+    Returns
+    ---------
+    df: pandas Dataframe
+        Dataframe with colour label and random number assigned as 
+        new columns
+    """
+
+    # Copy of dataframe
+    df = gals_df.copy()
+    # Saving labels
+    color_label_arr = [[] for x in range(len(df))]
+    rng_arr = [[] for x in range(len(df))]
+    # Adding columns for f_red to df
+    df.loc[:, 'f_red'] = np.zeros(len(df))
+    df.loc[df['cs_flag'] == 1, 'f_red'] = f_red_cen
+    df.loc[df['cs_flag'] == 0, 'f_red'] = f_red_sat
+    # Converting to array
+    f_red_arr = df['f_red'].values
+    # Looping over galaxies
+    for ii, cs_ii in enumerate(df['cs_flag']):
+        # Draw a random number
+        rng = np.random.uniform()
+        # Comparing against f_red
+        if (rng >= f_red_arr[ii]):
+            color_label = 'B'
+        else:
+            color_label = 'R'
+        # Saving to list
+        color_label_arr[ii] = color_label
+        rng_arr[ii] = rng
+    
+    ## Assigning to DataFrame
+    df.loc[:, 'colour_label'] = color_label_arr
+    df.loc[:, 'rng'] = rng_arr
+    # Dropping 'f_red` column
+    if drop_fred:
+        df.drop('f_red', axis=1, inplace=True)
+
+    return df
+
+def get_centrals_mock(gals_df):
+    """
+    Get centrals from mock catalog
+
+    Parameters
+    ----------
+    gals_df: pandas dataframe
+        Mock catalog
+
+    Returns
+    ---------
+    cen_gals: array
+        Array of central galaxy masses
+
+    cen_halos: array
+        Array of central halo masses
+    """
+    C_S = []
+    for idx in range(len(gals_df)):
+        if gals_df['halo_hostid'][idx] == gals_df['halo_id'][idx]:
+            C_S.append(1)
+        else:
+            C_S.append(0)
+    
+    C_S = np.array(C_S)
+    gals_df['C_S'] = C_S
+    cen_gals_red = []
+    cen_halos_red = []
+    cen_gals_blue = []
+    cen_halos_blue = []
+
+    for idx,value in enumerate(gals_df['C_S']):
+        if value == 1:
+            if gals_df['colour_label'][idx] == 'R':
+                cen_gals_red.append(gals_df['stellar_mass'][idx])
+                cen_halos_red.append(gals_df['halo_mvir'][idx])
+            elif gals_df['colour_label'][idx] == 'B':
+                cen_gals_blue.append(gals_df['stellar_mass'][idx])
+                cen_halos_blue.append(gals_df['halo_mvir'][idx])
+
+    cen_gals_red = np.log10(np.array(cen_gals_red))
+    cen_halos_red = np.log10(np.array(cen_halos_red))
+    cen_gals_blue = np.log10(np.array(cen_gals_blue))
+    cen_halos_blue = np.log10(np.array(cen_halos_blue))
+
+    return cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue
+
+def get_best_fit_model(best_fit_params):
+    """
+    Get SMF and SMHM information of best fit model given a survey
+
+    Parameters
+    ----------
+    survey: string
+        Name of survey
+
+    Returns
+    ---------
+    max_model: array
+        Array of x-axis mass values
+
+    phi_model: array
+        Array of y-axis values
+
+    err_tot_model: array
+        Array of error values per bin
+
+    cen_gals: array
+        Array of central galaxy masses
+
+    cen_halos: array
+        Array of central halo masses
+    """   
+    f_red_cen, f_red_sat = hybrid_quenching_model(best_fit_params, gals_df_)
+    gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, gals_df_)
+    v_sim = 130**3
+    total_model, red_model, blue_model = measure_all_smf(gals_df, v_sim 
+    , False)     
+    cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue = \
+        get_centrals_mock(gals_df)
+
+    #TODO : also measure and return spread in deltav
+
+    max_red = red_model[0]
+    phi_red = red_model[1]
+    max_blue = blue_model[0]
+    phi_blue = blue_model[1]
+
+    return max_red, phi_red, max_blue, phi_blue, cen_gals_red, cen_halos_red,\
+        cen_gals_blue, cen_halos_blue
 
 def plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red, 
     maxis_bf_blue, phi_bf_blue, bf_chi2):
@@ -1394,7 +1421,7 @@ elif machine == 'mac':
 
 chi2_file = path_to_proc + 'smhm_colour_run12/{0}_colour_chi2.txt'.format(survey)
 chain_file = path_to_proc + 'smhm_colour_run12/mcmc_{0}_colour_raw.txt'.format(survey)
-randint_file = path_to_proc + 'smhm_colour_run12/randint_logmstar.txt'
+randint_file = path_to_proc + '{0}_colour_mocknum.txt'.format(survey)
 
 if survey == 'eco':
     # catl_file = path_to_raw + "eco/eco_all.csv"
@@ -1413,19 +1440,27 @@ mcmc_table = read_mcmc(chain_file)
 print('Reading catalog')
 catl, volume, z_median = read_data_catl(catl_file, survey)
 
+# TODO : maybe only include Behroozi mocks in DF that appear in mcmc_table_ptcl 
+
 print('Getting data in specific percentile')
+# TODO : Include the randint as one of the columns in mcmc_table_pctl
 mcmc_table_pctl, bf_params, bf_chi2 = \
     get_paramvals_percentile(mcmc_table, 68, chi2, randint_file)
+
 print(bf_params)
+
 print('Assigning colour to data')
 catl = assign_colour_label_data(catl)
 
 print('Retrieving survey centrals')
+# Returns log masses in h=1.0
 cen_gals_data_red, cen_halos_data_red, cen_gals_data_blue, cen_halos_data_blue =\
      get_centrals_data(catl)
 
 print('Measuring SMF for data')
 total_data, red_data, blue_data = measure_all_smf(catl, volume, True)
+
+# TODO : measure spread in deltav for data
 
 print('Measuring error in data from mocks')
 # TODO : change function
@@ -1434,6 +1469,7 @@ total_data[2], red_data[2], blue_data[2] = \
 
 model_init = halocat_init(halo_catalog, z_median)
 
+# TODO: Do the next 3 lines within mp_func since randint needs to be used now instead of one mock
 print('Populating halos using best fit shmr params')
 # TODO : use randint_logmstar 
 bf_params_shmr = np.array([12.32381675, 10.56581819, 0.4276319, 0.7457711, 
@@ -1456,3 +1492,5 @@ plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red,
 plot_xmhm(result, cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue,
     cen_gals_data_red, cen_halos_data_red, cen_gals_data_blue, 
     cen_halos_data_blue, bf_chi2)
+
+# TODO : include function that plots spread in deltav for red and blue
