@@ -241,7 +241,7 @@ def read_data_catl(path_to_file, survey):
 
     return catl, volume, z_median
 
-def get_paramvals_percentile(mcmc_table, pctl, chi2, randint_filepath):
+def get_paramvals_percentile(mcmc_table, pctl, chi2, randints):
     """
     Isolates 68th percentile lowest chi^2 values and takes random 100 sample
 
@@ -264,6 +264,7 @@ def get_paramvals_percentile(mcmc_table, pctl, chi2, randint_filepath):
     # TODO : change body to include the mock number file contents
     pctl = pctl/100
     mcmc_table['chi2'] = chi2
+    mcmc_table['mock_num'] = randints.astype(int)
     mcmc_table = mcmc_table.sort_values('chi2').reset_index(drop=True)
     slice_end = int(pctl*len(mcmc_table))
     mcmc_table_pctl = mcmc_table[:slice_end]
@@ -272,10 +273,12 @@ def get_paramvals_percentile(mcmc_table, pctl, chi2, randint_filepath):
         values[0][:4]
     bf_chi2 = mcmc_table_pctl.drop_duplicates().reset_index(drop=True).\
         values[0][4]
+    bf_randint = mcmc_table_pctl.drop_duplicates().reset_index(drop=True).\
+        values[0][5].astype(int)
     # Randomly sample 100 lowest chi2 
     mcmc_table_pctl = mcmc_table_pctl.drop_duplicates().sample(100)
 
-    return mcmc_table_pctl, bf_params, bf_chi2
+    return mcmc_table_pctl, bf_params, bf_chi2, bf_randint
 
 def assign_colour_label_data(catl):
     """
@@ -495,6 +498,48 @@ def measure_all_smf(table, volume, data_bool, randint_logmstar=None):
     return [max_total, phi_total, err_total, counts_total] , \
         [max_red, phi_red, err_red, counts_red] , \
             [max_blue, phi_blue, err_blue, counts_blue]
+
+def std_func(bins, mass_arr, vel_arr):
+    """
+    Calculate std from mean = 0
+
+    Parameters
+    ----------
+    bins: array
+        Array of bins
+    mass_arr: array
+        Array of masses to be binned
+    vel_arr: array
+        Array of velocities
+
+    Returns
+    ---------
+    std_arr: array
+        Standard deviation from 0 of velocity values in each mass bin
+    """
+
+    last_index = len(bins)-1
+    i = 0
+    std_arr = []
+    for index1, bin_edge in enumerate(bins):
+        if index1 == last_index:
+            break
+        cen_deltav_arr = []
+        for index2, stellar_mass in enumerate(mass_arr):
+            if stellar_mass >= bin_edge and stellar_mass < bins[index1+1]:
+                cen_deltav_arr.append(vel_arr[index2])
+        N = len(cen_deltav_arr)
+        mean = 0
+        diff_sqrd_arr = []
+        for value in cen_deltav_arr:
+            diff = value - mean
+            diff_sqrd = diff**2
+            diff_sqrd_arr.append(diff_sqrd)
+        mean_diff_sqrd = np.mean(diff_sqrd_arr)
+        std = np.sqrt(mean_diff_sqrd)
+        std_arr.append(std)
+
+    return std_arr
 
 def get_deltav_sigma_data(df):
     """
@@ -1756,9 +1801,9 @@ if machine == 'bender':
 elif machine == 'mac':
     halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
 
-chi2_file = path_to_proc + 'smhm_colour_run12/{0}_colour_chi2.txt'.format(survey)
-chain_file = path_to_proc + 'smhm_colour_run12/mcmc_{0}_colour_raw.txt'.format(survey)
-randint_file = path_to_proc + '{0}_colour_mocknum.txt'.format(survey)
+chi2_file = path_to_proc + 'smhm_colour_run13/{0}_colour_chi2.txt'.format(survey)
+chain_file = path_to_proc + 'smhm_colour_run13/mcmc_{0}_colour_raw.txt'.format(survey)
+randint_file = path_to_proc + 'smhm_colour_run13/{0}_colour_mocknum.txt'.format(survey)
 
 if survey == 'eco':
     # catl_file = path_to_raw + "eco/eco_all.csv"
@@ -1768,27 +1813,18 @@ if survey == 'eco':
 elif survey == 'resolvea' or survey == 'resolveb':
     catl_file = path_to_raw + "RESOLVE_liveJune2018.csv"
 
-print('Reading chi-squared file')
+print('Reading files')
 chi2 = read_chi2(chi2_file)
-
-print('Reading mcmc chain file')
 mcmc_table = read_mcmc(chain_file)
-
-# TODO : read in mock number file
-
-print('Reading catalog')
+mock_nums = pd.read_csv(randint_file, header=None, names=['mock_num'], dtype=int)
 catl, volume, z_median = read_data_catl(catl_file, survey)
+gal_group_df = read_mock_catl(path_to_proc + "gal_group.hdf5") 
 
 
 # TODO : maybe only include Behroozi mocks in DF above that appear in mcmc_table_ptcl 
-
-
 print('Getting data in specific percentile')
-# TODO : Include the randint as one of the columns in mcmc_table_pctl
-mcmc_table_pctl, bf_params, bf_chi2 = \
-    get_paramvals_percentile(mcmc_table, 68, chi2, randint_file)
-
-print(bf_params)
+mcmc_table_pctl, bf_params, bf_chi2, bf_randint = \
+    get_paramvals_percentile(mcmc_table, 68, chi2, mock_nums)
 
 print('Assigning colour to data')
 catl = assign_colour_label_data(catl)
