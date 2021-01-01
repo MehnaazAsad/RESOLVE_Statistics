@@ -241,7 +241,7 @@ def read_data_catl(path_to_file, survey):
 
     return catl, volume, z_median
 
-def get_paramvals_percentile(mcmc_table, pctl, chi2, randints):
+def get_paramvals_percentile(mcmc_table, pctl, chi2, randints_df):
     """
     Isolates 68th percentile lowest chi^2 values and takes random 100 sample
 
@@ -261,10 +261,9 @@ def get_paramvals_percentile(mcmc_table, pctl, chi2, randints):
     mcmc_table_pctl: pandas dataframe
         Sample of 100 68th percentile lowest chi^2 values
     """ 
-    # TODO : change body to include the mock number file contents
     pctl = pctl/100
     mcmc_table['chi2'] = chi2
-    mcmc_table['mock_num'] = randints.astype(int)
+    mcmc_table['mock_num'] = randints_df.mock_num.values.astype(int)
     mcmc_table = mcmc_table.sort_values('chi2').reset_index(drop=True)
     slice_end = int(pctl*len(mcmc_table))
     mcmc_table_pctl = mcmc_table[:slice_end]
@@ -1095,7 +1094,7 @@ def assign_cen_sat_flag(gals_df):
     gals_df['cs_flag'] = C_S
     return gals_df
 
-def mp_init(mcmc_table_pctl,nproc):
+def mp_init(mcmc_table_pctl, nproc):
     """
     Initializes multiprocessing of mocks and smf and smhm measurements
 
@@ -1113,7 +1112,11 @@ def mp_init(mcmc_table_pctl,nproc):
         Array of smf and smhm data
     """
     start = time.time()
-    chunks = np.array([mcmc_table_pctl.iloc[:,:4].values[i::5] \
+    params_df = mcmc_table_pctl.iloc[:,:4].reset_index(drop=True)
+    mock_num_df = mcmc_table_pctl.iloc[:,5].reset_index(drop=True)
+    frames = [params_df, mock_num_df]
+    mcmc_table_pctl_new = pd.concat(frames, axis=1)
+    chunks = np.array([mcmc_table_pctl.values[i::5] \
         for i in range(5)])
     pool = Pool(processes=nproc)
     result = pool.map(mp_func, chunks)
@@ -1165,19 +1168,22 @@ def mp_func(a_list):
     cen_std_blue_arr = []
 
     for theta in a_list:  
-        # TODO : Use randint to first populate mock by separating it from theta
-        # TODO : Pass randint
-        gals_df = populate_mock(bf_params_shmr, model_init)
+        randint_logmstar = theta[4]
+        theta = theta[:4]
+        cols_to_use = ['halo_hostid', 'halo_id', 'halo_mvir', 'cz', \
+            '{0}'.format(randint_logmstar), \
+            'g_galtype_{0}'.format(randint_logmstar), \
+            'groupid_{0}'.format(randint_logmstar)]
+        gals_df = gal_group_df_subset[cols_to_use]
         gals_df = assign_cen_sat_flag(gals_df)
-        # TODO : Pass randint
-        f_red_cen, f_red_sat = hybrid_quenching_model(theta, gals_df, 'vishnu')
-
+        f_red_cen, f_red_sat = hybrid_quenching_model(theta, gals_df, 'vishnu',\
+            randint_logmstar)
         gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, gals_df)
-        v_sim = 130**3
         total_model, red_model, blue_model = measure_all_smf(gals_df, v_sim 
-        , False)     
+        , False)    
+        # * LAST CHECKPOINT 
         cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue = \
-            get_centrals_mock(gals_df)
+            get_centrals_mock(gals_df, randint_logmstar)
         # TODO : Pass randint
         std_red_model, std_blue_model, centers_red_model, centers_blue_model = \
             get_deltav_sigma_vishnu_qmcolour(gals_df, randint_logmstar)
@@ -1303,9 +1309,9 @@ def get_stellar_mock(gals_df, mock, randint=None):
     sat_gals: array
         Array of satellite stellar masses
     """
-    # TODO : check if masses are log or not log before this point
     df = gals_df.copy()
     if mock == 'vishnu':
+        # These masses are log
         cen_gals = []
         sat_gals = []
         for idx,value in enumerate(df.cs_flag):
@@ -1384,7 +1390,7 @@ def assign_colour_label_mock(f_red_cen, f_red_sat, gals_df, drop_fred=False):
 
     return df
 
-def get_centrals_mock(gals_df):
+def get_centrals_mock(gals_df, randint=None):
     """
     Get centrals from mock catalog
 
@@ -1418,12 +1424,13 @@ def get_centrals_mock(gals_df):
     for idx,value in enumerate(gals_df['C_S']):
         if value == 1:
             if gals_df['colour_label'][idx] == 'R':
-                cen_gals_red.append(gals_df['stellar_mass'][idx])
+                cen_gals_red.append(gals_df['{0}'.format(randint)][idx])
                 cen_halos_red.append(gals_df['halo_mvir'][idx])
             elif gals_df['colour_label'][idx] == 'B':
-                cen_gals_blue.append(gals_df['stellar_mass'][idx])
+                cen_gals_blue.append(gals_df['{0}'.format(randint)][idx])
                 cen_halos_blue.append(gals_df['halo_mvir'][idx])
 
+    # TODO : check if log conversion needs to stay 
     cen_gals_red = np.log10(np.array(cen_gals_red))
     cen_halos_red = np.log10(np.array(cen_halos_red))
     cen_gals_blue = np.log10(np.array(cen_gals_blue))
@@ -1781,6 +1788,7 @@ def plot_xmhm(result, gals_bf_red, halos_bf_red, gals_bf_blue, halos_bf_blue,
 global model_init
 global gals_df_
 global path_to_figures
+global gal_group_df_subset
 
 dict_of_paths = cwpaths.cookiecutter_paths()
 path_to_raw = dict_of_paths['raw_dir']
@@ -1801,9 +1809,12 @@ if machine == 'bender':
 elif machine == 'mac':
     halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
 
-chi2_file = path_to_proc + 'smhm_colour_run13/{0}_colour_chi2.txt'.format(survey)
-chain_file = path_to_proc + 'smhm_colour_run13/mcmc_{0}_colour_raw.txt'.format(survey)
-randint_file = path_to_proc + 'smhm_colour_run13/{0}_colour_mocknum.txt'.format(survey)
+chi2_file = path_to_proc + 'smhm_colour_run13/{0}_colour_chi2.txt'.\
+    format(survey)
+chain_file = path_to_proc + 'smhm_colour_run13/mcmc_{0}_colour_raw.txt'.\
+    format(survey)
+randint_file = path_to_proc + 'smhm_colour_run13/{0}_colour_mocknum.txt'.\
+    format(survey)
 
 if survey == 'eco':
     # catl_file = path_to_raw + "eco/eco_all.csv"
@@ -1816,15 +1827,34 @@ elif survey == 'resolvea' or survey == 'resolveb':
 print('Reading files')
 chi2 = read_chi2(chi2_file)
 mcmc_table = read_mcmc(chain_file)
-mock_nums = pd.read_csv(randint_file, header=None, names=['mock_num'], dtype=int)
+mock_nums_df = pd.read_csv(randint_file, header=None, names=['mock_num'], 
+    dtype=int)
 catl, volume, z_median = read_data_catl(catl_file, survey)
 gal_group_df = read_mock_catl(path_to_proc + "gal_group.hdf5") 
 
 
-# TODO : maybe only include Behroozi mocks in DF above that appear in mcmc_table_ptcl 
 print('Getting data in specific percentile')
 mcmc_table_pctl, bf_params, bf_chi2, bf_randint = \
-    get_paramvals_percentile(mcmc_table, 68, chi2, mock_nums)
+    get_paramvals_percentile(mcmc_table, 68, chi2, mock_nums_df)
+
+## Use only the mocks that are in the random sample of 100
+# Count the first 20 + 22nd column of general halo information from mock catalog
+idx_arr = np.insert(np.linspace(0,20,21), len(np.linspace(0,20,21)), 22).\
+    astype(int)
+
+names_arr = [x for x in gal_group_df.columns.values[idx_arr]]
+for idx in mcmc_table_pctl.mock_num.unique():
+    names_arr.append('{0}_y'.format(idx))
+    names_arr.append('groupid_{0}'.format(idx))
+    names_arr.append('g_galtype_{0}'.format(idx))
+names_arr = np.array(names_arr)
+
+gal_group_df_subset = gal_group_df[names_arr]
+
+for idx in mcmc_table_pctl.mock_num.unique():
+    gal_group_df_subset = gal_group_df_subset.rename(columns=\
+        {'{0}_y'.format(idx):'{0}'.format(idx)})
+
 
 print('Assigning colour to data')
 catl = assign_colour_label_data(catl)
@@ -1864,4 +1894,4 @@ plot_xmhm(result, cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue,
     cen_gals_data_red, cen_halos_data_red, cen_gals_data_blue, 
     cen_halos_data_blue, bf_chi2)
 
-# TODO : include function that plots spread in deltav for red and blue
+# TODO : include function that plots spread in deltav for red and blue 
