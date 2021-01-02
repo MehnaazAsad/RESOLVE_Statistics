@@ -518,7 +518,6 @@ def std_func(bins, mass_arr, vel_arr):
     """
 
     last_index = len(bins)-1
-    i = 0
     std_arr = []
     for index1, bin_edge in enumerate(bins):
         if index1 == last_index:
@@ -527,7 +526,6 @@ def std_func(bins, mass_arr, vel_arr):
         for index2, stellar_mass in enumerate(mass_arr):
             if stellar_mass >= bin_edge and stellar_mass < bins[index1+1]:
                 cen_deltav_arr.append(vel_arr[index2])
-        N = len(cen_deltav_arr)
         mean = 0
         diff_sqrd_arr = []
         for value in cen_deltav_arr:
@@ -999,75 +997,6 @@ def get_err_data(survey, path):
 
     return err_total, err_colour
 
-def halocat_init(halo_catalog, z_median):
-    """
-    Initial population of halo catalog using populate_mock function
-
-    Parameters
-    ----------
-    halo_catalog: string
-        Path to halo catalog
-    
-    z_median: float
-        Median redshift of survey
-
-    Returns
-    ---------
-    model: halotools model instance
-        Model based on behroozi 2010 SMHM
-    """
-    halocat = CachedHaloCatalog(fname=halo_catalog, update_cached_fname=True)
-    model = PrebuiltSubhaloModelFactory('behroozi10', redshift=z_median, \
-        prim_haloprop_key='halo_macc')
-    model.populate_mock(halocat,seed=5)
-
-    return model
-
-def populate_mock(theta, model):
-    """
-    Populate mock based on five SMHM parameter values and model
-
-    Parameters
-    ----------
-    theta: array
-        Array of parameter values
-    
-    model: halotools model instance
-        Model based on behroozi 2010 SMHM
-
-    Returns
-    ---------
-    gals_df: pandas dataframe
-        Dataframe of mock catalog
-    """
-    """"""
-
-    mhalo_characteristic, mstellar_characteristic, mlow_slope, mhigh_slope,\
-        mstellar_scatter = theta
-    model.param_dict['smhm_m1_0'] = mhalo_characteristic
-    model.param_dict['smhm_m0_0'] = mstellar_characteristic
-    model.param_dict['smhm_beta_0'] = mlow_slope
-    model.param_dict['smhm_delta_0'] = mhigh_slope
-    model.param_dict['scatter_model_param1'] = mstellar_scatter
-
-    model.mock.populate()
-
-    # if survey == 'eco' or survey == 'resolvea':
-    #     if mf_type == 'smf':
-    #         limit = np.round(np.log10((10**8.9) / 2.041), 1)
-    #     elif mf_type == 'bmf':
-    #         limit = np.round(np.log10((10**9.4) / 2.041), 1)
-    # elif survey == 'resolveb':
-    #     if mf_type == 'smf':
-    #         limit = np.round(np.log10((10**8.7) / 2.041), 1)
-    #     elif mf_type == 'bmf':
-    #         limit = np.round(np.log10((10**9.1) / 2.041), 1)
-    # sample_mask = model_init.mock.galaxy_table['stellar_mass'] >= 10**limit
-    gals = model.mock.galaxy_table#[sample_mask]
-    gals_df = pd.DataFrame(np.array(gals))
-
-    return gals_df
-
 def assign_cen_sat_flag(gals_df):
     """
     Assign centrals and satellites flag to dataframe
@@ -1116,7 +1045,7 @@ def mp_init(mcmc_table_pctl, nproc):
     mock_num_df = mcmc_table_pctl.iloc[:,5].reset_index(drop=True)
     frames = [params_df, mock_num_df]
     mcmc_table_pctl_new = pd.concat(frames, axis=1)
-    chunks = np.array([mcmc_table_pctl.values[i::5] \
+    chunks = np.array([mcmc_table_pctl_new.values[i::5] \
         for i in range(5)])
     pool = Pool(processes=nproc)
     result = pool.map(mp_func, chunks)
@@ -1168,7 +1097,7 @@ def mp_func(a_list):
     cen_std_blue_arr = []
 
     for theta in a_list:  
-        randint_logmstar = theta[4]
+        randint_logmstar = int(theta[4])
         theta = theta[:4]
         cols_to_use = ['halo_hostid', 'halo_id', 'halo_mvir', 'cz', \
             '{0}'.format(randint_logmstar), \
@@ -1181,10 +1110,8 @@ def mp_func(a_list):
         gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, gals_df)
         total_model, red_model, blue_model = measure_all_smf(gals_df, v_sim 
         , False)    
-        # * LAST CHECKPOINT 
         cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue = \
             get_centrals_mock(gals_df, randint_logmstar)
-        # TODO : Pass randint
         std_red_model, std_blue_model, centers_red_model, centers_blue_model = \
             get_deltav_sigma_vishnu_qmcolour(gals_df, randint_logmstar)
         maxis_red_arr.append(red_model[0])
@@ -1430,15 +1357,14 @@ def get_centrals_mock(gals_df, randint=None):
                 cen_gals_blue.append(gals_df['{0}'.format(randint)][idx])
                 cen_halos_blue.append(gals_df['halo_mvir'][idx])
 
-    # TODO : check if log conversion needs to stay 
-    cen_gals_red = np.log10(np.array(cen_gals_red))
-    cen_halos_red = np.log10(np.array(cen_halos_red))
-    cen_gals_blue = np.log10(np.array(cen_gals_blue))
-    cen_halos_blue = np.log10(np.array(cen_halos_blue))
+    cen_gals_red = np.array(cen_gals_red)
+    cen_halos_red = np.array(cen_halos_red)
+    cen_gals_blue = np.array(cen_gals_blue)
+    cen_halos_blue = np.array(cen_halos_blue)
 
     return cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue
 
-def get_best_fit_model(best_fit_params):
+def get_best_fit_model(best_fit_params, best_fit_mocknum):
     """
     Get SMF and SMHM information of best fit model given a survey
 
@@ -1464,16 +1390,17 @@ def get_best_fit_model(best_fit_params):
     cen_halos: array
         Array of central halo masses
     """   
-    # TODO : how to pass new "gals_df_"
-    f_red_cen, f_red_sat = hybrid_quenching_model(best_fit_params, gals_df_)
-    gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, gals_df_)
+    gals_df = gal_group_df_subset
+    f_red_cen, f_red_sat = hybrid_quenching_model(best_fit_params, gals_df, 
+        'vishnu', best_fit_mocknum)
+    gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, gals_df)
     v_sim = 130**3
     total_model, red_model, blue_model = measure_all_smf(gals_df, v_sim 
     , False)     
     cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue = \
         get_centrals_mock(gals_df)
     std_red, std_blue, std_centers_red, std_centers_blue = \
-        get_deltav_sigma_vishnu_qmcolour(gals_df_mock, randint_logmstar)
+        get_deltav_sigma_vishnu_qmcolour(gals_df, best_fit_mocknum)
 
     max_red = red_model[0]
     phi_red = red_model[1]
@@ -1785,8 +1712,37 @@ def plot_xmhm(result, gals_bf_red, halos_bf_red, gals_bf_blue, halos_bf_blue,
     # elif mf_type == 'bmf':
     #     plt.savefig(path_to_figures + 'bmhm_emcee_{0}.png'.format(survey))
 
-global model_init
-global gals_df_
+def plot_sigma_vdiff(result, std_red_data, cen_red_data, std_blue_data, 
+    cen_blue_data, std_bf_red, std_bf_blue, std_cen_bf_red, std_cen_bf_blue, 
+    bf_chi2):
+    """[summary]
+
+    Args:
+        result ([type]): [description]
+        std_red_data ([type]): [description]
+        cen_red_data ([type]): [description]
+        std_blue_data ([type]): [description]
+        cen_blue_data ([type]): [description]
+        std_bf_red ([type]): [description]
+        std_bf_blue ([type]): [description]
+        std_cen_bf_red ([type]): [description]
+        std_cen_bf_blue ([type]): [description]
+        bf_chi2 ([type]): [description]
+    """
+
+    # TODO : finish plotting result
+    plt.scatter(cen_red_data, std_red_data, c='maroon', label='data')
+    plt.scatter(cen_blue_data, std_blue_data, c='mediumblue', label='data')
+    plt.scatter(std_cen_bf_red, std_bf_red, c='indianred', label='best-fit')
+    plt.scatter(std_cen_bf_blue, std_bf_blue, c='cornflowerblue', \
+        label='best-fit')
+    plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=20)
+    plt.ylabel(r'$\sigma$')
+    plt.legend(loc='best')
+    plt.title(r'ECO spread in $\delta v$')
+    plt.show()
+
+global survey
 global path_to_figures
 global gal_group_df_subset
 
@@ -1838,9 +1794,10 @@ mcmc_table_pctl, bf_params, bf_chi2, bf_randint = \
     get_paramvals_percentile(mcmc_table, 68, chi2, mock_nums_df)
 
 ## Use only the mocks that are in the random sample of 100
-# Count the first 20 + 22nd column of general halo information from mock catalog
-idx_arr = np.insert(np.linspace(0,20,21), len(np.linspace(0,20,21)), 22).\
-    astype(int)
+# Count the first 20 + 22nd + 123-131 columns of general information from 
+# mock catalog (halo + rsd)
+idx_arr = np.insert(np.linspace(0,20,21), len(np.linspace(0,20,21)), (22, 123, 
+    124, 125, 126, 127, 128, 129, 130, 131)).astype(int)
 
 names_arr = [x for x in gal_group_df.columns.values[idx_arr]]
 for idx in mcmc_table_pctl.mock_num.unique():
@@ -1874,18 +1831,13 @@ print('Measuring error in data from mocks')
 err_total_data, err_colour_data = \
     get_err_data(survey, path_to_mocks)
 
-model_init = halocat_init(halo_catalog, z_median)
-
-# gals_df_ = gals_df_[['stellar_mass', 'C_S', 'halo_mvir', 'halo_mvir_host_halo',\
-#     'halo_macc','halo_hostid', 'halo_id']]
-
 print('Multiprocessing')
 result = mp_init(mcmc_table_pctl, nproc)
 
 print('Getting best fit model')
 maxis_bf_red, phi_bf_red, maxis_bf_blue, phi_bf_blue, cen_gals_red, \
     cen_halos_red, cen_gals_blue, cen_halos_blue, std_bf_red, std_bf_blue, \
-        std_cen_bf_red, std_cen_bf_blue = get_best_fit_model(bf_params)
+        std_cen_bf_red, std_cen_bf_blue = get_best_fit_model(bf_params, bf_randint)
 
 plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red, 
     maxis_bf_blue, phi_bf_blue, bf_chi2)
@@ -1894,4 +1846,5 @@ plot_xmhm(result, cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue,
     cen_gals_data_red, cen_halos_data_red, cen_gals_data_blue, 
     cen_halos_data_blue, bf_chi2)
 
-# TODO : include function that plots spread in deltav for red and blue 
+plot_sigma_vdiff(result, std_red, centers_red, std_blue, centers_blue, 
+    std_bf_red, std_bf_blue, std_cen_bf_red, std_cen_bf_blue, bf_chi2)
