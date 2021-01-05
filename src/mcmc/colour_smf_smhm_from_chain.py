@@ -1821,12 +1821,15 @@ print('Retrieving survey centrals')
 cen_gals_data_red, cen_halos_data_red, cen_gals_data_blue, cen_halos_data_blue =\
      get_centrals_data(catl)
 
+# Returns measurements in h=1.0
 print('Measuring SMF for data')
 total_data, red_data, blue_data = measure_all_smf(catl, volume, True)
 
+# Returns masses in h=1.0
 print('Measuring spread in vel disp for data')
 std_red, centers_red, std_blue, centers_blue = get_deltav_sigma_data(catl)
 
+# Measures errors using measurements in h=1.0
 print('Measuring error in data from mocks')
 err_total_data, err_colour_data = \
     get_err_data(survey, path_to_mocks)
