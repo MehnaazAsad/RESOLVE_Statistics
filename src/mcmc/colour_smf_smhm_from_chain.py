@@ -13,6 +13,7 @@ from halotools.empirical_models import PrebuiltSubhaloModelFactory
 from cosmo_utils.utils.stats_funcs import Stats_one_arr
 from halotools.sim_manager import CachedHaloCatalog
 from cosmo_utils.utils import work_paths as cwpaths
+from matplotlib.legend_handler import HandlerTuple
 from matplotlib.legend_handler import HandlerBase
 from collections import OrderedDict
 from multiprocessing import Pool
@@ -28,7 +29,7 @@ import os
 
 __author__ = '{Mehnaaz Asad}'
 
-rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=20)
+rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=25)
 rc('text', usetex=True)
 rc('text.latex', preamble=[r"\usepackage{amsmath}"])
 rc('axes', linewidth=2)
@@ -1103,13 +1104,25 @@ def mp_func(a_list):
             '{0}'.format(randint_logmstar), \
             'g_galtype_{0}'.format(randint_logmstar), \
             'groupid_{0}'.format(randint_logmstar)]
+
         gals_df = gal_group_df_subset[cols_to_use]
+
+        gals_df = gals_df.dropna(subset=['g_galtype_{0}'.\
+            format(randint_logmstar),'groupid_{0}'.format(randint_logmstar)]).\
+            reset_index(drop=True)
+
+        gals_df[['g_galtype_{0}'.format(randint_logmstar), \
+            'groupid_{0}'.format(randint_logmstar)]] = \
+            gals_df[['g_galtype_{0}'.format(randint_logmstar),\
+            'groupid_{0}'.format(randint_logmstar)]].astype(int)
+
         gals_df = assign_cen_sat_flag(gals_df)
+        # Stellar masses in log but halo masses not in log
         f_red_cen, f_red_sat = hybrid_quenching_model(theta, gals_df, 'vishnu',\
             randint_logmstar)
         gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, gals_df)
         total_model, red_model, blue_model = measure_all_smf(gals_df, v_sim 
-        , False)    
+        , False, randint_logmstar)    
         cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue = \
             get_centrals_mock(gals_df, randint_logmstar)
         std_red_model, std_blue_model, centers_red_model, centers_blue_model = \
@@ -1358,9 +1371,9 @@ def get_centrals_mock(gals_df, randint=None):
                 cen_halos_blue.append(gals_df['halo_mvir'][idx])
 
     cen_gals_red = np.array(cen_gals_red)
-    cen_halos_red = np.array(cen_halos_red)
+    cen_halos_red = np.log10(np.array(cen_halos_red))
     cen_gals_blue = np.array(cen_gals_blue)
-    cen_halos_blue = np.array(cen_halos_blue)
+    cen_halos_blue = np.log10(np.array(cen_halos_blue))
 
     return cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue
 
@@ -1390,15 +1403,31 @@ def get_best_fit_model(best_fit_params, best_fit_mocknum):
     cen_halos: array
         Array of central halo masses
     """   
-    gals_df = gal_group_df_subset
+    cols_to_use = ['halo_hostid', 'halo_id', 'halo_mvir', 'cz', \
+        '{0}'.format(best_fit_mocknum), \
+        'g_galtype_{0}'.format(best_fit_mocknum), \
+        'groupid_{0}'.format(best_fit_mocknum)]
+
+    gals_df = gal_group_df_subset[cols_to_use]
+
+    gals_df = gals_df.dropna(subset=['g_galtype_{0}'.\
+        format(best_fit_mocknum),'groupid_{0}'.format(best_fit_mocknum)]).\
+        reset_index(drop=True)
+
+    gals_df[['g_galtype_{0}'.format(best_fit_mocknum), \
+        'groupid_{0}'.format(best_fit_mocknum)]] = \
+        gals_df[['g_galtype_{0}'.format(best_fit_mocknum),\
+        'groupid_{0}'.format(best_fit_mocknum)]].astype(int)
+
+    gals_df = assign_cen_sat_flag(gals_df)
     f_red_cen, f_red_sat = hybrid_quenching_model(best_fit_params, gals_df, 
         'vishnu', best_fit_mocknum)
     gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, gals_df)
     v_sim = 130**3
     total_model, red_model, blue_model = measure_all_smf(gals_df, v_sim 
-    , False)     
+    , False, best_fit_mocknum)     
     cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue = \
-        get_centrals_mock(gals_df)
+        get_centrals_mock(gals_df, best_fit_mocknum)
     std_red, std_blue, std_centers_red, std_centers_blue = \
         get_deltav_sigma_vishnu_qmcolour(gals_df, best_fit_mocknum)
 
@@ -1412,7 +1441,7 @@ def get_best_fit_model(best_fit_params, best_fit_mocknum):
             std_centers_red, std_centers_blue
 
 def plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red, 
-    maxis_bf_blue, phi_bf_blue, bf_chi2):
+    maxis_bf_blue, phi_bf_blue, bf_chi2, err_colour):
     """
     Plot SMF from data, best fit param values and param values corresponding to 
     68th percentile 1000 lowest chi^2 values
@@ -1445,57 +1474,43 @@ def plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red,
     Nothing; SMF plot is saved in figures repository
     """
     class AnyObjectHandler(HandlerBase): 
+        # https://stackoverflow.com/questions/31478077/how-to-make-two-markers
+        # -share-the-same-label-in-the-legend-using-matplotlib
+                                    #AND
+        #https://stackoverflow.com/questions/41752309/single-legend-
+        # item-with-two-lines
         def create_artists(self, legend, orig_handle, x0, y0, width, height, 
             fontsize, trans):
-            if orig_handle[3]:
-                topcap_r = plt.Line2D([x0,x0+width*0.2], [0.8*height, 0.8*height], 
-                    linestyle='-', color='darkred') 
-                body_r = plt.Line2D([x0+width*0.1, x0+width*0.1], \
-                    [0.2*height, 0.8*height], linestyle='-', color='darkred')
-                bottomcap_r = plt.Line2D([x0, x0+width*0.2], \
-                    [0.2*height, 0.2*height], linestyle='-', color='darkred')
-                topcap_b = plt.Line2D([x0+width*0.4, x0+width*0.6], \
-                    [0.8*height, 0.8*height], linestyle='-', color='darkblue') 
-                body_b = plt.Line2D([x0+width*0.5, x0+width*0.5], \
-                    [0.2*height, 0.8*height], linestyle='-', color='darkblue')
-                bottomcap_b = plt.Line2D([x0+width*0.4, x0+width*0.6], \
-                    [0.2*height, 0.2*height], linestyle='-', color='darkblue')
-                return [topcap_r, body_r, bottomcap_r, topcap_b, body_b, bottomcap_b]
-            l1 = plt.Line2D([x0, x0+width], [0.7*height, 0.7*height], 
+            # if orig_handle[3]:
+            #     topcap_r = plt.Line2D([x0,x0+width*0.2], [0.8*height, 0.8*height], 
+            #         linestyle='-', color='darkred') 
+            #     body_r = plt.Line2D([x0+width*0.1, x0+width*0.1], \
+            #         [0.2*height, 0.8*height], linestyle='-', color='darkred')
+            #     bottomcap_r = plt.Line2D([x0, x0+width*0.2], \
+            #         [0.2*height, 0.2*height], linestyle='-', color='darkred')
+            #     topcap_b = plt.Line2D([x0+width*0.4, x0+width*0.6], \
+            #         [0.8*height, 0.8*height], linestyle='-', color='darkblue') 
+            #     body_b = plt.Line2D([x0+width*0.5, x0+width*0.5], \
+            #         [0.2*height, 0.8*height], linestyle='-', color='darkblue')
+            #     bottomcap_b = plt.Line2D([x0+width*0.4, x0+width*0.6], \
+            #         [0.2*height, 0.2*height], linestyle='-', color='darkblue')
+            #     return [topcap_r, body_r, bottomcap_r, topcap_b, body_b, bottomcap_b]
+            l1 = plt.Line2D([x0, x0+width], [0.3*height, 0.3*height], 
                 linestyle=orig_handle[2], color=orig_handle[0]) 
-            l2 = plt.Line2D([x0, x0+width], [0.3*height, 0.3*height],  
-                linestyle=orig_handle[2],
-                color=orig_handle[1])
+            l2 = plt.Line2D([x0, x0+width], [0.6*height, 0.6*height],  
+                linestyle=orig_handle[2], color=orig_handle[1])
             return [l1, l2] 
 
-    fig1= plt.figure(figsize=(10,10))
+    maxis_red_data, phi_red_data = red_data[0], red_data[1]
+    maxis_blue_data, phi_blue_data = blue_data[0], blue_data[1]
 
-    maxis_red_data, phi_red_data, err_red_data = red_data[0], red_data[1], \
-        red_data[2]
-    maxis_blue_data, phi_blue_data, err_blue_data = blue_data[0], blue_data[1], \
-        blue_data[2]
-    lower_err = phi_red_data - err_red_data
-    upper_err = phi_red_data + err_red_data
-    lower_err = phi_red_data - lower_err
-    upper_err = upper_err - phi_red_data
-    asymmetric_err = [lower_err, upper_err]
-    plt.errorbar(maxis_red_data,phi_red_data,yerr=asymmetric_err,
-        color='darkred',fmt='s', ecolor='darkred',markersize=5,capsize=5,
-        capthick=0.5,label='data',zorder=10)
-    lower_err = phi_blue_data - err_blue_data
-    upper_err = phi_blue_data + err_blue_data
-    lower_err = phi_blue_data - lower_err
-    upper_err = upper_err - phi_blue_data
-    asymmetric_err = [lower_err, upper_err]
-    plt.errorbar(maxis_blue_data,phi_blue_data,yerr=asymmetric_err,
-        color='darkblue',fmt='s', ecolor='darkblue',markersize=5,capsize=5,
-        capthick=0.5,label='data',zorder=10)
+    fig1= plt.figure(figsize=(10,10))
     for idx in range(len(result[0][0])):
-        plt.plot(result[0][0][idx],result[0][1][idx],color='indianred',
-            linestyle='-',alpha=0.3,zorder=0,label='model')
+        mr, = plt.plot(result[0][0][idx],result[0][1][idx],color='indianred',
+            linestyle='-',alpha=0.3,zorder=0)
     for idx in range(len(result[0][2])):
-        plt.plot(result[0][2][idx],result[0][3][idx],color='cornflowerblue',
-            linestyle='-',alpha=0.3,zorder=0,label='model')
+        mb, = plt.plot(result[0][2][idx],result[0][3][idx],color='cornflowerblue',
+            linestyle='-',alpha=0.3,zorder=0)
     for idx in range(len(result[1][0])):
         plt.plot(result[1][0][idx],result[1][1][idx],color='indianred',
             linestyle='-',alpha=0.3,zorder=0)
@@ -1520,23 +1535,31 @@ def plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red,
     for idx in range(len(result[4][2])):
         plt.plot(result[4][2][idx],result[4][3][idx],color='cornflowerblue',
             linestyle='-',alpha=0.3,zorder=0)
-    # REMOVED BEST FIT ERROR
-    plt.errorbar(maxis_bf_red,phi_bf_red,
-        color='darkred',fmt='-s',ecolor='darkred',markersize=3,lw=3,
-        capsize=5,capthick=0.5,label='best fit',zorder=10)
-    plt.errorbar(maxis_bf_blue,phi_bf_blue,
-        color='darkblue',fmt='-s',ecolor='darkblue',markersize=3,lw=3,
-        capsize=5,capthick=0.5,label='best fit',zorder=10)
+
+    # Data
+    dr = plt.fill_between(x=maxis_red_data, y1=phi_red_data+err_colour[0], 
+        y2=phi_red_data-err_colour[1], color='darkred', alpha=0.3)
+    db = plt.fill_between(x=maxis_blue_data, y1=phi_blue_data+err_colour[0], 
+        y2=phi_blue_data-err_colour[0], color='darkblue', alpha=0.3)
+
+    # Best-fit
+    bfr = plt.errorbar(maxis_bf_red,phi_bf_red,
+        color='darkred',fmt='--s',ecolor='darkred',markersize=3,lw=3,
+        capsize=5,capthick=0.5,zorder=10)
+    bfb = plt.errorbar(maxis_bf_blue,phi_bf_blue,
+        color='darkblue',fmt='--s',ecolor='darkblue',markersize=3,lw=3,
+        capsize=5,capthick=0.5,zorder=10)
+
     plt.ylim(-5,-1)
     if mf_type == 'smf':
-        plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=20)
+        plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=25)
     elif mf_type == 'bmf':
-        plt.xlabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=20)
+        plt.xlabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=25)
     plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=20)
-    plt.legend([("darkred", "darkblue", "-", False), \
-        ("indianred","cornflowerblue", "-", False), (0, 0, False, True)],\
-        ["best fit", "models", "data"], handler_map={tuple: AnyObjectHandler()},\
-        loc='best', prop={'size': 20})
+
+    l = plt.legend([(dr, db), (mr, mb), (bfr, bfb)], ['Data','Models','Best-fit'],
+        handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)})
+
     plt.annotate(r'$\boldsymbol\chi ^2 \approx$ {0}'.format(np.round(bf_chi2,2)), 
         xy=(0.1, 0.1), xycoords='axes fraction', bbox=dict(boxstyle="square", 
         ec='k', fc='lightgray', alpha=0.5), size=15)
@@ -1689,13 +1712,13 @@ def plot_xmhm(result, gals_bf_red, halos_bf_red, gals_bf_blue, halos_bf_blue,
             plt.ylim(np.log10((10**8.9)/2.041),13)
         elif survey == 'resolveb':
             plt.ylim(np.log10((10**8.7)/2.041),)
-        plt.ylabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=20)
+        plt.ylabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=25)
     elif mf_type == 'bmf':
         if survey == 'eco' or survey == 'resolvea':
             plt.ylim(np.log10((10**9.4)/2.041),)
         elif survey == 'resolveb':
             plt.ylim(np.log10((10**9.1)/2.041),)
-        plt.ylabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=20)
+        plt.ylabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=25)
     # handles, labels = plt.gca().get_legend_handles_labels()
     # by_label = OrderedDict(zip(labels, handles))
     # plt.legend(by_label.values(), by_label.keys(), loc='best',prop={'size': 20})
@@ -1714,7 +1737,7 @@ def plot_xmhm(result, gals_bf_red, halos_bf_red, gals_bf_blue, halos_bf_blue,
 
 def plot_sigma_vdiff(result, std_red_data, cen_red_data, std_blue_data, 
     cen_blue_data, std_bf_red, std_bf_blue, std_cen_bf_red, std_cen_bf_blue, 
-    bf_chi2):
+    bf_chi2, err_colour):
     """[summary]
 
     Args:
@@ -1730,16 +1753,51 @@ def plot_sigma_vdiff(result, std_red_data, cen_red_data, std_blue_data,
         bf_chi2 ([type]): [description]
     """
 
-    # TODO : finish plotting result
-    plt.scatter(cen_red_data, std_red_data, c='maroon', label='data')
-    plt.scatter(cen_blue_data, std_blue_data, c='mediumblue', label='data')
-    plt.scatter(std_cen_bf_red, std_bf_red, c='indianred', label='best-fit')
-    plt.scatter(std_cen_bf_blue, std_bf_blue, c='cornflowerblue', \
-        label='best-fit')
-    plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=20)
-    plt.ylabel(r'$\sigma$')
-    plt.legend(loc='best')
-    plt.title(r'ECO spread in $\delta v$')
+    fig1= plt.figure(figsize=(10,10))
+    for idx in range(len(result[0][0])):
+        mr = plt.scatter(result[0][10][idx],result[0][8][idx],color='indianred',
+            alpha=0.3,zorder=0,s=120)
+    for idx in range(len(result[0][2])):
+        mb = plt.scatter(result[0][11][idx],result[0][9][idx],color='cornflowerblue',
+            alpha=0.3,zorder=0,s=120)
+    for idx in range(len(result[1][0])):
+        plt.scatter(result[1][10][idx],result[1][8][idx],color='indianred',
+            alpha=0.3,zorder=0,s=120)
+    for idx in range(len(result[1][2])):
+        plt.scatter(result[1][11][idx],result[1][9][idx],color='cornflowerblue',
+            alpha=0.3,zorder=0,s=120)
+    for idx in range(len(result[2][0])):
+        plt.scatter(result[2][10][idx],result[2][8][idx],color='indianred',
+            alpha=0.3,zorder=0,s=120)
+    for idx in range(len(result[2][2])):
+        plt.scatter(result[2][11][idx],result[2][9][idx],color='cornflowerblue',
+            alpha=0.3,zorder=0,s=120)
+    for idx in range(len(result[3][0])):
+        plt.scatter(result[3][10][idx],result[3][8][idx],color='indianred',
+            alpha=0.3,zorder=0,s=120)
+    for idx in range(len(result[3][2])):
+        plt.scatter(result[3][11][idx],result[3][9][idx],color='cornflowerblue',
+            alpha=0.3,zorder=0,s=120)
+    for idx in range(len(result[4][0])):
+        plt.scatter(result[4][10][idx],result[4][8][idx],color='indianred',
+            alpha=0.3,zorder=0,s=120)
+    for idx in range(len(result[4][2])):
+        plt.scatter(result[4][11][idx],result[4][9][idx],color='cornflowerblue',
+            alpha=0.3,zorder=0,s=120)
+
+    dr = plt.scatter(cen_red_data, std_red_data, c='maroon', marker='p', s=160, 
+        zorder=10, edgecolors='darkred')
+    db = plt.scatter(cen_blue_data, std_blue_data, c='mediumblue', marker='p', 
+        s=160, zorder=10, edgecolors='darkblue')
+    bfr = plt.scatter(std_cen_bf_red, std_bf_red, c='maroon', marker='*', 
+        s=160, zorder=10, edgecolors='darkred')
+    bfb = plt.scatter(std_cen_bf_blue, std_bf_blue, c='mediumblue', 
+        marker='*', s=160, zorder=10, edgecolors='darkblue')
+    plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=25)
+    plt.ylabel(r'\boldmath$\sigma$', fontsize=25)
+    l = plt.legend([(dr, db), (mr, mb), (bfr, bfb)], ['Data','Models','Best-fit'],
+        handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, markerscale=1.5)
+    plt.title(r'{0} spread in $\Delta v$'.format(survey))
     plt.show()
 
 global survey
@@ -1836,6 +1894,7 @@ err_total_data, err_colour_data = \
 
 print('Multiprocessing')
 result = mp_init(mcmc_table_pctl, nproc)
+# Most recent run took 11 minutes 5/1/2021
 
 print('Getting best fit model')
 maxis_bf_red, phi_bf_red, maxis_bf_blue, phi_bf_blue, cen_gals_red, \
@@ -1843,11 +1902,12 @@ maxis_bf_red, phi_bf_red, maxis_bf_blue, phi_bf_blue, cen_gals_red, \
         std_cen_bf_red, std_cen_bf_blue = get_best_fit_model(bf_params, bf_randint)
 
 plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red, 
-    maxis_bf_blue, phi_bf_blue, bf_chi2)
+    maxis_bf_blue, phi_bf_blue, bf_chi2, err_colour_data)
 
 plot_xmhm(result, cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue,
     cen_gals_data_red, cen_halos_data_red, cen_gals_data_blue, 
     cen_halos_data_blue, bf_chi2)
 
 plot_sigma_vdiff(result, std_red, centers_red, std_blue, centers_blue, 
-    std_bf_red, std_bf_blue, std_cen_bf_red, std_cen_bf_blue, bf_chi2)
+    std_bf_red, std_bf_blue, std_cen_bf_red, std_cen_bf_blue, bf_chi2, 
+    err_colour_data)
