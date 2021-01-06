@@ -734,7 +734,7 @@ def lnprob(theta, phi_red_data, phi_blue_data, std_red_data, std_blue_data,
     if theta[0] < 0:
         chi2 = -np.inf
         return -np.inf, [chi2, randint_logmstar]
-    if theta[1] < 0 or theta[1] > 14:
+    if theta[1] < 0:
         chi2 = -np.inf
         return -np.inf, [chi2, randint_logmstar]
     if theta[2] < 0:
@@ -1002,11 +1002,17 @@ def get_err_data(survey, path):
                 (mock_pd.cz.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
                 (mock_pd.logmstar.values >= mstar_limit)]
 
-            ## Using best-fit found for old ECO data using optimize_hybridqm_eco,py
-            Mstar_q = 10.39 # Msun/h
-            Mh_q = 14.85 # Msun/h
-            mu = 0.65
-            nu = 0.16
+            # ## Using best-fit found for old ECO data using optimize_hybridqm_eco,py
+            # Mstar_q = 10.39 # Msun/h
+            # Mh_q = 14.85 # Msun/h
+            # mu = 0.65
+            # nu = 0.16
+
+            ## Using best-fit found for new ECO data using optimize_hybridqm_eco,py
+            Mstar_q = 10.49 # Msun/h
+            Mh_q = 14.03 # Msun/h
+            mu = 0.69
+            nu = 0.148
 
             theta = [Mstar_q, Mh_q, mu, nu]
             f_red_c, f_red_s = hybrid_quenching_model(theta, mock_pd, 'nonvishnu')
