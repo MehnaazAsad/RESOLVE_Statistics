@@ -913,10 +913,17 @@ def get_err_data(survey, path):
                 (mock_pd.logmstar.values >= mstar_limit)]
 
             ## Using best-fit found for old ECO data using optimize_hybridqm_eco,py
-            Mstar_q = 10.39 # Msun/h
-            Mh_q = 14.85 # Msun/h
-            mu = 0.65
-            nu = 0.16
+            # Mstar_q = 10.39 # Msun/h
+            # Mh_q = 14.85 # Msun/h
+            # mu = 0.65
+            # nu = 0.16
+
+            ## Using best-fit found for new ECO data using optimize_hybridqm_eco,py
+            Mstar_q = 10.49 # Msun/h
+            Mh_q = 14.03 # Msun/h
+            mu = 0.69
+            nu = 0.148
+
 
             theta = [Mstar_q, Mh_q, mu, nu]
             f_red_c, f_red_s = hybrid_quenching_model(theta, mock_pd, 'nonvishnu')
@@ -1541,10 +1548,10 @@ def plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red,
             linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
 
     # Data
-    dr = plt.fill_between(x=maxis_red_data, y1=phi_red_data+err_colour[0], 
-        y2=phi_red_data-err_colour[1], color='darkred',alpha=0.4)
-    db = plt.fill_between(x=maxis_blue_data, y1=phi_blue_data+err_colour[0], 
-        y2=phi_blue_data-err_colour[0], color='darkblue',alpha=0.4)
+    dr = plt.fill_between(x=maxis_red_data, y1=phi_red_data+err_colour[0:5], 
+        y2=phi_red_data-err_colour[0:5], color='darkred',alpha=0.4)
+    db = plt.fill_between(x=maxis_blue_data, y1=phi_blue_data+err_colour[5:], 
+        y2=phi_blue_data-err_colour[5:], color='darkblue',alpha=0.4)
 
     # Best-fit
     # Need a comma after 'bfr' and 'bfb' to solve this:
