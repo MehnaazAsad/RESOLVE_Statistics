@@ -1504,65 +1504,72 @@ def plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red,
     maxis_red_data, phi_red_data = red_data[0], red_data[1]
     maxis_blue_data, phi_blue_data = blue_data[0], blue_data[1]
 
+    alpha_mod = 0.7
+    col_red_mod = 'lightcoral'
+    col_blue_mod = 'cornflowerblue'
+    lw_mod = 3
     fig1= plt.figure(figsize=(10,10))
     for idx in range(len(result[0][0])):
-        mr, = plt.plot(result[0][0][idx],result[0][1][idx],color='indianred',
-            linestyle='-',alpha=0.3,zorder=0)
+        mr, = plt.plot(result[0][0][idx],result[0][1][idx],color=col_red_mod,
+            linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
     for idx in range(len(result[0][2])):
-        mb, = plt.plot(result[0][2][idx],result[0][3][idx],color='cornflowerblue',
-            linestyle='-',alpha=0.3,zorder=0)
+        mb, = plt.plot(result[0][2][idx],result[0][3][idx],color=col_blue_mod,
+            linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
     for idx in range(len(result[1][0])):
-        plt.plot(result[1][0][idx],result[1][1][idx],color='indianred',
-            linestyle='-',alpha=0.3,zorder=0)
+        plt.plot(result[1][0][idx],result[1][1][idx],color=col_red_mod,
+            linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
     for idx in range(len(result[1][2])):
-        plt.plot(result[1][2][idx],result[1][3][idx],color='cornflowerblue',
-            linestyle='-',alpha=0.3,zorder=0)
+        plt.plot(result[1][2][idx],result[1][3][idx],color=col_blue_mod,
+            linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
     for idx in range(len(result[2][0])):
-        plt.plot(result[2][0][idx],result[2][1][idx],color='indianred',
-            linestyle='-',alpha=0.3,zorder=0)
+        plt.plot(result[2][0][idx],result[2][1][idx],color=col_red_mod,
+            linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
     for idx in range(len(result[2][2])):
-        plt.plot(result[2][2][idx],result[2][3][idx],color='cornflowerblue',
-            linestyle='-',alpha=0.3,zorder=0)
+        plt.plot(result[2][2][idx],result[2][3][idx],color=col_blue_mod,
+            linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
     for idx in range(len(result[3][0])):
-        plt.plot(result[3][0][idx],result[3][1][idx],color='indianred',
-            linestyle='-',alpha=0.3,zorder=0)
+        plt.plot(result[3][0][idx],result[3][1][idx],color=col_red_mod,
+            linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
     for idx in range(len(result[3][2])):
-        plt.plot(result[3][2][idx],result[3][3][idx],color='cornflowerblue',
-            linestyle='-',alpha=0.3,zorder=0)
+        plt.plot(result[3][2][idx],result[3][3][idx],color=col_blue_mod,
+            linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
     for idx in range(len(result[4][0])):
-        plt.plot(result[4][0][idx],result[4][1][idx],color='indianred',
-            linestyle='-',alpha=0.3,zorder=0)
+        plt.plot(result[4][0][idx],result[4][1][idx],color=col_red_mod,
+            linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
     for idx in range(len(result[4][2])):
-        plt.plot(result[4][2][idx],result[4][3][idx],color='cornflowerblue',
-            linestyle='-',alpha=0.3,zorder=0)
+        plt.plot(result[4][2][idx],result[4][3][idx],color=col_blue_mod,
+            linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
 
     # Data
     dr = plt.fill_between(x=maxis_red_data, y1=phi_red_data+err_colour[0], 
-        y2=phi_red_data-err_colour[1], color='darkred', alpha=0.3)
+        y2=phi_red_data-err_colour[1], color='darkred',alpha=0.4)
     db = plt.fill_between(x=maxis_blue_data, y1=phi_blue_data+err_colour[0], 
-        y2=phi_blue_data-err_colour[0], color='darkblue', alpha=0.3)
+        y2=phi_blue_data-err_colour[0], color='darkblue',alpha=0.4)
 
     # Best-fit
-    bfr = plt.errorbar(maxis_bf_red,phi_bf_red,
-        color='darkred',fmt='--s',ecolor='darkred',markersize=3,lw=3,
-        capsize=5,capthick=0.5,zorder=10)
-    bfb = plt.errorbar(maxis_bf_blue,phi_bf_blue,
-        color='darkblue',fmt='--s',ecolor='darkblue',markersize=3,lw=3,
-        capsize=5,capthick=0.5,zorder=10)
+    # Need a comma after 'bfr' and 'bfb' to solve this:
+    #   AttributeError: 'NoneType' object has no attribute 'create_artists'
+    bfr, = plt.plot(maxis_bf_red,phi_bf_red,
+        color='maroon',ls='--',lw=3,zorder=10)
+    bfb, = plt.plot(maxis_bf_blue,phi_bf_blue,
+        color='darkblue',ls='--',lw=3,zorder=10)
 
-    plt.ylim(-5,-1)
+    plt.ylim(-4,-1)
     if mf_type == 'smf':
         plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=25)
     elif mf_type == 'bmf':
         plt.xlabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=25)
-    plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=20)
+    plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=25)
 
     l = plt.legend([(dr, db), (mr, mb), (bfr, bfb)], ['Data','Models','Best-fit'],
         handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)})
 
     plt.annotate(r'$\boldsymbol\chi ^2 \approx$ {0}'.format(np.round(bf_chi2,2)), 
         xy=(0.1, 0.1), xycoords='axes fraction', bbox=dict(boxstyle="square", 
-        ec='k', fc='lightgray', alpha=0.5), size=15)
+        ec='k', fc='lightgray', alpha=0.5), size=25)
+
+    if survey == 'eco':
+        plt.title('ECO')
     plt.show()
     # if mf_type == 'smf':
     #     plt.savefig(path_to_figures + 'smf_colour_{0}.png'.format(survey))
@@ -1695,19 +1702,19 @@ def plot_xmhm(result, gals_bf_red, halos_bf_red, gals_bf_blue, halos_bf_blue,
             zorder=0,label='model')
 
     # REMOVED ERROR BAR ON BEST FIT
-    plt.errorbar(x_bf_red,y_bf_red,color='darkred',fmt='-s',ecolor='darkred',lw=3,\
-        markersize=4,capsize=5,capthick=0.5,label='best fit',zorder=10)
-    plt.errorbar(x_bf_blue,y_bf_blue,color='darkblue',fmt='-s',ecolor='darkblue',lw=3,\
-        markersize=4,capsize=5,capthick=0.5,label='best fit',zorder=10)
+    plt.plot(x_bf_red,y_bf_red,color='darkred',lw=3,label='Best-fit',zorder=10)
+    plt.plot(x_bf_blue,y_bf_blue,color='darkblue',lw=3,
+        label='Best-fit',zorder=10)
 
     if survey == 'resolvea' and mf_type == 'smf':
         plt.xlim(10,14)
     else:
         plt.xlim(10,)
-    plt.xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=20)
+    plt.xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=25)
     if mf_type == 'smf':
         if survey == 'eco':
             plt.ylim(np.log10((10**8.9)/2.041),)
+            plt.title('ECO')
         elif survey == 'resolvea':
             plt.ylim(np.log10((10**8.9)/2.041),13)
         elif survey == 'resolveb':
@@ -1716,6 +1723,7 @@ def plot_xmhm(result, gals_bf_red, halos_bf_red, gals_bf_blue, halos_bf_blue,
     elif mf_type == 'bmf':
         if survey == 'eco' or survey == 'resolvea':
             plt.ylim(np.log10((10**9.4)/2.041),)
+            plt.title('ECO')
         elif survey == 'resolveb':
             plt.ylim(np.log10((10**9.1)/2.041),)
         plt.ylabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=25)
@@ -1724,11 +1732,11 @@ def plot_xmhm(result, gals_bf_red, halos_bf_red, gals_bf_blue, halos_bf_blue,
     # plt.legend(by_label.values(), by_label.keys(), loc='best',prop={'size': 20})
     plt.legend([("darkred", "darkblue", "-"), \
         ("indianred","cornflowerblue", "-")],\
-        ["best fit", "models"], handler_map={tuple: AnyObjectHandler()},\
-        loc='best', prop={'size': 20})
+        ["Best-fit", "Models"], handler_map={tuple: AnyObjectHandler()},\
+        loc='best', prop={'size': 30})
     plt.annotate(r'$\boldsymbol\chi ^2 \approx$ {0}'.format(np.round(bf_chi2,2)), 
         xy=(0.8, 0.1), xycoords='axes fraction', bbox=dict(boxstyle="square", 
-        ec='k', fc='lightgray', alpha=0.5), size=15)
+        ec='k', fc='lightgray', alpha=0.5), size=25)
     plt.show()
     # if mf_type == 'smf':
     #     plt.savefig(path_to_figures + 'smhm_emcee_{0}.png'.format(survey))
@@ -1794,10 +1802,11 @@ def plot_sigma_vdiff(result, std_red_data, cen_red_data, std_blue_data,
     bfb = plt.scatter(std_cen_bf_blue, std_bf_blue, c='mediumblue', 
         marker='*', s=160, zorder=10, edgecolors='darkblue')
     plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=25)
-    plt.ylabel(r'\boldmath$\sigma$', fontsize=25)
+    plt.ylabel(r'\boldmath$\sigma \left[\mathrm{km/s} \right]$', fontsize=30)
     l = plt.legend([(dr, db), (mr, mb), (bfr, bfb)], ['Data','Models','Best-fit'],
         handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, markerscale=1.5)
-    plt.title(r'{0} spread in $\Delta v$'.format(survey))
+    if survey == 'eco':
+        plt.title('ECO')
     plt.show()
 
 global survey
@@ -1823,11 +1832,11 @@ if machine == 'bender':
 elif machine == 'mac':
     halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
 
-chi2_file = path_to_proc + 'smhm_colour_run13/{0}_colour_chi2.txt'.\
+chi2_file = path_to_proc + 'smhm_colour_run14/{0}_colour_chi2.txt'.\
     format(survey)
-chain_file = path_to_proc + 'smhm_colour_run13/mcmc_{0}_colour_raw.txt'.\
+chain_file = path_to_proc + 'smhm_colour_run14/mcmc_{0}_colour_raw.txt'.\
     format(survey)
-randint_file = path_to_proc + 'smhm_colour_run13/{0}_colour_mocknum.txt'.\
+randint_file = path_to_proc + 'smhm_colour_run14/{0}_colour_mocknum.txt'.\
     format(survey)
 
 if survey == 'eco':
