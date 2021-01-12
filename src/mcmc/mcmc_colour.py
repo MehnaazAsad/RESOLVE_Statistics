@@ -127,7 +127,7 @@ def read_data_catl(path_to_file, survey):
         #     usecols=columns)
 
         eco_buff = reading_catls(path_to_file)
-
+        
         if mf_type == 'smf':
             # 6456 galaxies                       
             catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
