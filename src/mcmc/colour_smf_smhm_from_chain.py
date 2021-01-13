@@ -1511,7 +1511,7 @@ def plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red,
     maxis_red_data, phi_red_data = red_data[0], red_data[1]
     maxis_blue_data, phi_blue_data = blue_data[0], blue_data[1]
 
-    alpha_mod = 0.7
+    alpha_mod = 0.3
     col_red_mod = 'lightcoral'
     col_blue_mod = 'cornflowerblue'
     lw_mod = 3
@@ -1550,8 +1550,8 @@ def plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red,
     # Data
     dr = plt.fill_between(x=maxis_red_data, y1=phi_red_data+err_colour[0:5], 
         y2=phi_red_data-err_colour[0:5], color='darkred',alpha=0.4)
-    db = plt.fill_between(x=maxis_blue_data, y1=phi_blue_data+err_colour[5:], 
-        y2=phi_blue_data-err_colour[5:], color='darkblue',alpha=0.4)
+    db = plt.fill_between(x=maxis_blue_data, y1=phi_blue_data+err_colour[5:10], 
+        y2=phi_blue_data-err_colour[5:10], color='darkblue',alpha=0.4)
 
     # Best-fit
     # Need a comma after 'bfr' and 'bfb' to solve this:
@@ -1771,46 +1771,54 @@ def plot_sigma_vdiff(result, std_red_data, cen_red_data, std_blue_data,
     fig1= plt.figure(figsize=(10,10))
     for idx in range(len(result[0][0])):
         mr = plt.scatter(result[0][10][idx],result[0][8][idx],color='indianred',
-            alpha=0.3,zorder=0,s=120)
+            alpha=0.3,zorder=5,s=120)
     for idx in range(len(result[0][2])):
         mb = plt.scatter(result[0][11][idx],result[0][9][idx],color='cornflowerblue',
-            alpha=0.3,zorder=0,s=120)
+            alpha=0.3,zorder=5,s=120)
     for idx in range(len(result[1][0])):
         plt.scatter(result[1][10][idx],result[1][8][idx],color='indianred',
-            alpha=0.3,zorder=0,s=120)
+            alpha=0.3,zorder=5,s=120)
     for idx in range(len(result[1][2])):
         plt.scatter(result[1][11][idx],result[1][9][idx],color='cornflowerblue',
-            alpha=0.3,zorder=0,s=120)
+            alpha=0.3,zorder=5,s=120)
     for idx in range(len(result[2][0])):
         plt.scatter(result[2][10][idx],result[2][8][idx],color='indianred',
-            alpha=0.3,zorder=0,s=120)
+            alpha=0.3,zorder=5,s=120)
     for idx in range(len(result[2][2])):
         plt.scatter(result[2][11][idx],result[2][9][idx],color='cornflowerblue',
-            alpha=0.3,zorder=0,s=120)
+            alpha=0.3,zorder=5,s=120)
     for idx in range(len(result[3][0])):
         plt.scatter(result[3][10][idx],result[3][8][idx],color='indianred',
-            alpha=0.3,zorder=0,s=120)
+            alpha=0.3,zorder=5,s=120)
     for idx in range(len(result[3][2])):
         plt.scatter(result[3][11][idx],result[3][9][idx],color='cornflowerblue',
-            alpha=0.3,zorder=0,s=120)
+            alpha=0.3,zorder=5,s=120)
     for idx in range(len(result[4][0])):
         plt.scatter(result[4][10][idx],result[4][8][idx],color='indianred',
-            alpha=0.3,zorder=0,s=120)
+            alpha=0.3,zorder=5,s=120)
     for idx in range(len(result[4][2])):
         plt.scatter(result[4][11][idx],result[4][9][idx],color='cornflowerblue',
-            alpha=0.3,zorder=0,s=120)
+            alpha=0.3,zorder=5,s=120)
 
     dr = plt.scatter(cen_red_data, std_red_data, c='maroon', marker='p', s=160, 
         zorder=10, edgecolors='darkred')
     db = plt.scatter(cen_blue_data, std_blue_data, c='mediumblue', marker='p', 
         s=160, zorder=10, edgecolors='darkblue')
+
+    sigr = plt.fill_between(x=cen_red_data, y1=std_red_data+err_colour[10:15], 
+        y2=std_red_data-err_colour[10:15], color='darkred',alpha=0.3)
+    sigb = plt.fill_between(x=cen_blue_data, y1=std_blue_data+err_colour[15:20], 
+        y2=std_blue_data-err_colour[15:20], color='darkblue',alpha=0.3)
+
+
     bfr = plt.scatter(std_cen_bf_red, std_bf_red, c='maroon', marker='*', 
         s=160, zorder=10, edgecolors='darkred')
     bfb = plt.scatter(std_cen_bf_blue, std_bf_blue, c='mediumblue', 
         marker='*', s=160, zorder=10, edgecolors='darkblue')
     plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=25)
     plt.ylabel(r'\boldmath$\sigma \left[\mathrm{km/s} \right]$', fontsize=30)
-    l = plt.legend([(dr, db), (mr, mb), (bfr, bfb)], ['Data','Models','Best-fit'],
+    l = plt.legend([(dr, db), (mr, mb), (bfr, bfb), (sigr, sigb)], 
+        ['Data','Models','Best-fit',r'1$\sigma$'],
         handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, markerscale=1.5)
     if survey == 'eco':
         plt.title('ECO')
@@ -1927,3 +1935,4 @@ plot_xmhm(result, cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue,
 plot_sigma_vdiff(result, std_red, centers_red, std_blue, centers_blue, 
     std_bf_red, std_bf_blue, std_cen_bf_red, std_cen_bf_blue, bf_chi2, 
     err_colour_data)
+    
