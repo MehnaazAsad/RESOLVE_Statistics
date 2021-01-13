@@ -576,7 +576,6 @@ def get_err_data(survey, path):
             mu = 0.69
             nu = 0.148
 
-
             theta = [Mstar_q, Mh_q, mu, nu]
             f_red_c, f_red_s = hybrid_quenching_model(theta, mock_pd, 'nonvishnu')
             mock_pd = assign_colour_label_mock(f_red_c, f_red_s, mock_pd)
@@ -713,7 +712,7 @@ def mp_func(a_list):
     cen_halos_arr: array
         Array of central halo masses
     """
-    v_sim = 130**3
+    v_sim = 130**3#890641.5172927063 
 
     maxis_red_arr = []
     phi_red_arr = []
@@ -885,6 +884,7 @@ def get_stellar_mock(gals_df, mock, randint=None):
         sat_gals = []
         for idx,value in enumerate(df.cs_flag):
             if value == 1:
+                # Stellar masses in non-Vishnu mocks are in h=0.7
                 cen_gals.append(10**(df.logmstar.values[idx]))
             elif value == 0:
                 sat_gals.append(10**(df.logmstar.values[idx]))
@@ -1043,7 +1043,7 @@ def get_best_fit_model(best_fit_params, best_fit_mocknum):
     f_red_cen, f_red_sat = hybrid_quenching_model(best_fit_params, gals_df, 
         'vishnu', best_fit_mocknum)
     gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, gals_df)
-    v_sim = 130**3
+    v_sim = 130**3 #890641.5172927063 
     total_model, red_model, blue_model = measure_all_smf(gals_df, v_sim 
     , False, best_fit_mocknum)     
     cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue = \
