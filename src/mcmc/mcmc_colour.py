@@ -761,13 +761,14 @@ def lnprob(theta, phi_red_data, phi_blue_data, std_red_data, std_blue_data,
         gals_df_mock = gals_df_mock.rename(columns=\
             {'{0}_y'.format(randint_logmstar):'{0}'.format(randint_logmstar)})
 
+        # Masses in h=1.0
         f_red_cen, f_red_sat = hybrid_quenching_model(theta, gals_df_mock, \
             'vishnu', randint_logmstar)
         gals_df_mock = assign_colour_label_mock(f_red_cen, f_red_sat, \
             gals_df_mock)
         v_sim = 130**3
         total_model, red_model, blue_model = measure_all_smf(gals_df_mock, v_sim 
-        , False, randint_logmstar)     
+        , data_bool=False, randint_logmstar)     
         std_red_model, std_blue_model, centers_red_model, centers_blue_model = \
             get_deltav_sigma_vishnu_qmcolour(gals_df_mock, randint_logmstar)
         data_arr = []
@@ -1025,13 +1026,13 @@ def get_err_data(survey, path):
 
             #Measure SMF of mock using diff_smf function
             max_total, phi_total, err_total, bins_total, counts_total = \
-                diff_smf(logmstar_arr, volume, False)
+                diff_smf(logmstar_arr, volume, h1_bool=False)
             max_red, phi_red, err_red, bins_red, counts_red = \
                 diff_smf(mock_pd.logmstar.loc[mock_pd.colour_label.values == 'R'],
-                volume, False, 'R')
+                volume, h1_bool=False, 'R')
             max_blue, phi_blue, err_blue, bins_blue, counts_blue = \
                 diff_smf(mock_pd.logmstar.loc[mock_pd.colour_label.values == 'B'],
-                volume, False, 'B')
+                volume, h1_bool=False, 'B')
             phi_arr_total.append(phi_total)
             phi_arr_red.append(phi_red)
             phi_arr_blue.append(phi_blue)
@@ -1043,6 +1044,7 @@ def get_err_data(survey, path):
             sig_arr_blue.append(sig_blue)
             cen_arr_red.append(cen_red)
             cen_arr_blue.append(cen_blue)
+
     phi_arr_total = np.array(phi_arr_total)
     phi_arr_red = np.array(phi_arr_red)
     phi_arr_blue = np.array(phi_arr_blue)
@@ -1493,25 +1495,25 @@ def measure_all_smf(table, volume, data_bool, randint_logmstar=None):
     if data_bool:
         logmstar_col = 'logmstar'
         max_total, phi_total, err_total, bins_total, counts_total = \
-            diff_smf(table[logmstar_col], volume, False)
+            diff_smf(table[logmstar_col], volume, h1_bool=False)
         max_red, phi_red, err_red, bins_red, counts_red = \
             diff_smf(table[logmstar_col].loc[table[colour_col] == 'R'], 
-            volume, False, 'R')
+            volume, h1_bool=False, 'R')
         max_blue, phi_blue, err_blue, bins_blue, counts_blue = \
             diff_smf(table[logmstar_col].loc[table[colour_col] == 'B'], 
-            volume, False, 'B')
+            volume, h1_bool=False, 'B')
     else:
         # logmstar_col = 'stellar_mass'
         logmstar_col = '{0}'.format(randint_logmstar)
         ## Changed to 10**X because Behroozi mocks now have M* values in log
         max_total, phi_total, err_total, bins_total, counts_total = \
-            diff_smf(10**(table[logmstar_col]), volume, True)
+            diff_smf(10**(table[logmstar_col]), volume, h1_bool=True)
         max_red, phi_red, err_red, bins_red, counts_red = \
             diff_smf(10**(table[logmstar_col].loc[table[colour_col] == 'R']), 
-            volume, True, 'R')
+            volume,h1_bool=True, 'R')
         max_blue, phi_blue, err_blue, bins_blue, counts_blue = \
             diff_smf(10**(table[logmstar_col].loc[table[colour_col] == 'B']), 
-            volume, True, 'B')
+            volume, h1_bool=True, 'B')
     
     return [max_total, phi_total, err_total, counts_total] , \
         [max_red, phi_red, err_red, counts_red] , \
@@ -1602,14 +1604,20 @@ def main(args):
     # mocknum_queue = Queue()
     # mocknum_queue.put(mocknum_arr)
 
-    print('Reading catalog') #No Mstar cut
+    print('Reading catalog') 
+    # No Mstar cut needed
+    # grpcz values of -99 exist as well as >7000 so grpcz cut required
+    # absrmag cut required
+    # Masses in h=0.7
     catl, volume, z_median = read_data_catl(catl_file, survey)
 
     print('Assigning colour to data')
+    # Assigned using masses in h=0.7
     catl = assign_colour_label_data(catl)
 
     print('Measuring SMF for data')
-    total_data, red_data, blue_data = measure_all_smf(catl, volume, True)
+    total_data, red_data, blue_data = measure_all_smf(catl, volume, \
+        data_bool=True)
 
     print('Measuring spread in vel disp for data')
     std_red, centers_red, std_blue, centers_blue = get_deltav_sigma_data(catl)
