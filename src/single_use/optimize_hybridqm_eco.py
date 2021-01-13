@@ -1,6 +1,7 @@
 """
 {This script finds the best-fit hybrid quenching model parameters for the ECO
- data so that they can be applied to the mocks when measuring error in data}
+ data (in h=1.0) so that they can be applied to the mocks when measuring 
+ error in data}
 """
 
 from cosmo_utils.utils import work_paths as cwpaths
@@ -963,8 +964,11 @@ catl_file = path_to_proc + "gal_group_eco_data.hdf5"
 path_to_mocks = path_to_data + 'mocks/m200b/eco/'
 catl, volume, z_median = read_data_catl(catl_file, survey)
 catl = assign_colour_label_data(catl)
+# Measurements in h=1.0
 total_data, red_data, blue_data = measure_all_smf(catl, volume, True)
+# Masses in h=1.0
 sigma_red, cen_red, sigma_blue, cen_blue = get_deltav_sigma_data(catl)
+# SMF measurements and masses in h=1.0 before matrix and error calculations
 err_data_colour, corr_mat_colour_inv = get_err_data_urcolour(survey, 
     path_to_mocks)
 
