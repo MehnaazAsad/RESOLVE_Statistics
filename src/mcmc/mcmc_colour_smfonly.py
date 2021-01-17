@@ -650,9 +650,9 @@ def get_stellar_mock(gals_df, mock, randint=None):
         sat_gals = []
         for idx,value in enumerate(df.cs_flag):
             if value == 1:
-                cen_gals.append(10**(df.logmstar.values[idx]))
+                cen_gals.append((10**(df.logmstar.values[idx]))/2.041)
             elif value == 0:
-                sat_gals.append(10**(df.logmstar.values[idx]))
+                sat_gals.append((10**(df.logmstar.values[idx]))/2.041)
 
     cen_gals = np.array(cen_gals)
     sat_gals = np.array(sat_gals)
@@ -762,7 +762,8 @@ def lnprob(theta, phi_red_data, phi_blue_data, err, corr_mat_inv):
             'vishnu', randint_logmstar)
         gals_df_mock = assign_colour_label_mock(f_red_cen, f_red_sat, \
             gals_df_mock)
-        v_sim = 130**3
+        # v_sim = 130**3
+        v_sim = 890641.5172927063 #survey volume used in group_finder.py
         total_model, red_model, blue_model = measure_all_smf(gals_df_mock, v_sim 
         , False, randint_logmstar)     
         data_arr = []
@@ -1000,6 +1001,8 @@ def get_err_data(survey, path):
             Mh_q = 14.03 # Msun/h
             mu = 0.69
             nu = 0.148
+
+
 
             theta = [Mstar_q, Mh_q, mu, nu]
             f_red_c, f_red_s = hybrid_quenching_model(theta, mock_pd, 'nonvishnu')
