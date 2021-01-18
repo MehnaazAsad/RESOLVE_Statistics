@@ -652,9 +652,9 @@ def get_stellar_mock(gals_df, mock, randint=None):
         sat_gals = []
         for idx,value in enumerate(df.cs_flag):
             if value == 1:
-                cen_gals.append(10**(df.logmstar.values[idx]))
+                cen_gals.append((10**(df.logmstar.values[idx]))/2.041)
             elif value == 0:
-                sat_gals.append(10**(df.logmstar.values[idx]))
+                sat_gals.append((10**(df.logmstar.values[idx]))/2.041)
 
     cen_gals = np.array(cen_gals)
     sat_gals = np.array(sat_gals)
@@ -766,9 +766,10 @@ def lnprob(theta, phi_red_data, phi_blue_data, std_red_data, std_blue_data,
             'vishnu', randint_logmstar)
         gals_df_mock = assign_colour_label_mock(f_red_cen, f_red_sat, \
             gals_df_mock)
-        v_sim = 130**3
+        # v_sim = 130**3
+        v_sim = 890641.5172927063 #survey volume used in group_finder.py
         total_model, red_model, blue_model = measure_all_smf(gals_df_mock, v_sim 
-        , data_bool=False, randint_logmstar)     
+        ,data_bool=False, randint_logmstar=randint_logmstar)     
         std_red_model, std_blue_model, centers_red_model, centers_blue_model = \
             get_deltav_sigma_vishnu_qmcolour(gals_df_mock, randint_logmstar)
         data_arr = []
@@ -1029,10 +1030,10 @@ def get_err_data(survey, path):
                 diff_smf(logmstar_arr, volume, h1_bool=False)
             max_red, phi_red, err_red, bins_red, counts_red = \
                 diff_smf(mock_pd.logmstar.loc[mock_pd.colour_label.values == 'R'],
-                volume, h1_bool=False, 'R')
+                volume, h1_bool=False, colour_flag='R')
             max_blue, phi_blue, err_blue, bins_blue, counts_blue = \
                 diff_smf(mock_pd.logmstar.loc[mock_pd.colour_label.values == 'B'],
-                volume, h1_bool=False, 'B')
+                volume, h1_bool=False, colour_flag='B')
             phi_arr_total.append(phi_total)
             phi_arr_red.append(phi_red)
             phi_arr_blue.append(phi_blue)
