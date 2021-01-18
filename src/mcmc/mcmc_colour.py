@@ -1499,10 +1499,10 @@ def measure_all_smf(table, volume, data_bool, randint_logmstar=None):
             diff_smf(table[logmstar_col], volume, h1_bool=False)
         max_red, phi_red, err_red, bins_red, counts_red = \
             diff_smf(table[logmstar_col].loc[table[colour_col] == 'R'], 
-            volume, h1_bool=False, 'R')
+            volume, h1_bool=False, colour_flag='R')
         max_blue, phi_blue, err_blue, bins_blue, counts_blue = \
             diff_smf(table[logmstar_col].loc[table[colour_col] == 'B'], 
-            volume, h1_bool=False, 'B')
+            volume, h1_bool=False, colour_flag='B')
     else:
         # logmstar_col = 'stellar_mass'
         logmstar_col = '{0}'.format(randint_logmstar)
@@ -1511,10 +1511,10 @@ def measure_all_smf(table, volume, data_bool, randint_logmstar=None):
             diff_smf(10**(table[logmstar_col]), volume, h1_bool=True)
         max_red, phi_red, err_red, bins_red, counts_red = \
             diff_smf(10**(table[logmstar_col].loc[table[colour_col] == 'R']), 
-            volume,h1_bool=True, 'R')
+            volume,h1_bool=True, colour_flag='R')
         max_blue, phi_blue, err_blue, bins_blue, counts_blue = \
             diff_smf(10**(table[logmstar_col].loc[table[colour_col] == 'B']), 
-            volume, h1_bool=True, 'B')
+            volume, h1_bool=True, colour_flag='B')
     
     return [max_total, phi_total, err_total, counts_total] , \
         [max_red, phi_red, err_red, counts_red] , \
