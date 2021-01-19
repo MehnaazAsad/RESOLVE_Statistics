@@ -1516,36 +1516,36 @@ def plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red,
     col_blue_mod = 'cornflowerblue'
     lw_mod = 3
     fig1= plt.figure(figsize=(10,10))
-    for idx in range(len(result[0][0])):
-        mr, = plt.plot(result[0][0][idx],result[0][1][idx],color=col_red_mod,
-            linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
-    for idx in range(len(result[0][2])):
-        mb, = plt.plot(result[0][2][idx],result[0][3][idx],color=col_blue_mod,
-            linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
-    for idx in range(len(result[1][0])):
-        plt.plot(result[1][0][idx],result[1][1][idx],color=col_red_mod,
-            linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
-    for idx in range(len(result[1][2])):
-        plt.plot(result[1][2][idx],result[1][3][idx],color=col_blue_mod,
-            linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
-    for idx in range(len(result[2][0])):
-        plt.plot(result[2][0][idx],result[2][1][idx],color=col_red_mod,
-            linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
-    for idx in range(len(result[2][2])):
-        plt.plot(result[2][2][idx],result[2][3][idx],color=col_blue_mod,
-            linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
-    for idx in range(len(result[3][0])):
-        plt.plot(result[3][0][idx],result[3][1][idx],color=col_red_mod,
-            linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
-    for idx in range(len(result[3][2])):
-        plt.plot(result[3][2][idx],result[3][3][idx],color=col_blue_mod,
-            linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
-    for idx in range(len(result[4][0])):
-        plt.plot(result[4][0][idx],result[4][1][idx],color=col_red_mod,
-            linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
-    for idx in range(len(result[4][2])):
-        plt.plot(result[4][2][idx],result[4][3][idx],color=col_blue_mod,
-            linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
+    # for idx in range(len(result[0][0])):
+    #     mr, = plt.plot(result[0][0][idx],result[0][1][idx],color=col_red_mod,
+    #         linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
+    # for idx in range(len(result[0][2])):
+    #     mb, = plt.plot(result[0][2][idx],result[0][3][idx],color=col_blue_mod,
+    #         linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
+    # for idx in range(len(result[1][0])):
+    #     plt.plot(result[1][0][idx],result[1][1][idx],color=col_red_mod,
+    #         linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
+    # for idx in range(len(result[1][2])):
+    #     plt.plot(result[1][2][idx],result[1][3][idx],color=col_blue_mod,
+    #         linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
+    # for idx in range(len(result[2][0])):
+    #     plt.plot(result[2][0][idx],result[2][1][idx],color=col_red_mod,
+    #         linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
+    # for idx in range(len(result[2][2])):
+    #     plt.plot(result[2][2][idx],result[2][3][idx],color=col_blue_mod,
+    #         linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
+    # for idx in range(len(result[3][0])):
+    #     plt.plot(result[3][0][idx],result[3][1][idx],color=col_red_mod,
+    #         linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
+    # for idx in range(len(result[3][2])):
+    #     plt.plot(result[3][2][idx],result[3][3][idx],color=col_blue_mod,
+    #         linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
+    # for idx in range(len(result[4][0])):
+    #     plt.plot(result[4][0][idx],result[4][1][idx],color=col_red_mod,
+    #         linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
+    # for idx in range(len(result[4][2])):
+    #     plt.plot(result[4][2][idx],result[4][3][idx],color=col_blue_mod,
+    #         linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
 
     # Data
     dr = plt.fill_between(x=maxis_red_data, y1=phi_red_data+err_colour[0:5], 
@@ -1568,7 +1568,10 @@ def plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red,
         plt.xlabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=25)
     plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=25)
 
-    l = plt.legend([(dr, db), (mr, mb), (bfr, bfb)], ['Data','Models','Best-fit'],
+    # l = plt.legend([(dr, db), (mr, mb), (bfr, bfb)], ['Data','Models','Best-fit'],
+    #     handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)})
+
+    l = plt.legend([(dr, db), (bfr, bfb)], ['Data','Best-fit'],
         handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)})
 
     plt.annotate(r'$\boldsymbol\chi ^2 \approx$ {0}'.format(np.round(bf_chi2,2)), 
