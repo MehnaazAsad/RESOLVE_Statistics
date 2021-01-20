@@ -1089,7 +1089,8 @@ def mp_func(a_list):
     cen_halos_arr: array
         Array of central halo masses
     """
-    v_sim = 130**3
+    # v_sim = 130**3
+    v_sim = 890641.5172927063 
 
     maxis_red_arr = []
     phi_red_arr = []
@@ -1103,6 +1104,8 @@ def mp_func(a_list):
     std_blue_arr = []
     cen_std_red_arr = []
     cen_std_blue_arr = []
+    f_red_cen_red_arr = []
+    f_red_cen_blue_arr = []
 
     for theta in a_list:  
         randint_logmstar = int(theta[4])
@@ -1130,7 +1133,8 @@ def mp_func(a_list):
         gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, gals_df)
         total_model, red_model, blue_model = measure_all_smf(gals_df, v_sim 
         , False, randint_logmstar)    
-        cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue = \
+        cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue,\
+            f_red_cen_red, f_red_cen_blue = \
             get_centrals_mock(gals_df, randint_logmstar)
         std_red_model, std_blue_model, centers_red_model, centers_blue_model = \
             get_deltav_sigma_vishnu_qmcolour(gals_df, randint_logmstar)
@@ -1146,10 +1150,13 @@ def mp_func(a_list):
         std_blue_arr.append(std_blue_model)
         cen_std_red_arr.append(centers_red_model)
         cen_std_blue_arr.append(centers_blue_model)
+        f_red_cen_red_arr.append(f_red_cen_red)
+        f_red_cen_blue_arr.append(f_red_cen_blue)
 
     return [maxis_red_arr, phi_red_arr, maxis_blue_arr, phi_blue_arr, 
     cen_gals_red_arr, cen_halos_red_arr, cen_gals_blue_arr, cen_halos_blue_arr,
-    std_red_arr, std_blue_arr, cen_std_red_arr, cen_std_blue_arr]
+    std_red_arr, std_blue_arr, cen_std_red_arr, cen_std_blue_arr,
+    f_red_cen_red_arr, f_red_cen_blue_arr]
 
 def hybrid_quenching_model(theta, gals_df, mock, randint=None):
     """
@@ -1272,9 +1279,9 @@ def get_stellar_mock(gals_df, mock, randint=None):
         sat_gals = []
         for idx,value in enumerate(df.cs_flag):
             if value == 1:
-                cen_gals.append(10**(df.logmstar.values[idx]))
+                cen_gals.append((10**(df.logmstar.values[idx]))/2.041)
             elif value == 0:
-                sat_gals.append(10**(df.logmstar.values[idx]))
+                sat_gals.append((10**(df.logmstar.values[idx]))/2.041)
 
     cen_gals = np.array(cen_gals)
     sat_gals = np.array(sat_gals)
@@ -1367,22 +1374,27 @@ def get_centrals_mock(gals_df, randint=None):
     cen_halos_red = []
     cen_gals_blue = []
     cen_halos_blue = []
+    f_red_cen_gals_red = []
+    f_red_cen_gals_blue = []
 
     for idx,value in enumerate(gals_df['C_S']):
         if value == 1:
             if gals_df['colour_label'][idx] == 'R':
                 cen_gals_red.append(gals_df['{0}'.format(randint)][idx])
                 cen_halos_red.append(gals_df['halo_mvir'][idx])
+                f_red_cen_gals_red.append(gals_df['f_red'][idx])
             elif gals_df['colour_label'][idx] == 'B':
                 cen_gals_blue.append(gals_df['{0}'.format(randint)][idx])
                 cen_halos_blue.append(gals_df['halo_mvir'][idx])
+                f_red_cen_gals_blue.append(gals_df['f_red'][idx])
 
     cen_gals_red = np.array(cen_gals_red)
     cen_halos_red = np.log10(np.array(cen_halos_red))
     cen_gals_blue = np.array(cen_gals_blue)
     cen_halos_blue = np.log10(np.array(cen_halos_blue))
 
-    return cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue
+    return cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue, \
+        f_red_cen_gals_red, f_red_cen_gals_blue
 
 def get_best_fit_model(best_fit_params, best_fit_mocknum):
     """
@@ -1430,11 +1442,12 @@ def get_best_fit_model(best_fit_params, best_fit_mocknum):
     f_red_cen, f_red_sat = hybrid_quenching_model(best_fit_params, gals_df, 
         'vishnu', best_fit_mocknum)
     gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, gals_df)
-    v_sim = 130**3
+    # v_sim = 130**3
+    v_sim = 890641.5172927063
     total_model, red_model, blue_model = measure_all_smf(gals_df, v_sim 
     , False, best_fit_mocknum)     
-    cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue = \
-        get_centrals_mock(gals_df, best_fit_mocknum)
+    cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue, f_red_cen_red,\
+        f_red_cen_blue = get_centrals_mock(gals_df, best_fit_mocknum)
     std_red, std_blue, std_centers_red, std_centers_blue = \
         get_deltav_sigma_vishnu_qmcolour(gals_df, best_fit_mocknum)
 
@@ -1444,8 +1457,8 @@ def get_best_fit_model(best_fit_params, best_fit_mocknum):
     phi_blue = blue_model[1]
 
     return max_red, phi_red, max_blue, phi_blue, cen_gals_red, cen_halos_red,\
-        cen_gals_blue, cen_halos_blue, std_red, std_blue,\
-            std_centers_red, std_centers_blue
+        cen_gals_blue, cen_halos_blue, f_red_cen_red, f_red_cen_blue, std_red, \
+            std_blue, std_centers_red, std_centers_blue
 
 def plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red, 
     maxis_bf_blue, phi_bf_blue, bf_chi2, err_colour):
@@ -1511,11 +1524,54 @@ def plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red,
     maxis_red_data, phi_red_data = red_data[0], red_data[1]
     maxis_blue_data, phi_blue_data = blue_data[0], blue_data[1]
 
-    alpha_mod = 0.3
-    col_red_mod = 'lightcoral'
-    col_blue_mod = 'cornflowerblue'
-    lw_mod = 3
-    fig1= plt.figure(figsize=(10,10))
+    i_outer = 0
+    red_mod_arr = []
+    blue_mod_arr = []
+    while i_outer < 5:
+        for idx in range(len(result[i_outer][0])):
+            red_mod_ii = result[i_outer][1][idx]
+            red_mod_arr.append(red_mod_ii)
+            blue_mod_ii = result[i_outer][3][idx]
+            blue_mod_arr.append(blue_mod_ii)
+        i_outer += 1
+
+        for idx in range(len(result[i_outer][0])):
+            red_mod_ii = result[i_outer][1][idx]
+            red_mod_arr.append(red_mod_ii)
+            blue_mod_ii = result[i_outer][3][idx]
+            blue_mod_arr.append(blue_mod_ii)
+        i_outer += 1
+
+        for idx in range(len(result[i_outer][0])):
+            red_mod_ii = result[i_outer][1][idx]
+            red_mod_arr.append(red_mod_ii)
+            blue_mod_ii = result[i_outer][3][idx]
+            blue_mod_arr.append(blue_mod_ii)
+        i_outer += 1
+
+        for idx in range(len(result[i_outer][0])):
+            red_mod_ii = result[i_outer][1][idx]
+            red_mod_arr.append(red_mod_ii)
+            blue_mod_ii = result[i_outer][3][idx]
+            blue_mod_arr.append(blue_mod_ii)
+        i_outer += 1
+
+        for idx in range(len(result[i_outer][0])):
+            red_mod_ii = result[i_outer][1][idx]
+            red_mod_arr.append(red_mod_ii)
+            blue_mod_ii = result[i_outer][3][idx]
+            blue_mod_arr.append(blue_mod_ii)
+        i_outer += 1
+
+    red_phi_max = np.amax(red_mod_arr, axis=0)
+    red_phi_min = np.amin(red_mod_arr, axis=0)
+    blue_phi_max = np.amax(blue_mod_arr, axis=0)
+    blue_phi_min = np.amin(blue_mod_arr, axis=0)
+
+    # alpha_mod = 0.3
+    # col_red_mod = 'lightcoral'
+    # col_blue_mod = 'cornflowerblue'
+    # lw_mod = 3
     # for idx in range(len(result[0][0])):
     #     mr, = plt.plot(result[0][0][idx],result[0][1][idx],color=col_red_mod,
     #         linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
@@ -1548,10 +1604,24 @@ def plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red,
     #         linestyle='-',alpha=alpha_mod,zorder=5,lw=lw_mod)
 
     # Data
-    dr = plt.fill_between(x=maxis_red_data, y1=phi_red_data+err_colour[0:5], 
-        y2=phi_red_data-err_colour[0:5], color='darkred',alpha=0.4)
-    db = plt.fill_between(x=maxis_blue_data, y1=phi_blue_data+err_colour[5:10], 
-        y2=phi_blue_data-err_colour[5:10], color='darkblue',alpha=0.4)
+    # dr = plt.fill_between(x=maxis_red_data, y1=phi_red_data+err_colour[0:5], 
+    #     y2=phi_red_data-err_colour[0:5], color='darkred',alpha=0.4)
+    # db = plt.fill_between(x=maxis_blue_data, y1=phi_blue_data+err_colour[5:10], 
+    #     y2=phi_blue_data-err_colour[5:10], color='darkblue',alpha=0.4)
+
+    fig1= plt.figure(figsize=(10,10))
+
+    mr = plt.fill_between(x=maxis_red_data, y1=red_phi_max, 
+        y2=red_phi_min, color='lightcoral',alpha=0.4)
+    mb = plt.fill_between(x=maxis_blue_data, y1=blue_phi_max, 
+        y2=blue_phi_min, color='cornflowerblue',alpha=0.4)
+
+    dr = plt.errorbar(maxis_red_data,phi_red_data,yerr=err_colour[0:5],
+        color='darkred',fmt='s-',ecolor='darkred',markersize=5,capsize=5,
+        capthick=0.5,zorder=10)
+    db = plt.errorbar(maxis_blue_data,phi_blue_data,yerr=err_colour[5:10],
+        color='darkblue',fmt='s-',ecolor='darkblue',markersize=5,capsize=5,
+        capthick=0.5,zorder=10)
 
     # Best-fit
     # Need a comma after 'bfr' and 'bfb' to solve this:
@@ -1568,10 +1638,7 @@ def plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red,
         plt.xlabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=25)
     plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=25)
 
-    # l = plt.legend([(dr, db), (mr, mb), (bfr, bfb)], ['Data','Models','Best-fit'],
-    #     handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)})
-
-    l = plt.legend([(dr, db), (bfr, bfb)], ['Data','Best-fit'],
+    plt.legend([(dr, db), (mr, mb), (bfr, bfb)], ['Data','Models','Best-fit'],
         handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)})
 
     plt.annotate(r'$\boldsymbol\chi ^2 \approx$ {0}'.format(np.round(bf_chi2,2)), 
@@ -1827,6 +1894,180 @@ def plot_sigma_vdiff(result, std_red_data, cen_red_data, std_blue_data,
         plt.title('ECO')
     plt.show()
 
+def plot_zumand_fig4(result, gals_bf_red, halos_bf_red, gals_bf_blue, 
+    halos_bf_blue, bf_chi2):
+
+    # if model == 'halo':
+    #     sat_halomod_df = gals_df.loc[gals_df.C_S.values == 0] 
+    #     cen_halomod_df = gals_df.loc[gals_df.C_S.values == 1]
+    # elif model == 'hybrid':
+    #     sat_hybmod_df = gals_df.loc[gals_df.C_S.values == 0]
+    #     cen_hybmod_df = gals_df.loc[gals_df.C_S.values == 1]
+
+    logmhalo_mod_arr = result[0][5]
+    for idx in range(5):
+        idx+=1
+        if idx == 5:
+            break
+        logmhalo_mod_arr = np.insert(logmhalo_mod_arr, -1, result[idx][5])
+    for idx in range(5):
+        logmhalo_mod_arr = np.insert(logmhalo_mod_arr, -1, result[idx][7])
+    logmhalo_mod_arr_flat = np.hstack(logmhalo_mod_arr)
+
+    logmstar_mod_arr = result[0][4]
+    for idx in range(5):
+        idx+=1
+        if idx == 5:
+            break
+        logmstar_mod_arr = np.insert(logmstar_mod_arr, -1, result[idx][4])
+    for idx in range(5):
+        logmstar_mod_arr = np.insert(logmstar_mod_arr, -1, result[idx][6])
+    logmstar_mod_arr_flat = np.hstack(logmstar_mod_arr)
+
+    fred_mod_arr = result[0][12]
+    for idx in range(5):
+        idx+=1
+        if idx == 5:
+            break
+        fred_mod_arr = np.insert(fred_mod_arr, -1, result[idx][12])
+    for idx in range(5):
+        fred_mod_arr = np.insert(fred_mod_arr, -1, result[idx][13])
+    fred_mod_arr_flat = np.hstack(fred_mod_arr)
+
+    fig1 = plt.figure()
+    plt.hexbin(logmhalo_mod_arr_flat, logmstar_mod_arr_flat, 
+        C=fred_mod_arr_flat, cmap='rainbow')
+    cb = plt.colorbar()
+    cb.set_label(r'\boldmath\ $f_{red}$')
+
+
+    x_bf_red,y_bf_red,y_std_bf_red,y_std_err_bf_red = Stats_one_arr(halos_bf_red,\
+    gals_bf_red,base=0.4,bin_statval='center')
+    x_bf_blue,y_bf_blue,y_std_bf_blue,y_std_err_bf_blue = Stats_one_arr(halos_bf_blue,\
+    gals_bf_blue,base=0.4,bin_statval='center')
+
+    bfr, = plt.plot(x_bf_red,y_bf_red,color='darkred',lw=5,zorder=10)
+    bfb, = plt.plot(x_bf_blue,y_bf_blue,color='darkblue',lw=5,zorder=10)
+
+    plt.annotate(r'$\boldsymbol\chi ^2 \approx$ {0}'.format(np.round(bf_chi2,2)), 
+        xy=(0.02, 0.85), xycoords='axes fraction', bbox=dict(boxstyle="square", 
+        ec='k', fc='lightgray', alpha=0.5), size=25)
+
+    plt.fill([13.5, plt.gca().get_xlim()[1], plt.gca().get_xlim()[1], 13.5], 
+        [plt.gca().get_ylim()[0], plt.gca().get_ylim()[0], 
+        plt.gca().get_ylim()[1], plt.gca().get_ylim()[1]], fill=False, 
+        hatch='\\')
+
+    plt.xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$')
+    plt.ylabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$')
+
+    plt.ylim(8.45, 12.3)
+    plt.xlim(10, 14.5)
+
+    plt.legend([(bfr, bfb)], ['Best-fit'], 
+        handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='best', 
+        prop={'size': 30})
+
+    if survey == 'eco':
+        plt.title('ECO')
+    
+    plt.show()
+
+def plot_sigma_vdiff_mod(result, std_red_data, cen_red_data, std_blue_data, 
+    cen_blue_data, std_bf_red, std_bf_blue, std_cen_bf_red, std_cen_bf_blue, 
+    bf_chi2, err_colour):
+    """[summary]
+
+    Args:
+        result ([type]): [description]
+        std_red_data ([type]): [description]
+        cen_red_data ([type]): [description]
+        std_blue_data ([type]): [description]
+        cen_blue_data ([type]): [description]
+        std_bf_red ([type]): [description]
+        std_bf_blue ([type]): [description]
+        std_cen_bf_red ([type]): [description]
+        std_cen_bf_blue ([type]): [description]
+        bf_chi2 ([type]): [description]
+    """
+    i_outer = 0
+    red_mod_arr = []
+    blue_mod_arr = []
+    while i_outer < 5:
+        for idx in range(len(result[i_outer][0])):
+            red_mod_ii = result[i_outer][8][idx]
+            red_mod_arr.append(red_mod_ii)
+            blue_mod_ii = result[i_outer][9][idx]
+            blue_mod_arr.append(blue_mod_ii)
+        i_outer += 1
+
+        for idx in range(len(result[i_outer][0])):
+            red_mod_ii = result[i_outer][8][idx]
+            red_mod_arr.append(red_mod_ii)
+            blue_mod_ii = result[i_outer][9][idx]
+            blue_mod_arr.append(blue_mod_ii)
+        i_outer += 1
+
+        for idx in range(len(result[i_outer][0])):
+            red_mod_ii = result[i_outer][8][idx]
+            red_mod_arr.append(red_mod_ii)
+            blue_mod_ii = result[i_outer][9][idx]
+            blue_mod_arr.append(blue_mod_ii)
+        i_outer += 1
+
+        for idx in range(len(result[i_outer][0])):
+            red_mod_ii = result[i_outer][8][idx]
+            red_mod_arr.append(red_mod_ii)
+            blue_mod_ii = result[i_outer][9][idx]
+            blue_mod_arr.append(blue_mod_ii)
+        i_outer += 1
+
+        for idx in range(len(result[i_outer][0])):
+            red_mod_ii = result[i_outer][8][idx]
+            red_mod_arr.append(red_mod_ii)
+            blue_mod_ii = result[i_outer][9][idx]
+            blue_mod_arr.append(blue_mod_ii)
+        i_outer += 1
+
+    red_std_max = np.amax(red_mod_arr, axis=0)
+    red_std_min = np.amin(red_mod_arr, axis=0)
+    blue_std_max = np.amax(blue_mod_arr, axis=0)
+    blue_std_min = np.amin(blue_mod_arr, axis=0)
+
+    fig1= plt.figure(figsize=(10,10))
+
+    mr = plt.fill_between(x=cen_red_data, y1=red_std_min, 
+        y2=red_std_max, color='lightcoral',alpha=0.4)
+    mb = plt.fill_between(x=cen_blue_data, y1=blue_std_min, 
+        y2=blue_std_max, color='cornflowerblue',alpha=0.4)
+
+    dr = plt.errorbar(cen_red_data,std_red_data,yerr=err_colour[10:15],
+        color='darkred',fmt='p-',ecolor='darkred',markersize=10,capsize=10,
+        capthick=1.0,zorder=10)
+    db = plt.errorbar(cen_blue_data,std_blue_data,yerr=err_colour[15:20],
+        color='darkblue',fmt='p-',ecolor='darkblue',markersize=10,capsize=10,
+        capthick=1.0,zorder=10)
+
+    bfr, = plt.plot(std_cen_bf_red,std_bf_red,
+        color='maroon',ls='--',lw=3,zorder=10)
+    bfb, = plt.plot(std_cen_bf_blue,std_bf_blue,
+        color='mediumblue',ls='--',lw=3,zorder=10)
+
+    plt.xlabel(r'\boldmath$\log_{10}\ M_{\star , cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=25)
+    plt.ylabel(r'\boldmath$\sigma \left[\mathrm{km/s} \right]$', fontsize=30)
+
+    plt.legend([(dr, db), (mr, mb), (bfr, bfb)], 
+        ['Data','Models','Best-fit'],
+        handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, markerscale=1.5)
+
+    plt.annotate(r'$\boldsymbol\chi ^2 \approx$ {0}'.format(np.round(bf_chi2,2)), 
+    xy=(0.02, 0.75), xycoords='axes fraction', bbox=dict(boxstyle="square", 
+    ec='k', fc='lightgray', alpha=0.5), size=25)
+
+    if survey == 'eco':
+        plt.title('ECO')
+    plt.show()
+
 global survey
 global path_to_figures
 global gal_group_df_subset
@@ -1850,11 +2091,11 @@ if machine == 'bender':
 elif machine == 'mac':
     halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
 
-chi2_file = path_to_proc + 'smhm_colour_run14/{0}_colour_chi2.txt'.\
+chi2_file = path_to_proc + 'smhm_colour_run17/{0}_colour_chi2.txt'.\
     format(survey)
-chain_file = path_to_proc + 'smhm_colour_run14/mcmc_{0}_colour_raw.txt'.\
+chain_file = path_to_proc + 'smhm_colour_run17/mcmc_{0}_colour_raw.txt'.\
     format(survey)
-randint_file = path_to_proc + 'smhm_colour_run14/{0}_colour_mocknum.txt'.\
+randint_file = path_to_proc + 'smhm_colour_run17/{0}_colour_mocknum.txt'.\
     format(survey)
 
 if survey == 'eco':
@@ -1893,10 +2134,13 @@ names_arr = np.array(names_arr)
 
 gal_group_df_subset = gal_group_df[names_arr]
 
+# Renaming the "1_y" column kept from line 1896 because of case where it was
+# also in mcmc_table_ptcl.mock_num and was selected twice
+gal_group_df_subset.columns.values[30] = "behroozi_bf"
+
 for idx in mcmc_table_pctl.mock_num.unique():
     gal_group_df_subset = gal_group_df_subset.rename(columns=\
         {'{0}_y'.format(idx):'{0}'.format(idx)})
-
 
 print('Assigning colour to data')
 catl = assign_colour_label_data(catl)
@@ -1921,12 +2165,13 @@ err_total_data, err_colour_data = \
 
 print('Multiprocessing')
 result = mp_init(mcmc_table_pctl, nproc)
-# Most recent run took 11 minutes 5/1/2021
+# Most recent run took 9.5 minutes 20/1/2021
 
 print('Getting best fit model')
 maxis_bf_red, phi_bf_red, maxis_bf_blue, phi_bf_blue, cen_gals_red, \
-    cen_halos_red, cen_gals_blue, cen_halos_blue, std_bf_red, std_bf_blue, \
-        std_cen_bf_red, std_cen_bf_blue = get_best_fit_model(bf_params, bf_randint)
+    cen_halos_red, cen_gals_blue, cen_halos_blue, f_red_cen_red, \
+        f_red_cen_blue, std_bf_red, std_bf_blue, std_cen_bf_red, \
+            std_cen_bf_blue = get_best_fit_model(bf_params, bf_randint)
 
 plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red, 
     maxis_bf_blue, phi_bf_blue, bf_chi2, err_colour_data)
@@ -1935,7 +2180,13 @@ plot_xmhm(result, cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue,
     cen_gals_data_red, cen_halos_data_red, cen_gals_data_blue, 
     cen_halos_data_blue, bf_chi2)
 
+plot_zumand_fig4(result, cen_gals_red, cen_halos_red, cen_gals_blue, 
+    cen_halos_blue, bf_chi2)
+    
 plot_sigma_vdiff(result, std_red, centers_red, std_blue, centers_blue, 
     std_bf_red, std_bf_blue, std_cen_bf_red, std_cen_bf_blue, bf_chi2, 
     err_colour_data)
-    
+
+plot_sigma_vdiff_mod(result, std_red, centers_red, std_blue, centers_blue, 
+    std_bf_red, std_bf_blue, std_cen_bf_red, std_cen_bf_blue, bf_chi2, 
+    err_colour_data)
