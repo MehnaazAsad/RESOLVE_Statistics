@@ -1628,7 +1628,7 @@ def plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red,
     bfr, = plt.plot(maxis_bf_red,phi_bf_red,
         color='maroon',ls='--',lw=3,zorder=10)
     bfb, = plt.plot(maxis_bf_blue,phi_bf_blue,
-        color='darkblue',ls='--',lw=3,zorder=10)
+        color='mediumblue',ls='--',lw=3,zorder=10)
 
     plt.ylim(-4,-1)
     if mf_type == 'smf':
@@ -1643,7 +1643,7 @@ def plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red,
     #     handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)})
 
     plt.annotate(r'$\boldsymbol\chi ^2 \approx$ {0}'.format(np.round(bf_chi2,2)), 
-        xy=(0.1, 0.1), xycoords='axes fraction', bbox=dict(boxstyle="square", 
+        xy=(0.9, 0.75), xycoords='axes fraction', bbox=dict(boxstyle="square", 
         ec='k', fc='lightgray', alpha=0.5), size=25)
 
     if survey == 'eco':
@@ -1937,9 +1937,10 @@ def plot_zumand_fig4(result, gals_bf_red, halos_bf_red, gals_bf_blue,
 
     fig1 = plt.figure()
     plt.hexbin(logmhalo_mod_arr_flat, logmstar_mod_arr_flat, 
-        C=fred_mod_arr_flat, cmap='rainbow', reduce_C_function=np.median)
+        C=fred_mod_arr_flat, cmap='rainbow')
     cb = plt.colorbar()
-    cb.set_label(r'\boldmath\ median $f_{red}$')
+    cb.set_label(r'\boldmath\ $f_{red}$')
+
 
     x_bf_red,y_bf_red,y_std_bf_red,y_std_err_bf_red = Stats_one_arr(halos_bf_red,\
     gals_bf_red,base=0.4,bin_statval='center')
@@ -1967,8 +1968,106 @@ def plot_zumand_fig4(result, gals_bf_red, halos_bf_red, gals_bf_blue,
     plt.legend([(bfr, bfb)], ['Best-fit'], 
         handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='best', 
         prop={'size': 30})
+
+    if survey == 'eco':
+        plt.title('ECO')
+    
     plt.show()
 
+def plot_sigma_vdiff_mod(result, std_red_data, cen_red_data, std_blue_data, 
+    cen_blue_data, std_bf_red, std_bf_blue, std_cen_bf_red, std_cen_bf_blue, 
+    bf_chi2, err_colour):
+    """[summary]
+
+    Args:
+        result ([type]): [description]
+        std_red_data ([type]): [description]
+        cen_red_data ([type]): [description]
+        std_blue_data ([type]): [description]
+        cen_blue_data ([type]): [description]
+        std_bf_red ([type]): [description]
+        std_bf_blue ([type]): [description]
+        std_cen_bf_red ([type]): [description]
+        std_cen_bf_blue ([type]): [description]
+        bf_chi2 ([type]): [description]
+    """
+    i_outer = 0
+    red_mod_arr = []
+    blue_mod_arr = []
+    while i_outer < 5:
+        for idx in range(len(result[i_outer][0])):
+            red_mod_ii = result[i_outer][8][idx]
+            red_mod_arr.append(red_mod_ii)
+            blue_mod_ii = result[i_outer][9][idx]
+            blue_mod_arr.append(blue_mod_ii)
+        i_outer += 1
+
+        for idx in range(len(result[i_outer][0])):
+            red_mod_ii = result[i_outer][8][idx]
+            red_mod_arr.append(red_mod_ii)
+            blue_mod_ii = result[i_outer][9][idx]
+            blue_mod_arr.append(blue_mod_ii)
+        i_outer += 1
+
+        for idx in range(len(result[i_outer][0])):
+            red_mod_ii = result[i_outer][8][idx]
+            red_mod_arr.append(red_mod_ii)
+            blue_mod_ii = result[i_outer][9][idx]
+            blue_mod_arr.append(blue_mod_ii)
+        i_outer += 1
+
+        for idx in range(len(result[i_outer][0])):
+            red_mod_ii = result[i_outer][8][idx]
+            red_mod_arr.append(red_mod_ii)
+            blue_mod_ii = result[i_outer][9][idx]
+            blue_mod_arr.append(blue_mod_ii)
+        i_outer += 1
+
+        for idx in range(len(result[i_outer][0])):
+            red_mod_ii = result[i_outer][8][idx]
+            red_mod_arr.append(red_mod_ii)
+            blue_mod_ii = result[i_outer][9][idx]
+            blue_mod_arr.append(blue_mod_ii)
+        i_outer += 1
+
+    red_std_max = np.amax(red_mod_arr, axis=0)
+    red_std_min = np.amin(red_mod_arr, axis=0)
+    blue_std_max = np.amax(blue_mod_arr, axis=0)
+    blue_std_min = np.amin(blue_mod_arr, axis=0)
+
+    fig1= plt.figure(figsize=(10,10))
+
+    mr = plt.fill_between(x=cen_red_data, y1=red_std_min, 
+        y2=red_std_max, color='lightcoral',alpha=0.4)
+    mb = plt.fill_between(x=cen_blue_data, y1=blue_std_min, 
+        y2=blue_std_max, color='cornflowerblue',alpha=0.4)
+
+    dr = plt.errorbar(cen_red_data,std_red_data,yerr=err_colour[10:15],
+        color='darkred',fmt='p-',ecolor='darkred',markersize=10,capsize=10,
+        capthick=1.0,zorder=10)
+    db = plt.errorbar(cen_blue_data,std_blue_data,yerr=err_colour[15:20],
+        color='darkblue',fmt='p-',ecolor='darkblue',markersize=10,capsize=10,
+        capthick=1.0,zorder=10)
+
+    bfr, = plt.plot(std_cen_bf_red,std_bf_red,
+        color='maroon',ls='--',lw=3,zorder=10)
+    bfb, = plt.plot(std_cen_bf_blue,std_bf_blue,
+        color='mediumblue',ls='--',lw=3,zorder=10)
+
+    plt.xlabel(r'\boldmath$\log_{10}\ M_{\star , cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=25)
+    plt.ylabel(r'\boldmath$\sigma \left[\mathrm{km/s} \right]$', fontsize=30)
+
+    plt.legend([(dr, db), (mr, mb), (bfr, bfb)], 
+        ['Data','Models','Best-fit'],
+        handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, markerscale=1.5)
+
+    plt.annotate(r'$\boldsymbol\chi ^2 \approx$ {0}'.format(np.round(bf_chi2,2)), 
+    xy=(0.02, 0.75), xycoords='axes fraction', bbox=dict(boxstyle="square", 
+    ec='k', fc='lightgray', alpha=0.5), size=25)
+
+    if survey == 'eco':
+        plt.title('ECO')
+    plt.show()
 
 global survey
 global path_to_figures
@@ -2044,7 +2143,6 @@ for idx in mcmc_table_pctl.mock_num.unique():
     gal_group_df_subset = gal_group_df_subset.rename(columns=\
         {'{0}_y'.format(idx):'{0}'.format(idx)})
 
-
 print('Assigning colour to data')
 catl = assign_colour_label_data(catl)
 
@@ -2068,7 +2166,7 @@ err_total_data, err_colour_data = \
 
 print('Multiprocessing')
 result = mp_init(mcmc_table_pctl, nproc)
-# Most recent run took 3 minutes 12/1/2021
+# Most recent run took 11 minutes 19/1/2021
 
 print('Getting best fit model')
 maxis_bf_red, phi_bf_red, maxis_bf_blue, phi_bf_blue, cen_gals_red, \
@@ -2087,5 +2185,9 @@ plot_zumand_fig4(result, cen_gals_red, cen_halos_red, cen_gals_blue,
     cen_halos_blue, bf_chi2)
 
 plot_sigma_vdiff(result, std_red, centers_red, std_blue, centers_blue, 
+    std_bf_red, std_bf_blue, std_cen_bf_red, std_cen_bf_blue, bf_chi2, 
+    err_colour_data)
+
+plot_sigma_vdiff_mod(result, std_red, centers_red, std_blue, centers_blue, 
     std_bf_red, std_bf_blue, std_cen_bf_red, std_cen_bf_blue, bf_chi2, 
     err_colour_data)
