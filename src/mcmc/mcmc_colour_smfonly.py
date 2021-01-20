@@ -731,7 +731,7 @@ def lnprob(theta, phi_red_data, phi_blue_data, err, corr_mat_inv):
     if theta[0] < 0:
         chi2 = -np.inf
         return -np.inf, [chi2, randint_logmstar]
-    if theta[1] < 0:
+    if theta[1] < 0 or theta[1] > 16:
         chi2 = -np.inf
         return -np.inf, [chi2, randint_logmstar]
     if theta[2] < 0:
