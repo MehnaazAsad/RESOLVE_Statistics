@@ -1629,7 +1629,7 @@ def plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red,
     bfr, = plt.plot(maxis_bf_red,phi_bf_red,
         color='maroon',ls='--',lw=3,zorder=10)
     bfb, = plt.plot(maxis_bf_blue,phi_bf_blue,
-        color='darkblue',ls='--',lw=3,zorder=10)
+        color='mediumblue',ls='--',lw=3,zorder=10)
 
     plt.ylim(-4,-1)
     if mf_type == 'smf':
@@ -2053,7 +2053,7 @@ def plot_sigma_vdiff_mod(result, std_red_data, cen_red_data, std_blue_data,
     bfb, = plt.plot(std_cen_bf_blue,std_bf_blue,
         color='mediumblue',ls='--',lw=3,zorder=10)
 
-    plt.xlabel(r'\boldmath$\log_{10}\ M_{\star , cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=25)
+    plt.xlabel(r'\boldmath$\log_{10}\ M_{\star , cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
     plt.ylabel(r'\boldmath$\sigma \left[\mathrm{km/s} \right]$', fontsize=30)
 
     plt.legend([(dr, db), (mr, mb), (bfr, bfb)], 
@@ -2182,7 +2182,7 @@ plot_xmhm(result, cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue,
 
 plot_zumand_fig4(result, cen_gals_red, cen_halos_red, cen_gals_blue, 
     cen_halos_blue, bf_chi2)
-    
+
 plot_sigma_vdiff(result, std_red, centers_red, std_blue, centers_blue, 
     std_bf_red, std_bf_blue, std_cen_bf_red, std_cen_bf_blue, bf_chi2, 
     err_colour_data)
