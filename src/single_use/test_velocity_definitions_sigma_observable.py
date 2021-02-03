@@ -117,8 +117,8 @@ def read_data_catl(path_to_file, survey):
         #             'fc', 'grpmb', 'grpms','modelu_rcorr']
 
         # 13878 galaxies
-        # eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0, \
-        #     usecols=columns)
+        # eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0)#, \
+            #usecols=columns)
 
         eco_buff = read_mock_catl(path_to_file)
 
@@ -133,6 +133,7 @@ def read_data_catl(path_to_file, survey):
                 (eco_buff.absrmag.values <= -17.33)] 
 
         volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
+        # volume = 192351.36 # Survey volume with buffer [Mpc/h]^3
         # cvar = 0.125
         z_median = np.median(catl.grpcz.values) / (3 * 10**5)
         
@@ -446,17 +447,22 @@ def std_func_mod(bins, mass_arr, vel_arr):
         cen_deltav_arr.append(np.array(vel_arr)[current_bin_idxs])
         
         diff_sqrd_arr = []
+        # mean = np.mean(cen_deltav_arr)
         for value in cen_deltav_arr:
+            # print(mean)
+            # print(np.mean(cen_deltav_arr))
             diff = value - mean
             diff_sqrd = diff**2
             diff_sqrd_arr.append(diff_sqrd)
         mean_diff_sqrd = np.mean(diff_sqrd_arr)
         std = np.sqrt(mean_diff_sqrd)
+        # print(std)
+        # print(np.std(cen_deltav_arr))
         std_arr.append(std)
 
     return std_arr
 
-def mean_halo_func(bins, logmstar_arr, loghalom_arr):
+def mean_grphalo_func(bins, logmstar_arr, loghalom_arr):
     mass_arr_bin_idxs = np.digitize(logmstar_arr, bins)
     # Put all galaxies that would have been in the bin after the last in the 
     # bin as well i.e galaxies with bin number 5 and 6 from previous line all
@@ -475,7 +481,7 @@ def mean_halo_func(bins, logmstar_arr, loghalom_arr):
 
     return mean_halomass_arr
 
-def mean_halo_vcirc_func(bins, logmstar_arr, loghalom_arr):
+def mean_grphalo_vcirc_func(bins, logmstar_arr, loghalom_arr):
     mass_arr_bin_idxs = np.digitize(logmstar_arr, bins)
     # Put all galaxies that would have been in the bin after the last in the 
     # bin as well i.e galaxies with bin number 5 and 6 from previous line all
@@ -489,14 +495,14 @@ def mean_halo_vcirc_func(bins, logmstar_arr, loghalom_arr):
         halomass_arr = []
         delta_mean = 200
         omega_m = 0.3
-        rho_crit = 2.77*10**11 # assuming h=1.0
+        rho_crit = 2.77*10**11 # assuming h=1.0 # h^2 . Msun/Mpc^3
         G = 4.3*10**-9 # Mpc . Msun^-1 . (km/s)^2
         current_bin_idxs = np.argwhere(mass_arr_bin_idxs == idx)
         halomass_arr.append(np.array(loghalom_arr)[current_bin_idxs])
         halomass_arr = np.array(halomass_arr).flatten()
         # radius in Mpc
         halo_radius = ((3*(10**halomass_arr)) / (4*np.pi*delta_mean*omega_m*rho_crit))**(1/3)
-        halo_vcirc = np.sqrt((G * halomass_arr)/halo_radius)
+        halo_vcirc = np.sqrt((G * (10**halomass_arr))/halo_radius)
         mean_vcirc = np.mean(halo_vcirc)
 
         mean_vcirc_arr.append(mean_vcirc)
@@ -628,12 +634,18 @@ def get_deltav_sigma_mocks_qmcolour(survey, mock_df):
     red_deltav_arr = []
     red_cen_stellar_mass_arr = []
     for key in red_subset_grpids: 
+
         group = mock_pd.loc[mock_pd.groupid == key]
         cen_stellar_mass = group.logmstar.loc[group.g_galtype.\
             values == 1].values[0]
-        # mean_cz_grp = np.round(np.mean(group.cz.values),2)
-        mean_cz_grp = group.cz.loc[group.g_galtype == 1].values[0]
+
+        # Different velocity definitions
+        mean_cz_grp = np.round(np.mean(group.cz.values),2)
+        cen_cz_grp = group.cz.loc[group.g_galtype == 1].values[0]
+
+        # Velocity difference
         deltav = group.cz.values - len(group)*[mean_cz_grp]
+
         for val in deltav:
             red_deltav_arr.append(val)
             red_cen_stellar_mass_arr.append(cen_stellar_mass)
@@ -657,9 +669,14 @@ def get_deltav_sigma_mocks_qmcolour(survey, mock_df):
         group = mock_pd.loc[mock_pd.groupid == key]
         cen_stellar_mass = group.logmstar.loc[group.g_galtype\
             .values == 1].values[0]
-        # mean_cz_grp = np.round(np.mean(group.cz.values),2)
-        mean_cz_grp = group.cz.loc[group.g_galtype == 1].values[0]
+
+        # Different velocity definitions
+        mean_cz_grp = np.round(np.mean(group.cz.values),2)
+        cen_cz_grp = group.cz.loc[group.g_galtype == 1].values[0]
+
+        # Velocity difference
         deltav = group.cz.values - len(group)*[mean_cz_grp]
+
         for val in deltav:
             blue_deltav_arr.append(val)
             blue_cen_stellar_mass_arr.append(cen_stellar_mass)
@@ -1072,22 +1089,64 @@ catl = assign_colour_label_data(catl)
 
 catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
 catl.M_group = np.log10((10**catl.M_group) / 2.041)
+catl.logmh_s = np.log10((10**catl.logmh_s) / 2.041)
+catl.logmh = np.log10((10**catl.logmh) / 2.041)
 
 
 
 if survey == 'eco' or survey == 'resolvea':
-    catl = catl.loc[catl.logmstar >= 8.9]
+    catl = catl.loc[catl.logmstar >= np.log10((10**8.9)/2.041)]
 elif survey == 'resolveb':
-    catl = catl.loc[catl.logmstar >= 8.7]
+    catl = catl.loc[catl.logmstar >= np.log10((10**8.7)/2.041)]
 
 red_subset_grpids = np.unique(catl.groupid.loc[(catl.\
     colour_label == 'R') & (catl.g_galtype == 1)].values)  
 blue_subset_grpids = np.unique(catl.groupid.loc[(catl.\
     colour_label == 'B') & (catl.g_galtype == 1)].values)
 
+red_subset_grpids = np.unique(catl.grp.loc[(catl.\
+    colour_label == 'R') & (catl.fc == 1)].values)  
+blue_subset_grpids = np.unique(catl.grp.loc[(catl.\
+    colour_label == 'B') & (catl.fc == 1)].values)
+
 # Calculating spread in velocity dispersion for galaxies in groups with a 
 # red central
 
+### USE IF OLD DATA
+red_deltav_arr = []
+red_cen_stellar_mass_arr = []
+grpid_arr = []
+red_cen_cz_arr = []
+red_mean_cz_arr = []
+red_grp_halo_mass_arr = []
+for key in red_subset_grpids: 
+    group = catl.loc[catl.grp == key]
+
+    grp_halo_mass = np.unique(group.logmh.values)[0]
+    cen_stellar_mass = group.logmstar.loc[group.fc.\
+        values == 1].values[0]
+    
+    # Different velocity definitions
+    mean_cz_grp = np.round(np.mean(group.cz.values),2)
+    cen_cz_grp = group.cz.loc[group.fc == 1].values[0]
+    cz_grp = np.unique(group.grpcz.values)[0]
+
+    # Velocity difference
+    deltav = group.cz.values - len(group)*[cen_cz_grp]
+    
+    red_cen_stellar_mass_arr.append(cen_stellar_mass)
+    red_grp_halo_mass_arr.append(grp_halo_mass)
+    red_cen_cz_arr.append(cen_cz_grp)
+    red_mean_cz_arr.append(mean_cz_grp)
+
+    for val in deltav:
+        red_deltav_arr.append(val)
+        # red_cen_stellar_mass_arr.append(cen_stellar_mass)
+        grpid_arr.append(key)
+    # if len(group) > 5:
+    #     break
+
+### USE IF NEW DATA
 red_deltav_arr = []
 red_cen_stellar_mass_arr = []
 grpid_arr = []
@@ -1096,13 +1155,19 @@ red_mean_cz_arr = []
 red_grp_halo_mass_arr = []
 for key in red_subset_grpids: 
     group = catl.loc[catl.groupid == key]
-    grp_halo_mass = np.unique(group.M_group.values)[0]
+
+    grp_halo_mass = np.unique(group.logmh.values)[0]
     cen_stellar_mass = group.logmstar.loc[group.g_galtype.\
         values == 1].values[0]
+    
+    # Different velocity definitions
     mean_cz_grp = np.round(np.mean(group.cz.values),2)
     cen_cz_grp = group.cz.loc[group.g_galtype == 1].values[0]
-    deltav = group.cz.values - len(group)*[cen_cz_grp]
+    cz_grp = np.unique(group.grpcz.values)[0]
 
+    # Velocity difference
+    deltav = group.cz.values - len(group)*[cen_cz_grp]
+    
     red_cen_stellar_mass_arr.append(cen_stellar_mass)
     red_grp_halo_mass_arr.append(grp_halo_mass)
     red_cen_cz_arr.append(cen_cz_grp)
@@ -1128,14 +1193,48 @@ std_red = np.array(std_red)
 
 mean_std_red = mean_std_func(red_stellar_mass_bins, red_cen_stellar_mass_arr, 
     red_deltav_arr, grpid_arr)
-mean_halo_red = mean_halo_func(red_stellar_mass_bins, red_cen_stellar_mass_arr, 
+mean_halo_red = mean_grphalo_func(red_stellar_mass_bins, red_cen_stellar_mass_arr, 
     red_grp_halo_mass_arr)
-mean_vcirc_red = mean_halo_vcirc_func(red_stellar_mass_bins, 
+mean_vcirc_red = mean_grphalo_vcirc_func(red_stellar_mass_bins, 
     red_cen_stellar_mass_arr, red_grp_halo_mass_arr)
 
 # Calculating spread in velocity dispersion for galaxies in groups with a 
 # blue central
 
+### USE IF OLD DATA
+blue_deltav_arr = []
+blue_cen_stellar_mass_arr = []
+grpid_arr = []
+blue_cen_cz_arr = []
+blue_mean_cz_arr = []
+blue_grp_halo_mass_arr = []
+for key in blue_subset_grpids: 
+    group = catl.loc[catl.grp == key]
+
+    grp_halo_mass = np.unique(group.logmh.values)[0]
+    cen_stellar_mass = group.logmstar.loc[group.fc\
+        .values == 1].values[0]
+
+    # Different velocity definitions
+    mean_cz_grp = np.round(np.mean(group.cz.values),2)
+    cen_cz_grp = group.cz.loc[group.fc == 1].values[0]
+    cz_grp = np.unique(group.grpcz.values)[0]
+
+    # Velocity difference
+    deltav = group.cz.values - len(group)*[cen_cz_grp]
+
+    blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+    blue_grp_halo_mass_arr.append(grp_halo_mass)
+    blue_cen_cz_arr.append(cen_cz_grp)
+    blue_mean_cz_arr.append(mean_cz_grp)
+
+    for val in deltav:
+        blue_deltav_arr.append(val)
+        # blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+        grpid_arr.append(key)
+
+
+### USE IF NEW DATA
 blue_deltav_arr = []
 blue_cen_stellar_mass_arr = []
 grpid_arr = []
@@ -1144,11 +1243,17 @@ blue_mean_cz_arr = []
 blue_grp_halo_mass_arr = []
 for key in blue_subset_grpids: 
     group = catl.loc[catl.groupid == key]
-    grp_halo_mass = np.unique(group.M_group.values)[0]
+
+    grp_halo_mass = np.unique(group.logmh.values)[0]
     cen_stellar_mass = group.logmstar.loc[group.g_galtype\
         .values == 1].values[0]
+
+    # Different velocity definitions
     mean_cz_grp = np.round(np.mean(group.cz.values),2)
     cen_cz_grp = group.cz.loc[group.g_galtype == 1].values[0]
+    cz_grp = np.unique(group.grpcz.values)[0]
+
+    # Velocity difference
     deltav = group.cz.values - len(group)*[cen_cz_grp]
 
     blue_cen_stellar_mass_arr.append(cen_stellar_mass)
@@ -1168,19 +1273,22 @@ if survey == 'eco' or survey == 'resolvea':
 
 elif survey == 'resolveb':
     blue_stellar_mass_bins = np.linspace(8.4,10.4,6)
-    
+
 std_blue = std_func_mod(blue_stellar_mass_bins, blue_cen_stellar_mass_arr, 
     blue_deltav_arr)    
 std_blue = np.array(std_blue)
 
 mean_std_blue = mean_std_func(blue_stellar_mass_bins, blue_cen_stellar_mass_arr, 
     blue_deltav_arr, grpid_arr)
-mean_halo_blue = mean_halo_func(blue_stellar_mass_bins, blue_cen_stellar_mass_arr, 
+mean_halo_blue = mean_grphalo_func(blue_stellar_mass_bins, blue_cen_stellar_mass_arr, 
     blue_grp_halo_mass_arr)
-mean_vcirc_blue = mean_halo_vcirc_func(blue_stellar_mass_bins, 
+mean_vcirc_blue = mean_grphalo_vcirc_func(blue_stellar_mass_bins, 
     blue_cen_stellar_mass_arr, blue_grp_halo_mass_arr)
 
-
+# centers_red = 0.5 * (result_red[1][1:] + \
+#     result_red[1][:-1])
+# centers_blue = 0.5 * (result_blue[1][1:] + \
+#     result_blue[1][:-1])
 
 centers_red = 0.5 * (red_stellar_mass_bins[1:] + \
     red_stellar_mass_bins[:-1])
@@ -1198,40 +1306,67 @@ fig1 = plt.figure()
 # plt.errorbar(centers_blue,std_blue,yerr=err_colour_data[15:20],
 #     color='darkblue',fmt='p-',ecolor='darkblue',markersize=10,capsize=10,
 #     capthick=1.0,zorder=10)
-plt.scatter(centers_red,std_red,color='darkred',s=50)
-plt.scatter(centers_blue,std_blue,color='darkblue',s=50)
+plt.scatter(centers_red,std_red,color='darkred',s=350,marker='p')
+plt.scatter(centers_blue,std_blue,color='darkblue',s=350,marker='p')
 plt.xlabel(r'\boldmath$\log_{10}\ M_{\star , cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
 plt.ylabel(r'\boldmath$\sigma \left[\mathrm{km/s} \right]$', fontsize=30)
+# plt.title('Spread in velocity difference from group cz as included in catalog')
+plt.title('Spread in velocity difference from central cz of group')
 plt.show()
+
+fig2 = plt.figure()
+plt.scatter(centers_red,mean_std_red,color='darkred',s=350, marker='p')
+plt.scatter(centers_blue,mean_std_blue,color='darkblue',s=350, marker='p')
+plt.xlabel(r'\boldmath$\log_{10}\ M_{\star , cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
+plt.ylabel(r'\boldmath$\sigma \left[\mathrm{km/s} \right]$', fontsize=30)
+plt.title('Mean of spread in velocity difference from central cz of group')
+plt.show()
+
 
 # Plot of comparison between using mean of all satellite velocities to measure 
 # velocity difference and using central velocity
-fig2 = plt.figure()
-plt.scatter(red_cen_cz_arr, red_mean_cz_arr, c='indianred', s=50)
-plt.scatter(blue_cen_cz_arr, blue_mean_cz_arr, c='cornflowerblue', s=50)
-plt.plot(np.linspace(3000, 7000, 20), np.linspace(3000, 7000, 20), '--k')
-plt.xlabel('Central cz')
-plt.ylabel('Mean cz')
+fig3, ax3 = plt.subplots()
+
+ax4 = ax3.twinx()
+ax4.set_ylabel(r'Mean cz (red) [km/s]')
+imshowax4 = ax4.scatter(red_cen_cz_arr, red_mean_cz_arr, c=red_grp_halo_mass_arr, cmap='Reds', s=50)
+# ax4.set_ylim(ax4.get_ylim()[::-1])
+plt.gca().invert_yaxis()
+
+imshowax3 = ax3.scatter(blue_cen_cz_arr, blue_mean_cz_arr, c=blue_grp_halo_mass_arr, cmap='Blues', s=50)
+
+ax3.plot(np.linspace(2530, 7470, 20), np.linspace(2530, 7470, 20), '--k')
+ax4.plot(np.linspace(2530, 7470, 20), np.linspace(2530, 7470, 20), '--k')
+
+cbb = plt.colorbar(mappable=imshowax3, shrink=0.5, pad=-0.1)
+cbr = plt.colorbar(mappable=imshowax4, shrink=0.5, pad=0.15)
+cbb.set_label(r'Group halo mass $[{M_\odot}/h]$', rotation=90, labelpad=20)
+
+ax3.set_xlabel(r'Central cz [km/s]')
+ax3.set_ylabel(r'Mean cz (blue) [km/s]')
+plt.title('Comparison of central cz and mean cz values of groups')
 plt.show()
 
-
-fig3 = plt.figure()
-plt.scatter(centers_red, mean_halo_red, color='darkred',s=50)
-plt.scatter(centers_blue,mean_halo_blue,color='darkblue',s=50)
-plt.xlabel('Group central M* [Msun/h]')
-plt.ylabel('Mean group halo mass [Msun/h]')
-plt.show()
 
 fig4 = plt.figure()
-plt.scatter(centers_red, mean_vcirc_red, color='darkred',s=50)
-plt.scatter(centers_blue,mean_vcirc_blue,color='darkblue',s=50)
+plt.scatter(centers_red, mean_halo_red, color='darkred',s=350,marker='p')
+plt.scatter(centers_blue,mean_halo_blue,color='darkblue',s=350,marker='p')
+plt.xlabel('Group central M* [Msun/h]')
+plt.ylabel('Mean group halo mass [Msun/h]')
+plt.title(r'Group halo mass (HAM with $M_{r}$) vs group central stellar mass')
+plt.show()
+
+fig5 = plt.figure()
+plt.scatter(centers_red, mean_vcirc_red, color='darkred',s=350, marker='p')
+plt.scatter(centers_blue,mean_vcirc_blue,color='darkblue',s=350, marker='p')
 plt.xlabel('Group central M* [Msun/h]')
 plt.ylabel('Mean group halo circular velocity [km/s]')
+plt.title(r'Group halo cirvular velocity vs group central stellar mass')
 plt.show()
 
 # Plot of comparison between using spread in velocity across all groups per bin
 # and mean of spreads per group per bin
-fig5 = plt.figure()
+fig6 = plt.figure()
 plt.scatter(std_red, mean_std_red, c='indianred', s=50)
 plt.scatter(std_blue, mean_std_blue, c='cornflowerblue', s=50)
 plt.plot(np.linspace(0, 350, 20), np.linspace(0, 350, 20), '--k')
@@ -1239,3 +1374,741 @@ plt.xlabel('Sigma')
 plt.ylabel('Mean sigma')
 plt.show()
 
+################################################################################
+
+def read_chi2(path_to_file):
+    """
+    Reads chi-squared values from file
+
+    Parameters
+    ----------
+    path_to_file: string
+        Path to chi-squared values file
+
+    Returns
+    ---------
+    chi2: array
+        Array of reshaped chi^2 values to match chain values
+    """
+    chi2_df = pd.read_csv(path_to_file,header=None,names=['chisquared'])
+    chi2 = chi2_df.chisquared.values
+
+    return chi2
+
+def read_mcmc(path_to_file):
+    """
+    Reads mcmc chain from file
+
+    Parameters
+    ----------
+    path_to_file: string
+        Path to mcmc chain file
+
+    Returns
+    ---------
+    emcee_table: pandas dataframe
+        Dataframe of mcmc chain values with NANs removed
+    """
+    colnames = ['mstar_q','mh_q','mu','nu']
+    
+    emcee_table = pd.read_csv(path_to_file, names=colnames, 
+        delim_whitespace=True, header=None)
+
+    emcee_table = emcee_table[emcee_table.mstar_q.values != '#']
+    emcee_table.mstar_q = emcee_table.mstar_q.astype(np.float64)
+    emcee_table.mh_q = emcee_table.mh_q.astype(np.float64)
+    emcee_table.mu = emcee_table.mu.astype(np.float64)
+    emcee_table.nu = emcee_table.nu.astype(np.float64)
+    
+    return emcee_table
+
+def read_mock_catl(filename, catl_format='.hdf5'):
+    """
+    Function to read ECO/RESOLVE catalogues.
+
+    Parameters
+    ----------
+    filename: string
+        path and name of the ECO/RESOLVE catalogue to read
+
+    catl_format: string, optional (default = '.hdf5')
+        type of file to read.
+        Options:
+            - '.hdf5': Reads in a catalogue in HDF5 format
+
+    Returns
+    -------
+    mock_pd: pandas DataFrame
+        DataFrame with galaxy/group information
+
+    Examples
+    --------
+    # Specifying `filename`
+    >>> filename = 'ECO_catl.hdf5'
+
+    # Reading in Catalogue
+    >>> mock_pd = reading_catls(filename, format='.hdf5')
+
+    >>> mock_pd.head()
+               x          y         z          vx          vy          vz  \
+    0  10.225435  24.778214  3.148386  356.112457 -318.894409  366.721832
+    1  20.945772  14.500367 -0.237940  168.731766   37.558834  447.436951
+    2  21.335835  14.808488  0.004653  967.204407 -701.556763 -388.055115
+    3  11.102760  21.782235  2.947002  611.646484 -179.032089  113.388794
+    4  13.217764  21.214905  2.113904  120.689598  -63.448833  400.766541
+
+       loghalom  cs_flag  haloid  halo_ngal    ...        cz_nodist      vel_tot  \
+    0    12.170        1  196005          1    ...      2704.599189   602.490355
+    1    11.079        1  197110          1    ...      2552.681697   479.667489
+    2    11.339        1  197131          1    ...      2602.377466  1256.285409
+    3    11.529        1  199056          1    ...      2467.277182   647.318259
+    4    10.642        1  199118          1    ...      2513.381124   423.326770
+
+           vel_tan     vel_pec     ra_orig  groupid    M_group g_ngal  g_galtype  \
+    0   591.399858 -115.068833  215.025116        0  11.702527      1          1
+    1   453.617221  155.924074  182.144134        1  11.524787      4          0
+    2  1192.742240  394.485714  182.213220        1  11.524787      4          0
+    3   633.928896  130.977416  210.441320        2  11.502205      1          1
+    4   421.064495   43.706352  205.525386        3  10.899680      1          1
+
+       halo_rvir
+    0   0.184839
+    1   0.079997
+    2   0.097636
+    3   0.113011
+    4   0.057210
+    """
+    ## Checking if file exists
+    if not os.path.exists(filename):
+        msg = '`filename`: {0} NOT FOUND! Exiting..'.format(filename)
+        raise ValueError(msg)
+    ## Reading file
+    if catl_format=='.hdf5':
+        mock_pd = pd.read_hdf(filename)
+    else:
+        msg = '`catl_format` ({0}) not supported! Exiting...'.format(catl_format)
+        raise ValueError(msg)
+
+    return mock_pd
+
+def get_paramvals_percentile(mcmc_table, pctl, chi2, randints_df):
+    """
+    Isolates 68th percentile lowest chi^2 values and takes random 100 sample
+
+    Parameters
+    ----------
+    mcmc_table: pandas dataframe
+        Mcmc chain dataframe
+
+    pctl: int
+        Percentile to use
+
+    chi2: array
+        Array of chi^2 values
+
+    Returns
+    ---------
+    mcmc_table_pctl: pandas dataframe
+        Sample of 100 68th percentile lowest chi^2 values
+    """ 
+    pctl = pctl/100
+    mcmc_table['chi2'] = chi2
+    mcmc_table['mock_num'] = randints_df.mock_num.values.astype(int)
+    mcmc_table = mcmc_table.sort_values('chi2').reset_index(drop=True)
+    slice_end = int(pctl*len(mcmc_table))
+    mcmc_table_pctl = mcmc_table[:slice_end]
+    # Best fit params are the parameters that correspond to the smallest chi2
+    bf_params = mcmc_table_pctl.drop_duplicates().reset_index(drop=True).\
+        values[0][:4]
+    bf_chi2 = mcmc_table_pctl.drop_duplicates().reset_index(drop=True).\
+        values[0][4]
+    bf_randint = mcmc_table_pctl.drop_duplicates().reset_index(drop=True).\
+        values[0][5].astype(int)
+    # Randomly sample 100 lowest chi2 
+    mcmc_table_pctl = mcmc_table_pctl.drop_duplicates().sample(100)
+
+    return mcmc_table_pctl, bf_params, bf_chi2, bf_randint
+
+def assign_cen_sat_flag(gals_df):
+    """
+    Assign centrals and satellites flag to dataframe
+
+    Parameters
+    ----------
+    gals_df: pandas dataframe
+        Mock catalog
+
+    Returns
+    ---------
+    gals_df: pandas dataframe
+        Mock catalog with centrals/satellites flag as new column
+    """
+
+    C_S = []
+    for idx in range(len(gals_df)):
+        if gals_df['halo_hostid'][idx] == gals_df['halo_id'][idx]:
+            C_S.append(1)
+        else:
+            C_S.append(0)
+    
+    C_S = np.array(C_S)
+    gals_df['cs_flag'] = C_S
+    return gals_df
+
+def get_host_halo_mock(gals_df, mock):
+    """
+    Get host halo mass from mock catalog
+
+    Parameters
+    ----------
+    gals_df: pandas dataframe
+        Mock catalog
+
+    Returns
+    ---------
+    cen_halos: array
+        Array of central host halo masses
+    sat_halos: array
+        Array of satellite host halo masses
+    """
+
+    df = gals_df.copy()
+
+    # groups = df.groupby('halo_id')
+    # keys = groups.groups.keys()
+
+    # for key in keys:
+    #     group = groups.get_group(key)
+    # for index, value in enumerate(group.cs_flag):
+    #     if value == 1:
+    #         cen_halos.append(group.loghalom.values[index])
+    #     else:
+    #         sat_halos.append(group.loghalom.values[index])
+
+    if mock == 'vishnu':
+        cen_halos = []
+        sat_halos = []
+        for index, value in enumerate(df.cs_flag):
+            if value == 1:
+                cen_halos.append(df.halo_mvir.values[index])
+            else:
+                sat_halos.append(df.halo_mvir.values[index])
+    else:
+        cen_halos = []
+        sat_halos = []
+        for index, value in enumerate(df.cs_flag):
+            if value == 1:
+                cen_halos.append(10**(df.loghalom.values[index]))
+            else:
+                sat_halos.append(10**(df.loghalom.values[index]))
+
+    cen_halos = np.array(cen_halos)
+    sat_halos = np.array(sat_halos)
+
+    return cen_halos, sat_halos
+
+def get_stellar_mock(gals_df, mock, randint=None):
+    """
+    Get stellar mass from mock catalog
+
+    Parameters
+    ----------
+    gals_df: pandas dataframe
+        Mock catalog
+
+    Returns
+    ---------
+    cen_gals: array
+        Array of central stellar masses
+    sat_gals: array
+        Array of satellite stellar masses
+    """
+    df = gals_df.copy()
+    if mock == 'vishnu':
+        # These masses are log
+        cen_gals = []
+        sat_gals = []
+        for idx,value in enumerate(df.cs_flag):
+            if value == 1:
+                cen_gals.append(10**(df['{0}'.format(randint)].values[idx]))
+            elif value == 0:
+                sat_gals.append(10**(df['{0}'.format(randint)].values[idx]))
+
+    else:
+        cen_gals = []
+        sat_gals = []
+        for idx,value in enumerate(df.cs_flag):
+            if value == 1:
+                cen_gals.append((10**(df.logmstar.values[idx]))/2.041)
+            elif value == 0:
+                sat_gals.append((10**(df.logmstar.values[idx]))/2.041)
+
+    cen_gals = np.array(cen_gals)
+    sat_gals = np.array(sat_gals)
+
+    return cen_gals, sat_gals
+
+def hybrid_quenching_model(theta, gals_df, mock, randint=None):
+    """
+    Apply hybrid quenching model from Zu and Mandelbaum 2015
+
+    Parameters
+    ----------
+
+    gals_df: pandas dataframe
+        Mock catalog
+
+    Returns
+    ---------
+    f_red_cen: array
+        Array of central red fractions
+    f_red_sat: array
+        Array of satellite red fractions
+    """
+
+    # parameter values from Table 1 of Zu and Mandelbaum 2015 "prior case"
+    Mstar_q = theta[0] # Msun/h
+    Mh_q = theta[1] # Msun/h
+    mu = theta[2]
+    nu = theta[3]
+
+    cen_hosthalo_mass_arr, sat_hosthalo_mass_arr = get_host_halo_mock(gals_df, \
+        mock)
+    cen_stellar_mass_arr, sat_stellar_mass_arr = get_stellar_mock(gals_df, mock, \
+        randint)
+
+    f_red_cen = 1 - np.exp(-((cen_stellar_mass_arr/(10**Mstar_q))**mu))
+
+    g_Mstar = np.exp(-((sat_stellar_mass_arr/(10**Mstar_q))**mu))
+    h_Mh = np.exp(-((sat_hosthalo_mass_arr/(10**Mh_q))**nu))
+    f_red_sat = 1 - (g_Mstar * h_Mh)
+
+    return f_red_cen, f_red_sat
+
+def assign_colour_label_mock(f_red_cen, f_red_sat, gals_df, drop_fred=False):
+    """
+    Assign colour label to mock catalog
+
+    Parameters
+    ----------
+    f_red_cen: array
+        Array of central red fractions
+    f_red_sat: array
+        Array of satellite red fractions
+    gals_df: pandas Dataframe
+        Mock catalog
+    drop_fred: boolean
+        Whether or not to keep red fraction column after colour has been
+        assigned
+
+    Returns
+    ---------
+    df: pandas Dataframe
+        Dataframe with colour label and random number assigned as 
+        new columns
+    """
+
+    # Copy of dataframe
+    df = gals_df.copy()
+    # Saving labels
+    color_label_arr = [[] for x in range(len(df))]
+    rng_arr = [[] for x in range(len(df))]
+    # Adding columns for f_red to df
+    df.loc[:, 'f_red'] = np.zeros(len(df))
+    df.loc[df['cs_flag'] == 1, 'f_red'] = f_red_cen
+    df.loc[df['cs_flag'] == 0, 'f_red'] = f_red_sat
+    # Converting to array
+    f_red_arr = df['f_red'].values
+    # Looping over galaxies
+    for ii, cs_ii in enumerate(df['cs_flag']):
+        # Draw a random number
+        rng = np.random.uniform()
+        # Comparing against f_red
+        if (rng >= f_red_arr[ii]):
+            color_label = 'B'
+        else:
+            color_label = 'R'
+        # Saving to list
+        color_label_arr[ii] = color_label
+        rng_arr[ii] = rng
+    
+    ## Assigning to DataFrame
+    df.loc[:, 'colour_label'] = color_label_arr
+    df.loc[:, 'rng'] = rng_arr
+    # Dropping 'f_red` column
+    if drop_fred:
+        df.drop('f_red', axis=1, inplace=True)
+
+    return df
+
+def mean_std_func(bins, mass_arr, vel_arr, groupid_arr):
+    mass_arr_bin_idxs = np.digitize(mass_arr, bins)
+    # Put all galaxies that would have been in the bin after the last in the 
+    # bin as well i.e galaxies with bin number 5 and 6 from previous line all
+    # go in one bin
+    for idx, value in enumerate(mass_arr_bin_idxs):
+        if value == 6:
+            mass_arr_bin_idxs[idx] = 5
+
+    mean_std_arr = []
+    len_std_arr = []
+    for idx in range(1, len(bins)):
+        cen_deltav_arr = []
+        grpid_arr = []
+        current_bin_idxs = np.argwhere(mass_arr_bin_idxs == idx)
+        cen_deltav_arr.append(np.array(vel_arr)[current_bin_idxs])
+        grpid_arr.append(np.array(groupid_arr)[current_bin_idxs])
+
+        mean = 0
+        std_arr = []
+        
+        data_temp = {'group_id': np.array(grpid_arr).flatten(), 
+            'deltav': np.array(cen_deltav_arr).flatten()}
+        df_temp = pd.DataFrame(data=data_temp)
+        groups = df_temp.groupby('group_id')
+        keys = groups.groups.keys()
+
+        for key in keys:
+            group = groups.get_group(key)
+            vels = group.deltav.values
+            diff_sqrd_arr = []
+            for value in vels:
+                diff = value - mean
+                diff_sqrd = diff**2
+                diff_sqrd_arr.append(diff_sqrd)
+            mean_diff_sqrd = np.mean(diff_sqrd_arr)
+            std = np.sqrt(mean_diff_sqrd)
+            std_arr.append(std)
+        len_std_arr.append(len(std_arr))
+        mean_std_arr.append(np.mean(std_arr))
+    return mean_std_arr
+
+def std_func_mod(bins, mass_arr, vel_arr):
+    mass_arr_bin_idxs = np.digitize(mass_arr, bins)
+    # Put all galaxies that would have been in the bin after the last in the 
+    # bin as well i.e galaxies with bin number 5 and 6 from previous line all
+    # go in one bin
+    for idx, value in enumerate(mass_arr_bin_idxs):
+        if value == 6:
+            mass_arr_bin_idxs[idx] = 5
+
+    mean = 0
+    std_arr = []
+    for idx in range(1, len(bins)):
+        cen_deltav_arr = []
+        current_bin_idxs = np.argwhere(mass_arr_bin_idxs == idx)
+        cen_deltav_arr.append(np.array(vel_arr)[current_bin_idxs])
+        
+        diff_sqrd_arr = []
+        # mean = np.mean(cen_deltav_arr)
+        for value in cen_deltav_arr:
+            # print(mean)
+            # print(np.mean(cen_deltav_arr))
+            diff = value - mean
+            diff_sqrd = diff**2
+            diff_sqrd_arr.append(diff_sqrd)
+        mean_diff_sqrd = np.mean(diff_sqrd_arr)
+        std = np.sqrt(mean_diff_sqrd)
+        # print(std)
+        # print(np.std(cen_deltav_arr))
+        std_arr.append(std)
+
+    return std_arr
+
+def mean_halo_func(bins, logmstar_arr, loghalom_arr):
+    mass_arr_bin_idxs = np.digitize(logmstar_arr, bins)
+    # Put all galaxies that would have been in the bin after the last in the 
+    # bin as well i.e galaxies with bin number 5 and 6 from previous line all
+    # go in one bin
+    for idx, value in enumerate(mass_arr_bin_idxs):
+        if value == 6:
+            mass_arr_bin_idxs[idx] = 5
+
+    mean_halomass_arr = []
+    for idx in range(1, len(bins)):
+        halomass_arr = []
+        current_bin_idxs = np.argwhere(mass_arr_bin_idxs == idx)
+        halomass_arr.append(np.array(loghalom_arr)[current_bin_idxs])
+        mean_halomass = np.mean(np.array(halomass_arr).flatten())
+        mean_halomass_arr.append(mean_halomass)
+
+    return mean_halomass_arr
+
+def mean_halo_vcirc_func(bins, logmstar_arr, loghalom_arr, halor_arr):
+    mass_arr_bin_idxs = np.digitize(logmstar_arr, bins)
+    # Put all galaxies that would have been in the bin after the last in the 
+    # bin as well i.e galaxies with bin number 5 and 6 from previous line all
+    # go in one bin
+    for idx, value in enumerate(mass_arr_bin_idxs):
+        if value == 6:
+            mass_arr_bin_idxs[idx] = 5
+
+    mean_vcirc_arr = []
+    for idx in range(1, len(bins)):
+        halomass_arr = []
+        halorvir_arr = []
+        delta_mean = 200
+        omega_m = 0.3
+        rho_crit = 2.77*10**11 # assuming h=1.0 # h^2 . Msun/Mpc^3
+        G = 4.3*10**-9 # Mpc . Msun^-1 . (km/s)^2
+        current_bin_idxs = np.argwhere(mass_arr_bin_idxs == idx)
+        halomass_arr.append(np.array(loghalom_arr)[current_bin_idxs])
+        halomass_arr = np.array(halomass_arr).flatten()
+        halorvir_arr.append(np.array(halor_arr)[current_bin_idxs])
+        halorvir_arr = np.array(halorvir_arr).flatten()
+        # radius in Mpc
+        # halo_radius = ((3*(10**halomass_arr)) / (4*np.pi*delta_mean*omega_m*rho_crit))**(1/3)
+        halo_vcirc = np.sqrt((G * (10**halomass_arr))/halorvir_arr)
+        mean_vcirc = np.mean(halo_vcirc)
+
+        mean_vcirc_arr.append(mean_vcirc)
+
+    return mean_vcirc_arr
+
+
+global survey
+global path_to_figures
+global gal_group_df_subset
+
+dict_of_paths = cwpaths.cookiecutter_paths()
+path_to_raw = dict_of_paths['raw_dir']
+path_to_proc = dict_of_paths['proc_dir']
+path_to_interim = dict_of_paths['int_dir']
+path_to_figures = dict_of_paths['plot_dir']
+path_to_external = dict_of_paths['ext_dir']
+path_to_data = dict_of_paths['data_dir']
+
+machine = 'mac'
+mf_type = 'smf'
+survey = 'eco'
+nproc = 2
+
+if machine == 'bender':
+    halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
+                'vishnu/rockstar/vishnu_rockstar_test.hdf5'
+elif machine == 'mac':
+    halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
+
+chi2_file = path_to_proc + 'smhm_colour_run17/{0}_colour_chi2.txt'.\
+    format(survey)
+chain_file = path_to_proc + 'smhm_colour_run17/mcmc_{0}_colour_raw.txt'.\
+    format(survey)
+randint_file = path_to_proc + 'smhm_colour_run17/{0}_colour_mocknum.txt'.\
+    format(survey)
+
+if survey == 'eco':
+    # catl_file = path_to_raw + "eco/eco_all.csv"
+    ## New catalog with group finder run on subset after applying M* and cz cuts
+    catl_file = path_to_proc + "gal_group_eco_data.hdf5"
+    path_to_mocks = path_to_data + 'mocks/m200b/eco/'
+elif survey == 'resolvea' or survey == 'resolveb':
+    catl_file = path_to_raw + "RESOLVE_liveJune2018.csv"
+
+print('Reading files')
+chi2 = read_chi2(chi2_file)
+mcmc_table = read_mcmc(chain_file)
+mock_nums_df = pd.read_csv(randint_file, header=None, names=['mock_num'], 
+    dtype=int)
+gal_group_df = read_mock_catl(path_to_proc + "gal_group.hdf5") 
+
+print('Getting data in specific percentile')
+mcmc_table_pctl, bf_params, bf_chi2, bf_randint = \
+    get_paramvals_percentile(mcmc_table, 68, chi2, mock_nums_df)
+
+## Use only the mocks that are in the random sample of 100
+# Count the first 20 + 22nd + 123-131 columns of general information from 
+# mock catalog (halo + rsd)
+idx_arr = np.insert(np.linspace(0,20,21), len(np.linspace(0,20,21)), (22, 123, 
+    124, 125, 126, 127, 128, 129, 130, 131)).astype(int)
+
+names_arr = [x for x in gal_group_df.columns.values[idx_arr]]
+for idx in mcmc_table_pctl.mock_num.unique():
+    names_arr.append('{0}_y'.format(idx))
+    names_arr.append('groupid_{0}'.format(idx))
+    names_arr.append('g_galtype_{0}'.format(idx))
+names_arr = np.array(names_arr)
+
+gal_group_df_subset = gal_group_df[names_arr]
+
+# Renaming the "1_y" column kept from line 1896 because of case where it was
+# also in mcmc_table_ptcl.mock_num and was selected twice
+gal_group_df_subset.columns.values[30] = "behroozi_bf"
+
+for idx in mcmc_table_pctl.mock_num.unique():
+    gal_group_df_subset = gal_group_df_subset.rename(columns=\
+        {'{0}_y'.format(idx):'{0}'.format(idx)})
+
+cols_to_use = ['halo_hostid', 'halo_id', 'halo_mvir', 'halo_rvir', 'cz', \
+    '{0}'.format(bf_randint), \
+    'g_galtype_{0}'.format(bf_randint), \
+    'groupid_{0}'.format(bf_randint)]
+
+gals_df = gal_group_df_subset[cols_to_use]
+
+gals_df = gals_df.dropna(subset=['g_galtype_{0}'.\
+    format(bf_randint),'groupid_{0}'.format(bf_randint)]).\
+    reset_index(drop=True)
+
+gals_df = assign_cen_sat_flag(gals_df)
+f_red_cen, f_red_sat = hybrid_quenching_model(best_fit_params, gals_df, 
+    'vishnu', best_fit_mocknum)
+gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, gals_df)
+
+grpid_col = 'groupid_{0}'.format(bf_randint)
+galtype_col = 'g_galtype_{0}'.format(bf_randint)
+logmstar_col = '{0}'.format(bf_randint)
+
+red_subset_grpids = np.unique(gals_df.halo_hostid.loc[(gals_df.\
+    colour_label == 'R') & (gals_df.cs_flag == 1)].values)  
+blue_subset_grpids = np.unique(gals_df.halo_hostid.loc[(gals_df.\
+    colour_label == 'B') & (gals_df.cs_flag == 1)].values)
+
+red_deltav_arr = []
+red_cen_stellar_mass_arr = []
+red_grpid_arr = []
+red_cen_cz_arr = []
+red_mean_cz_arr = []
+red_host_halo_mass_arr = []
+red_host_halo_rvir_arr = []
+for key in red_subset_grpids: 
+    group = gals_df.loc[gals_df.halo_hostid == key]
+
+    host_halo_mass = group.halo_mvir.loc[group.cs_flag.\
+        values == 1].values[0]
+    cen_stellar_mass = group[logmstar_col].loc[group.cs_flag.\
+        values == 1].values[0]
+    host_halo_rvir = group.halo_rvir.loc[group.cs_flag.\
+        values == 1].values[0]
+   
+    # Different velocity definitions
+    mean_cz_grp = np.round(np.mean(group.cz.values),2)
+    cen_cz_grp = group.cz.loc[group.cs_flag == 1].values[0]
+
+    # Velocity difference
+    deltav = group.cz.values - len(group)*[cen_cz_grp]
+    
+    # red_cen_stellar_mass_arr.append(cen_stellar_mass)
+    red_host_halo_mass_arr.append(host_halo_mass)
+    red_host_halo_rvir_arr.append(host_halo_rvir)
+    red_cen_cz_arr.append(cen_cz_grp)
+    red_mean_cz_arr.append(mean_cz_grp)
+
+    for val in deltav:
+        red_deltav_arr.append(val)
+        red_cen_stellar_mass_arr.append(cen_stellar_mass)
+        red_grpid_arr.append(key)
+    # if len(group) > 5:
+    #     break
+
+if survey == 'eco' or survey == 'resolvea':
+    # TODO : check if this is actually correct for resolve a
+    red_stellar_mass_bins = np.linspace(8.6,11.2,6)
+    # red_stellar_mass_bins = np.linspace(8.6,11.5,6)
+elif survey == 'resolveb':
+    red_stellar_mass_bins = np.linspace(8.4,11.0,6)
+
+blue_deltav_arr = []
+blue_cen_stellar_mass_arr = []
+blue_grpid_arr = []
+blue_cen_cz_arr = []
+blue_mean_cz_arr = []
+blue_host_halo_mass_arr = []
+blue_host_halo_rvir_arr = []
+for key in blue_subset_grpids: 
+    group = gals_df.loc[gals_df.halo_hostid == key]
+
+    host_halo_mass = group.halo_mvir.loc[group.cs_flag.\
+        values == 1].values[0]
+    cen_stellar_mass = group[logmstar_col].loc[group.cs_flag.\
+        values == 1].values[0]
+    host_halo_rvir = group.halo_rvir.loc[group.cs_flag.\
+        values == 1].values[0]
+    
+    # Different velocity definitions
+    mean_cz_grp = np.round(np.mean(group.cz.values),2)
+    cen_cz_grp = group.cz.loc[group.cs_flag == 1].values[0]
+
+    # Velocity difference
+    deltav = group.cz.values - len(group)*[cen_cz_grp]
+
+    # blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+    blue_host_halo_mass_arr.append(host_halo_mass)
+    blue_host_halo_rvir_arr.append(host_halo_rvir)
+    blue_cen_cz_arr.append(cen_cz_grp)
+    blue_mean_cz_arr.append(mean_cz_grp)
+
+    for val in deltav:
+        blue_deltav_arr.append(val)
+        blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+        blue_grpid_arr.append(key)
+
+if survey == 'eco' or survey == 'resolvea':
+    # TODO : check if this is actually correct for resolve a
+    blue_stellar_mass_bins = np.linspace(8.6,10.7,6)
+    # blue_stellar_mass_bins = np.linspace(8.6,11,6)
+
+elif survey == 'resolveb':
+    blue_stellar_mass_bins = np.linspace(8.4,10.4,6)
+
+
+std_red = std_func_mod(red_stellar_mass_bins, red_cen_stellar_mass_arr, 
+    red_deltav_arr)
+std_red = np.array(std_red)
+
+mean_std_red = mean_std_func(red_stellar_mass_bins, red_cen_stellar_mass_arr, 
+    red_deltav_arr, red_grpid_arr)
+
+mean_halo_red = mean_halo_func(red_stellar_mass_bins, red_cen_stellar_mass_arr, 
+    np.log10(red_host_halo_mass_arr))
+mean_vcirc_red = mean_halo_vcirc_func(red_stellar_mass_bins, 
+    red_cen_stellar_mass_arr, np.log10(red_host_halo_mass_arr), 
+    red_host_halo_rvir_arr)
+
+std_blue = std_func_mod(blue_stellar_mass_bins, blue_cen_stellar_mass_arr, 
+    blue_deltav_arr)
+std_blue = np.array(std_blue)
+
+mean_std_blue = mean_std_func(blue_stellar_mass_bins, blue_cen_stellar_mass_arr, 
+    blue_deltav_arr, blue_grpid_arr)
+
+mean_halo_blue = mean_halo_func(blue_stellar_mass_bins, blue_cen_stellar_mass_arr, 
+    np.log10(blue_host_halo_mass_arr))
+mean_vcirc_blue = mean_halo_vcirc_func(blue_stellar_mass_bins, 
+    blue_cen_stellar_mass_arr, np.log10(blue_host_halo_mass_arr), 
+    blue_host_halo_rvir_arr)
+
+centers_red = 0.5 * (red_stellar_mass_bins[1:] + \
+    red_stellar_mass_bins[:-1])
+centers_blue = 0.5 * (blue_stellar_mass_bins[1:] + \
+    blue_stellar_mass_bins[:-1])
+
+
+fig7 = plt.figure()
+plt.scatter(centers_red,std_red,color='darkred',s=350,marker='p')
+plt.scatter(centers_blue,std_blue,color='darkblue',s=350,marker='p')
+plt.xlabel(r'\boldmath$\log_{10}\ M_{\star , cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
+plt.ylabel(r'\boldmath$\sigma \left[\mathrm{km/s} \right]$', fontsize=30)
+plt.title('Spread in velocity difference from halo central cz')
+plt.show()
+
+fig8 = plt.figure()
+plt.scatter(centers_red,mean_std_red,color='darkred',s=350, marker='p')
+plt.scatter(centers_blue,mean_std_blue,color='darkblue',s=350, marker='p')
+plt.xlabel(r'\boldmath$\log_{10}\ M_{\star , cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
+plt.ylabel(r'\boldmath$\sigma \left[\mathrm{km/s} \right]$', fontsize=30)
+plt.title('Mean of spread in velocity difference from halo central cz')
+plt.show()
+
+fig9 = plt.figure()
+plt.scatter(centers_red, mean_halo_red, color='darkred',s=350,marker='p')
+plt.scatter(centers_blue,mean_halo_blue,color='darkblue',s=350,marker='p')
+plt.xlabel('Halo central M* [Msun/h]')
+plt.ylabel('Mean host halo mass [Msun/h]')
+plt.show()
+
+fig10 = plt.figure()
+plt.scatter(centers_red, mean_vcirc_red, color='darkred',s=350, marker='p')
+plt.scatter(centers_blue,mean_vcirc_blue,color='darkblue',s=350, marker='p')
+plt.xlabel('Halo central M* [Msun/h]')
+plt.ylabel('Mean host halo circular velocity [km/s]')
+plt.show()
