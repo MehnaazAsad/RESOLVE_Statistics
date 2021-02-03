@@ -2155,7 +2155,7 @@ print('Measuring SMF for data')
 total_data, red_data, blue_data = measure_all_smf(catl, volume, True)
 
 # Returns masses in h=1.0
-print('Measuring spread in vel disp for data')
+print('Measuring spread in vel difference for data')
 std_red, centers_red, std_blue, centers_blue = get_deltav_sigma_data(catl)
 
 # Measures errors using measurements in h=1.0
