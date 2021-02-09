@@ -1064,7 +1064,7 @@ def get_err_data(survey, path):
             mu_c = 0.40
             mu_s = 0.148
 
-            if quenching == 'hybrid';
+            if quenching == 'hybrid':
                 theta = [Mstar_q, Mh_q, mu, nu]
                 f_red_c, f_red_s = hybrid_quenching_model(theta, mock_pd, 'nonvishnu')
             elif quenching == 'halo':
