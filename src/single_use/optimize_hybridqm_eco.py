@@ -207,6 +207,38 @@ def std_func(bins, mass_arr, vel_arr):
 
     return std_arr
 
+def std_func_mod(bins, mass_arr, vel_arr):
+    mass_arr_bin_idxs = np.digitize(mass_arr, bins)
+    # Put all galaxies that would have been in the bin after the last in the 
+    # bin as well i.e galaxies with bin number 5 and 6 from previous line all
+    # go in one bin
+    for idx, value in enumerate(mass_arr_bin_idxs):
+        if value == 6:
+            mass_arr_bin_idxs[idx] = 5
+
+    mean = 0
+    std_arr = []
+    for idx in range(1, len(bins)):
+        cen_deltav_arr = []
+        current_bin_idxs = np.argwhere(mass_arr_bin_idxs == idx)
+        cen_deltav_arr.append(np.array(vel_arr)[current_bin_idxs])
+        
+        diff_sqrd_arr = []
+        # mean = np.mean(cen_deltav_arr)
+        for value in cen_deltav_arr:
+            # print(mean)
+            # print(np.mean(cen_deltav_arr))
+            diff = value - mean
+            diff_sqrd = diff**2
+            diff_sqrd_arr.append(diff_sqrd)
+        mean_diff_sqrd = np.mean(diff_sqrd_arr)
+        std = np.sqrt(mean_diff_sqrd)
+        # print(std)
+        # print(np.std(cen_deltav_arr))
+        std_arr.append(std)
+
+    return std_arr
+
 def diff_smf(mstar_arr, volume, h1_bool, colour_flag=False):
     """
     Calculates differential stellar mass function in units of h=1.0
@@ -379,7 +411,7 @@ def get_deltav_sigma_data(df):
         red_stellar_mass_bins = np.linspace(8.6,11.2,6)
     elif survey == 'resolveb':
         red_stellar_mass_bins = np.linspace(8.4,11.0,6)
-    std_red = std_func(red_stellar_mass_bins, red_cen_stellar_mass_arr, 
+    std_red = std_func_mod(red_stellar_mass_bins, red_cen_stellar_mass_arr, 
         red_deltav_arr)
     std_red = np.array(std_red)
 
@@ -403,7 +435,7 @@ def get_deltav_sigma_data(df):
         blue_stellar_mass_bins = np.linspace(8.6,10.7,6)
     elif survey == 'resolveb':
         blue_stellar_mass_bins = np.linspace(8.4,10.4,6)
-    std_blue = std_func(blue_stellar_mass_bins, blue_cen_stellar_mass_arr, 
+    std_blue = std_func_mod(blue_stellar_mass_bins, blue_cen_stellar_mass_arr, 
         blue_deltav_arr)    
     std_blue = np.array(std_blue)
 
@@ -480,8 +512,11 @@ def lnprob(theta, phi_red_data, phi_blue_data, std_red_data, std_blue_data,
         
     """
     
-    f_red_cen, f_red_sat, cen_mstar, sat_hosthalom, sat_mstar = \
-        hybrid_quenching_model(theta, gals_df)
+    if quenching == 'hybrid':
+        f_red_cen, f_red_sat, cen_mstar, sat_hosthalom, sat_mstar = \
+            hybrid_quenching_model(theta, gals_df)
+    elif quenching == 'halo':
+        f_red_cen, f_red_sat = halo_quenching_model(theta, gals_df)
     gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, gals_df)
     v_survey = volume
     total_model, red_model, blue_model = measure_all_smf(gals_df, v_survey 
@@ -539,6 +574,36 @@ def hybrid_quenching_model(theta, gals_df):
 
     return f_red_cen, f_red_sat, cen_stellar_mass_arr, sat_hosthalo_mass_arr, sat_stellar_mass_arr
 
+def halo_quenching_model(theta, gals_df):
+    """
+    Apply halo quenching model from Zu and Mandelbaum 2015
+
+    Parameters
+    ----------
+    gals_df: pandas dataframe
+        Mock catalog
+
+    Returns
+    ---------
+    f_red_cen: array
+        Array of central red fractions
+    f_red_sat: array
+        Array of satellite red fractions
+    """
+
+    # parameter values from Table 1 of Zu and Mandelbaum 2015 "prior case"
+    Mh_qc = theta[0] # Msun/h 
+    Mh_qs = theta[1] # Msun/h
+    mu_c = theta[2]
+    mu_s = theta[3]
+
+    cen_hosthalo_mass_arr, sat_hosthalo_mass_arr = get_host_halo_mock(gals_df)
+
+    f_red_cen = 1 - np.exp(-(((10**cen_hosthalo_mass_arr)/(10**Mh_qc))**mu_c))
+    f_red_sat = 1 - np.exp(-(((10**sat_hosthalo_mass_arr)/(10**Mh_qs))**mu_s))
+
+    return f_red_cen, f_red_sat
+
 def get_deltav_sigma_mocks_urcolour(survey, mock_df):
     """
     Calculate spread in velocity dispersion from survey mocks (logmstar converted
@@ -591,7 +656,7 @@ def get_deltav_sigma_mocks_urcolour(survey, mock_df):
         red_stellar_mass_bins = np.linspace(8.6,11.2,6)
     elif survey == 'resolveb':
         red_stellar_mass_bins = np.linspace(8.4,11.0,6)
-    std_red = std_func(red_stellar_mass_bins, red_cen_stellar_mass_arr, 
+    std_red = std_func_mod(red_stellar_mass_bins, red_cen_stellar_mass_arr, 
         red_deltav_arr)
     std_red = np.array(std_red)
 
@@ -616,7 +681,7 @@ def get_deltav_sigma_mocks_urcolour(survey, mock_df):
         blue_stellar_mass_bins = np.linspace(8.6,10.7,6)
     elif survey == 'resolveb':
         blue_stellar_mass_bins = np.linspace(8.4,10.4,6)
-    std_blue = std_func(blue_stellar_mass_bins, \
+    std_blue = std_func_mod(blue_stellar_mass_bins, \
         blue_cen_stellar_mass_arr, blue_deltav_arr)    
     std_blue = np.array(std_blue)
 
@@ -908,9 +973,9 @@ def get_host_halo_mock(catl):
     sat_halos = []
     for index, value in enumerate(df.fc):
         if value == 1:
-            cen_halos.append(df.logmh.values[index])
+            cen_halos.append(df.logmh_s.values[index])
         else:
-            sat_halos.append(df.logmh.values[index])
+            sat_halos.append(df.logmh_s.values[index])
 
     cen_halos = np.array(cen_halos)
     sat_halos = np.array(sat_halos)
@@ -958,8 +1023,12 @@ path_to_figures = dict_of_paths['plot_dir']
 path_to_data = dict_of_paths['data_dir']
 
 global volume
+global quenching
+
 survey = 'eco'
 mf_type = 'smf'
+quenching = 'halo'
+
 catl_file = path_to_proc + "gal_group_eco_data.hdf5"
 path_to_mocks = path_to_data + 'mocks/m200b/eco/'
 catl, volume, z_median = read_data_catl(catl_file, survey)
@@ -976,14 +1045,23 @@ Mstar_q = 10.5 # Msun/h
 Mh_q = 13.76 # Msun/h
 mu = 0.69
 nu = 0.15
+x0 = [Mstar_q, Mh_q, mu, nu]
+
+Mh_qc = 12.20 # Msun/h
+Mh_qs = 12.17 # Msun/h
+mu_c = 0.38
+mu_s = 0.15
+x0 = [Mh_qc, Mh_qs, mu_c, mu_s]
+
 
 catl, volume, z_median = read_data_catl(catl_file, survey)
-x0 = [Mstar_q, Mh_q, mu, nu]
-res80 = minimize(lnprob, x0, args=(red_data[1], blue_data[1], sigma_red, 
-    sigma_blue, err_data_colour, corr_mat_colour_inv, catl), 
-    method='nelder-mead', options={'maxiter':80, 'disp': True})
 
-best_fit = res80.x
+
+res = minimize(lnprob, x0, args=(red_data[1], blue_data[1], sigma_red, 
+    sigma_blue, err_data_colour, corr_mat_colour_inv, catl), 
+    method='nelder-mead', options={'maxiter':20, 'disp': True})
+
+best_fit = res.x
 
 ## After running minimize for 10, 20, 40 and 80 iterations
 catl = catl.loc[catl.logmstar.values >= 8.9]
@@ -991,6 +1069,9 @@ f_red_cen_fid, f_red_sat_fid, mstar_cen_fid, sat_hosthalo_fid, mstar_sat_fid = \
     hybrid_quenching_model(x0, catl)
 f_red_cen, f_red_sat, mstar_cen, sat_hosthalo, mstar_sat = \
     hybrid_quenching_model(best_fit, catl)
+
+f_red_cen_fid, f_red_sat_fid = halo_quenching_model(x0, catl)
+f_red_cen, f_red_sat = halo_quenching_model(best_fit, catl)
 
 gals_df_fid = assign_colour_label_mock(f_red_cen_fid, f_red_sat_fid, catl)
 v_survey = volume
