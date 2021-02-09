@@ -1076,7 +1076,9 @@ survey = 'eco'
 if survey == 'eco':
     # catl_file = path_to_raw + "eco/eco_all.csv"
     ## New catalog with group finder run on subset after applying M* and cz cuts
-    catl_file = path_to_proc + "gal_group_eco_data.hdf5"
+    # catl_file = path_to_proc + "gal_group_eco_data.hdf5"
+    catl_file = path_to_proc + "gal_group_eco_data_vol_update.hdf5"
+
     path_to_mocks = path_to_data + 'mocks/m200b/eco/'
 elif survey == 'resolvea' or survey == 'resolveb':
     catl_file = path_to_raw + "RESOLVE_liveJune2018.csv"
@@ -1134,14 +1136,14 @@ for key in red_subset_grpids:
     # Velocity difference
     deltav = group.cz.values - len(group)*[cen_cz_grp]
     
-    red_cen_stellar_mass_arr.append(cen_stellar_mass)
+    # red_cen_stellar_mass_arr.append(cen_stellar_mass)
     red_grp_halo_mass_arr.append(grp_halo_mass)
     red_cen_cz_arr.append(cen_cz_grp)
     red_mean_cz_arr.append(mean_cz_grp)
 
     for val in deltav:
         red_deltav_arr.append(val)
-        # red_cen_stellar_mass_arr.append(cen_stellar_mass)
+        red_cen_stellar_mass_arr.append(cen_stellar_mass)
         grpid_arr.append(key)
     # if len(group) > 5:
     #     break
@@ -1168,14 +1170,14 @@ for key in red_subset_grpids:
     # Velocity difference
     deltav = group.cz.values - len(group)*[cen_cz_grp]
     
-    red_cen_stellar_mass_arr.append(cen_stellar_mass)
+    # red_cen_stellar_mass_arr.append(cen_stellar_mass)
     red_grp_halo_mass_arr.append(grp_halo_mass)
     red_cen_cz_arr.append(cen_cz_grp)
     red_mean_cz_arr.append(mean_cz_grp)
 
     for val in deltav:
         red_deltav_arr.append(val)
-        # red_cen_stellar_mass_arr.append(cen_stellar_mass)
+        red_cen_stellar_mass_arr.append(cen_stellar_mass)
         grpid_arr.append(key)
     # if len(group) > 5:
     #     break
@@ -1183,7 +1185,7 @@ for key in red_subset_grpids:
 if survey == 'eco' or survey == 'resolvea':
     # TODO : check if this is actually correct for resolve a
     red_stellar_mass_bins = np.linspace(8.6,11.2,6)
-    # red_stellar_mass_bins = np.linspace(8.6,11.5,6)
+    # red_stellar_mass_bins = np.linspace(8.9,11.5,6) # h=0.7
 elif survey == 'resolveb':
     red_stellar_mass_bins = np.linspace(8.4,11.0,6)
 
@@ -1223,14 +1225,14 @@ for key in blue_subset_grpids:
     # Velocity difference
     deltav = group.cz.values - len(group)*[cen_cz_grp]
 
-    blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+    # blue_cen_stellar_mass_arr.append(cen_stellar_mass)
     blue_grp_halo_mass_arr.append(grp_halo_mass)
     blue_cen_cz_arr.append(cen_cz_grp)
     blue_mean_cz_arr.append(mean_cz_grp)
 
     for val in deltav:
         blue_deltav_arr.append(val)
-        # blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+        blue_cen_stellar_mass_arr.append(cen_stellar_mass)
         grpid_arr.append(key)
 
 
@@ -1256,20 +1258,20 @@ for key in blue_subset_grpids:
     # Velocity difference
     deltav = group.cz.values - len(group)*[cen_cz_grp]
 
-    blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+    # blue_cen_stellar_mass_arr.append(cen_stellar_mass)
     blue_grp_halo_mass_arr.append(grp_halo_mass)
     blue_cen_cz_arr.append(cen_cz_grp)
     blue_mean_cz_arr.append(mean_cz_grp)
 
     for val in deltav:
         blue_deltav_arr.append(val)
-        # blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+        blue_cen_stellar_mass_arr.append(cen_stellar_mass)
         grpid_arr.append(key)
 
 if survey == 'eco' or survey == 'resolvea':
     # TODO : check if this is actually correct for resolve a
     blue_stellar_mass_bins = np.linspace(8.6,10.7,6)
-    # blue_stellar_mass_bins = np.linspace(8.6,11,6)
+    # blue_stellar_mass_bins = np.linspace(8.9,11,6) #h=0.7
 
 elif survey == 'resolveb':
     blue_stellar_mass_bins = np.linspace(8.4,10.4,6)
@@ -1312,6 +1314,7 @@ plt.xlabel(r'\boldmath$\log_{10}\ M_{\star , cen} \left[\mathrm{M_\odot}\, \math
 plt.ylabel(r'\boldmath$\sigma \left[\mathrm{km/s} \right]$', fontsize=30)
 # plt.title('Spread in velocity difference from group cz as included in catalog')
 plt.title('Spread in velocity difference from central cz of group')
+# plt.title('Spread in velocity difference from mean cz of group')
 plt.show()
 
 fig2 = plt.figure()
@@ -1374,6 +1377,8 @@ plt.xlabel('Sigma')
 plt.ylabel('Mean sigma')
 plt.show()
 
+################################################################################
+############################### SIMULATION DATA ################################
 ################################################################################
 
 def read_chi2(path_to_file):
@@ -1938,7 +1943,8 @@ for idx in mcmc_table_pctl.mock_num.unique():
     gal_group_df_subset = gal_group_df_subset.rename(columns=\
         {'{0}_y'.format(idx):'{0}'.format(idx)})
 
-cols_to_use = ['halo_hostid', 'halo_id', 'halo_mvir', 'halo_rvir', 'cz', \
+cols_to_use = ['halo_hostid', 'halo_id', 'halo_mvir', 'halo_macc', 'halo_rvir', 
+    'cz', \
     '{0}'.format(bf_randint), \
     'g_galtype_{0}'.format(bf_randint), \
     'groupid_{0}'.format(bf_randint)]
@@ -1958,9 +1964,9 @@ grpid_col = 'groupid_{0}'.format(bf_randint)
 galtype_col = 'g_galtype_{0}'.format(bf_randint)
 logmstar_col = '{0}'.format(bf_randint)
 
-red_subset_grpids = np.unique(gals_df.halo_hostid.loc[(gals_df.\
+red_subset_grpids = np.unique(gals_df.halo_id.loc[(gals_df.\
     colour_label == 'R') & (gals_df.cs_flag == 1)].values)  
-blue_subset_grpids = np.unique(gals_df.halo_hostid.loc[(gals_df.\
+blue_subset_grpids = np.unique(gals_df.halo_id.loc[(gals_df.\
     colour_label == 'B') & (gals_df.cs_flag == 1)].values)
 
 red_deltav_arr = []
@@ -1968,6 +1974,8 @@ red_cen_stellar_mass_arr = []
 red_grpid_arr = []
 red_cen_cz_arr = []
 red_mean_cz_arr = []
+red_halo_mass_arr = []
+red_halo_rvir_arr = []
 red_host_halo_mass_arr = []
 red_host_halo_rvir_arr = []
 for key in red_subset_grpids: 
@@ -1975,10 +1983,13 @@ for key in red_subset_grpids:
 
     host_halo_mass = group.halo_mvir.loc[group.cs_flag.\
         values == 1].values[0]
-    cen_stellar_mass = group[logmstar_col].loc[group.cs_flag.\
-        values == 1].values[0]
     host_halo_rvir = group.halo_rvir.loc[group.cs_flag.\
         values == 1].values[0]
+    # halo_macc = group.halo_mvir.values
+    # halo_rvir = group.halo_rvir.values
+    cen_stellar_mass = group[logmstar_col].loc[group.cs_flag.\
+        values == 1].values[0]
+
    
     # Different velocity definitions
     mean_cz_grp = np.round(np.mean(group.cz.values),2)
@@ -1987,15 +1998,17 @@ for key in red_subset_grpids:
     # Velocity difference
     deltav = group.cz.values - len(group)*[cen_cz_grp]
     
-    # red_cen_stellar_mass_arr.append(cen_stellar_mass)
+    red_cen_stellar_mass_arr.append(cen_stellar_mass)
     red_host_halo_mass_arr.append(host_halo_mass)
     red_host_halo_rvir_arr.append(host_halo_rvir)
     red_cen_cz_arr.append(cen_cz_grp)
     red_mean_cz_arr.append(mean_cz_grp)
 
-    for val in deltav:
+    for idx, val in enumerate(deltav):
         red_deltav_arr.append(val)
-        red_cen_stellar_mass_arr.append(cen_stellar_mass)
+        # red_halo_mass_arr.append(halo_macc[idx])
+        # red_halo_rvir_arr.append(halo_rvir[idx])
+        # red_cen_stellar_mass_arr.append(cen_stellar_mass)
         red_grpid_arr.append(key)
     # if len(group) > 5:
     #     break
@@ -2012,6 +2025,8 @@ blue_cen_stellar_mass_arr = []
 blue_grpid_arr = []
 blue_cen_cz_arr = []
 blue_mean_cz_arr = []
+blue_halo_mass_arr = []
+blue_halo_rvir_arr = []
 blue_host_halo_mass_arr = []
 blue_host_halo_rvir_arr = []
 for key in blue_subset_grpids: 
@@ -2019,10 +2034,13 @@ for key in blue_subset_grpids:
 
     host_halo_mass = group.halo_mvir.loc[group.cs_flag.\
         values == 1].values[0]
-    cen_stellar_mass = group[logmstar_col].loc[group.cs_flag.\
-        values == 1].values[0]
     host_halo_rvir = group.halo_rvir.loc[group.cs_flag.\
         values == 1].values[0]
+    # halo_macc = group.halo_mvir.values
+    # halo_rvir = group.halo_rvir.values
+    cen_stellar_mass = group[logmstar_col].loc[group.cs_flag.\
+        values == 1].values[0]
+
     
     # Different velocity definitions
     mean_cz_grp = np.round(np.mean(group.cz.values),2)
@@ -2031,21 +2049,23 @@ for key in blue_subset_grpids:
     # Velocity difference
     deltav = group.cz.values - len(group)*[cen_cz_grp]
 
-    # blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+    blue_cen_stellar_mass_arr.append(cen_stellar_mass)
     blue_host_halo_mass_arr.append(host_halo_mass)
     blue_host_halo_rvir_arr.append(host_halo_rvir)
     blue_cen_cz_arr.append(cen_cz_grp)
     blue_mean_cz_arr.append(mean_cz_grp)
 
-    for val in deltav:
+    for idx, val in enumerate(deltav):
         blue_deltav_arr.append(val)
-        blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+        # blue_halo_mass_arr.append(halo_macc[idx])
+        # blue_halo_rvir_arr.append(halo_rvir[idx])
+        # blue_cen_stellar_mass_arr.append(cen_stellar_mass)
         blue_grpid_arr.append(key)
 
 if survey == 'eco' or survey == 'resolvea':
     # TODO : check if this is actually correct for resolve a
     blue_stellar_mass_bins = np.linspace(8.6,10.7,6)
-    # blue_stellar_mass_bins = np.linspace(8.6,11,6)
+    # blue_stellar_mass_bins = np.linspace(8.9,11,6)
 
 elif survey == 'resolveb':
     blue_stellar_mass_bins = np.linspace(8.4,10.4,6)
@@ -2058,18 +2078,19 @@ std_red = np.array(std_red)
 mean_std_red = mean_std_func(red_stellar_mass_bins, red_cen_stellar_mass_arr, 
     red_deltav_arr, red_grpid_arr)
 
-mean_halo_red = mean_halo_func(red_stellar_mass_bins, red_cen_stellar_mass_arr, 
-    np.log10(red_host_halo_mass_arr))
-mean_vcirc_red = mean_halo_vcirc_func(red_stellar_mass_bins, 
-    red_cen_stellar_mass_arr, np.log10(red_host_halo_mass_arr), 
-    red_host_halo_rvir_arr)
-
 std_blue = std_func_mod(blue_stellar_mass_bins, blue_cen_stellar_mass_arr, 
     blue_deltav_arr)
 std_blue = np.array(std_blue)
 
 mean_std_blue = mean_std_func(blue_stellar_mass_bins, blue_cen_stellar_mass_arr, 
     blue_deltav_arr, blue_grpid_arr)
+
+
+mean_halo_red = mean_halo_func(red_stellar_mass_bins, red_cen_stellar_mass_arr, 
+    np.log10(red_host_halo_mass_arr))
+mean_vcirc_red = mean_halo_vcirc_func(red_stellar_mass_bins, 
+    red_cen_stellar_mass_arr, np.log10(red_host_halo_mass_arr), 
+    red_host_halo_rvir_arr)
 
 mean_halo_blue = mean_halo_func(blue_stellar_mass_bins, blue_cen_stellar_mass_arr, 
     np.log10(blue_host_halo_mass_arr))
@@ -2103,12 +2124,308 @@ fig9 = plt.figure()
 plt.scatter(centers_red, mean_halo_red, color='darkred',s=350,marker='p')
 plt.scatter(centers_blue,mean_halo_blue,color='darkblue',s=350,marker='p')
 plt.xlabel('Halo central M* [Msun/h]')
-plt.ylabel('Mean host halo mass [Msun/h]')
+plt.ylabel('Mean halo mass [Msun/h]')
 plt.show()
 
 fig10 = plt.figure()
 plt.scatter(centers_red, mean_vcirc_red, color='darkred',s=350, marker='p')
 plt.scatter(centers_blue,mean_vcirc_blue,color='darkblue',s=350, marker='p')
 plt.xlabel('Halo central M* [Msun/h]')
-plt.ylabel('Mean host halo circular velocity [km/s]')
+plt.ylabel('Mean halo circular velocity [km/s]')
 plt.show()
+
+################################################################################
+# Comparing distribution of Behroozi parameters before and after adding second
+# observable
+################################################################################
+
+from cosmo_utils.utils import work_paths as cwpaths
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+
+def read_chi2(path_to_file):
+    """
+    Reads chi-squared values from file
+
+    Parameters
+    ----------
+    path_to_file: string
+        Path to chi-squared values file
+
+    Returns
+    ---------
+    chi2: array
+        Array of reshaped chi^2 values to match chain values
+    """
+    chi2_df = pd.read_csv(path_to_file,header=None,names=['chisquared'])
+
+    # Applies to runs prior to run 5?
+    if mf_type == 'smf' and survey == 'eco' and ver==1.0:
+        # Needed to reshape since flattened along wrong axis, 
+        # didn't correspond to chain
+        test_reshape = chi2_df.chisquared.values.reshape((1000,250))
+        chi2 = np.ndarray.flatten(np.array(test_reshape),'F')
+    
+    else:
+        chi2 = chi2_df.chisquared.values
+
+    return chi2
+
+def read_mcmc(path_to_file):
+    """
+    Reads mcmc chain from file
+
+    Parameters
+    ----------
+    path_to_file: string
+        Path to mcmc chain file
+
+    Returns
+    ---------
+    emcee_table: pandas dataframe
+        Dataframe of mcmc chain values with NANs removed
+    """
+    colnames = ['mhalo_c','mstellar_c','lowmass_slope','highmass_slope',\
+        'scatter']
+    
+    if mf_type == 'smf' and survey == 'eco' and ver==1.0:
+        emcee_table = pd.read_csv(path_to_file,names=colnames,sep='\s+',\
+            dtype=np.float64)
+
+    else:
+        emcee_table = pd.read_csv(path_to_file, names=colnames, 
+            delim_whitespace=True, header=None)
+
+        emcee_table = emcee_table[emcee_table.mhalo_c.values != '#']
+        emcee_table.mhalo_c = emcee_table.mhalo_c.astype(np.float64)
+        emcee_table.mstellar_c = emcee_table.mstellar_c.astype(np.float64)
+        emcee_table.lowmass_slope = emcee_table.lowmass_slope.astype(np.float64)
+
+    # Cases where last parameter was a NaN and its value was being written to 
+    # the first element of the next line followed by 4 NaNs for the other 
+    # parameters
+    for idx,row in enumerate(emcee_table.values):
+        if np.isnan(row)[4] == True and np.isnan(row)[3] == False:
+            scatter_val = emcee_table.values[idx+1][0]
+            row[4] = scatter_val
+    
+    # Cases where rows of NANs appear
+    emcee_table = emcee_table.dropna(axis='index', how='any').\
+        reset_index(drop=True)
+    
+    return emcee_table
+
+def get_paramvals_percentile(table, percentile, chi2_arr):
+    """
+    Isolates 68th percentile lowest chi^2 values and takes random 1000 sample
+
+    Parameters
+    ----------
+    table: pandas dataframe
+        Mcmc chain dataframe
+
+    pctl: int
+        Percentile to use
+
+    chi2_arr: array
+        Array of chi^2 values
+
+    Returns
+    ---------
+    subset: ndarray
+        Random 100 sample of param values from 68th percentile
+    """ 
+    percentile = percentile/100
+    table['chi2'] = chi2_arr
+    table = table.sort_values('chi2').reset_index(drop=True)
+    slice_end = int(percentile*len(table))
+    mcmc_table_pctl = table[:slice_end]
+    # Best fit params are the parameters that correspond to the smallest chi2
+    bf_params = mcmc_table_pctl.drop_duplicates().reset_index(drop=True).\
+        values[0][:5]
+    subset = mcmc_table_pctl.drop_duplicates().sample(100).values[:,:5] 
+    subset = np.insert(subset, 0, bf_params, axis=0)
+
+    return subset
+
+dict_of_paths = cwpaths.cookiecutter_paths()
+path_to_raw = dict_of_paths['raw_dir']
+path_to_data = dict_of_paths['data_dir']
+path_to_proc = dict_of_paths['proc_dir']
+
+survey = 'eco'
+machine = 'mac'
+mf_type = 'smf'
+ver = 2.0
+
+
+## Subset of 100 from latest total smf run on which group finding was done
+chi2_file = path_to_proc + 'smhm_run6/{0}_chi2.txt'.format(survey)
+if mf_type == 'smf' and survey == 'eco' and ver == 1.0:
+    chain_file = path_to_proc + 'mcmc_{0}.dat'.format(survey)
+else:
+    chain_file = path_to_proc + 'smhm_run6/mcmc_{0}_raw.txt'.\
+        format(survey)
+
+print('Reading chi-squared file')
+chi2 = read_chi2(chi2_file)
+
+print('Reading mcmc chain file')
+mcmc_table = read_mcmc(chain_file)
+
+print('Getting subset of 100 Behroozi parameters')
+mcmc_table_subset = get_paramvals_percentile(mcmc_table, 68, chi2)
+
+## Latest colour run using both observables
+
+def read_chi2(path_to_file):
+    """
+    Reads chi-squared values from file
+
+    Parameters
+    ----------
+    path_to_file: string
+        Path to chi-squared values file
+
+    Returns
+    ---------
+    chi2: array
+        Array of reshaped chi^2 values to match chain values
+    """
+    chi2_df = pd.read_csv(path_to_file,header=None,names=['chisquared'])
+    chi2 = chi2_df.chisquared.values
+
+    return chi2
+
+def read_mcmc(path_to_file):
+    """
+    Reads mcmc chain from file
+
+    Parameters
+    ----------
+    path_to_file: string
+        Path to mcmc chain file
+
+    Returns
+    ---------
+    emcee_table: pandas dataframe
+        Dataframe of mcmc chain values with NANs removed
+    """
+    colnames = ['mstar_q','mh_q','mu','nu']
+    
+    emcee_table = pd.read_csv(path_to_file, names=colnames, 
+        delim_whitespace=True, header=None)
+
+    emcee_table = emcee_table[emcee_table.mstar_q.values != '#']
+    emcee_table.mstar_q = emcee_table.mstar_q.astype(np.float64)
+    emcee_table.mh_q = emcee_table.mh_q.astype(np.float64)
+    emcee_table.mu = emcee_table.mu.astype(np.float64)
+    emcee_table.nu = emcee_table.nu.astype(np.float64)
+    
+    return emcee_table
+
+def get_paramvals_percentile(mcmc_table, pctl, chi2, randints_df):
+    """
+    Isolates 68th percentile lowest chi^2 values and takes random 100 sample
+
+    Parameters
+    ----------
+    mcmc_table: pandas dataframe
+        Mcmc chain dataframe
+
+    pctl: int
+        Percentile to use
+
+    chi2: array
+        Array of chi^2 values
+
+    Returns
+    ---------
+    mcmc_table_pctl: pandas dataframe
+        Sample of 100 68th percentile lowest chi^2 values
+    """ 
+    pctl = pctl/100
+    mcmc_table['chi2'] = chi2
+    mcmc_table['mock_num'] = randints_df.mock_num.values.astype(int)
+    mcmc_table = mcmc_table.sort_values('chi2').reset_index(drop=True)
+    slice_end = int(pctl*len(mcmc_table))
+    mcmc_table_pctl = mcmc_table[:slice_end]
+    # Best fit params are the parameters that correspond to the smallest chi2
+    bf_params = mcmc_table_pctl.drop_duplicates().reset_index(drop=True).\
+        values[0][:4]
+    bf_chi2 = mcmc_table_pctl.drop_duplicates().reset_index(drop=True).\
+        values[0][4]
+    bf_randint = mcmc_table_pctl.drop_duplicates().reset_index(drop=True).\
+        values[0][5].astype(int)
+    # Randomly sample 100 lowest chi2 
+    mcmc_table_pctl = mcmc_table_pctl.drop_duplicates().sample(100)
+
+    return mcmc_table_pctl, bf_params, bf_chi2, bf_randint
+
+chi2_file = path_to_proc + 'smhm_colour_run17/{0}_colour_chi2.txt'.\
+    format(survey)
+chain_file = path_to_proc + 'smhm_colour_run17/mcmc_{0}_colour_raw.txt'.\
+    format(survey)
+randint_file = path_to_proc + 'smhm_colour_run17/{0}_colour_mocknum.txt'.\
+    format(survey)
+
+chi2 = read_chi2(chi2_file)
+mcmc_table = read_mcmc(chain_file)
+mock_nums_df = pd.read_csv(randint_file, header=None, names=['mock_num'], 
+    dtype=int)
+
+mcmc_table_pctl, bf_params, bf_chi2, bf_randint = \
+    get_paramvals_percentile(mcmc_table, 68, chi2, mock_nums_df)
+
+mock_nums_picked = mcmc_table_pctl['mock_num']
+
+mhalo_arr = []
+mstar_arr = []
+lowslope = []
+highslope = []
+scatter = []
+for idx in mock_nums_picked:
+    mhalo_arr.append(mcmc_table_subset.T[0][idx-1])
+    mstar_arr.append(mcmc_table_subset.T[1][idx-1])
+    lowslope.append(mcmc_table_subset.T[2][idx-1])
+    highslope.append(mcmc_table_subset.T[3][idx-1])
+    scatter.append(mcmc_table_subset.T[4][idx-1])
+
+plt.clf()
+ax1 = plt.subplot2grid(shape=(2,6), loc=(0,0), colspan=2)
+ax2 = plt.subplot2grid((2,6), (0,2), colspan=2)
+ax3 = plt.subplot2grid((2,6), (0,4), colspan=2)
+ax4 = plt.subplot2grid((2,6), (1,1), colspan=2)
+ax5 = plt.subplot2grid((2,6), (1,3), colspan=2)
+# ax1.hist(mcmc_table_b10_full['mhalo_c'], histtype='step', lw=3, color='r', ls='-', label='full chain')
+ax1.hist(mcmc_table_subset.T[0], histtype='step', lw=3, color='r', ls='-', label='68% full B10', bins=np.linspace(11.5, 12.8, 8))
+
+ax1.hist(mhalo_arr, histtype='step', lw=3, color='r', ls='dashdot', label='68% (+ 2nd observable)', bins=np.linspace(11.5, 12.8, 8))
+
+# ax2.hist(mcmc_table_b10_full['mstellar_c'], histtype='step', lw=3, color='g', ls='-', label='full chain')
+ax2.hist(mcmc_table_subset.T[1], histtype='step', lw=3, color='b', ls='-', label='68% full B10', bins=np.linspace(10.4, 10.9, 8))
+ax2.hist(mstar_arr, histtype='step', lw=3, color='b', ls='dashdot', label='68% (+ 2nd observable)', bins=np.linspace(10.4, 10.9, 8))
+
+# ax3.hist(mcmc_table_b10_full['lowmass_slope'], histtype='step', lw=3, color='b', ls='-', label='full chain')
+ax3.hist(mcmc_table_subset.T[2], histtype='step', lw=3, color='g', ls='-', label='68% full B10', bins=np.linspace(0.2, 0.5, 8))
+ax3.hist(lowslope, histtype='step', lw=3, color='g', ls='dashdot', label='68% (+ 2nd observable)', bins=np.linspace(0.2, 0.5, 8))
+
+# ax4.hist(mcmc_table_b10_full['highmass_slope'], histtype='step', lw=3, color='y', ls='-', label='full chain')
+ax4.hist(mcmc_table_subset.T[3], histtype='step', lw=3, color='y', ls='-', label='68% full B10', bins=np.linspace(0.2, 1.2, 8))
+ax4.hist(highslope, histtype='step', lw=3, color='y', ls='dashdot', label='68% (+ 2nd observable)', bins=np.linspace(0.2, 1.2, 8))
+
+# ax5.hist(mcmc_table_b10_full['scatter'], histtype='step', lw=3, color='violet', ls='-', label='full chain')
+ax5.hist(mcmc_table_subset.T[4], histtype='step', lw=3, color='violet', ls='-', label='68% full B10', bins=np.linspace(0.1, 0.5, 8))
+ax5.hist(scatter, histtype='step', lw=3, color='violet', ls='dashdot', label='68% (+ 2nd observable)', bins=np.linspace(0.1, 0.5, 8))
+
+
+ax1.title.set_text('Characteristic halo mass')
+ax2.title.set_text('Characteristic stellar mass')
+ax3.title.set_text('Low mass slope')
+ax4.title.set_text('High mass slope')
+ax5.title.set_text('Log-normal scatter in stellar mass')
+
+plt.legend(loc='best')
+plt.show()
+
