@@ -1,5 +1,5 @@
 """
-{This script finds the best-fit hybrid quenching model parameters for the ECO
+{This script finds the best-fit hybrid/halo quenching model parameters for the ECO
  data (in h=1.0) so that they can be applied to the mocks when measuring 
  error in data}
 """
