@@ -21,96 +21,7 @@ import math
 
 __author__ = '[Mehnaaz Asad]'
 
-def read_data_catl(path_to_file, survey):
-    """
-    Reads survey catalog from file
-
-    Parameters
-    ----------
-    path_to_file: `string`
-        Path to survey catalog file
-
-    survey: `string`
-        Name of survey
-
-    Returns
-    ---------
-    catl: `pandas.DataFrame`
-        Survey catalog with grpcz, abs rmag and stellar mass limits
-    
-    volume: `float`
-        Volume of survey
-
-    z_median: `float`
-        Median redshift of survey
-    """
-    if survey == 'eco':
-        columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
-                    'logmstar', 'logmgas', 'grp', 'grpn', 'logmh', 'logmh_s', 
-                    'fc', 'grpmb', 'grpms']
-
-        # 13878 galaxies
-        eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0, \
-            usecols=columns)
-
-        if mf_type == 'smf':
-            # 6456 galaxies                       
-            catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
-                (eco_buff.grpcz.values <= 7000) & 
-                (eco_buff.absrmag.values <= -17.33)]
-        elif mf_type == 'bmf':
-            catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
-                (eco_buff.grpcz.values <= 7000) & 
-                (eco_buff.absrmag.values <= -17.33)] 
-
-        volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
-        # cvar = 0.125
-        z_median = np.median(catl.grpcz.values) / (3 * 10**5)
-        
-    elif survey == 'resolvea' or survey == 'resolveb':
-        columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
-                    'logmstar', 'logmgas', 'grp', 'grpn', 'grpnassoc', 'logmh', 
-                    'logmh_s', 'fc', 'grpmb', 'grpms', 'f_a', 'f_b']
-        # 2286 galaxies
-        resolve_live18 = pd.read_csv(path_to_file, delimiter=",", header=0, \
-            usecols=columns)
-
-        if survey == 'resolvea':
-            if mf_type == 'smf':
-                catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
-                    (resolve_live18.grpcz.values >= 4500) & 
-                    (resolve_live18.grpcz.values <= 7000) & 
-                    (resolve_live18.absrmag.values <= -17.33)]
-            elif mf_type == 'bmf':
-                catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
-                    (resolve_live18.grpcz.values >= 4500) & 
-                    (resolve_live18.grpcz.values <= 7000) & 
-                    (resolve_live18.absrmag.values <= -17.33)]
-
-            volume = 13172.384  # Survey volume without buffer [Mpc/h]^3
-            # cvar = 0.30
-            z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
-        
-        elif survey == 'resolveb':
-            if mf_type == 'smf':
-                # 487 - cz, 369 - grpcz
-                catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
-                    (resolve_live18.grpcz.values >= 4500) & 
-                    (resolve_live18.grpcz.values <= 7000) & 
-                    (resolve_live18.absrmag.values <= -17)]
-            elif mf_type == 'bmf':
-                catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
-                    (resolve_live18.grpcz.values >= 4500) & 
-                    (resolve_live18.grpcz.values <= 7000) & 
-                    (resolve_live18.absrmag.values <= -17)]
-
-            volume = 4709.8373  # *2.915 #Survey volume without buffer [Mpc/h]^3
-            # cvar = 0.58
-            z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
-
-    return catl, volume, z_median
-
-def reading_catls(filename, catl_format='.hdf5'):
+def read_mock_catl(filename, catl_format='.hdf5'):
     """
     Function to read ECO/RESOLVE catalogues.
 
@@ -178,6 +89,98 @@ def reading_catls(filename, catl_format='.hdf5'):
         raise ValueError(msg)
 
     return mock_pd
+
+def read_data_catl(path_to_file, survey):
+    """
+    Reads survey catalog from file
+
+    Parameters
+    ----------
+    path_to_file: `string`
+        Path to survey catalog file
+
+    survey: `string`
+        Name of survey
+
+    Returns
+    ---------
+    catl: `pandas.DataFrame`
+        Survey catalog with grpcz, abs rmag and stellar mass limits
+    
+    volume: `float`
+        Volume of survey
+
+    z_median: `float`
+        Median redshift of survey
+    """
+    if survey == 'eco':
+        # columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
+        #             'logmstar', 'logmgas', 'grp', 'grpn', 'logmh', 'logmh_s', 
+        #             'fc', 'grpmb', 'grpms','modelu_rcorr']
+
+        # 13878 galaxies
+        # eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0)#, \
+            #usecols=columns)
+
+        eco_buff = read_mock_catl(path_to_file)
+
+        if mf_type == 'smf':
+            # 6456 galaxies                       
+            catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
+                (eco_buff.grpcz.values <= 7000) & 
+                (eco_buff.absrmag.values <= -17.33)]
+        elif mf_type == 'bmf':
+            catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
+                (eco_buff.grpcz.values <= 7000) & 
+                (eco_buff.absrmag.values <= -17.33)] 
+
+        volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
+        # volume = 192351.36 # Survey volume with buffer [Mpc/h]^3
+        # cvar = 0.125
+        z_median = np.median(catl.grpcz.values) / (3 * 10**5)
+        
+    elif survey == 'resolvea' or survey == 'resolveb':
+        columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
+                    'logmstar', 'logmgas', 'grp', 'grpn', 'grpnassoc', 'logmh', 
+                    'logmh_s', 'fc', 'grpmb', 'grpms', 'f_a', 'f_b']
+        # 2286 galaxies
+        resolve_live18 = pd.read_csv(path_to_file, delimiter=",", header=0, \
+            usecols=columns)
+
+        if survey == 'resolvea':
+            if mf_type == 'smf':
+                catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
+                    (resolve_live18.grpcz.values >= 4500) & 
+                    (resolve_live18.grpcz.values <= 7000) & 
+                    (resolve_live18.absrmag.values <= -17.33)]
+            elif mf_type == 'bmf':
+                catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
+                    (resolve_live18.grpcz.values >= 4500) & 
+                    (resolve_live18.grpcz.values <= 7000) & 
+                    (resolve_live18.absrmag.values <= -17.33)]
+
+            volume = 13172.384  # Survey volume without buffer [Mpc/h]^3
+            # cvar = 0.30
+            z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
+        
+        elif survey == 'resolveb':
+            if mf_type == 'smf':
+                # 487 - cz, 369 - grpcz
+                catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
+                    (resolve_live18.grpcz.values >= 4500) & 
+                    (resolve_live18.grpcz.values <= 7000) & 
+                    (resolve_live18.absrmag.values <= -17)]
+            elif mf_type == 'bmf':
+                catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
+                    (resolve_live18.grpcz.values >= 4500) & 
+                    (resolve_live18.grpcz.values <= 7000) & 
+                    (resolve_live18.absrmag.values <= -17)]
+
+            volume = 4709.8373  # *2.915 #Survey volume without buffer [Mpc/h]^3
+            # cvar = 0.58
+            z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
+
+    return catl, volume, z_median
 
 def diff_smf(mstar_arr, volume, h1_bool):
     """
@@ -300,6 +303,245 @@ def diff_bmf(mass_arr, volume, h1_bool):
 
     return maxis, phi, err_tot, bins, counts
 
+def std_func_mod(bins, mass_arr, vel_arr):
+    mass_arr_bin_idxs = np.digitize(mass_arr, bins)
+    # Put all galaxies that would have been in the bin after the last in the 
+    # bin as well i.e galaxies with bin number 5 and 6 from previous line all
+    # go in one bin
+    for idx, value in enumerate(mass_arr_bin_idxs):
+        if value == 6:
+            mass_arr_bin_idxs[idx] = 5
+
+    mean = 0
+    std_arr = []
+    for idx in range(1, len(bins)):
+        cen_deltav_arr = []
+        current_bin_idxs = np.argwhere(mass_arr_bin_idxs == idx)
+        cen_deltav_arr.append(np.array(vel_arr)[current_bin_idxs])
+        
+        diff_sqrd_arr = []
+        # mean = np.mean(cen_deltav_arr)
+        for value in cen_deltav_arr:
+            # print(mean)
+            # print(np.mean(cen_deltav_arr))
+            diff = value - mean
+            diff_sqrd = diff**2
+            diff_sqrd_arr.append(diff_sqrd)
+        mean_diff_sqrd = np.mean(diff_sqrd_arr)
+        std = np.sqrt(mean_diff_sqrd)
+        # print(std)
+        # print(np.std(cen_deltav_arr))
+        std_arr.append(std)
+
+    return std_arr
+
+def get_deltav_sigma_data(df):
+    """
+    Measure spread in velocity dispersion 
+    by binning up central stellar mass (changes logmstar units from h=0.7 to h=1)
+
+    Parameters
+    ----------
+    df: pandas Dataframe 
+        Data catalog
+
+    Returns
+    ---------
+    std_red: numpy array
+        Spread in velocity dispersion of red galaxies
+    centers_red: numpy array
+        Bin centers of central stellar mass for red galaxies
+    std_blue: numpy array
+        Spread in velocity dispersion of blue galaxies
+    centers_blue: numpy array
+        Bin centers of central stellar mass for blue galaxies
+    """
+    catl = df.copy()
+    if survey == 'eco' or survey == 'resolvea':
+        catl = catl.loc[catl.logmstar >= 8.9]
+    elif survey == 'resolveb':
+        catl = catl.loc[catl.logmstar >= 8.7]
+    catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
+   
+    grpids = np.unique(catl.groupid.loc[catl.g_galtype == 1].values)  
+
+    deltav_arr = []
+    cen_stellar_mass_arr = []
+    for key in grpids: 
+        group = catl.loc[catl.groupid == key]
+        cen_stellar_mass = group.logmstar.loc[group.g_galtype.\
+            values == 1].values[0]
+        mean_cz_grp = np.round(np.mean(group.cz.values),2)
+        deltav = group.cz.values - len(group)*[mean_cz_grp]
+        for val in deltav:
+            deltav_arr.append(val)
+            cen_stellar_mass_arr.append(cen_stellar_mass)
+
+    if survey == 'eco' or survey == 'resolvea':
+        # TODO : check if this is actually correct for resolve a
+        stellar_mass_bins = np.linspace(8.6,11.5,6)
+    elif survey == 'resolveb':
+        # TODO : check if this is actually correct for resolve b
+        stellar_mass_bins = np.linspace(8.4,11.0,6) 
+    std = std_func_mod(stellar_mass_bins, cen_stellar_mass_arr, 
+        deltav_arr)
+    std = np.array(std)
+
+    centers = 0.5 * (stellar_mass_bins[1:] + \
+        stellar_mass_bins[:-1])
+
+    return std, centers
+
+def get_deltav_sigma_mocks(survey, mock_df):
+    """
+    Calculate spread in velocity dispersion from survey mocks (logmstar converted
+    to h=1 units before analysis)
+
+    Parameters
+    ----------
+    survey: string
+        Name of survey
+    path: string
+        Path to mock catalogs
+
+    Returns
+    ---------
+    std_red_arr: numpy array
+        Spread in velocity dispersion of red galaxies
+    centers_red_arr: numpy array
+        Bin centers of central stellar mass for red galaxies
+    std_blue_arr: numpy array
+        Spread in velocity dispersion of blue galaxies
+    centers_blue_arr: numpy array
+        Bin centers of central stellar mass for blue galaxies
+    """
+    mock_pd = mock_df.copy()
+    mock_pd.logmstar = np.log10((10**mock_pd.logmstar) / 2.041)
+
+    grpids = np.unique(mock_pd.groupid.loc[mock_pd.g_galtype == 1].values)  
+
+
+    deltav_arr = []
+    cen_stellar_mass_arr = []
+    for key in grpids: 
+        group = mock_pd.loc[mock_pd.groupid == key]
+        cen_stellar_mass = group.logmstar.loc[group.g_galtype.\
+            values == 1].values[0]
+        mean_cz_grp = np.round(np.mean(group.cz.values),2)
+        deltav = group.cz.values - len(group)*[mean_cz_grp]
+        for val in deltav:
+            deltav_arr.append(val)
+            cen_stellar_mass_arr.append(cen_stellar_mass)
+
+    if survey == 'eco' or survey == 'resolvea':
+        # TODO : check if this is actually correct for resolve a
+        stellar_mass_bins = np.linspace(8.6,11.5,6)
+    elif survey == 'resolveb':
+        # TODO : check if this is actually correct for resolve b
+        stellar_mass_bins = np.linspace(8.4,11.0,6) 
+    std = std_func_mod(stellar_mass_bins, cen_stellar_mass_arr, 
+        deltav_arr)
+    std = np.array(std)
+
+    centers = 0.5 * (stellar_mass_bins[1:] + \
+        stellar_mass_bins[:-1])
+
+    return std, centers
+
+def get_deltav_sigma_vishnu(gals_df):
+    """
+    Calculate spread in velocity dispersion from Vishnu mock (logmstar already 
+    in h=1)
+
+    Parameters
+    ----------
+    survey: string
+        Name of survey
+    path: string
+        Path to mock catalogs
+
+    Returns
+    ---------
+    std_red_arr: numpy array
+        Spread in velocity dispersion of red galaxies
+    centers_red_arr: numpy array
+        Bin centers of central stellar mass for red galaxies
+    std_blue_arr: numpy array
+        Spread in velocity dispersion of blue galaxies
+    centers_blue_arr: numpy array
+        Bin centers of central stellar mass for blue galaxies
+    """
+
+    mock_pd = gals_df.copy()
+
+    if survey == 'eco':
+        mock_name = 'ECO'
+        num_mocks = 8
+        min_cz = 3000
+        max_cz = 7000
+        mag_limit = -17.33
+        mstar_limit = 8.9
+        volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
+    elif survey == 'resolvea':
+        mock_name = 'A'
+        num_mocks = 59
+        min_cz = 4500
+        max_cz = 7000
+        mag_limit = -17.33
+        mstar_limit = 8.9
+        volume = 13172.384  # Survey volume without buffer [Mpc/h]^3 
+    elif survey == 'resolveb':
+        mock_name = 'B'
+        num_mocks = 104
+        min_cz = 4500
+        max_cz = 7000
+        mag_limit = -17
+        mstar_limit = 8.7
+        volume = 4709.8373  # Survey volume without buffer [Mpc/h]^3
+
+    #* Note: In order to use this function, RSDs have to be 
+    #* applied along with running group finder every time this function is 
+    #* called from lnprob()
+    logmstar_col = 'stellar_mass'
+    g_galtype_col = 'g_galtype'
+    groupid_col = 'groupid'
+    # Using the same survey definition as in mcmc smf i.e excluding the 
+    # buffer except no M_r cut since vishnu mock has no M_r info
+    mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & \
+        (mock_pd.cz.values <= max_cz) & \
+        (mock_pd[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
+
+    grpids = np.unique(mock_pd[groupid_col].loc[mock_pd[g_galtype_col] == 1].values)  
+
+
+    deltav_arr = []
+    cen_stellar_mass_arr = []
+    for key in grpids: 
+        group = mock_pd.loc[mock_pd[groupid_col] == key]
+        cen_stellar_mass = group[logmstar_col].loc[group[g_galtype_col].\
+            values == 1].values[0]
+        mean_cz_grp = np.round(np.mean(group.cz.values),2)
+        deltav = group.cz.values - len(group)*[mean_cz_grp]
+        for val in deltav:
+            deltav_arr.append(val)
+            cen_stellar_mass_arr.append(cen_stellar_mass)
+    # print(max(red_cen_stellar_mass_arr))
+
+    if survey == 'eco' or survey == 'resolvea':
+        # TODO : check if this is actually correct for resolve a
+        stellar_mass_bins = np.linspace(8.6,11.5,6)
+    elif survey == 'resolveb':
+        # TODO : check if this is actually correct for resolve b
+        stellar_mass_bins = np.linspace(8.4,11.0,6) 
+    std = std_func_mod(stellar_mass_bins, cen_stellar_mass_arr, 
+        deltav_arr)
+    std = np.array(std)
+
+    centers = 0.5 * (stellar_mass_bins[1:] + \
+        stellar_mass_bins[:-1])
+            
+    return std, centers
+
 def get_err_data(survey, path):
     """
     Calculate error in data SMF from mocks
@@ -347,6 +589,7 @@ def get_err_data(survey, path):
         volume = 4709.8373  # Survey volume without buffer [Mpc/h]^3
 
     phi_arr_total = []
+    sig_arr_total = []
     box_id_arr = np.linspace(5001,5008,8)
     for box in box_id_arr:
         box = int(box)
@@ -356,16 +599,16 @@ def get_err_data(survey, path):
         for num in range(num_mocks):
             filename = temp_path + '{0}_cat_{1}_Planck_memb_cat.hdf5'.\
                 format(mock_name, num)
-            mock_pd = reading_catls(filename) 
+            mock_pd = read_mock_catl(filename) 
 
             if mf_type == 'smf':
                 # Using the same survey definition as data
                 mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & 
                     (mock_pd.cz.values <= max_cz) & 
-                    (mock_pd.M_r.values <= mag_limit) &
+                    (mock_pd.M_r.values <= mag_limit)]
                     ## SHOULDN'T THIS NEXT LINE BE REMOVED AND CUT ONLY APPLIED 
                     ## IN DIFF_SMF FUNCTION
-                    (mock_pd.logmstar.values >= mstar_limit)]
+                    # & (mock_pd.logmstar.values >= mstar_limit)]
 
                 logmstar_arr = mock_pd.logmstar.values 
                 #Measure SMF of mock using diff_smf function
@@ -386,18 +629,46 @@ def get_err_data(survey, path):
 
             phi_arr_total.append(phi_total)
 
+            sig, cen = get_deltav_sigma_mocks(survey, mock_pd)
+
+            sig_arr_total.append(sig)
+
     phi_arr_total = np.array(phi_arr_total)
-    # np.std(phi_arr_total, axis=0)
-    # Covariance matrix
-    # A variable here is a bin so each row is a bin and each column is one 
-    # observation of all bins.
-    cov_mat = np.cov(phi_arr_total, rowvar=False) # default norm is N-1
-    stddev = np.sqrt(cov_mat.diagonal())
-    # Correlation matrix
-    corr_mat = cov_mat / np.outer(stddev , stddev)
-    # Inverse of correlation matrix
-    corr_mat_inv = np.linalg.inv(corr_mat)
-    return stddev, corr_mat_inv
+    sig_arr_total = np.array(sig_arr_total)
+
+    phi_0 = phi_arr_total[:,0]
+    phi_1 = phi_arr_total[:,1]
+    phi_2 = phi_arr_total[:,2]
+    phi_3 = phi_arr_total[:,3]
+    phi_4 = phi_arr_total[:,4]
+
+    std_0 = sig_arr_total[:,0]
+    std_1 = sig_arr_total[:,1]
+    std_2 = sig_arr_total[:,2]
+    std_3 = sig_arr_total[:,3]
+    std_4 = sig_arr_total[:,4]
+
+    combined_df = pd.DataFrame({'phi_0':phi_0, 'phi_1':phi_1,\
+        'phi_2':phi_2, 'phi_3':phi_3, 'phi_4':phi_4,\
+        'dv_0':dv_0, 'dv_1':dv_1, 'dv_2':dv_2, \
+        'dv_3':dv_3, 'dv_4':dv_4})
+
+    # Correlation matrix of phi and deltav colour measurements combined
+    corr_mat = combined_df.corr()
+    corr_mat_inv = np.linalg.inv(corr_mat.values)  
+    err = np.sqrt(np.diag(combined_df.cov()))
+
+    # # np.std(phi_arr_total, axis=0)
+    # # Covariance matrix
+    # # A variable here is a bin so each row is a bin and each column is one 
+    # # observation of all bins.
+    # cov_mat = np.cov(phi_arr_total, rowvar=False) # default norm is N-1
+    # stddev = np.sqrt(cov_mat.diagonal())
+    # # Correlation matrix
+    # corr_mat = cov_mat / np.outer(stddev , stddev)
+    # # Inverse of correlation matrix
+    # corr_mat_inv = np.linalg.inv(corr_mat)
+    return err, corr_mat_inv
 
 def halocat_init(halo_catalog, z_median):
     """
@@ -423,7 +694,7 @@ def halocat_init(halo_catalog, z_median):
 
     return model
 
-def mcmc(nproc, nwalkers, nsteps, phi, err, inv_corr_mat):
+def mcmc(nproc, nwalkers, nsteps, phi, std, err, inv_corr_mat):
     """
     MCMC analysis
 
@@ -451,39 +722,43 @@ def mcmc(nproc, nwalkers, nsteps, phi, err, inv_corr_mat):
 
     """
     behroozi10_param_vals = [12.35,10.72,0.44,0.57,0.15]
-    bmf_resume = [12.03949177, 10.65053122, 0.50320246, 0.26588596, 0.22353107]
     ndim = 5
-    p0 = bmf_resume + 0.1*np.random.rand(ndim*nwalkers).\
+    p0 = behroozi10_param_vals + 0.1*np.random.rand(ndim*nwalkers).\
         reshape((nwalkers, ndim))
 
-    colnames = ['mhalo_c','mstellar_c','lowmass_slope','highmass_slope',\
-        'scatter']
+    ## Code used for when chain had to be restarted from specific point
+    # bmf_resume = [12.03949177, 10.65053122, 0.50320246, 0.26588596, 0.22353107]
+    # p0 = bmf_resume + 0.1*np.random.rand(ndim*nwalkers).\
+    #     reshape((nwalkers, ndim))
+
+    # colnames = ['mhalo_c','mstellar_c','lowmass_slope','highmass_slope',\
+    #     'scatter']
     
-    emcee_table = pd.read_csv('../../data/processed/bmhm_run3/mcmc_eco_raw.txt', names=colnames, 
-        delim_whitespace=True, header=None)
+    # emcee_table = pd.read_csv('../../data/processed/bmhm_run3/mcmc_eco_raw.txt', names=colnames, 
+    #     delim_whitespace=True, header=None)
 
-    emcee_table = emcee_table[emcee_table.mhalo_c.values != '#']
-    emcee_table.mhalo_c = emcee_table.mhalo_c.astype(np.float64)
-    emcee_table.mstellar_c = emcee_table.mstellar_c.astype(np.float64)
-    emcee_table.lowmass_slope = emcee_table.lowmass_slope.astype(np.float64)
+    # emcee_table = emcee_table[emcee_table.mhalo_c.values != '#']
+    # emcee_table.mhalo_c = emcee_table.mhalo_c.astype(np.float64)
+    # emcee_table.mstellar_c = emcee_table.mstellar_c.astype(np.float64)
+    # emcee_table.lowmass_slope = emcee_table.lowmass_slope.astype(np.float64)
 
-    # Cases where last parameter was a NaN and its value was being written to 
-    # the first element of the next line followed by 4 NaNs for the other 
-    # parameters
-    for idx,row in enumerate(emcee_table.values):
-        if np.isnan(row)[4] == True and np.isnan(row)[3] == False:
-            scatter_val = emcee_table.values[idx+1][0]
-            row[4] = scatter_val
+    # # Cases where last parameter was a NaN and its value was being written to 
+    # # the first element of the next line followed by 4 NaNs for the other 
+    # # parameters
+    # for idx,row in enumerate(emcee_table.values):
+    #     if np.isnan(row)[4] == True and np.isnan(row)[3] == False:
+    #         scatter_val = emcee_table.values[idx+1][0]
+    #         row[4] = scatter_val
     
-    # Cases where rows of NANs appear
-    emcee_table = emcee_table.dropna(axis='index', how='any').\
-        reset_index(drop=True)
+    # # Cases where rows of NANs appear
+    # emcee_table = emcee_table.dropna(axis='index', how='any').\
+    #     reset_index(drop=True)
 
-    p0 = emcee_table[-250:]
+    # p0 = emcee_table[-250:]
 
     with Pool(processes=nproc) as pool:
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, 
-            args=(phi, err, inv_corr_mat), pool=pool)
+            args=(phi, std, err, inv_corr_mat), pool=pool)
         start = time.time()
         for i,result in enumerate(sampler.sample(p0, iterations=nsteps, 
             storechain=False)):
@@ -491,8 +766,10 @@ def mcmc(nproc, nwalkers, nsteps, phi, err, inv_corr_mat):
             chi2 = np.array(result[3])
             # print(chi2)
             print("Iteration number {0} of {1}".format(i+1,nsteps))
-            chain_fname = open("mcmc_{0}_raw_bmf986.txt".format(survey), "a")
-            chi2_fname = open("{0}_chi2_bmf986.txt".format(survey), "a")
+            # chain_fname = open("mcmc_{0}_raw_bmf986.txt".format(survey), "a")
+            # chi2_fname = open("{0}_chi2_bmf986.txt".format(survey), "a")
+            chain_fname = open("mcmc_{0}_raw.txt".format(survey), "a")
+            chi2_fname = open("{0}_chi2.txt".format(survey), "a")
             for k in range(position.shape[0]):
                 chain_fname.write(str(position[k]).strip("[]"))
                 chain_fname.write("\n")
@@ -577,12 +854,20 @@ def chi_squared(data, model, err_data, inv_corr_mat):
     # chi_squared = np.sum(chi_squared_arr)
 
     # return chi_squared
+
+    ## Needed after adding second observable
+    data = data.flatten() # from (2,5) to (1,10)
+    model = model.flatten() # same as above
+
     first_term = ((data - model) / (err_data)).reshape(1,len(data))
     third_term = np.transpose(first_term)
+
+    # chi_squared is saved as [[value]]
     chi_squared = np.dot(np.dot(first_term,inv_corr_mat),third_term)
+
     return chi_squared[0][0]
 
-def lnprob(theta, phi, err_tot, inv_corr_mat):
+def lnprob(theta, phi, std, err_tot, inv_corr_mat):
     """
     Calculates log probability for emcee
 
@@ -624,15 +909,28 @@ def lnprob(theta, phi, err_tot, inv_corr_mat):
     warnings.simplefilter("error", (UserWarning, RuntimeWarning))
     try:
         gals_df = populate_mock(theta, model_init)
-        v_sim = 130**3
+        # v_sim = 130**3
+        v_sim = 890641.5172927063 #survey volume used in group_finder.py
         mstellar_mock = gals_df.stellar_mass.values 
         if mf_type == 'smf':
             max_model, phi_model, err_tot_model, bins_model, counts_model = \
                 diff_smf(mstellar_mock, v_sim, True)
         elif mf_type == 'bmf':
             max_model, phi_model, err_tot_model, bins_model, counts_model = \
-                diff_bmf(mstellar_mock, v_sim, True)           
-        chi2 = chi_squared(phi, phi_model, err_tot, inv_corr_mat)
+                diff_bmf(mstellar_mock, v_sim, True)  
+
+        std_model, centers_model = \
+            get_deltav_sigma_vishnu(gals_df)
+
+        data_arr = []
+        data_arr.append(phi)
+        data_arr.append(std)
+        model_arr = []
+        model_arr.append(phi_model)
+        model_arr.append(std_model)   
+
+        data_arr, model_arr = np.array(data_arr), np.array(model_arr)
+        chi2 = chi_squared(data_arr, model_arr, err_tot, inv_corr_mat)
         lnp = -chi2 / 2
         if math.isnan(lnp):
             raise ValueError
@@ -744,7 +1042,8 @@ def main(args):
         halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
 
     if survey == 'eco':
-        catl_file = path_to_raw + "eco/eco_all.csv"
+        # catl_file = path_to_raw + "eco/eco_all.csv"
+        catl_file = path_to_proc + "gal_group_eco_data.hdf5"
     elif survey == 'resolvea' or survey == 'resolveb':
         catl_file = path_to_raw + "RESOLVE_liveJune2018.csv"
 
@@ -758,7 +1057,7 @@ def main(args):
     print('Reading catalog')
     catl, volume, z_median = read_data_catl(catl_file, survey)
 
-    print('Retrieving stellar mass from catalog')
+    print('Measuring SMF for data')
     stellar_mass_arr = catl.logmstar.values
     if mf_type == 'smf':
         maxis_data, phi_data, err_data, bins_data, counts_data = \
@@ -768,6 +1067,9 @@ def main(args):
         bary_mass_arr = calc_bary(stellar_mass_arr, gas_mass_arr)
         maxis_data, phi_data, err_data, bins_data, counts_data = \
             diff_bmf(bary_mass_arr, volume, False)
+
+    print('Measuring spread in vel disp for data')
+    std_data, centers_data = get_deltav_sigma_data(catl)
     
     print('Initial population of halo catalog')
     model_init = halocat_init(halo_catalog, z_median)
@@ -775,8 +1077,10 @@ def main(args):
     print('Measuring error in data from mocks')
     err_data, inv_corr_mat = get_err_data(survey, path_to_mocks)
     print(err_data, inv_corr_mat)
+
     print('Running MCMC')
-    sampler = mcmc(nproc, nwalkers, nsteps, phi_data, err_data, inv_corr_mat)
+    sampler = mcmc(nproc, nwalkers, nsteps, phi_data, std_data, err_data, 
+        inv_corr_mat)
     
 
 # Main function
