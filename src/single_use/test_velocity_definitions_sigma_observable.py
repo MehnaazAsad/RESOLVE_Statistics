@@ -430,6 +430,48 @@ def mean_std_func(bins, mass_arr, vel_arr, groupid_arr):
         mean_std_arr.append(np.mean(std_arr))
     return mean_std_arr
 
+def median_std_func(bins, mass_arr, vel_arr, groupid_arr):
+    mass_arr_bin_idxs = np.digitize(mass_arr, bins)
+    # Put all galaxies that would have been in the bin after the last in the 
+    # bin as well i.e galaxies with bin number 5 and 6 from previous line all
+    # go in one bin
+    for idx, value in enumerate(mass_arr_bin_idxs):
+        if value == 6:
+            mass_arr_bin_idxs[idx] = 5
+
+    median_std_arr = []
+    len_std_arr = []
+    for idx in range(1, len(bins)):
+        cen_deltav_arr = []
+        grpid_arr = []
+        current_bin_idxs = np.argwhere(mass_arr_bin_idxs == idx)
+        cen_deltav_arr.append(np.array(vel_arr)[current_bin_idxs])
+        grpid_arr.append(np.array(groupid_arr)[current_bin_idxs])
+
+        mean = 0
+        std_arr = []
+        
+        data_temp = {'group_id': np.array(grpid_arr).flatten(), 
+            'deltav': np.array(cen_deltav_arr).flatten()}
+        df_temp = pd.DataFrame(data=data_temp)
+        groups = df_temp.groupby('group_id')
+        keys = groups.groups.keys()
+
+        for key in keys:
+            group = groups.get_group(key)
+            vels = group.deltav.values
+            diff_sqrd_arr = []
+            for value in vels:
+                diff = value - mean
+                diff_sqrd = diff**2
+                diff_sqrd_arr.append(diff_sqrd)
+            mean_diff_sqrd = np.mean(diff_sqrd_arr)
+            std = np.sqrt(mean_diff_sqrd)
+            std_arr.append(std)
+        len_std_arr.append(len(std_arr))
+        median_std_arr.append(np.median(std_arr))
+    return median_std_arr
+
 def std_func_mod(bins, mass_arr, vel_arr):
     mass_arr_bin_idxs = np.digitize(mass_arr, bins)
     # Put all galaxies that would have been in the bin after the last in the 
@@ -546,48 +588,56 @@ def get_deltav_sigma_data(df):
     # Calculating spread in velocity dispersion for galaxies in groups with a 
     # red central
 
+    red_singleton_counter = 0
     red_deltav_arr = []
     red_cen_stellar_mass_arr = []
     for key in red_subset_grpids: 
         group = catl.loc[catl.groupid == key]
-        cen_stellar_mass = group.logmstar.loc[group.g_galtype.\
-            values == 1].values[0]
-        mean_cz_grp = np.round(np.mean(group.cz.values),2)
-        deltav = group.cz.values - len(group)*[mean_cz_grp]
-        for val in deltav:
-            red_deltav_arr.append(val)
-            red_cen_stellar_mass_arr.append(cen_stellar_mass)
+        if len(group) == 1:
+            singleton_counter += 1
+        else:
+            cen_stellar_mass = group.logmstar.loc[group.g_galtype.\
+                values == 1].values[0]
+            mean_cz_grp = np.round(np.mean(group.cz.values),2)
+            deltav = group.cz.values - len(group)*[mean_cz_grp]
+            for val in deltav:
+                red_deltav_arr.append(val)
+                red_cen_stellar_mass_arr.append(cen_stellar_mass)
 
     if survey == 'eco' or survey == 'resolvea':
         # TODO : check if this is actually correct for resolve a
         red_stellar_mass_bins = np.linspace(8.6,11.2,6)
     elif survey == 'resolveb':
         red_stellar_mass_bins = np.linspace(8.4,11.0,6)
-    std_red = std_func(red_stellar_mass_bins, red_cen_stellar_mass_arr, 
+    std_red = std_func_mod(red_stellar_mass_bins, red_cen_stellar_mass_arr, 
         red_deltav_arr)
     std_red = np.array(std_red)
 
     # Calculating spread in velocity dispersion for galaxies in groups with a 
     # blue central
 
+    blue_singleton_counter = 0
     blue_deltav_arr = []
     blue_cen_stellar_mass_arr = []
     for key in blue_subset_grpids: 
         group = catl.loc[catl.groupid == key]
-        cen_stellar_mass = group.logmstar.loc[group.g_galtype\
-            .values == 1].values[0]
-        mean_cz_grp = np.round(np.mean(group.cz.values),2)
-        deltav = group.cz.values - len(group)*[mean_cz_grp]
-        for val in deltav:
-            blue_deltav_arr.append(val)
-            blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+        if len(group) == 1:
+            blue_singleton_counter += 1
+        else:
+            cen_stellar_mass = group.logmstar.loc[group.g_galtype\
+                .values == 1].values[0]
+            mean_cz_grp = np.round(np.mean(group.cz.values),2)
+            deltav = group.cz.values - len(group)*[mean_cz_grp]
+            for val in deltav:
+                blue_deltav_arr.append(val)
+                blue_cen_stellar_mass_arr.append(cen_stellar_mass)
 
     if survey == 'eco' or survey == 'resolvea':
         # TODO : check if this is actually correct for resolve a
         blue_stellar_mass_bins = np.linspace(8.6,10.7,6)
     elif survey == 'resolveb':
         blue_stellar_mass_bins = np.linspace(8.4,10.4,6)
-    std_blue = std_func(blue_stellar_mass_bins, blue_cen_stellar_mass_arr, 
+    std_blue = std_func_mod(blue_stellar_mass_bins, blue_cen_stellar_mass_arr, 
         blue_deltav_arr)    
     std_blue = np.array(std_blue)
 
@@ -1085,7 +1135,7 @@ elif survey == 'resolvea' or survey == 'resolveb':
 
 catl, volume, z_median = read_data_catl(catl_file, survey)
 catl = assign_colour_label_data(catl)
-# std_red, centers_red, std_blue, centers_blue = get_deltav_sigma_data(catl)
+std_red, centers_red, std_blue, centers_blue = get_deltav_sigma_data(catl)
 # err_total_data, err_colour_data = \
 #     get_err_data(survey, path_to_mocks)
 
@@ -1101,11 +1151,13 @@ if survey == 'eco' or survey == 'resolvea':
 elif survey == 'resolveb':
     catl = catl.loc[catl.logmstar >= np.log10((10**8.7)/2.041)]
 
+### USE IF NEW DATA
 red_subset_grpids = np.unique(catl.groupid.loc[(catl.\
     colour_label == 'R') & (catl.g_galtype == 1)].values)  
 blue_subset_grpids = np.unique(catl.groupid.loc[(catl.\
     colour_label == 'B') & (catl.g_galtype == 1)].values)
 
+### USE IF OLD DATA
 red_subset_grpids = np.unique(catl.grp.loc[(catl.\
     colour_label == 'R') & (catl.fc == 1)].values)  
 blue_subset_grpids = np.unique(catl.grp.loc[(catl.\
@@ -1149,38 +1201,41 @@ for key in red_subset_grpids:
     #     break
 
 ### USE IF NEW DATA
+red_singleton_counter = 0
 red_deltav_arr = []
 red_cen_stellar_mass_arr = []
-grpid_arr = []
+red_grpid_arr = []
 red_cen_cz_arr = []
 red_mean_cz_arr = []
 red_grp_halo_mass_arr = []
 for key in red_subset_grpids: 
     group = catl.loc[catl.groupid == key]
+    if len(group) == 1:
+        red_singleton_counter += 1
+    else:
+        grp_halo_mass = np.unique(group.logmh.values)[0]
+        cen_stellar_mass = group.logmstar.loc[group.g_galtype.\
+            values == 1].values[0]
+        
+        # Different velocity definitions
+        mean_cz_grp = np.round(np.mean(group.cz.values),2)
+        cen_cz_grp = group.cz.loc[group.g_galtype == 1].values[0]
+        cz_grp = np.unique(group.grpcz.values)[0]
 
-    grp_halo_mass = np.unique(group.logmh.values)[0]
-    cen_stellar_mass = group.logmstar.loc[group.g_galtype.\
-        values == 1].values[0]
-    
-    # Different velocity definitions
-    mean_cz_grp = np.round(np.mean(group.cz.values),2)
-    cen_cz_grp = group.cz.loc[group.g_galtype == 1].values[0]
-    cz_grp = np.unique(group.grpcz.values)[0]
+        # Velocity difference
+        deltav = group.cz.values - len(group)*[cen_cz_grp]
+        
+        # red_cen_stellar_mass_arr.append(cen_stellar_mass)
+        red_grp_halo_mass_arr.append(grp_halo_mass)
+        red_cen_cz_arr.append(cen_cz_grp)
+        red_mean_cz_arr.append(mean_cz_grp)
 
-    # Velocity difference
-    deltav = group.cz.values - len(group)*[cen_cz_grp]
-    
-    # red_cen_stellar_mass_arr.append(cen_stellar_mass)
-    red_grp_halo_mass_arr.append(grp_halo_mass)
-    red_cen_cz_arr.append(cen_cz_grp)
-    red_mean_cz_arr.append(mean_cz_grp)
-
-    for val in deltav:
-        red_deltav_arr.append(val)
-        red_cen_stellar_mass_arr.append(cen_stellar_mass)
-        grpid_arr.append(key)
-    # if len(group) > 5:
-    #     break
+        for val in deltav:
+            red_deltav_arr.append(val)
+            red_cen_stellar_mass_arr.append(cen_stellar_mass)
+            red_grpid_arr.append(key)
+        # if len(group) > 5:
+        #     break
 
 if survey == 'eco' or survey == 'resolvea':
     # TODO : check if this is actually correct for resolve a
@@ -1194,7 +1249,9 @@ std_red = std_func_mod(red_stellar_mass_bins, red_cen_stellar_mass_arr,
 std_red = np.array(std_red)
 
 mean_std_red = mean_std_func(red_stellar_mass_bins, red_cen_stellar_mass_arr, 
-    red_deltav_arr, grpid_arr)
+    red_deltav_arr, red_grpid_arr)
+median_std_red = median_std_func(red_stellar_mass_bins, red_cen_stellar_mass_arr, 
+    red_deltav_arr, red_grpid_arr)
 mean_halo_red = mean_grphalo_func(red_stellar_mass_bins, red_cen_stellar_mass_arr, 
     red_grp_halo_mass_arr)
 mean_vcirc_red = mean_grphalo_vcirc_func(red_stellar_mass_bins, 
@@ -1237,36 +1294,39 @@ for key in blue_subset_grpids:
 
 
 ### USE IF NEW DATA
+blue_singleton_counter = 0
 blue_deltav_arr = []
 blue_cen_stellar_mass_arr = []
-grpid_arr = []
+blue_grpid_arr = []
 blue_cen_cz_arr = []
 blue_mean_cz_arr = []
 blue_grp_halo_mass_arr = []
 for key in blue_subset_grpids: 
     group = catl.loc[catl.groupid == key]
+    if len(group) == 1:
+        blue_singleton_counter += 1
+    else:
+        grp_halo_mass = np.unique(group.logmh.values)[0]
+        cen_stellar_mass = group.logmstar.loc[group.g_galtype\
+            .values == 1].values[0]
 
-    grp_halo_mass = np.unique(group.logmh.values)[0]
-    cen_stellar_mass = group.logmstar.loc[group.g_galtype\
-        .values == 1].values[0]
+        # Different velocity definitions
+        mean_cz_grp = np.round(np.mean(group.cz.values),2)
+        cen_cz_grp = group.cz.loc[group.g_galtype == 1].values[0]
+        cz_grp = np.unique(group.grpcz.values)[0]
 
-    # Different velocity definitions
-    mean_cz_grp = np.round(np.mean(group.cz.values),2)
-    cen_cz_grp = group.cz.loc[group.g_galtype == 1].values[0]
-    cz_grp = np.unique(group.grpcz.values)[0]
+        # Velocity difference
+        deltav = group.cz.values - len(group)*[cen_cz_grp]
 
-    # Velocity difference
-    deltav = group.cz.values - len(group)*[cen_cz_grp]
+        # blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+        blue_grp_halo_mass_arr.append(grp_halo_mass)
+        blue_cen_cz_arr.append(cen_cz_grp)
+        blue_mean_cz_arr.append(mean_cz_grp)
 
-    # blue_cen_stellar_mass_arr.append(cen_stellar_mass)
-    blue_grp_halo_mass_arr.append(grp_halo_mass)
-    blue_cen_cz_arr.append(cen_cz_grp)
-    blue_mean_cz_arr.append(mean_cz_grp)
-
-    for val in deltav:
-        blue_deltav_arr.append(val)
-        blue_cen_stellar_mass_arr.append(cen_stellar_mass)
-        grpid_arr.append(key)
+        for val in deltav:
+            blue_deltav_arr.append(val)
+            blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+            blue_grpid_arr.append(key)
 
 if survey == 'eco' or survey == 'resolvea':
     # TODO : check if this is actually correct for resolve a
@@ -1281,7 +1341,9 @@ std_blue = std_func_mod(blue_stellar_mass_bins, blue_cen_stellar_mass_arr,
 std_blue = np.array(std_blue)
 
 mean_std_blue = mean_std_func(blue_stellar_mass_bins, blue_cen_stellar_mass_arr, 
-    blue_deltav_arr, grpid_arr)
+    blue_deltav_arr, blue_grpid_arr)
+median_std_blue = median_std_func(blue_stellar_mass_bins, blue_cen_stellar_mass_arr, 
+    blue_deltav_arr, blue_grpid_arr)
 mean_halo_blue = mean_grphalo_func(blue_stellar_mass_bins, blue_cen_stellar_mass_arr, 
     blue_grp_halo_mass_arr)
 mean_vcirc_blue = mean_grphalo_vcirc_func(blue_stellar_mass_bins, 
@@ -1321,8 +1383,10 @@ fig2 = plt.figure()
 plt.scatter(centers_red,mean_std_red,color='darkred',s=350, marker='p')
 plt.scatter(centers_blue,mean_std_blue,color='darkblue',s=350, marker='p')
 plt.xlabel(r'\boldmath$\log_{10}\ M_{\star , cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
-plt.ylabel(r'\boldmath$\sigma \left[\mathrm{km/s} \right]$', fontsize=30)
+plt.ylabel(r'\boldmath$\bar{\sigma} \left[\mathrm{km/s} \right]$', fontsize=30)
 plt.title('Mean of spread in velocity difference from central cz of group')
+# plt.title('Mean of spread in velocity difference from mean cz of group')
+
 plt.show()
 
 
@@ -1956,8 +2020,8 @@ gals_df = gals_df.dropna(subset=['g_galtype_{0}'.\
     reset_index(drop=True)
 
 gals_df = assign_cen_sat_flag(gals_df)
-f_red_cen, f_red_sat = hybrid_quenching_model(best_fit_params, gals_df, 
-    'vishnu', best_fit_mocknum)
+f_red_cen, f_red_sat = hybrid_quenching_model(bf_params, gals_df, 
+    'vishnu', bf_randint)
 gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, gals_df)
 
 grpid_col = 'groupid_{0}'.format(bf_randint)
@@ -1969,6 +2033,7 @@ red_subset_grpids = np.unique(gals_df.halo_id.loc[(gals_df.\
 blue_subset_grpids = np.unique(gals_df.halo_id.loc[(gals_df.\
     colour_label == 'B') & (gals_df.cs_flag == 1)].values)
 
+red_singleton_counter = 0
 red_deltav_arr = []
 red_cen_stellar_mass_arr = []
 red_grpid_arr = []
@@ -1980,38 +2045,42 @@ red_host_halo_mass_arr = []
 red_host_halo_rvir_arr = []
 for key in red_subset_grpids: 
     group = gals_df.loc[gals_df.halo_hostid == key]
+    if len(group) == 1:
+        red_singleton_counter += 1
+    else:
+        # host_halo_mass = group.halo_mvir.loc[group.cs_flag.\
+        #     values == 1].values[0]
+        halo_macc = group.halo_macc.values
 
-    host_halo_mass = group.halo_mvir.loc[group.cs_flag.\
-        values == 1].values[0]
-    host_halo_rvir = group.halo_rvir.loc[group.cs_flag.\
-        values == 1].values[0]
-    # halo_macc = group.halo_mvir.values
-    # halo_rvir = group.halo_rvir.values
-    cen_stellar_mass = group[logmstar_col].loc[group.cs_flag.\
-        values == 1].values[0]
+        host_halo_rvir = group.halo_rvir.loc[group.cs_flag.\
+            values == 1].values[0]
+        # halo_rvir = group.halo_rvir.values
 
-   
-    # Different velocity definitions
-    mean_cz_grp = np.round(np.mean(group.cz.values),2)
-    cen_cz_grp = group.cz.loc[group.cs_flag == 1].values[0]
+        cen_stellar_mass = group[logmstar_col].loc[group.cs_flag.\
+            values == 1].values[0]
 
-    # Velocity difference
-    deltav = group.cz.values - len(group)*[cen_cz_grp]
     
-    red_cen_stellar_mass_arr.append(cen_stellar_mass)
-    red_host_halo_mass_arr.append(host_halo_mass)
-    red_host_halo_rvir_arr.append(host_halo_rvir)
-    red_cen_cz_arr.append(cen_cz_grp)
-    red_mean_cz_arr.append(mean_cz_grp)
+        # Different velocity definitions
+        mean_cz_grp = np.round(np.mean(group.cz.values),2)
+        cen_cz_grp = group.cz.loc[group.cs_flag == 1].values[0]
 
-    for idx, val in enumerate(deltav):
-        red_deltav_arr.append(val)
-        # red_halo_mass_arr.append(halo_macc[idx])
-        # red_halo_rvir_arr.append(halo_rvir[idx])
-        # red_cen_stellar_mass_arr.append(cen_stellar_mass)
-        red_grpid_arr.append(key)
-    # if len(group) > 5:
-    #     break
+        # Velocity difference
+        deltav = group.cz.values - len(group)*[cen_cz_grp]
+        
+        red_cen_stellar_mass_arr.append(cen_stellar_mass)
+        red_host_halo_mass_arr.append(halo_macc)
+        red_host_halo_rvir_arr.append(host_halo_rvir)
+        red_cen_cz_arr.append(cen_cz_grp)
+        red_mean_cz_arr.append(mean_cz_grp)
+
+        for idx, val in enumerate(deltav):
+            red_deltav_arr.append(val)
+            # red_halo_mass_arr.append(halo_macc[idx])
+            # red_halo_rvir_arr.append(halo_rvir[idx])
+            # red_cen_stellar_mass_arr.append(cen_stellar_mass)
+            red_grpid_arr.append(key)
+        # if len(group) > 5:
+        #     break
 
 if survey == 'eco' or survey == 'resolvea':
     # TODO : check if this is actually correct for resolve a
@@ -2020,6 +2089,7 @@ if survey == 'eco' or survey == 'resolvea':
 elif survey == 'resolveb':
     red_stellar_mass_bins = np.linspace(8.4,11.0,6)
 
+blue_singleton_counter = 0
 blue_deltav_arr = []
 blue_cen_stellar_mass_arr = []
 blue_grpid_arr = []
@@ -2031,36 +2101,40 @@ blue_host_halo_mass_arr = []
 blue_host_halo_rvir_arr = []
 for key in blue_subset_grpids: 
     group = gals_df.loc[gals_df.halo_hostid == key]
+    if len(group) == 1:
+        blue_singleton_counter += 1
+    else:
+        # host_halo_mass = group.halo_mvir.loc[group.cs_flag.\
+        #     values == 1].values[0]
+        halo_macc = group.halo_macc.values
 
-    host_halo_mass = group.halo_mvir.loc[group.cs_flag.\
-        values == 1].values[0]
-    host_halo_rvir = group.halo_rvir.loc[group.cs_flag.\
-        values == 1].values[0]
-    # halo_macc = group.halo_mvir.values
-    # halo_rvir = group.halo_rvir.values
-    cen_stellar_mass = group[logmstar_col].loc[group.cs_flag.\
-        values == 1].values[0]
+        host_halo_rvir = group.halo_rvir.loc[group.cs_flag.\
+            values == 1].values[0]
+        # halo_rvir = group.halo_rvir.values
 
-    
-    # Different velocity definitions
-    mean_cz_grp = np.round(np.mean(group.cz.values),2)
-    cen_cz_grp = group.cz.loc[group.cs_flag == 1].values[0]
+        cen_stellar_mass = group[logmstar_col].loc[group.cs_flag.\
+            values == 1].values[0]
 
-    # Velocity difference
-    deltav = group.cz.values - len(group)*[cen_cz_grp]
+        
+        # Different velocity definitions
+        mean_cz_grp = np.round(np.mean(group.cz.values),2)
+        cen_cz_grp = group.cz.loc[group.cs_flag == 1].values[0]
 
-    blue_cen_stellar_mass_arr.append(cen_stellar_mass)
-    blue_host_halo_mass_arr.append(host_halo_mass)
-    blue_host_halo_rvir_arr.append(host_halo_rvir)
-    blue_cen_cz_arr.append(cen_cz_grp)
-    blue_mean_cz_arr.append(mean_cz_grp)
+        # Velocity difference
+        deltav = group.cz.values - len(group)*[cen_cz_grp]
 
-    for idx, val in enumerate(deltav):
-        blue_deltav_arr.append(val)
-        # blue_halo_mass_arr.append(halo_macc[idx])
-        # blue_halo_rvir_arr.append(halo_rvir[idx])
-        # blue_cen_stellar_mass_arr.append(cen_stellar_mass)
-        blue_grpid_arr.append(key)
+        blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+        blue_host_halo_mass_arr.append(halo_macc)
+        blue_host_halo_rvir_arr.append(host_halo_rvir)
+        blue_cen_cz_arr.append(cen_cz_grp)
+        blue_mean_cz_arr.append(mean_cz_grp)
+
+        for idx, val in enumerate(deltav):
+            blue_deltav_arr.append(val)
+            # blue_halo_mass_arr.append(halo_macc[idx])
+            # blue_halo_rvir_arr.append(halo_rvir[idx])
+            # blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+            blue_grpid_arr.append(key)
 
 if survey == 'eco' or survey == 'resolvea':
     # TODO : check if this is actually correct for resolve a
