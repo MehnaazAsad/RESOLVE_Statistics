@@ -117,8 +117,7 @@ def read_data_catl(path_to_file, survey):
         #             'fc', 'grpmb', 'grpms','modelu_rcorr']
 
         # 13878 galaxies
-        # eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0)#, \
-            #usecols=columns)
+        # eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0)#, \usecols=columns)
 
         eco_buff = read_mock_catl(path_to_file)
 
@@ -1145,7 +1144,7 @@ catl.logmh_s = np.log10((10**catl.logmh_s) / 2.041)
 catl.logmh = np.log10((10**catl.logmh) / 2.041)
 
 
-
+## Unnecessary for new data since cut applied before group finding
 if survey == 'eco' or survey == 'resolvea':
     catl = catl.loc[catl.logmstar >= np.log10((10**8.9)/2.041)]
 elif survey == 'resolveb':
@@ -3547,3 +3546,523 @@ plt.xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1}
 plt.title('Distribution of halo masses in specified stellar mass bin')
 plt.legend()
 plt.show()
+
+################################################################################
+############ Experimenting with new metric for second observable ###############
+################################################################################
+
+from scipy.stats import binned_statistic as bs
+from scipy.stats import normaltest as nt
+from cosmo_utils.utils import work_paths as cwpaths
+import matplotlib.pyplot as plt
+from matplotlib import rc
+import pandas as pd
+import numpy as np
+import scipy as sp
+from scipy.stats import iqr
+import random
+import math
+import os
+
+rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=25)
+rc('text', usetex=True)
+rc('text.latex', preamble=[r"\usepackage{amsmath}"])
+rc('axes', linewidth=2)
+rc('xtick.major', width=2, size=7)
+rc('ytick.major', width=2, size=7)
+
+def read_mock_catl(filename, catl_format='.hdf5'):
+    """
+    Function to read ECO/RESOLVE catalogues.
+
+    Parameters
+    ----------
+    filename: string
+        path and name of the ECO/RESOLVE catalogue to read
+
+    catl_format: string, optional (default = '.hdf5')
+        type of file to read.
+        Options:
+            - '.hdf5': Reads in a catalogue in HDF5 format
+
+    Returns
+    -------
+    mock_pd: pandas DataFrame
+        DataFrame with galaxy/group information
+
+    Examples
+    --------
+    # Specifying `filename`
+    >>> filename = 'ECO_catl.hdf5'
+
+    # Reading in Catalogue
+    >>> mock_pd = reading_catls(filename, format='.hdf5')
+
+    >>> mock_pd.head()
+               x          y         z          vx          vy          vz  \
+    0  10.225435  24.778214  3.148386  356.112457 -318.894409  366.721832
+    1  20.945772  14.500367 -0.237940  168.731766   37.558834  447.436951
+    2  21.335835  14.808488  0.004653  967.204407 -701.556763 -388.055115
+    3  11.102760  21.782235  2.947002  611.646484 -179.032089  113.388794
+    4  13.217764  21.214905  2.113904  120.689598  -63.448833  400.766541
+
+       loghalom  cs_flag  haloid  halo_ngal    ...        cz_nodist      vel_tot  \
+    0    12.170        1  196005          1    ...      2704.599189   602.490355
+    1    11.079        1  197110          1    ...      2552.681697   479.667489
+    2    11.339        1  197131          1    ...      2602.377466  1256.285409
+    3    11.529        1  199056          1    ...      2467.277182   647.318259
+    4    10.642        1  199118          1    ...      2513.381124   423.326770
+
+           vel_tan     vel_pec     ra_orig  groupid    M_group g_ngal  g_galtype  \
+    0   591.399858 -115.068833  215.025116        0  11.702527      1          1
+    1   453.617221  155.924074  182.144134        1  11.524787      4          0
+    2  1192.742240  394.485714  182.213220        1  11.524787      4          0
+    3   633.928896  130.977416  210.441320        2  11.502205      1          1
+    4   421.064495   43.706352  205.525386        3  10.899680      1          1
+
+       halo_rvir
+    0   0.184839
+    1   0.079997
+    2   0.097636
+    3   0.113011
+    4   0.057210
+    """
+    ## Checking if file exists
+    if not os.path.exists(filename):
+        msg = '`filename`: {0} NOT FOUND! Exiting..'.format(filename)
+        raise ValueError(msg)
+    ## Reading file
+    if catl_format=='.hdf5':
+        mock_pd = pd.read_hdf(filename)
+    else:
+        msg = '`catl_format` ({0}) not supported! Exiting...'.format(catl_format)
+        raise ValueError(msg)
+
+    return mock_pd
+
+def assign_colour_label_data(catl):
+    """
+    Assign colour label to data
+
+    Parameters
+    ----------
+    catl: pandas Dataframe 
+        Data catalog
+
+    Returns
+    ---------
+    catl: pandas Dataframe
+        Data catalog with colour label assigned as new column
+    """
+
+    logmstar_arr = catl.logmstar.values
+    u_r_arr = catl.modelu_rcorr.values
+
+    colour_label_arr = np.empty(len(catl), dtype='str')
+    for idx, value in enumerate(logmstar_arr):
+
+        # Divisions taken from Moffett et al. 2015 equation 1
+        if value <= 9.1:
+            if u_r_arr[idx] > 1.457:
+                colour_label = 'R'
+            else:
+                colour_label = 'B'
+
+        if value > 9.1 and value < 10.1:
+            divider = 0.24 * value - 0.7
+            if u_r_arr[idx] > divider:
+                colour_label = 'R'
+            else:
+                colour_label = 'B'
+
+        if value >= 10.1:
+            if u_r_arr[idx] > 1.7:
+                colour_label = 'R'
+            else:
+                colour_label = 'B'
+            
+        colour_label_arr[idx] = colour_label
+    
+    catl['colour_label'] = colour_label_arr
+
+    return catl
+
+def read_data_catl(path_to_file, survey):
+    """
+    Reads survey catalog from file
+
+    Parameters
+    ----------
+    path_to_file: `string`
+        Path to survey catalog file
+
+    survey: `string`
+        Name of survey
+
+    Returns
+    ---------
+    catl: `pandas.DataFrame`
+        Survey catalog with grpcz, abs rmag and stellar mass limits
+    
+    volume: `float`
+        Volume of survey
+
+    z_median: `float`
+        Median redshift of survey
+    """
+    if survey == 'eco':
+        # columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
+        #             'logmstar', 'logmgas', 'grp', 'grpn', 'logmh', 'logmh_s', 
+        #             'fc', 'grpmb', 'grpms','modelu_rcorr']
+
+        # 13878 galaxies
+        # eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0)#, \usecols=columns)
+
+        eco_buff = read_mock_catl(path_to_file)
+
+        if mf_type == 'smf':
+            # 6456 galaxies                       
+            catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
+                (eco_buff.grpcz.values <= 7000) & 
+                (eco_buff.absrmag.values <= -17.33)]
+        elif mf_type == 'bmf':
+            catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
+                (eco_buff.grpcz.values <= 7000) & 
+                (eco_buff.absrmag.values <= -17.33)] 
+
+        volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
+        # volume = 192351.36 # Survey volume with buffer [Mpc/h]^3
+        # cvar = 0.125
+        z_median = np.median(catl.grpcz.values) / (3 * 10**5)
+        
+    elif survey == 'resolvea' or survey == 'resolveb':
+        columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
+                    'logmstar', 'logmgas', 'grp', 'grpn', 'grpnassoc', 'logmh', 
+                    'logmh_s', 'fc', 'grpmb', 'grpms', 'f_a', 'f_b']
+        # 2286 galaxies
+        resolve_live18 = pd.read_csv(path_to_file, delimiter=",", header=0, \
+            usecols=columns)
+
+        if survey == 'resolvea':
+            if mf_type == 'smf':
+                catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
+                    (resolve_live18.grpcz.values >= 4500) & 
+                    (resolve_live18.grpcz.values <= 7000) & 
+                    (resolve_live18.absrmag.values <= -17.33)]
+            elif mf_type == 'bmf':
+                catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
+                    (resolve_live18.grpcz.values >= 4500) & 
+                    (resolve_live18.grpcz.values <= 7000) & 
+                    (resolve_live18.absrmag.values <= -17.33)]
+
+            volume = 13172.384  # Survey volume without buffer [Mpc/h]^3
+            # cvar = 0.30
+            z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
+        
+        elif survey == 'resolveb':
+            if mf_type == 'smf':
+                # 487 - cz, 369 - grpcz
+                catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
+                    (resolve_live18.grpcz.values >= 4500) & 
+                    (resolve_live18.grpcz.values <= 7000) & 
+                    (resolve_live18.absrmag.values <= -17)]
+            elif mf_type == 'bmf':
+                catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
+                    (resolve_live18.grpcz.values >= 4500) & 
+                    (resolve_live18.grpcz.values <= 7000) & 
+                    (resolve_live18.absrmag.values <= -17)]
+
+            volume = 4709.8373  # *2.915 #Survey volume without buffer [Mpc/h]^3
+            # cvar = 0.58
+            z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
+
+    return catl, volume, z_median
+
+
+global survey
+global path_to_figures
+global gal_group_df_subset
+
+dict_of_paths = cwpaths.cookiecutter_paths()
+path_to_raw = dict_of_paths['raw_dir']
+path_to_proc = dict_of_paths['proc_dir']
+path_to_interim = dict_of_paths['int_dir']
+path_to_figures = dict_of_paths['plot_dir']
+path_to_external = dict_of_paths['ext_dir']
+path_to_data = dict_of_paths['data_dir']
+
+machine = 'mac'
+mf_type = 'smf'
+survey = 'eco'
+
+if survey == 'eco':
+    # catl_file = path_to_raw + "eco/eco_all.csv"
+    ## New catalog with group finder run on subset after applying M* and cz cuts
+    # catl_file = path_to_proc + "gal_group_eco_data.hdf5"
+    catl_file = path_to_proc + "gal_group_eco_data_vol_update.hdf5"
+
+    path_to_mocks = path_to_data + 'mocks/m200b/eco/'
+elif survey == 'resolvea' or survey == 'resolveb':
+    catl_file = path_to_raw + "RESOLVE_liveJune2018.csv"
+
+catl, volume, z_median = read_data_catl(catl_file, survey)
+catl = assign_colour_label_data(catl)
+
+catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
+catl.M_group = np.log10((10**catl.M_group) / 2.041)
+catl.logmh_s = np.log10((10**catl.logmh_s) / 2.041)
+catl.logmh = np.log10((10**catl.logmh) / 2.041)
+
+red_subset_grpids = np.unique(catl.groupid.loc[(catl.\
+    colour_label == 'R') & (catl.g_galtype == 1)].values)  
+blue_subset_grpids = np.unique(catl.groupid.loc[(catl.\
+    colour_label == 'B') & (catl.g_galtype == 1)].values)
+
+red_singleton_counter = 0
+red_deltav_arr = []
+red_cen_stellar_mass_arr = []
+red_grpid_arr = []
+red_cen_cz_arr = []
+red_mean_cz_arr = []
+red_grp_halo_mass_arr = []
+for key in red_subset_grpids: 
+    group = catl.loc[catl.groupid == key]
+    if len(group) == 1:
+        red_singleton_counter += 1
+    else:
+        grp_halo_mass = np.unique(group.logmh.values)[0]
+        cen_stellar_mass = group.logmstar.loc[group.g_galtype.\
+            values == 1].values[0]
+        
+        # Different velocity definitions
+        mean_cz_grp = np.round(np.mean(group.cz.values),2)
+        cen_cz_grp = group.cz.loc[group.g_galtype == 1].values[0]
+        cz_grp = np.unique(group.grpcz.values)[0]
+
+        # Velocity difference
+        deltav = group.cz.values - len(group)*[cen_cz_grp]
+        
+        # red_cen_stellar_mass_arr.append(cen_stellar_mass)
+        red_grp_halo_mass_arr.append(grp_halo_mass)
+        red_cen_cz_arr.append(cen_cz_grp)
+        red_mean_cz_arr.append(mean_cz_grp)
+
+        for val in deltav:
+            if val != 0:
+                red_deltav_arr.append(val)
+                red_cen_stellar_mass_arr.append(cen_stellar_mass)
+                red_grpid_arr.append(key)
+
+blue_singleton_counter = 0
+blue_deltav_arr = []
+blue_cen_stellar_mass_arr = []
+blue_grpid_arr = []
+blue_cen_cz_arr = []
+blue_mean_cz_arr = []
+blue_grp_halo_mass_arr = []
+for key in blue_subset_grpids: 
+    group = catl.loc[catl.groupid == key]
+    if len(group) == 1:
+        blue_singleton_counter += 1
+    else:
+        grp_halo_mass = np.unique(group.logmh.values)[0]
+        cen_stellar_mass = group.logmstar.loc[group.g_galtype\
+            .values == 1].values[0]
+
+        # Different velocity definitions
+        mean_cz_grp = np.round(np.mean(group.cz.values),2)
+        cen_cz_grp = group.cz.loc[group.g_galtype == 1].values[0]
+        cz_grp = np.unique(group.grpcz.values)[0]
+
+        # Velocity difference
+        deltav = group.cz.values - len(group)*[cen_cz_grp]
+
+        # blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+        blue_grp_halo_mass_arr.append(grp_halo_mass)
+        blue_cen_cz_arr.append(cen_cz_grp)
+        blue_mean_cz_arr.append(mean_cz_grp)
+
+        for val in deltav:
+            if val != 0:
+                blue_deltav_arr.append(val)
+                blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+                blue_grpid_arr.append(key)
+
+all_grpids_with_cen = np.unique(catl.groupid.loc[(catl.g_galtype == 1)].values)  
+
+cen_stellar_mass_arr = []
+deltav_arr = []
+grpid_arr = []
+cen_cz_arr = []
+mean_cz_arr = []
+grp_halo_mass_arr = []
+singleton_counter = 0
+for key in all_grpids_with_cen: 
+    group = catl.loc[catl.groupid == key]
+    if len(group) == 1:
+        singleton_counter += 1
+    else:
+        grp_halo_mass = np.unique(group.logmh.values)[0]
+        cen_stellar_mass = group.logmstar.loc[group.g_galtype\
+            .values == 1].values[0]
+
+        # Different velocity definitions
+        mean_cz_grp = np.round(np.mean(group.cz.values),2)
+        cen_cz_grp = group.cz.loc[group.g_galtype == 1].values[0]
+        cz_grp = np.unique(group.grpcz.values)[0]
+
+        # Velocity difference
+        deltav = group.cz.values - len(group)*[cen_cz_grp]
+
+        # blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+        grp_halo_mass_arr.append(grp_halo_mass)
+        cen_cz_arr.append(cen_cz_grp)
+        mean_cz_arr.append(mean_cz_grp)
+
+        for val in deltav:
+            if val != 0:
+                deltav_arr.append(val)
+                cen_stellar_mass_arr.append(cen_stellar_mass)
+                grpid_arr.append(key)
+
+## Plot of new metric but with trend line fit to ALL groups and not split by red
+## and blue
+plt.scatter(red_cen_stellar_mass_arr, np.log10(np.abs(red_deltav_arr)), c='indianred')
+plt.scatter(blue_cen_stellar_mass_arr, np.log10(np.abs(blue_deltav_arr)), c='cornflowerblue')
+
+# plt.scatter(cen_stellar_mass_arr, np.log10(np.abs(deltav_arr)), c='lightgray')
+z = np.polyfit(cen_stellar_mass_arr, np.log10(np.abs(deltav_arr)), 1)
+p = np.poly1d(z)
+plt.plot(cen_stellar_mass_arr,p(cen_stellar_mass_arr),"k--")
+
+# plt.yscale('log')
+plt.xlabel(r'\boldmath$\log_{10}\ M_{\star , cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
+plt.ylabel(r'\boldmath$ log_{10}({| \Delta{v} |}) \left[\mathrm{km/s} \right]$', fontsize=30)
+plt.show()
+
+## Plot of fractional difference in new metric between points and trend line
+red_frac_diff_arr = []
+for idx, val in enumerate(red_cen_stellar_mass_arr):
+    ## Need to unlog since the fit was done to the log of the absolute values
+    ## above
+    red_frac_diff = (np.abs(red_deltav_arr[idx]) - (10**p(val)))/(10**p(val))
+    red_frac_diff_arr.append(red_frac_diff)
+
+blue_frac_diff_arr = []
+for idx, val in enumerate(blue_cen_stellar_mass_arr):
+    blue_frac_diff = (np.abs(blue_deltav_arr[idx]) - (10**p(val)))/(10**p(val))
+    blue_frac_diff_arr.append(blue_frac_diff)
+
+plt.scatter(red_cen_stellar_mass_arr, red_frac_diff_arr, c='indianred')
+plt.scatter(blue_cen_stellar_mass_arr, blue_frac_diff_arr, c='cornflowerblue')
+# plt.plot(cen_stellar_mass_arr,p(cen_stellar_mass_arr),"k--")
+
+# plt.yscale('log')
+plt.xlabel(r'\boldmath$\log_{10}\ M_{\star , cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
+plt.ylabel(r'\boldmath$ ({| \Delta{v} | -  \Delta{v}_{fit}})/\Delta{v}_{fit} \left[\mathrm{km/s} \right]$', fontsize=30)
+plt.show()
+
+## Taking the mean of the fractional difference in bins of central stellar mass
+blue_stellar_mass_bins = np.linspace(8.6,10.7,6)
+red_stellar_mass_bins = np.linspace(8.6,11.2,6)
+
+centers_red = 0.5 * (red_stellar_mass_bins[1:] + \
+    red_stellar_mass_bins[:-1])
+centers_blue = 0.5 * (blue_stellar_mass_bins[1:] + \
+    blue_stellar_mass_bins[:-1])
+
+stats_red = bs(red_cen_stellar_mass_arr, red_frac_diff_arr, statistic='mean', 
+    bins=red_stellar_mass_bins)
+stats_blue = bs(blue_cen_stellar_mass_arr, blue_frac_diff_arr, statistic='mean', 
+    bins=blue_stellar_mass_bins)
+
+plt.scatter(centers_red, stats_red[0], c='indianred')
+plt.scatter(centers_blue, stats_blue[0], c='cornflowerblue')
+plt.ylabel(r'\boldmath$ ({| \Delta{v} | -  \Delta{v}_{fit}})/\Delta{v}_{fit} \left[\mathrm{km/s} \right]$', fontsize=30)
+plt.xlabel(r'\boldmath$\log_{10}\ M_{\star , cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
+plt.show()
+
+## Look at distribution of deltav values in red and blue bins of mass 
+
+blue_stellar_mass_bins = np.linspace(8.6,10.7,6)
+red_stellar_mass_bins = np.linspace(8.6,11.2,6)
+
+centers_red = 0.5 * (red_stellar_mass_bins[1:] + \
+    red_stellar_mass_bins[:-1])
+centers_blue = 0.5 * (blue_stellar_mass_bins[1:] + \
+    blue_stellar_mass_bins[:-1])
+
+stats_red = bs(red_cen_stellar_mass_arr, np.abs(red_deltav_arr), 
+    bins=red_stellar_mass_bins)
+stats_blue = bs(blue_cen_stellar_mass_arr, np.abs(blue_deltav_arr),
+    bins=blue_stellar_mass_bins)
+
+data = pd.DataFrame(data=zip(np.abs(red_deltav_arr), stats_red[2]), columns=['deltav','bin_num'])
+color_arr = ['r','g','b','c','m','y']
+for idx in range(1,7):
+    subset = data.deltav.loc[data.bin_num == idx]
+    if len(subset) > 8:
+        pval = nt(subset)[1]
+        plt.hist(subset, histtype='step', color=color_arr[idx-1], label={pval, idx})
+plt.legend()
+plt.show()
+
+## Experiment with statistic to use on non normal |deltav| measurements
+def pop_standard_dev(array):
+    mean = np.mean(array)
+    median = np.median(array)
+    sum = 0
+    N = len(array)
+    for val in array:
+        sum += (val - median)**2
+    sigma = np.sqrt(sum/N)
+    return sigma
+
+def sam_standard_dev(array):
+    mean = np.mean(array)
+    median = np.median(array)
+    sum = 0
+    N = len(array)
+    for val in array:
+        sum += (val - median)**2
+    sigma = np.sqrt(sum/(N-1))
+    return sigma
+
+def iqr(array):
+    return iqr(array)
+
+def mad(array):
+    median_arr = []
+    for val in array:
+        median = val - np.median(array)
+        median_arr.append(median)
+    mad = np.median(np.abs(median_arr))
+    return mad
+
+stats_red = bs(red_cen_stellar_mass_arr, np.abs(red_deltav_arr), statistic=mad, 
+    bins=red_stellar_mass_bins)
+stats_blue = bs(blue_cen_stellar_mass_arr, np.abs(blue_deltav_arr), statistic=mad,
+    bins=blue_stellar_mass_bins)
+
+plt.scatter(centers_red, stats_red[0], c='indianred')
+plt.scatter(centers_blue, stats_blue[0], c='cornflowerblue')
+plt.ylabel(r'\boldmath$ | \Delta{v} |  \left[\mathrm{km/s} \right]$', fontsize=30)
+plt.xlabel(r'\boldmath$\log_{10}\ M_{\star , cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
+plt.show()
+
+
+## Experiment with number of bins for original deltav metric 
+
+## 23 bins
+h = 2*(iqr(red_cen_stellar_mass_arr)/(len(red_cen_stellar_mass_arr)**(1/3)))
+## 11 bins
+h = 2*(iqr(blue_cen_stellar_mass_arr)/(len(blue_cen_stellar_mass_arr)**(1/3)))
+
+stats_red = bs(red_cen_stellar_mass_arr, red_frac_diff_arr, statistic='mean', 
+    bins=7)
+stats_blue = bs(blue_cen_stellar_mass_arr, blue_frac_diff_arr, statistic='mean', 
+    bins=6)
+centers_red = 0.5 * (stats_red[1][1:] + \
+    stats_red[1][:-1])
+centers_blue = 0.5 * (stats_blue[1][1:] + \
+    stats_blue[1][:-1])
