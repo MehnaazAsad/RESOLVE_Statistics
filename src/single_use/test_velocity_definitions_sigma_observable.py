@@ -3471,7 +3471,7 @@ for idx in mock_nums_picked:
     lowslope.append(mcmc_table_subset.T[2][idx-1])
     highslope.append(mcmc_table_subset.T[3][idx-1])
     scatter.append(mcmc_table_subset.T[4][idx-1])
-bf_scatter = 
+
 
 ## Use only the mocks that are in the random sample of 100
 # Count the first 20 + 22nd + 123-131 columns of general information from 
@@ -3504,15 +3504,16 @@ maxis_bf_red, phi_bf_red, maxis_bf_blue, phi_bf_blue, cen_gals_red, \
 
 x_bf_red,y_bf_red,y_std_bf_red,y_std_err_bf_red,x_red_data,y_red_data = \
     Stats_one_arr(cen_halos_red,cen_gals_red,base=0.4,bin_statval='center', 
-    arr_digit='y')
+    arr_digit='y',statfunc=np.nanmedian)
 x_bf_blue,y_bf_blue,y_std_bf_blue,y_std_err_bf_blue,x_blue_data,y_blue_data = \
     Stats_one_arr(cen_halos_blue,cen_gals_blue,base=0.4,bin_statval='center', 
-    arr_digit='y')
+    arr_digit='y',statfunc=np.nanmedian)
 
 fig1 = plt.figure(figsize=(10,10))
 plt.plot(x_bf_red,y_bf_red,color='darkred',lw=3,label='Best-fit',zorder=10)
 plt.plot(x_bf_blue,y_bf_blue,color='darkblue',lw=3,
     label='Best-fit',zorder=10)
+### Errors not using range of model lines but using std calculated
 plt.fill_between(x_bf_red, y_bf_red+y_std_bf_red, y_bf_red-y_std_bf_red, 
     color='indianred', alpha=0.6)
 plt.fill_between(x_bf_blue, y_bf_blue+y_std_bf_blue, y_bf_blue-y_std_bf_blue, 
@@ -3528,7 +3529,6 @@ blue_max = std_cen_bf_blue[3] + 0.5*bw_std_blue
 red_min = std_cen_bf_red[3] - 0.5*bw_std_red
 red_max = std_cen_bf_red[3] + 0.5*bw_std_red
 
-
 red_halos_in_bin = []
 for idx, value in enumerate(cen_gals_red):
     if value >= 10.16 and value <= 10.68:
@@ -3540,10 +3540,61 @@ for idx, value in enumerate(cen_gals_blue):
         blue_halos_in_bin.append(cen_halos_blue[idx])
 
 fig2 = plt.figure(figsize=(10,10))
-plt.hist(red_halos_in_bin, histtype='step', lw=3, color='r', ls='-', label='10.16 - 10.68')
-plt.hist(blue_halos_in_bin, histtype='step', lw=3, color='b', ls='-', label='9.86 - 10.28')
+plt.hist(red_halos_in_bin, histtype='step', lw=3, color='r', ls='-', 
+    label='10.16 - 10.68')
+plt.hist(blue_halos_in_bin, histtype='step', lw=3, color='b', ls='-', 
+    label='9.86 - 10.28')
 plt.xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=25)
 plt.title('Distribution of halo masses in specified stellar mass bin')
+plt.legend()
+plt.show()
+
+red_min_arr = []
+red_max_arr = []
+for i in range(len(std_cen_bf_red)):
+    red_min = std_cen_bf_red[i] - 0.5*bw_std_red
+    red_max = std_cen_bf_red[i] + 0.5*bw_std_red
+    red_min_arr.append(red_min)
+    red_max_arr.append(red_max)
+
+blue_min_arr = []
+blue_max_arr = []
+for i in range(len(std_cen_bf_blue)):
+    blue_min = std_cen_bf_blue[i] - 0.5*bw_std_blue
+    blue_max = std_cen_bf_blue[i] + 0.5*bw_std_blue
+    blue_min_arr.append(blue_min)
+    blue_max_arr.append(blue_max)
+
+red_halos = []
+bin_counter = 0
+while bin_counter < len(red_min_arr):
+    red_halos_in_bin_idx = []
+    for idx, value in enumerate(cen_gals_red):
+        if value >= red_min_arr[bin_counter] and value <= red_max_arr[bin_counter]:
+            red_halos_in_bin_idx.append(cen_halos_red[idx])
+    red_halos.append(red_halos_in_bin_idx)
+    bin_counter += 1
+
+
+blue_halos = []
+bin_counter = 0
+while bin_counter < len(blue_min_arr):
+    blue_halos_in_bin_idx = []
+    for idx, value in enumerate(cen_gals_blue):
+        if value >= blue_min_arr[bin_counter] and value <= blue_max_arr[bin_counter]:
+            blue_halos_in_bin_idx.append(cen_halos_blue[idx])
+    blue_halos.append(blue_halos_in_bin_idx)
+    bin_counter += 1
+
+fig2 = plt.figure(figsize=(10,10))
+colour_arr = ['indianred', 'darkorange', 'gold', 'forestgreen', 'cornflowerblue']
+for i in range(len(red_halos)):
+    plt.hist(red_halos[i], histtype='step', lw=3, color=colour_arr[i], ls='-', 
+        label='R: {0} - {1}'.format(np.round(red_min_arr[i],2), np.round(red_max_arr[i],2)), density=True)
+    plt.hist(blue_halos[i], histtype='step', lw=3, color=colour_arr[i], ls='--', 
+        label='B: {0} - {1}'.format(np.round(blue_min_arr[i],2), np.round(blue_max_arr[i],2)), density=True)
+plt.xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=25)
+plt.title('Distribution of halo masses in stellar mass bins for galaxies around red and blue group centrals')
 plt.legend()
 plt.show()
 
@@ -3925,8 +3976,8 @@ for key in all_grpids_with_cen:
                 cen_stellar_mass_arr.append(cen_stellar_mass)
                 grpid_arr.append(key)
 
-## Plot of new metric but with trend line fit to ALL groups and not split by red
-## and blue
+##! Plot of new metric but with trend line fit to ALL groups and not split by red
+##! and blue
 plt.scatter(red_cen_stellar_mass_arr, np.log10(np.abs(red_deltav_arr)), c='indianred')
 plt.scatter(blue_cen_stellar_mass_arr, np.log10(np.abs(blue_deltav_arr)), c='cornflowerblue')
 
@@ -3940,7 +3991,7 @@ plt.xlabel(r'\boldmath$\log_{10}\ M_{\star , cen} \left[\mathrm{M_\odot}\, \math
 plt.ylabel(r'\boldmath$ log_{10}({| \Delta{v} |}) \left[\mathrm{km/s} \right]$', fontsize=30)
 plt.show()
 
-## Plot of fractional difference in new metric between points and trend line
+##! Plot of fractional difference in new metric between points and trend line
 red_frac_diff_arr = []
 for idx, val in enumerate(red_cen_stellar_mass_arr):
     ## Need to unlog since the fit was done to the log of the absolute values
@@ -3962,7 +4013,7 @@ plt.xlabel(r'\boldmath$\log_{10}\ M_{\star , cen} \left[\mathrm{M_\odot}\, \math
 plt.ylabel(r'\boldmath$ ({| \Delta{v} | -  \Delta{v}_{fit}})/\Delta{v}_{fit} \left[\mathrm{km/s} \right]$', fontsize=30)
 plt.show()
 
-## Taking the mean of the fractional difference in bins of central stellar mass
+##! Taking the mean of the fractional difference in bins of central stellar mass
 blue_stellar_mass_bins = np.linspace(8.6,10.7,6)
 red_stellar_mass_bins = np.linspace(8.6,11.2,6)
 
@@ -3978,11 +4029,11 @@ stats_blue = bs(blue_cen_stellar_mass_arr, blue_frac_diff_arr, statistic='mean',
 
 plt.scatter(centers_red, stats_red[0], c='indianred')
 plt.scatter(centers_blue, stats_blue[0], c='cornflowerblue')
-plt.ylabel(r'\boldmath$ ({| \Delta{v} | -  \Delta{v}_{fit}})/\Delta{v}_{fit} \left[\mathrm{km/s} \right]$', fontsize=30)
+plt.ylabel(r'\boldmath$ \overline{({| \Delta{v} | -  \Delta{v}_{fit}})/\Delta{v}_{fit}} \left[\mathrm{km/s} \right]$', fontsize=30)
 plt.xlabel(r'\boldmath$\log_{10}\ M_{\star , cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
 plt.show()
 
-## Look at distribution of deltav values in red and blue bins of mass 
+##! Look at distribution of original deltav values in red and blue bins of mass 
 
 blue_stellar_mass_bins = np.linspace(8.6,10.7,6)
 red_stellar_mass_bins = np.linspace(8.6,11.2,6)
@@ -3992,22 +4043,62 @@ centers_red = 0.5 * (red_stellar_mass_bins[1:] + \
 centers_blue = 0.5 * (blue_stellar_mass_bins[1:] + \
     blue_stellar_mass_bins[:-1])
 
-stats_red = bs(red_cen_stellar_mass_arr, np.abs(red_deltav_arr), 
+stats_red = bs(red_cen_stellar_mass_arr, red_deltav_arr, 
     bins=red_stellar_mass_bins)
-stats_blue = bs(blue_cen_stellar_mass_arr, np.abs(blue_deltav_arr),
+stats_blue = bs(blue_cen_stellar_mass_arr, blue_deltav_arr,
     bins=blue_stellar_mass_bins)
 
-data = pd.DataFrame(data=zip(np.abs(red_deltav_arr), stats_red[2]), columns=['deltav','bin_num'])
+data = pd.DataFrame(data=zip(red_deltav_arr, stats_red[2]), columns=['deltav','bin_num'])
 color_arr = ['r','g','b','c','m','y']
 for idx in range(1,7):
     subset = data.deltav.loc[data.bin_num == idx]
+    print("Num of red things in bin {0}: {1}".format(idx, len(subset)))
     if len(subset) > 8:
         pval = nt(subset)[1]
         plt.hist(subset, histtype='step', color=color_arr[idx-1], label={pval, idx})
 plt.legend()
 plt.show()
 
-## Experiment with statistic to use on non normal |deltav| measurements
+data = pd.DataFrame(data=zip(blue_deltav_arr, stats_blue[2]), columns=['deltav','bin_num'])
+color_arr = ['r','g','b','c','m','y']
+for idx in range(1,7):
+    subset = data.deltav.loc[data.bin_num == idx]
+    print("Num of blue things in bin {0}: {1}".format(idx, len(subset)))
+    if len(subset) > 8:
+        pval = nt(subset)[1]
+        plt.hist(subset, histtype='step', color=color_arr[idx-1], label={pval, idx})
+plt.legend()
+plt.show()
+
+##! Look at location of points of original central stellar mass in red and blue bins of mass 
+
+data_r = pd.DataFrame(data=zip(red_cen_stellar_mass_arr, red_deltav_arr, stats_red[2]), columns=['mcen','deltav','bin_num'])
+data_b = pd.DataFrame(data=zip(blue_cen_stellar_mass_arr, blue_deltav_arr, stats_blue[2]), columns=['mcen','deltav','bin_num'])
+
+stats_red = bs(red_cen_stellar_mass_arr, red_deltav_arr, statistic='std', 
+    bins=red_stellar_mass_bins)
+stats_blue = bs(blue_cen_stellar_mass_arr, blue_deltav_arr, statistic='std', 
+    bins=blue_stellar_mass_bins)
+
+for idx in range(1,7):
+    subset_r = data_r.loc[data_r.bin_num == idx]
+    print("Num of red things in bin {0}: {1}".format(idx, len(subset_r)))
+    plt.scatter(subset_r.mcen.values, subset_r.deltav.values, c='indianred', alpha=0.4)
+    plt.vlines(red_stellar_mass_bins[idx-1],min(subset_r.deltav.values),max(subset_r.deltav.values),colors='r')
+    if idx != 6:
+        plt.vlines(red_stellar_mass_bins[idx],min(subset_r.deltav.values),max(subset_r.deltav.values),colors='r')
+    plt.scatter(centers_red, stats_red[0], marker='*', s=200, c='r')
+    plt.scatter(centers_blue, stats_blue[0], marker='*', s=200, c='b')
+    subset_b = data_b.loc[data_b.bin_num == idx]
+    print("Num of blue things in bin {0}: {1}".format(idx, len(subset_b)))
+    plt.scatter(subset_b.mcen.values, subset_b.deltav.values-1000, c='cornflowerblue', alpha=0.4)
+    plt.vlines(blue_stellar_mass_bins[idx-1],min(subset_b.deltav.values-1000),max(subset_b.deltav.values-1000),colors='b')
+    if idx != 6:
+        plt.vlines(blue_stellar_mass_bins[idx],min(subset_b.deltav.values-1000),max(subset_b.deltav.values-1000),colors='b')
+plt.show()
+
+##! Experiment with statistic to use on non normal |deltav| measurements
+
 def pop_standard_dev(array):
     mean = np.mean(array)
     median = np.median(array)
@@ -4051,18 +4142,31 @@ plt.xlabel(r'\boldmath$\log_{10}\ M_{\star , cen} \left[\mathrm{M_\odot}\, \math
 plt.show()
 
 
-## Experiment with number of bins for original deltav metric 
+##! Experiment with number of bins for original deltav metric 
 
 ## 23 bins
-h = 2*(iqr(red_cen_stellar_mass_arr)/(len(red_cen_stellar_mass_arr)**(1/3)))
-## 11 bins
-h = 2*(iqr(blue_cen_stellar_mass_arr)/(len(blue_cen_stellar_mass_arr)**(1/3)))
+# h_r = 2*(iqr(red_cen_stellar_mass_arr)/(len(red_cen_stellar_mass_arr)**(1/3)))
+# k_r = math.ceil((max(red_cen_stellar_mass_arr) - min(red_cen_stellar_mass_arr))/h_r)
+# ## 11 bins
+# h_b= 2*(iqr(blue_cen_stellar_mass_arr)/(len(blue_cen_stellar_mass_arr)**(1/3)))
+# k_b = math.ceil((max(blue_cen_stellar_mass_arr) - min(blue_cen_stellar_mass_arr))/h_b)
 
-stats_red = bs(red_cen_stellar_mass_arr, red_frac_diff_arr, statistic='mean', 
-    bins=7)
-stats_blue = bs(blue_cen_stellar_mass_arr, blue_frac_diff_arr, statistic='mean', 
-    bins=6)
+red_stellar_mass_bins = np.linspace(8.6,11.2,11)
+blue_stellar_mass_bins = np.linspace(8.6,10.7,5)
+
+stats_red = bs(red_cen_stellar_mass_arr, red_deltav_arr, statistic='std', 
+    bins=red_stellar_mass_bins)
+stats_blue = bs(blue_cen_stellar_mass_arr, blue_deltav_arr, statistic='std', 
+    bins=blue_stellar_mass_bins)
+
 centers_red = 0.5 * (stats_red[1][1:] + \
     stats_red[1][:-1])
 centers_blue = 0.5 * (stats_blue[1][1:] + \
     stats_blue[1][:-1])
+
+plt.scatter(centers_red, stats_red[0], c='indianred')
+plt.scatter(centers_blue, stats_blue[0], c='cornflowerblue')
+
+plt.xlabel(r'\boldmath$\log_{10}\ M_{\star , cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
+plt.ylabel(r'\boldmath$\sigma \left[\mathrm{km/s} \right]$', fontsize=30)
+plt.show()
