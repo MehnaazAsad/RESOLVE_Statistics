@@ -2208,8 +2208,8 @@ plt.ylabel('Mean halo circular velocity [km/s]')
 plt.show()
 
 ################################################################################
-# Comparing distribution of Behroozi parameters before and after adding second
-# observable
+#! Comparing distribution of Behroozi parameters before and after adding second
+#! observable
 ################################################################################
 
 from cosmo_utils.utils import work_paths as cwpaths
@@ -2503,7 +2503,7 @@ plt.legend(loc='best')
 plt.show()
 
 ################################################################################
-# In a bin of M* what does the distribution of M_h look like?
+#! In a bin of M* what does the distribution of M_h look like?
 ################################################################################
 
 from cosmo_utils.utils.stats_funcs import Stats_one_arr
@@ -3549,6 +3549,8 @@ plt.title('Distribution of halo masses in specified stellar mass bin')
 plt.legend()
 plt.show()
 
+#! In all bins of M* what do the distributions of M_h look like?
+
 red_min_arr = []
 red_max_arr = []
 for i in range(len(std_cen_bf_red)):
@@ -3570,7 +3572,7 @@ bin_counter = 0
 while bin_counter < len(red_min_arr):
     red_halos_in_bin_idx = []
     for idx, value in enumerate(cen_gals_red):
-        if value >= red_min_arr[bin_counter] and value <= red_max_arr[bin_counter]:
+        if value >= red_min_arr[bin_counter] and value < red_max_arr[bin_counter]:
             red_halos_in_bin_idx.append(cen_halos_red[idx])
     red_halos.append(red_halos_in_bin_idx)
     bin_counter += 1
@@ -3581,7 +3583,7 @@ bin_counter = 0
 while bin_counter < len(blue_min_arr):
     blue_halos_in_bin_idx = []
     for idx, value in enumerate(cen_gals_blue):
-        if value >= blue_min_arr[bin_counter] and value <= blue_max_arr[bin_counter]:
+        if value >= blue_min_arr[bin_counter] and value < blue_max_arr[bin_counter]:
             blue_halos_in_bin_idx.append(cen_halos_blue[idx])
     blue_halos.append(blue_halos_in_bin_idx)
     bin_counter += 1
@@ -3593,6 +3595,47 @@ for i in range(len(red_halos)):
         label='R: {0} - {1}'.format(np.round(red_min_arr[i],2), np.round(red_max_arr[i],2)), density=True)
     plt.hist(blue_halos[i], histtype='step', lw=3, color=colour_arr[i], ls='--', 
         label='B: {0} - {1}'.format(np.round(blue_min_arr[i],2), np.round(blue_max_arr[i],2)), density=True)
+plt.xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=25)
+plt.title('Distribution of halo masses in stellar mass bins for galaxies around red and blue group centrals')
+plt.legend()
+plt.show()
+
+#! In much narrower bins of M* what do the distributions of M_h look like?
+
+red_arr = np.linspace(8.6, 11.2, 20)
+blue_arr = np.linspace(8.6, 10.7, 10)
+
+red_halos = []
+bin_counter = 0
+while bin_counter < len(red_arr):
+    if bin_counter == 9:
+        break
+    red_halos_in_bin_idx = []
+    for idx, value in enumerate(cen_gals_red):
+        if value >= red_arr[bin_counter] and value < red_arr[bin_counter+1]:
+            red_halos_in_bin_idx.append(cen_halos_red[idx])
+    red_halos.append(red_halos_in_bin_idx)
+    bin_counter += 1
+
+blue_halos = []
+bin_counter = 0
+while bin_counter < len(blue_arr):
+    if bin_counter == 9:
+        break
+    blue_halos_in_bin_idx = []
+    for idx, value in enumerate(cen_gals_blue):
+        if value >= blue_arr[bin_counter] and value < blue_arr[bin_counter+1]:
+            blue_halos_in_bin_idx.append(cen_halos_blue[idx])
+    blue_halos.append(blue_halos_in_bin_idx)
+    bin_counter += 1
+
+fig2 = plt.figure(figsize=(10,10))
+colour_arr = ['indianred', 'darkorange', 'gold', 'yellowgreen', 'forestgreen','darkturquoise', 'cornflowerblue', 'mediumorchid', 'orchid']
+for i in range(len(red_halos)):
+    plt.hist(red_halos[i], histtype='step', lw=3, color=colour_arr[i], ls='-', 
+        label='R: {0} - {1}'.format(np.round(red_arr[i],2), np.round(red_arr[i+1],2)), density=True)
+    plt.hist(blue_halos[i], histtype='step', lw=3, color=colour_arr[i], ls='--', 
+        label='B: {0} - {1}'.format(np.round(blue_arr[i],2), np.round(blue_arr[i+1],2)), density=True)
 plt.xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=25)
 plt.title('Distribution of halo masses in stellar mass bins for galaxies around red and blue group centrals')
 plt.legend()
@@ -4014,8 +4057,14 @@ plt.ylabel(r'\boldmath$ ({| \Delta{v} | -  \Delta{v}_{fit}})/\Delta{v}_{fit} \le
 plt.show()
 
 ##! Taking the mean of the fractional difference in bins of central stellar mass
+
+## Original bins
 blue_stellar_mass_bins = np.linspace(8.6,10.7,6)
-red_stellar_mass_bins = np.linspace(8.6,11.2,6)
+red_stellar_mass_bins = np.linspace(8.6,11.2,10)
+
+## Trying with same bins for both pops
+red_stellar_mass_bins = np.arange(8.75, 11.25, 0.5)
+blue_stellar_mass_bins = np.arange(8.75, 11.25, 0.5)
 
 centers_red = 0.5 * (red_stellar_mass_bins[1:] + \
     red_stellar_mass_bins[:-1])
@@ -4027,8 +4076,8 @@ stats_red = bs(red_cen_stellar_mass_arr, red_frac_diff_arr, statistic='mean',
 stats_blue = bs(blue_cen_stellar_mass_arr, blue_frac_diff_arr, statistic='mean', 
     bins=blue_stellar_mass_bins)
 
-plt.scatter(centers_red, stats_red[0], c='indianred')
-plt.scatter(centers_blue, stats_blue[0], c='cornflowerblue')
+plt.scatter(centers_red, stats_red[0], c='indianred', s=200, marker='*')
+plt.scatter(centers_blue, stats_blue[0], c='cornflowerblue', s=200, marker='*')
 plt.ylabel(r'\boldmath$ \overline{({| \Delta{v} | -  \Delta{v}_{fit}})/\Delta{v}_{fit}} \left[\mathrm{km/s} \right]$', fontsize=30)
 plt.xlabel(r'\boldmath$\log_{10}\ M_{\star , cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
 plt.show()
