@@ -15,6 +15,7 @@ from halotools.sim_manager import CachedHaloCatalog
 from cosmo_utils.utils import work_paths as cwpaths
 from matplotlib.legend_handler import HandlerTuple
 from matplotlib.legend_handler import HandlerBase
+from scipy.stats import binned_statistic as bs
 from collections import OrderedDict
 from multiprocessing import Pool
 import matplotlib.pyplot as plt
@@ -1049,7 +1050,7 @@ def get_deltav_vishnu_qmcolour(gals_df, randint):
             # Different velocity definitions
             mean_cz_grp = np.round(np.mean(group.cz.values),2)
             cen_cz_grp = group.cz.loc[group[g_galtype_col].values == 1].values[0]
-            cz_grp = np.unique(group.grpcz.values)[0]
+            # cz_grp = np.unique(group.grpcz.values)[0]
 
             # Velocity difference
             deltav = group.cz.values - len(group)*[cen_cz_grp]
@@ -1083,7 +1084,7 @@ def get_deltav_vishnu_qmcolour(gals_df, randint):
             # Different velocity definitions
             mean_cz_grp = np.round(np.mean(group.cz.values),2)
             cen_cz_grp = group.cz.loc[group[g_galtype_col].values == 1].values[0]
-            cz_grp = np.unique(group.grpcz.values)[0]
+            # cz_grp = np.unique(group.grpcz.values)[0]
 
             # Velocity difference
             deltav = group.cz.values - len(group)*[cen_cz_grp]
@@ -1113,13 +1114,13 @@ def get_deltav_vishnu_qmcolour(gals_df, randint):
         if len(group) == 1:
             singleton_counter += 1
         else:
-            cen_stellar_mass = group.logmstar.loc[group.g_galtype\
-                .values == 1].values[0]
+            cen_stellar_mass = group['{0}'.format(randint)].loc[group[g_galtype_col].\
+                values == 1].values[0]
 
             # Different velocity definitions
             mean_cz_grp = np.round(np.mean(group.cz.values),2)
             cen_cz_grp = group.cz.loc[group[g_galtype_col].values == 1].values[0]
-            cz_grp = np.unique(group.grpcz.values)[0]
+            # cz_grp = np.unique(group.grpcz.values)[0]
 
             # Velocity difference
             deltav = group.cz.values - len(group)*[cen_cz_grp]
@@ -1762,8 +1763,11 @@ def get_best_fit_model(best_fit_params, best_fit_mocknum):
     , False, best_fit_mocknum)     
     cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue, f_red_cen_red,\
         f_red_cen_blue = get_centrals_mock(gals_df, best_fit_mocknum)
-    std_red, std_blue, std_centers_red, std_centers_blue = \
-        get_deltav_sigma_vishnu_qmcolour(gals_df, best_fit_mocknum)
+    # std_red, std_blue, std_centers_red, std_centers_blue = \
+    #     get_deltav_sigma_vishnu_qmcolour(gals_df, best_fit_mocknum)
+    red_deltav, red_cen_stellar_mass, blue_deltav, \
+        blue_cen_stellar_mass, deltav, cen_stellar_mass = \
+        get_deltav_vishnu_qmcolour(gals_df, best_fit_mocknum)
 
     max_red = red_model[0]
     phi_red = red_model[1]
@@ -1771,8 +1775,10 @@ def get_best_fit_model(best_fit_params, best_fit_mocknum):
     phi_blue = blue_model[1]
 
     return max_red, phi_red, max_blue, phi_blue, cen_gals_red, cen_halos_red,\
-        cen_gals_blue, cen_halos_blue, f_red_cen_red, f_red_cen_blue, std_red, \
-            std_blue, std_centers_red, std_centers_blue
+        cen_gals_blue, cen_halos_blue, f_red_cen_red, f_red_cen_blue, \
+        red_deltav, red_cen_stellar_mass, blue_deltav, blue_cen_stellar_mass, \
+        deltav, cen_stellar_mass
+        # std_red, std_blue, std_centers_red, std_centers_blue
 
 def plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red, 
     maxis_bf_blue, phi_bf_blue, bf_chi2, err_colour):
@@ -2382,9 +2388,10 @@ def plot_sigma_vdiff_mod(result, std_red_data, cen_red_data, std_blue_data,
         plt.title('ECO')
     plt.show()
 
-def plot_mean_fracdiff(result, std_red_data, cen_red_data, std_blue_data, 
-    cen_blue_data, std_bf_red, std_bf_blue, std_cen_bf_red, std_cen_bf_blue, 
-    bf_chi2, err_colour):
+def plot_mean_fracdiff(result, red_deltav_data, red_cen_stellar_mass_data, \
+    blue_deltav_data, blue_cen_stellar_mass_data, deltav_data, \
+    cen_stellar_mass_data, red_cen_stellar_mass_bf, blue_deltav_bf, \
+    blue_cen_stellar_mass_bf, deltav_bf, cen_stellar_mass_bf):
     """[summary]
 
     Args:
@@ -2399,6 +2406,88 @@ def plot_mean_fracdiff(result, std_red_data, cen_red_data, std_blue_data,
         std_cen_bf_blue ([type]): [description]
         bf_chi2 ([type]): [description]
     """
+    z = np.polyfit(cen_stellar_mass_bf, np.log10(np.abs(deltav_bf)), 1)
+    p = np.poly1d(z)
+    
+    fig1= plt.figure(figsize=(10,10))
+
+    plt.plot(cen_stellar_mass_bf,p(cen_stellar_mass_bf),"k--")
+
+    # plt.yscale('log')
+    # plt.xlabel(r'\boldmath$\log_{10}\ M_{\star , cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
+    # plt.ylabel(r'\boldmath$ log_{10}({| \Delta{v} |}) \left[\mathrm{km/s} \right]$', fontsize=30)
+    # plt.show()
+
+    ##! Plot of fractional difference in new metric between points and trend line
+    
+    red_frac_diff_arr = []
+    blue_frac_diff_arr = []
+    red_cen_arr = []
+    blue_cen_arr = []
+    chunk_counter = 0 # There are 5 chunks of all 16 statistics each with len 20
+    while chunk_counter < 5:
+        for idx in range(len(result[chunk_counter][0])):
+            red_deltav_idx = result[chunk_counter][8][idx]
+            blue_deltav_idx = result[chunk_counter][9][idx]
+            red_cen_idx = result[chunk_counter][11][idx]
+            blue_cen_idx = result[chunk_counter][12][idx]
+            for idx, val in enumerate(red_cen_idx):
+                ## Need to unlog since the fit was done to the log of the absolute values
+                ## above
+                red_frac_diff = (np.abs(red_deltav_idx[idx]) - (10**p(val)))/(10**p(val))
+                red_frac_diff_arr.append(red_frac_diff)
+                red_cen_arr.append(val)
+
+            for idx, val in enumerate(blue_cen_idx):
+                blue_frac_diff = (np.abs(blue_deltav_idx[idx]) - (10**p(val)))/(10**p(val))
+                blue_frac_diff_arr.append(blue_frac_diff)
+                blue_cen_arr.append(val)
+        chunk_counter+=1
+
+    # plt.scatter(red_cen_stellar_mass_arr, red_frac_diff_arr, c='indianred')
+    # plt.scatter(blue_cen_stellar_mass_arr, blue_frac_diff_arr, c='cornflowerblue')
+    # # plt.plot(cen_stellar_mass_arr,p(cen_stellar_mass_arr),"k--")
+
+    # # plt.yscale('log')
+    # plt.xlabel(r'\boldmath$\log_{10}\ M_{\star , cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
+    # plt.ylabel(r'\boldmath$ ({| \Delta{v} | -  \Delta{v}_{fit}})/\Delta{v}_{fit} \left[\mathrm{km/s} \right]$', fontsize=30)
+    # plt.show()
+
+    ##! Taking the mean of the fractional difference in bins of central stellar mass
+
+    ## Original bins
+    # blue_stellar_mass_bins = np.linspace(8.6,10.7,6)
+    # red_stellar_mass_bins = np.linspace(8.6,11.2,10)
+
+    ## Trying with same bins for both pops
+    red_stellar_mass_bins = np.arange(8.75, 11.25, 0.5)
+    blue_stellar_mass_bins = np.arange(8.75, 11.25, 0.5)
+
+    centers_red = 0.5 * (red_stellar_mass_bins[1:] + \
+        red_stellar_mass_bins[:-1])
+    centers_blue = 0.5 * (blue_stellar_mass_bins[1:] + \
+        blue_stellar_mass_bins[:-1])
+
+    mean_stats_red = bs(red_cen_arr, red_frac_diff_arr, statistic='mean', 
+        bins=red_stellar_mass_bins)
+    mean_stats_blue = bs(blue_cen_arr, blue_frac_diff_arr, statistic='mean', 
+        bins=blue_stellar_mass_bins)
+
+    std_stats_red = bs(red_cen_arr, red_frac_diff_arr, statistic='std', 
+        bins=red_stellar_mass_bins)
+    std_stats_blue = bs(blue_cen_arr, blue_frac_diff_arr, statistic='std', 
+        bins=blue_stellar_mass_bins)
+
+    plt.fill_between(red_stellar_mass_bins, mean_stats_red[0]+std_stats_red[0], 
+        mean_stats_red[0]-std_stats_red[0])
+    plt.fill_between(blue_stellar_mass_bins, mean_stats_blue[0]+std_stats_blue[0], 
+        mean_stats_blue[0]-std_stats_blue[0])
+
+    plt.scatter(centers_red, stats_red[0], c='indianred', s=200, marker='*')
+    plt.scatter(centers_blue, stats_blue[0], c='cornflowerblue', s=200, marker='*')
+    plt.ylabel(r'\boldmath$ \overline{({| \Delta{v} | -  \Delta{v}_{fit}})/\Delta{v}_{fit}} \left[\mathrm{km/s} \right]$', fontsize=30)
+    plt.xlabel(r'\boldmath$\log_{10}\ M_{\star , cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
+    plt.show()
 
     fig1= plt.figure(figsize=(10,10))
     for idx in range(len(result[0][0])):
@@ -2562,8 +2651,11 @@ result = mp_init(mcmc_table_pctl, nproc)
 print('Getting best fit model')
 maxis_bf_red, phi_bf_red, maxis_bf_blue, phi_bf_blue, cen_gals_red, \
     cen_halos_red, cen_gals_blue, cen_halos_blue, f_red_cen_red, \
-        f_red_cen_blue, std_bf_red, std_bf_blue, std_cen_bf_red, \
-            std_cen_bf_blue = get_best_fit_model(bf_params, bf_randint)
+    f_red_cen_blue, red_deltav_bf, red_cen_stellar_mass_bf, blue_deltav_bf, \
+    blue_cen_stellar_mass_bf, deltav_bf, cen_stellar_mass_bf, \
+    = get_best_fit_model(bf_params, bf_randint)
+
+    # std_bf_red, std_bf_blue, std_cen_bf_red, std_cen_bf_blue \
 
 plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red, 
     maxis_bf_blue, phi_bf_blue, bf_chi2, err_colour_data)
@@ -2582,3 +2674,8 @@ plot_zumand_fig4(result, cen_gals_red, cen_halos_red, cen_gals_blue,
 # plot_sigma_vdiff_mod(result, std_red, centers_red, std_blue, centers_blue, 
 #     std_bf_red, std_bf_blue, std_cen_bf_red, std_cen_bf_blue, bf_chi2, 
 #     err_colour_data)
+
+plot_mean_fracdiff(result, red_deltav_data, red_cen_stellar_mass_data, \
+    blue_deltav_data, blue_cen_stellar_mass_data, deltav_data, \
+    cen_stellar_mass_data, red_cen_stellar_mass_bf, blue_deltav_bf, \
+    blue_cen_stellar_mass_bf, deltav_bf, cen_stellar_mass_bf)
