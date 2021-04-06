@@ -841,6 +841,303 @@ def get_deltav_sigma_vishnu_qmcolour(gals_df, randint):
             
     return std_red, std_blue, centers_red, centers_blue
 
+def get_deltav_data(df):
+
+    catl = df.copy()
+    if survey == 'eco' or survey == 'resolvea':
+        catl = catl.loc[catl.logmstar >= 8.9]
+    elif survey == 'resolveb':
+        catl = catl.loc[catl.logmstar >= 8.7]
+    catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
+
+    red_subset_grpids = np.unique(catl.groupid.loc[(catl.\
+        colour_label == 'R') & (catl.g_galtype == 1)].values)  
+    blue_subset_grpids = np.unique(catl.groupid.loc[(catl.\
+        colour_label == 'B') & (catl.g_galtype == 1)].values)
+
+    red_singleton_counter = 0
+    red_deltav_arr = []
+    red_cen_stellar_mass_arr = []
+    red_grpid_arr = []
+    red_cen_cz_arr = []
+    red_mean_cz_arr = []
+    red_grp_halo_mass_arr = []
+    for key in red_subset_grpids: 
+        group = catl.loc[catl.groupid == key]
+        if len(group) == 1:
+            red_singleton_counter += 1
+        else:
+            grp_halo_mass = np.unique(group.logmh.values)[0]
+            cen_stellar_mass = group.logmstar.loc[group.g_galtype.\
+                values == 1].values[0]
+            
+            # Different velocity definitions
+            mean_cz_grp = np.round(np.mean(group.cz.values),2)
+            cen_cz_grp = group.cz.loc[group.g_galtype == 1].values[0]
+            cz_grp = np.unique(group.grpcz.values)[0]
+
+            # Velocity difference
+            deltav = group.cz.values - len(group)*[cen_cz_grp]
+            
+            # red_cen_stellar_mass_arr.append(cen_stellar_mass)
+            red_grp_halo_mass_arr.append(grp_halo_mass)
+            red_cen_cz_arr.append(cen_cz_grp)
+            red_mean_cz_arr.append(mean_cz_grp)
+
+            for val in deltav:
+                if val != 0:
+                    red_deltav_arr.append(val)
+                    red_cen_stellar_mass_arr.append(cen_stellar_mass)
+                    red_grpid_arr.append(key)
+
+    blue_singleton_counter = 0
+    blue_deltav_arr = []
+    blue_cen_stellar_mass_arr = []
+    blue_grpid_arr = []
+    blue_cen_cz_arr = []
+    blue_mean_cz_arr = []
+    blue_grp_halo_mass_arr = []
+    for key in blue_subset_grpids: 
+        group = catl.loc[catl.groupid == key]
+        if len(group) == 1:
+            blue_singleton_counter += 1
+        else:
+            grp_halo_mass = np.unique(group.logmh.values)[0]
+            cen_stellar_mass = group.logmstar.loc[group.g_galtype\
+                .values == 1].values[0]
+
+            # Different velocity definitions
+            mean_cz_grp = np.round(np.mean(group.cz.values),2)
+            cen_cz_grp = group.cz.loc[group.g_galtype == 1].values[0]
+            cz_grp = np.unique(group.grpcz.values)[0]
+
+            # Velocity difference
+            deltav = group.cz.values - len(group)*[cen_cz_grp]
+
+            # blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+            blue_grp_halo_mass_arr.append(grp_halo_mass)
+            blue_cen_cz_arr.append(cen_cz_grp)
+            blue_mean_cz_arr.append(mean_cz_grp)
+
+            for val in deltav:
+                if val != 0:
+                    blue_deltav_arr.append(val)
+                    blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+                    blue_grpid_arr.append(key)
+
+    all_grpids_with_cen = np.unique(catl.groupid.loc[(catl.g_galtype == 1)].values)  
+
+    cen_stellar_mass_arr = []
+    deltav_arr = []
+    grpid_arr = []
+    cen_cz_arr = []
+    mean_cz_arr = []
+    grp_halo_mass_arr = []
+    singleton_counter = 0
+    for key in all_grpids_with_cen: 
+        group = catl.loc[catl.groupid == key]
+        if len(group) == 1:
+            singleton_counter += 1
+        else:
+            grp_halo_mass = np.unique(group.logmh.values)[0]
+            cen_stellar_mass = group.logmstar.loc[group.g_galtype\
+                .values == 1].values[0]
+
+            # Different velocity definitions
+            mean_cz_grp = np.round(np.mean(group.cz.values),2)
+            cen_cz_grp = group.cz.loc[group.g_galtype == 1].values[0]
+            cz_grp = np.unique(group.grpcz.values)[0]
+
+            # Velocity difference
+            deltav = group.cz.values - len(group)*[cen_cz_grp]
+
+            # blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+            grp_halo_mass_arr.append(grp_halo_mass)
+            cen_cz_arr.append(cen_cz_grp)
+            mean_cz_arr.append(mean_cz_grp)
+
+            for val in deltav:
+                if val != 0:
+                    deltav_arr.append(val)
+                    cen_stellar_mass_arr.append(cen_stellar_mass)
+                    grpid_arr.append(key)
+
+    return red_deltav_arr, red_cen_stellar_mass_arr, blue_deltav_arr, \
+        blue_cen_stellar_mass_arr, deltav_arr, cen_stellar_mass_arr
+
+def get_deltav_vishnu_qmcolour(gals_df, randint):
+    """
+    Calculate spread in velocity dispersion from Vishnu mock (logmstar already 
+    in h=1)
+
+    Parameters
+    ----------
+    survey: string
+        Name of survey
+    path: string
+        Path to mock catalogs
+
+    Returns
+    ---------
+    std_red_arr: numpy array
+        Spread in velocity dispersion of red galaxies
+    centers_red_arr: numpy array
+        Bin centers of central stellar mass for red galaxies
+    std_blue_arr: numpy array
+        Spread in velocity dispersion of blue galaxies
+    centers_blue_arr: numpy array
+        Bin centers of central stellar mass for blue galaxies
+    """
+
+    mock_pd = gals_df.copy()
+
+    if survey == 'eco':
+        mock_name = 'ECO'
+        num_mocks = 8
+        min_cz = 3000
+        max_cz = 7000
+        mag_limit = -17.33
+        mstar_limit = 8.9
+        volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
+    elif survey == 'resolvea':
+        mock_name = 'A'
+        num_mocks = 59
+        min_cz = 4500
+        max_cz = 7000
+        mag_limit = -17.33
+        mstar_limit = 8.9
+        volume = 13172.384  # Survey volume without buffer [Mpc/h]^3 
+    elif survey == 'resolveb':
+        mock_name = 'B'
+        num_mocks = 104
+        min_cz = 4500
+        max_cz = 7000
+        mag_limit = -17
+        mstar_limit = 8.7
+        volume = 4709.8373  # Survey volume without buffer [Mpc/h]^3
+
+
+    logmstar_col = '{0}'.format(randint)
+    g_galtype_col = 'g_galtype_{0}'.format(randint)
+    groupid_col = 'groupid_{0}'.format(randint)
+    # Using the same survey definition as in mcmc smf i.e excluding the 
+    # buffer except no M_r cut since vishnu mock has no M_r info
+    mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & \
+        (mock_pd.cz.values <= max_cz) & \
+        (mock_pd[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
+
+    red_subset_grpids = np.unique(mock_pd[groupid_col].loc[(mock_pd.\
+        colour_label == 'R') & (mock_pd[g_galtype_col] == 1)].values)  
+    blue_subset_grpids = np.unique(mock_pd[groupid_col].loc[(mock_pd.\
+        colour_label == 'B') & (mock_pd[g_galtype_col] == 1)].values)
+
+    red_singleton_counter = 0
+    red_deltav_arr = []
+    red_cen_stellar_mass_arr = []
+    red_grpid_arr = []
+    # red_cen_cz_arr = []
+    # red_mean_cz_arr = []
+    # red_grp_halo_mass_arr = []
+    for key in red_subset_grpids: 
+        group = mock_pd.loc[mock_pd[groupid_col] == key]
+        if len(group) == 1:
+            red_singleton_counter += 1
+        else:
+            cen_stellar_mass = group['{0}'.format(randint)].loc[group[g_galtype_col].\
+                values == 1].values[0]
+            
+            # Different velocity definitions
+            mean_cz_grp = np.round(np.mean(group.cz.values),2)
+            cen_cz_grp = group.cz.loc[group[g_galtype_col].values == 1].values[0]
+            cz_grp = np.unique(group.grpcz.values)[0]
+
+            # Velocity difference
+            deltav = group.cz.values - len(group)*[cen_cz_grp]
+            
+            # red_cen_stellar_mass_arr.append(cen_stellar_mass)
+            # red_grp_halo_mass_arr.append(grp_halo_mass)
+            # red_cen_cz_arr.append(cen_cz_grp)
+            # red_mean_cz_arr.append(mean_cz_grp)
+
+            for val in deltav:
+                if val != 0:
+                    red_deltav_arr.append(val)
+                    red_cen_stellar_mass_arr.append(cen_stellar_mass)
+                    red_grpid_arr.append(key)
+
+    blue_singleton_counter = 0
+    blue_deltav_arr = []
+    blue_cen_stellar_mass_arr = []
+    blue_grpid_arr = []
+    # blue_cen_cz_arr = []
+    # blue_mean_cz_arr = []
+    # blue_grp_halo_mass_arr = []
+    for key in blue_subset_grpids: 
+        group = mock_pd.loc[mock_pd[groupid_col] == key]
+        if len(group) == 1:
+            blue_singleton_counter += 1
+        else:
+            cen_stellar_mass = group['{0}'.format(randint)].loc[group[g_galtype_col].\
+                values == 1].values[0]
+            
+            # Different velocity definitions
+            mean_cz_grp = np.round(np.mean(group.cz.values),2)
+            cen_cz_grp = group.cz.loc[group[g_galtype_col].values == 1].values[0]
+            cz_grp = np.unique(group.grpcz.values)[0]
+
+            # Velocity difference
+            deltav = group.cz.values - len(group)*[cen_cz_grp]
+            
+            # blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+            # blue_grp_halo_mass_arr.append(grp_halo_mass)
+            # blue_cen_cz_arr.append(cen_cz_grp)
+            # blue_mean_cz_arr.append(mean_cz_grp)
+
+            for val in deltav:
+                if val != 0:
+                    blue_deltav_arr.append(val)
+                    blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+                    blue_grpid_arr.append(key)
+
+    all_grpids_with_cen = np.unique(mock_pd[groupid_col].loc[mock_pd[g_galtype_col].values == 1])  
+
+    cen_stellar_mass_arr = []
+    deltav_arr = []
+    grpid_arr = []
+    # cen_cz_arr = []
+    # mean_cz_arr = []
+    # grp_halo_mass_arr = []
+    singleton_counter = 0
+    for key in all_grpids_with_cen: 
+        group = mock_pd.loc[mock_pd[groupid_col] == key]
+        if len(group) == 1:
+            singleton_counter += 1
+        else:
+            cen_stellar_mass = group.logmstar.loc[group.g_galtype\
+                .values == 1].values[0]
+
+            # Different velocity definitions
+            mean_cz_grp = np.round(np.mean(group.cz.values),2)
+            cen_cz_grp = group.cz.loc[group[g_galtype_col].values == 1].values[0]
+            cz_grp = np.unique(group.grpcz.values)[0]
+
+            # Velocity difference
+            deltav = group.cz.values - len(group)*[cen_cz_grp]
+
+            # blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+            # grp_halo_mass_arr.append(grp_halo_mass)
+            # cen_cz_arr.append(cen_cz_grp)
+            # mean_cz_arr.append(mean_cz_grp)
+
+            for val in deltav:
+                if val != 0:
+                    deltav_arr.append(val)
+                    cen_stellar_mass_arr.append(cen_stellar_mass)
+                    grpid_arr.append(key)
+
+    return red_deltav_arr, red_cen_stellar_mass_arr, blue_deltav_arr, \
+        blue_cen_stellar_mass_arr, deltav_arr, cen_stellar_mass_arr
+
 def get_err_data(survey, path):
     """
     Calculate error in data SMF from mocks
@@ -1100,10 +1397,16 @@ def mp_func(a_list):
     cen_halos_red_arr = []
     cen_gals_blue_arr = []
     cen_halos_blue_arr = []
-    std_red_arr = []
-    std_blue_arr = []
-    cen_std_red_arr = []
-    cen_std_blue_arr = []
+    red_deltav_arr = []
+    blue_deltav_arr = []
+    deltav_arr = []
+    red_cen_arr = []
+    blue_cen_arr = []
+    all_cen_arr = []
+    # std_red_arr = []
+    # std_blue_arr = []
+    # cen_std_red_arr = []
+    # cen_std_blue_arr = []
     f_red_cen_red_arr = []
     f_red_cen_blue_arr = []
 
@@ -1136,8 +1439,11 @@ def mp_func(a_list):
         cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue,\
             f_red_cen_red, f_red_cen_blue = \
             get_centrals_mock(gals_df, randint_logmstar)
-        std_red_model, std_blue_model, centers_red_model, centers_blue_model = \
-            get_deltav_sigma_vishnu_qmcolour(gals_df, randint_logmstar)
+        # std_red_model, std_blue_model, centers_red_model, centers_blue_model = \
+        #     get_deltav_sigma_vishnu_qmcolour(gals_df, randint_logmstar)
+        red_deltav, red_cen_stellar_mass, blue_deltav, \
+            blue_cen_stellar_mass, deltav, cen_stellar_mass = \
+            get_deltav_vishnu_qmcolour(gals_df, randint_logmstar)
         maxis_red_arr.append(red_model[0])
         phi_red_arr.append(red_model[1])
         maxis_blue_arr.append(blue_model[0])
@@ -1146,16 +1452,24 @@ def mp_func(a_list):
         cen_halos_red_arr.append(cen_halos_red)
         cen_gals_blue_arr.append(cen_gals_blue)
         cen_halos_blue_arr.append(cen_halos_blue)
-        std_red_arr.append(std_red_model)
-        std_blue_arr.append(std_blue_model)
-        cen_std_red_arr.append(centers_red_model)
-        cen_std_blue_arr.append(centers_blue_model)
+        red_deltav_arr.append(red_deltav)
+        blue_deltav_arr.append(blue_deltav)
+        deltav_arr.append(deltav)
+        red_cen_arr.append(red_cen_stellar_mass)
+        blue_cen_arr.append(blue_cen_stellar_mass)
+        all_cen_arr.append(cen_stellar_mass)
+        # std_red_arr.append(std_red_model)
+        # std_blue_arr.append(std_blue_model)
+        # cen_std_red_arr.append(centers_red_model)
+        # cen_std_blue_arr.append(centers_blue_model)
         f_red_cen_red_arr.append(f_red_cen_red)
         f_red_cen_blue_arr.append(f_red_cen_blue)
 
     return [maxis_red_arr, phi_red_arr, maxis_blue_arr, phi_blue_arr, 
     cen_gals_red_arr, cen_halos_red_arr, cen_gals_blue_arr, cen_halos_blue_arr,
-    std_red_arr, std_blue_arr, cen_std_red_arr, cen_std_blue_arr,
+    red_deltav_arr, blue_deltav_arr, deltav_arr, red_cen_arr, blue_cen_arr, 
+    all_cen_arr,
+    # std_red_arr, std_blue_arr, cen_std_red_arr, cen_std_blue_arr,
     f_red_cen_red_arr, f_red_cen_blue_arr]
 
 def hybrid_quenching_model(theta, gals_df, mock, randint=None):
@@ -1698,15 +2012,15 @@ def plot_xmhm(result, gals_bf_red, halos_bf_red, gals_bf_blue, halos_bf_blue,
             return [l1, l2]  
 
     x_bf_red,y_bf_red,y_std_bf_red,y_std_err_bf_red = Stats_one_arr(halos_bf_red,\
-    gals_bf_red,base=0.4,bin_statval='center')
+    gals_bf_red,base=0.4,bin_statval='average')
     x_bf_blue,y_bf_blue,y_std_bf_blue,y_std_err_bf_blue = Stats_one_arr(halos_bf_blue,\
-    gals_bf_blue,base=0.4,bin_statval='center')
+    gals_bf_blue,base=0.4,bin_statval='average')
     # x_b10,y_b10,y_std_b10,y_std_err_b10 = Stats_one_arr(halos_b10,\
     #     gals_b10,base=0.4,bin_statval='center')
     x_data_red,y_data_red,y_std_data_red,y_std_err_data_red = Stats_one_arr(halos_data_red,\
-        gals_data_red,base=0.4,bin_statval='center')
+        gals_data_red,base=0.4,bin_statval='average')
     x_data_blue,y_data_blue,y_std_data_blue,y_std_err_data_blue = Stats_one_arr(halos_data_blue,\
-        gals_data_blue,base=0.4,bin_statval='center')
+        gals_data_blue,base=0.4,bin_statval='average')
     # y_std_err_data = err_data
 
     fig1 = plt.figure(figsize=(10,10))
@@ -1725,56 +2039,56 @@ def plot_xmhm(result, gals_bf_red, halos_bf_red, gals_bf_blue, halos_bf_blue,
     for idx in range(len(result[0][0])):
         x_model_red,y_model_red,y_std_model_red,y_std_err_model_red = \
             Stats_one_arr(result[0][5][idx],result[0][4][idx],base=0.4,\
-                bin_statval='center')
+                bin_statval='average')
         plt.plot(x_model_red,y_model_red,color='indianred',linestyle='-', \
             alpha=0.5, zorder=0,label='model')
         x_model_blue,y_model_blue,y_std_model_blue,y_std_err_model_blue = \
             Stats_one_arr(result[0][7][idx],result[0][6][idx],base=0.4,\
-                bin_statval='center')
+                bin_statval='average')
         plt.plot(x_model_blue,y_model_blue,color='cornflowerblue',linestyle='-',alpha=0.5,\
             zorder=0,label='model')
     for idx in range(len(result[1][0])):
         x_model_red,y_model_red,y_std_model_red,y_std_err_model_red = \
             Stats_one_arr(result[1][5][idx],result[1][4][idx],base=0.4,\
-                bin_statval='center')
+                bin_statval='average')
         plt.plot(x_model_red,y_model_red,color='indianred',linestyle='-',alpha=0.5,\
             zorder=0,label='model')
         x_model_blue,y_model_blue,y_std_model_blue,y_std_err_model_blue = \
             Stats_one_arr(result[1][7][idx],result[1][6][idx],base=0.4,\
-                bin_statval='center')
+                bin_statval='average')
         plt.plot(x_model_blue,y_model_blue,color='cornflowerblue',linestyle='-',alpha=0.5,\
             zorder=0,label='model')
     for idx in range(len(result[2][0])):
         x_model_red,y_model_red,y_std_model_red,y_std_err_model_red = \
             Stats_one_arr(result[2][5][idx],result[2][4][idx],base=0.4,\
-                bin_statval='center')
+                bin_statval='average')
         plt.plot(x_model_red,y_model_red,color='indianred',linestyle='-',alpha=0.5,\
             zorder=0,label='model')
         x_model_blue,y_model_blue,y_std_model_blue,y_std_err_model_blue = \
             Stats_one_arr(result[2][7][idx],result[2][6][idx],base=0.4,\
-                bin_statval='center')
+                bin_statval='average')
         plt.plot(x_model_blue,y_model_blue,color='cornflowerblue',linestyle='-',alpha=0.5,\
-            zorder=0,label='model')
+            zorder=0,label='average')
     for idx in range(len(result[3][0])):
         x_model_red,y_model_red,y_std_model_red,y_std_err_model_red = \
             Stats_one_arr(result[3][5][idx],result[3][4][idx],base=0.4,\
-                bin_statval='center')
+                bin_statval='average')
         plt.plot(x_model_red,y_model_red,color='indianred',linestyle='-',alpha=0.5,\
             zorder=0,label='model')
         x_model_blue,y_model_blue,y_std_model_blue,y_std_err_model_blue = \
             Stats_one_arr(result[3][7][idx],result[3][6][idx],base=0.4,\
-                bin_statval='center')
+                bin_statval='average')
         plt.plot(x_model_blue,y_model_blue,color='cornflowerblue',linestyle='-',alpha=0.5,\
             zorder=0,label='model')
     for idx in range(len(result[4][0])):
         x_model_red,y_model_red,y_std_model_red,y_std_err_model_red = \
             Stats_one_arr(result[4][5][idx],result[4][4][idx],base=0.4,\
-                bin_statval='center')
+                bin_statval='average')
         plt.plot(x_model_red,y_model_red,color='indianred',linestyle='-',alpha=0.5,\
             zorder=0,label='model')
         x_model_blue,y_model_blue,y_std_model_blue,y_std_err_model_blue = \
             Stats_one_arr(result[4][7][idx],result[4][6][idx],base=0.4,\
-                bin_statval='center')
+                bin_statval='average')
         plt.plot(x_model_blue,y_model_blue,color='cornflowerblue',linestyle='-',alpha=0.5,\
             zorder=0,label='model')
 
@@ -2068,6 +2382,80 @@ def plot_sigma_vdiff_mod(result, std_red_data, cen_red_data, std_blue_data,
         plt.title('ECO')
     plt.show()
 
+def plot_mean_fracdiff(result, std_red_data, cen_red_data, std_blue_data, 
+    cen_blue_data, std_bf_red, std_bf_blue, std_cen_bf_red, std_cen_bf_blue, 
+    bf_chi2, err_colour):
+    """[summary]
+
+    Args:
+        result ([type]): [description]
+        std_red_data ([type]): [description]
+        cen_red_data ([type]): [description]
+        std_blue_data ([type]): [description]
+        cen_blue_data ([type]): [description]
+        std_bf_red ([type]): [description]
+        std_bf_blue ([type]): [description]
+        std_cen_bf_red ([type]): [description]
+        std_cen_bf_blue ([type]): [description]
+        bf_chi2 ([type]): [description]
+    """
+
+    fig1= plt.figure(figsize=(10,10))
+    for idx in range(len(result[0][0])):
+        mr = plt.scatter(result[0][10][idx],result[0][8][idx],color='indianred',
+            alpha=0.3,zorder=5,s=120)
+    for idx in range(len(result[0][2])):
+        mb = plt.scatter(result[0][11][idx],result[0][9][idx],color='cornflowerblue',
+            alpha=0.3,zorder=5,s=120)
+    for idx in range(len(result[1][0])):
+        plt.scatter(result[1][10][idx],result[1][8][idx],color='indianred',
+            alpha=0.3,zorder=5,s=120)
+    for idx in range(len(result[1][2])):
+        plt.scatter(result[1][11][idx],result[1][9][idx],color='cornflowerblue',
+            alpha=0.3,zorder=5,s=120)
+    for idx in range(len(result[2][0])):
+        plt.scatter(result[2][10][idx],result[2][8][idx],color='indianred',
+            alpha=0.3,zorder=5,s=120)
+    for idx in range(len(result[2][2])):
+        plt.scatter(result[2][11][idx],result[2][9][idx],color='cornflowerblue',
+            alpha=0.3,zorder=5,s=120)
+    for idx in range(len(result[3][0])):
+        plt.scatter(result[3][10][idx],result[3][8][idx],color='indianred',
+            alpha=0.3,zorder=5,s=120)
+    for idx in range(len(result[3][2])):
+        plt.scatter(result[3][11][idx],result[3][9][idx],color='cornflowerblue',
+            alpha=0.3,zorder=5,s=120)
+    for idx in range(len(result[4][0])):
+        plt.scatter(result[4][10][idx],result[4][8][idx],color='indianred',
+            alpha=0.3,zorder=5,s=120)
+    for idx in range(len(result[4][2])):
+        plt.scatter(result[4][11][idx],result[4][9][idx],color='cornflowerblue',
+            alpha=0.3,zorder=5,s=120)
+
+    dr = plt.scatter(cen_red_data, std_red_data, c='maroon', marker='p', s=160, 
+        zorder=10, edgecolors='darkred')
+    db = plt.scatter(cen_blue_data, std_blue_data, c='mediumblue', marker='p', 
+        s=160, zorder=10, edgecolors='darkblue')
+
+    sigr = plt.fill_between(x=cen_red_data, y1=std_red_data+err_colour[10:15], 
+        y2=std_red_data-err_colour[10:15], color='darkred',alpha=0.3)
+    sigb = plt.fill_between(x=cen_blue_data, y1=std_blue_data+err_colour[15:20], 
+        y2=std_blue_data-err_colour[15:20], color='darkblue',alpha=0.3)
+
+
+    bfr = plt.scatter(std_cen_bf_red, std_bf_red, c='maroon', marker='*', 
+        s=160, zorder=10, edgecolors='darkred')
+    bfb = plt.scatter(std_cen_bf_blue, std_bf_blue, c='mediumblue', 
+        marker='*', s=160, zorder=10, edgecolors='darkblue')
+    plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=25)
+    plt.ylabel(r'\boldmath$\sigma \left[\mathrm{km/s} \right]$', fontsize=30)
+    l = plt.legend([(dr, db), (mr, mb), (bfr, bfb), (sigr, sigb)], 
+        ['Data','Models','Best-fit',r'1$\sigma$'],
+        handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, markerscale=1.5)
+    if survey == 'eco':
+        plt.title('ECO')
+    plt.show()
+
 global survey
 global path_to_figures
 global gal_group_df_subset
@@ -2155,8 +2543,12 @@ print('Measuring SMF for data')
 total_data, red_data, blue_data = measure_all_smf(catl, volume, True)
 
 # Returns masses in h=1.0
-print('Measuring spread in vel difference for data')
-std_red, centers_red, std_blue, centers_blue = get_deltav_sigma_data(catl)
+# print('Measuring spread in vel difference for data')
+# std_red, centers_red, std_blue, centers_blue = get_deltav_sigma_data(catl)
+
+print('Measuring new dynamical metric for data')
+red_deltav_data, red_cen_stellar_mass_data, blue_deltav_data, \
+    blue_cen_stellar_mass_data, deltav_data, cen_stellar_mass_data = get_deltav_data(catl)
 
 # Measures errors using measurements in h=1.0
 print('Measuring error in data from mocks')
@@ -2183,10 +2575,10 @@ plot_xmhm(result, cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue,
 plot_zumand_fig4(result, cen_gals_red, cen_halos_red, cen_gals_blue, 
     cen_halos_blue, bf_chi2)
 
-plot_sigma_vdiff(result, std_red, centers_red, std_blue, centers_blue, 
-    std_bf_red, std_bf_blue, std_cen_bf_red, std_cen_bf_blue, bf_chi2, 
-    err_colour_data)
+# plot_sigma_vdiff(result, std_red, centers_red, std_blue, centers_blue, 
+#     std_bf_red, std_bf_blue, std_cen_bf_red, std_cen_bf_blue, bf_chi2, 
+#     err_colour_data)
 
-plot_sigma_vdiff_mod(result, std_red, centers_red, std_blue, centers_blue, 
-    std_bf_red, std_bf_blue, std_cen_bf_red, std_cen_bf_blue, bf_chi2, 
-    err_colour_data)
+# plot_sigma_vdiff_mod(result, std_red, centers_red, std_blue, centers_blue, 
+#     std_bf_red, std_bf_blue, std_cen_bf_red, std_cen_bf_blue, bf_chi2, 
+#     err_colour_data)
