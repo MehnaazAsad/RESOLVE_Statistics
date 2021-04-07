@@ -4058,7 +4058,7 @@ plt.show()
 
 ##! Taking the mean of the fractional difference in bins of central stellar mass
 
-## Original bins
+## Original bins but more bins for red than blue
 blue_stellar_mass_bins = np.linspace(8.6,10.7,6)
 red_stellar_mass_bins = np.linspace(8.6,11.2,10)
 
