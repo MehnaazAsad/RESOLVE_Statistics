@@ -2406,20 +2406,11 @@ def plot_mean_fracdiff(result, red_deltav_data, red_cen_stellar_mass_data, \
         std_cen_bf_blue ([type]): [description]
         bf_chi2 ([type]): [description]
     """
-    z = np.polyfit(cen_stellar_mass_bf, np.log10(np.abs(deltav_bf)), 1)
-    p = np.poly1d(z)
-    
-    fig1= plt.figure(figsize=(10,10))
+    ##! Models
 
-    plt.plot(cen_stellar_mass_bf,p(cen_stellar_mass_bf),"k--")
-
-    # plt.yscale('log')
-    # plt.xlabel(r'\boldmath$\log_{10}\ M_{\star , cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
-    # plt.ylabel(r'\boldmath$ log_{10}({| \Delta{v} |}) \left[\mathrm{km/s} \right]$', fontsize=30)
-    # plt.show()
-
-    ##! Plot of fractional difference in new metric between points and trend line
-    
+    z_bf = np.polyfit(cen_stellar_mass_data, np.log10(np.abs(deltav_data)), 1)
+    p_bf = np.poly1d(z_bf)
+        
     red_frac_diff_arr = []
     blue_frac_diff_arr = []
     red_cen_arr = []
@@ -2434,39 +2425,38 @@ def plot_mean_fracdiff(result, red_deltav_data, red_cen_stellar_mass_data, \
             for idx, val in enumerate(red_cen_idx):
                 ## Need to unlog since the fit was done to the log of the absolute values
                 ## above
-                red_frac_diff = (np.abs(red_deltav_idx[idx]) - (10**p(val)))/(10**p(val))
+                red_frac_diff = (np.abs(red_deltav_idx[idx]) - (10**p_bf(val)))/(10**p_bf(val))
                 red_frac_diff_arr.append(red_frac_diff)
                 red_cen_arr.append(val)
 
             for idx, val in enumerate(blue_cen_idx):
-                blue_frac_diff = (np.abs(blue_deltav_idx[idx]) - (10**p(val)))/(10**p(val))
+                blue_frac_diff = (np.abs(blue_deltav_idx[idx]) - (10**p_bf(val)))/(10**p_bf(val))
                 blue_frac_diff_arr.append(blue_frac_diff)
                 blue_cen_arr.append(val)
         chunk_counter+=1
-
-    # plt.scatter(red_cen_stellar_mass_arr, red_frac_diff_arr, c='indianred')
-    # plt.scatter(blue_cen_stellar_mass_arr, blue_frac_diff_arr, c='cornflowerblue')
-    # # plt.plot(cen_stellar_mass_arr,p(cen_stellar_mass_arr),"k--")
-
-    # # plt.yscale('log')
-    # plt.xlabel(r'\boldmath$\log_{10}\ M_{\star , cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
-    # plt.ylabel(r'\boldmath$ ({| \Delta{v} | -  \Delta{v}_{fit}})/\Delta{v}_{fit} \left[\mathrm{km/s} \right]$', fontsize=30)
-    # plt.show()
-
-    ##! Taking the mean of the fractional difference in bins of central stellar mass
-
-    ## Original bins
-    # blue_stellar_mass_bins = np.linspace(8.6,10.7,6)
-    # red_stellar_mass_bins = np.linspace(8.6,11.2,10)
 
     ## Trying with same bins for both pops
     red_stellar_mass_bins = np.arange(8.75, 11.25, 0.5)
     blue_stellar_mass_bins = np.arange(8.75, 11.25, 0.5)
 
+    # red_stellar_mass_bins = np.linspace(8.6,11.2,11)
+    # blue_stellar_mass_bins = np.linspace(8.6,10.7,5)
+
     centers_red = 0.5 * (red_stellar_mass_bins[1:] + \
         red_stellar_mass_bins[:-1])
     centers_blue = 0.5 * (blue_stellar_mass_bins[1:] + \
         blue_stellar_mass_bins[:-1])
+
+    fig1= plt.figure(figsize=(10,10))
+
+    plt.scatter(red_cen_arr, red_frac_diff_arr, c='indianred')
+    plt.scatter(blue_cen_arr, blue_frac_diff_arr, c='cornflowerblue')
+    plt.plot(cen_stellar_mass_bf,p_bf(cen_stellar_mass_bf),"k--")
+
+    # plt.yscale('log')
+    plt.xlabel(r'\boldmath$\log_{10}\ M_{\star , cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
+    plt.ylabel(r'\boldmath$ ({| \Delta{v} | -  \Delta{v}_{fit}})/\Delta{v}_{fit} \left[\mathrm{km/s} \right]$', fontsize=30)
+    plt.show()
 
     mean_stats_red = bs(red_cen_arr, red_frac_diff_arr, statistic='mean', 
         bins=red_stellar_mass_bins)
@@ -2478,72 +2468,109 @@ def plot_mean_fracdiff(result, red_deltav_data, red_cen_stellar_mass_data, \
     std_stats_blue = bs(blue_cen_arr, blue_frac_diff_arr, statistic='std', 
         bins=blue_stellar_mass_bins)
 
-    plt.fill_between(red_stellar_mass_bins, mean_stats_red[0]+std_stats_red[0], 
-        mean_stats_red[0]-std_stats_red[0])
-    plt.fill_between(blue_stellar_mass_bins, mean_stats_blue[0]+std_stats_blue[0], 
-        mean_stats_blue[0]-std_stats_blue[0])
+    ##! Data 
+    
+    z_data = np.polyfit(cen_stellar_mass_data, np.log10(np.abs(deltav_data)), 1)
+    p_data = np.poly1d(z_data)
 
-    plt.scatter(centers_red, stats_red[0], c='indianred', s=200, marker='*')
-    plt.scatter(centers_blue, stats_blue[0], c='cornflowerblue', s=200, marker='*')
+    red_frac_diff_arr = []
+    for idx, val in enumerate(red_cen_stellar_mass_data):
+        ## Need to unlog since the fit was done to the log of the absolute values
+        ## above
+        red_frac_diff = (np.abs(red_deltav_data[idx]) - (10**p_data(val)))/(10**p_data(val))
+        red_frac_diff_arr.append(red_frac_diff)
+
+    blue_frac_diff_arr = []
+    for idx, val in enumerate(blue_cen_stellar_mass_data):
+        blue_frac_diff = (np.abs(blue_deltav_data[idx]) - (10**p_data(val)))/(10**p_data(val))
+        blue_frac_diff_arr.append(blue_frac_diff)
+
+    stats_red = bs(red_cen_stellar_mass_data, red_frac_diff_arr, statistic='mean', 
+        bins=red_stellar_mass_bins)
+    stats_blue = bs(blue_cen_stellar_mass_data, blue_frac_diff_arr, statistic='mean', 
+        bins=blue_stellar_mass_bins)
+
+    fig2= plt.figure(figsize=(10,10))
+
+    # bf = plt.plot(cen_stellar_mass_bf,p_bf(cen_stellar_mass_bf),"k-")
+    # data = plt.plot(cen_stellar_mass_data,p_data(cen_stellar_mass_data),"k--")
+
+    mr = plt.fill_between(centers_red, mean_stats_red[0]+std_stats_red[0], 
+        mean_stats_red[0]-std_stats_red[0], color='lightcoral',alpha=0.4)
+    mb = plt.fill_between(centers_blue, mean_stats_blue[0]+std_stats_blue[0], 
+        mean_stats_blue[0]-std_stats_blue[0], color='cornflowerblue',alpha=0.4)
+
+    dr = plt.scatter(centers_red, stats_red[0], c='indianred', s=200, marker='*')
+    db = plt.scatter(centers_blue, stats_blue[0], c='cornflowerblue', s=200, marker='*')
+
+    l = plt.legend([(dr, db), (mr, mb)], 
+        ['Data','Models'],
+        handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, markerscale=1.5)
+    if survey == 'eco':
+        plt.title('ECO')
+
     plt.ylabel(r'\boldmath$ \overline{({| \Delta{v} | -  \Delta{v}_{fit}})/\Delta{v}_{fit}} \left[\mathrm{km/s} \right]$', fontsize=30)
     plt.xlabel(r'\boldmath$\log_{10}\ M_{\star , cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
     plt.show()
 
-    fig1= plt.figure(figsize=(10,10))
-    for idx in range(len(result[0][0])):
-        mr = plt.scatter(result[0][10][idx],result[0][8][idx],color='indianred',
-            alpha=0.3,zorder=5,s=120)
-    for idx in range(len(result[0][2])):
-        mb = plt.scatter(result[0][11][idx],result[0][9][idx],color='cornflowerblue',
-            alpha=0.3,zorder=5,s=120)
-    for idx in range(len(result[1][0])):
-        plt.scatter(result[1][10][idx],result[1][8][idx],color='indianred',
-            alpha=0.3,zorder=5,s=120)
-    for idx in range(len(result[1][2])):
-        plt.scatter(result[1][11][idx],result[1][9][idx],color='cornflowerblue',
-            alpha=0.3,zorder=5,s=120)
-    for idx in range(len(result[2][0])):
-        plt.scatter(result[2][10][idx],result[2][8][idx],color='indianred',
-            alpha=0.3,zorder=5,s=120)
-    for idx in range(len(result[2][2])):
-        plt.scatter(result[2][11][idx],result[2][9][idx],color='cornflowerblue',
-            alpha=0.3,zorder=5,s=120)
-    for idx in range(len(result[3][0])):
-        plt.scatter(result[3][10][idx],result[3][8][idx],color='indianred',
-            alpha=0.3,zorder=5,s=120)
-    for idx in range(len(result[3][2])):
-        plt.scatter(result[3][11][idx],result[3][9][idx],color='cornflowerblue',
-            alpha=0.3,zorder=5,s=120)
-    for idx in range(len(result[4][0])):
-        plt.scatter(result[4][10][idx],result[4][8][idx],color='indianred',
-            alpha=0.3,zorder=5,s=120)
-    for idx in range(len(result[4][2])):
-        plt.scatter(result[4][11][idx],result[4][9][idx],color='cornflowerblue',
-            alpha=0.3,zorder=5,s=120)
-
-    dr = plt.scatter(cen_red_data, std_red_data, c='maroon', marker='p', s=160, 
-        zorder=10, edgecolors='darkred')
-    db = plt.scatter(cen_blue_data, std_blue_data, c='mediumblue', marker='p', 
-        s=160, zorder=10, edgecolors='darkblue')
-
-    sigr = plt.fill_between(x=cen_red_data, y1=std_red_data+err_colour[10:15], 
-        y2=std_red_data-err_colour[10:15], color='darkred',alpha=0.3)
-    sigb = plt.fill_between(x=cen_blue_data, y1=std_blue_data+err_colour[15:20], 
-        y2=std_blue_data-err_colour[15:20], color='darkblue',alpha=0.3)
+def plot_red_fraction(result, cen_gals_red, \
+    cen_halos_red, cen_gals_blue, cen_halos_blue, f_red_cen_red, \
+    f_red_cen_blue):
 
 
-    bfr = plt.scatter(std_cen_bf_red, std_bf_red, c='maroon', marker='*', 
-        s=160, zorder=10, edgecolors='darkred')
-    bfb = plt.scatter(std_cen_bf_blue, std_bf_blue, c='mediumblue', 
-        marker='*', s=160, zorder=10, edgecolors='darkblue')
-    plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=25)
-    plt.ylabel(r'\boldmath$\sigma \left[\mathrm{km/s} \right]$', fontsize=30)
-    l = plt.legend([(dr, db), (mr, mb), (bfr, bfb), (sigr, sigb)], 
-        ['Data','Models','Best-fit',r'1$\sigma$'],
-        handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, markerscale=1.5)
-    if survey == 'eco':
-        plt.title('ECO')
+    cen_gals_arr = []
+    cen_halos_arr = []
+    fred_arr = []
+    chunk_counter = 0 # There are 5 chunks of all 16 statistics each with len 20
+    while chunk_counter < 5:
+        cen_gals_idx_arr = []
+        cen_halos_idx_arr = []
+        fred_idx_arr = []
+        for idx in range(len(result[chunk_counter][0])):
+            red_cen_gals_idx = result[chunk_counter][4][idx]
+            red_cen_halos_idx = result[chunk_counter][5][idx]
+            blue_cen_gals_idx = result[chunk_counter][6][idx]
+            blue_cen_halos_idx = result[chunk_counter][7][idx]
+            fred_red_cen_idx = result[chunk_counter][14][idx]
+            fred_blue_cen_idx = result[chunk_counter][15][idx]  
+
+            cen_gals_idx_arr = list(red_cen_gals_idx) + list(blue_cen_gals_idx)
+            cen_gals_arr.append(cen_gals_idx_arr)
+
+            cen_halos_idx_arr = list(red_cen_halos_idx) + list(blue_cen_halos_idx)
+            cen_halos_arr.append(cen_halos_idx_arr)
+
+            fred_idx_arr = list(fred_red_cen_idx) + list(fred_blue_cen_idx)
+            fred_arr.append(fred_idx_arr)
+            
+            cen_gals_idx_arr = []
+            cen_halos_idx_arr = []
+            fred_idx_arr = []
+
+        chunk_counter+=1
+    
+    # cen_halos_arr = np.array(cen_halos_arr)
+    # fred_arr = np.array(fred_arr)
+
+    cen_gals_bf = []
+    cen_halos_bf = []
+    fred_bf = []
+
+    cen_gals_bf = list(cen_gals_red) + list(cen_gals_blue)
+    cen_halos_bf = list(cen_halos_red) + list(cen_halos_blue)
+    fred_bf = list(f_red_cen_red) + list(f_red_cen_blue)
+
+
+    fig1 = plt.figure(figsize=(10,8))
+    for idx in range(len(cen_gals_arr)):
+        plt.scatter(cen_gals_arr[idx], fred_arr[idx], alpha=0.4, s=150, c='cornflowerblue')
+    plt.scatter(cen_gals_arr[0], fred_arr[0], alpha=1.0, s=150, c='cornflowerblue', label='Models')
+    plt.scatter(cen_gals_bf, fred_bf, alpha=0.4, s=150, c='mediumorchid', label='Best-fit')
+    plt.ylabel(r'\boldmath$f_{red}$', fontsize=30)
+    plt.xlabel(r'\boldmath$\log_{10}\ M_{*, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=20)
+    plt.legend(loc='best', prop={'size':15})
     plt.show()
+
 
 global survey
 global path_to_figures
@@ -2679,3 +2706,7 @@ plot_mean_fracdiff(result, red_deltav_data, red_cen_stellar_mass_data, \
     blue_deltav_data, blue_cen_stellar_mass_data, deltav_data, \
     cen_stellar_mass_data, red_cen_stellar_mass_bf, blue_deltav_bf, \
     blue_cen_stellar_mass_bf, deltav_bf, cen_stellar_mass_bf)
+
+plot_red_fraction(result,cen_gals_red, \
+    cen_halos_red, cen_gals_blue, cen_halos_blue, f_red_cen_red, \
+    f_red_cen_blue)
