@@ -3602,8 +3602,8 @@ plt.show()
 
 #! In much narrower bins of M* what do the distributions of M_h look like?
 
-red_arr = np.linspace(8.6, 11.2, 20)
-blue_arr = np.linspace(8.6, 10.7, 10)
+red_arr = np.linspace(8.6, 11, 10)
+blue_arr = np.linspace(8.6, 11, 10)
 
 red_halos = []
 bin_counter = 0
@@ -3632,10 +3632,11 @@ while bin_counter < len(blue_arr):
 fig2 = plt.figure(figsize=(10,10))
 colour_arr = ['indianred', 'darkorange', 'gold', 'yellowgreen', 'forestgreen','darkturquoise', 'cornflowerblue', 'mediumorchid', 'orchid']
 for i in range(len(red_halos)):
-    plt.hist(red_halos[i], histtype='step', lw=3, color=colour_arr[i], ls='-', 
-        label='R: {0} - {1}'.format(np.round(red_arr[i],2), np.round(red_arr[i+1],2)), density=True)
-    plt.hist(blue_halos[i], histtype='step', lw=3, color=colour_arr[i], ls='--', 
-        label='B: {0} - {1}'.format(np.round(blue_arr[i],2), np.round(blue_arr[i+1],2)), density=True)
+    if i in [0,2,4,6,8]:
+        plt.hist(red_halos[i], histtype='step', lw=3, color=colour_arr[i], ls='-', 
+            label='R: {0} - {1}'.format(np.round(red_arr[i],2), np.round(red_arr[i+1],2)), density=True)
+        plt.hist(blue_halos[i], histtype='step', lw=3, color=colour_arr[i], ls='--', 
+            label='B: {0} - {1}'.format(np.round(blue_arr[i],2), np.round(blue_arr[i+1],2)), density=True)
 plt.xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=25)
 plt.title('Distribution of halo masses in stellar mass bins for galaxies around red and blue group centrals')
 plt.legend()
@@ -4124,9 +4125,9 @@ plt.show()
 data_r = pd.DataFrame(data=zip(red_cen_stellar_mass_arr, red_deltav_arr, stats_red[2]), columns=['mcen','deltav','bin_num'])
 data_b = pd.DataFrame(data=zip(blue_cen_stellar_mass_arr, blue_deltav_arr, stats_blue[2]), columns=['mcen','deltav','bin_num'])
 
-stats_red = bs(red_cen_stellar_mass_arr, red_deltav_arr, statistic='std', 
+stats_red = bs(red_cen_stellar_mass_arr, red_deltav_arr, statistic='mean', 
     bins=red_stellar_mass_bins)
-stats_blue = bs(blue_cen_stellar_mass_arr, blue_deltav_arr, statistic='std', 
+stats_blue = bs(blue_cen_stellar_mass_arr, blue_deltav_arr, statistic='mean', 
     bins=blue_stellar_mass_bins)
 
 for idx in range(1,7):
@@ -4200,8 +4201,11 @@ plt.show()
 # h_b= 2*(iqr(blue_cen_stellar_mass_arr)/(len(blue_cen_stellar_mass_arr)**(1/3)))
 # k_b = math.ceil((max(blue_cen_stellar_mass_arr) - min(blue_cen_stellar_mass_arr))/h_b)
 
-red_stellar_mass_bins = np.linspace(8.6,11.2,11)
-blue_stellar_mass_bins = np.linspace(8.6,10.7,5)
+red_stellar_mass_bins = np.linspace(8.6,11.2,10)
+blue_stellar_mass_bins = np.linspace(8.6,10.7,6)
+
+red_stellar_mass_bins = np.linspace(8.6,11,6)
+blue_stellar_mass_bins = np.linspace(8.6,11,6)
 
 stats_red = bs(red_cen_stellar_mass_arr, red_deltav_arr, statistic='std', 
     bins=red_stellar_mass_bins)
