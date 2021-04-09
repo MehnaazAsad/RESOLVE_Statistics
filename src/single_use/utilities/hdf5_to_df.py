@@ -1,6 +1,6 @@
-    """This script includes a function that reads .hdf5 mock catalogs and 
-       outputs them as a pandas DataFrame
-    """
+"""This script includes a function that reads .hdf5 mock catalogs and 
+    outputs them as a pandas DataFrame
+"""
 
 import pandas as pd
 import os
@@ -63,6 +63,7 @@ def read_mock_catl(filename, catl_format='.hdf5'):
     3   0.113011
     4   0.057210
     """
+
     ## Checking if file exists
     if not os.path.exists(filename):
         msg = '`filename`: {0} NOT FOUND! Exiting..'.format(filename)
