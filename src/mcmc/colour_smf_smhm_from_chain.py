@@ -1139,6 +1139,123 @@ def get_deltav_vishnu_qmcolour(gals_df, randint):
     return red_deltav_arr, red_cen_stellar_mass_arr, blue_deltav_arr, \
         blue_cen_stellar_mass_arr, deltav_arr, cen_stellar_mass_arr
 
+def get_sigma_per_group_vishnu_qmcolour(gals_df, randint):
+    """
+    Calculate spread in velocity dispersion from Vishnu mock (logmstar already 
+    in h=1)
+
+    Parameters
+    ----------
+    survey: string
+        Name of survey
+    path: string
+        Path to mock catalogs
+
+    Returns
+    ---------
+    std_red_arr: numpy array
+        Spread in velocity dispersion of red galaxies
+    centers_red_arr: numpy array
+        Bin centers of central stellar mass for red galaxies
+    std_blue_arr: numpy array
+        Spread in velocity dispersion of blue galaxies
+    centers_blue_arr: numpy array
+        Bin centers of central stellar mass for blue galaxies
+    """
+
+    mock_pd = gals_df.copy()
+
+    if survey == 'eco':
+        mock_name = 'ECO'
+        num_mocks = 8
+        min_cz = 3000
+        max_cz = 7000
+        mag_limit = -17.33
+        mstar_limit = 8.9
+        volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
+    elif survey == 'resolvea':
+        mock_name = 'A'
+        num_mocks = 59
+        min_cz = 4500
+        max_cz = 7000
+        mag_limit = -17.33
+        mstar_limit = 8.9
+        volume = 13172.384  # Survey volume without buffer [Mpc/h]^3 
+    elif survey == 'resolveb':
+        mock_name = 'B'
+        num_mocks = 104
+        min_cz = 4500
+        max_cz = 7000
+        mag_limit = -17
+        mstar_limit = 8.7
+        volume = 4709.8373  # Survey volume without buffer [Mpc/h]^3
+
+
+    logmstar_col = '{0}'.format(randint)
+    g_galtype_col = 'g_galtype_{0}'.format(randint)
+    groupid_col = 'groupid_{0}'.format(randint)
+    # Using the same survey definition as in mcmc smf i.e excluding the 
+    # buffer except no M_r cut since vishnu mock has no M_r info
+    mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & \
+        (mock_pd.cz.values <= max_cz) & \
+        (mock_pd[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
+
+    red_subset_grpids = np.unique(mock_pd[groupid_col].loc[(mock_pd.\
+        colour_label == 'R') & (mock_pd[g_galtype_col] == 1)].values)  
+    blue_subset_grpids = np.unique(mock_pd[groupid_col].loc[(mock_pd.\
+        colour_label == 'B') & (mock_pd[g_galtype_col] == 1)].values)
+
+    red_singleton_counter = 0
+    red_sigma_arr = []
+    red_cen_stellar_mass_arr = []
+    for key in red_subset_grpids: 
+        group = mock_pd.loc[mock_pd[groupid_col] == key]
+        if len(group) == 1:
+            red_singleton_counter += 1
+        else:
+            cen_stellar_mass = group['{0}'.format(randint)].loc[group[g_galtype_col].\
+                values == 1].values[0]
+            
+            # Different velocity definitions
+            mean_cz_grp = np.round(np.mean(group.cz.values),2)
+            cen_cz_grp = group.cz.loc[group[g_galtype_col].values == 1].values[0]
+            # cz_grp = np.unique(group.grpcz.values)[0]
+
+            # Velocity difference
+            deltav = group.cz.values - len(group)*[mean_cz_grp]
+            # sigma = deltav[deltav!=0].std()
+            sigma = deltav.std()
+            
+            red_sigma_arr.append(sigma)
+            red_cen_stellar_mass_arr.append(cen_stellar_mass)
+
+    blue_singleton_counter = 0
+    blue_sigma_arr = []
+    blue_cen_stellar_mass_arr = []
+    for key in blue_subset_grpids: 
+        group = mock_pd.loc[mock_pd[groupid_col] == key]
+        if len(group) == 1:
+            blue_singleton_counter += 1
+        else:
+            cen_stellar_mass = group['{0}'.format(randint)].loc[group[g_galtype_col].\
+                values == 1].values[0]
+            
+            # Different velocity definitions
+            mean_cz_grp = np.round(np.mean(group.cz.values),2)
+            cen_cz_grp = group.cz.loc[group[g_galtype_col].values == 1].values[0]
+            # cz_grp = np.unique(group.grpcz.values)[0]
+
+            # Velocity difference
+            deltav = group.cz.values - len(group)*[mean_cz_grp]
+            # sigma = deltav[deltav!=0].std()
+            sigma = deltav.std()
+            
+            blue_sigma_arr.append(sigma)
+            blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+
+    return red_sigma_arr, red_cen_stellar_mass_arr, blue_sigma_arr, \
+        blue_cen_stellar_mass_arr
+
 def get_err_data(survey, path):
     """
     Calculate error in data SMF from mocks
@@ -1410,6 +1527,10 @@ def mp_func(a_list):
     # cen_std_blue_arr = []
     f_red_cen_red_arr = []
     f_red_cen_blue_arr = []
+    grp_red_cen_arr = []
+    grp_blue_cen_arr = []
+    red_sigma_arr = []
+    blue_sigma_arr = []
 
     for theta in a_list:  
         randint_logmstar = int(theta[4])
@@ -1445,6 +1566,11 @@ def mp_func(a_list):
         red_deltav, red_cen_stellar_mass, blue_deltav, \
             blue_cen_stellar_mass, deltav, cen_stellar_mass = \
             get_deltav_vishnu_qmcolour(gals_df, randint_logmstar)
+
+        red_sigma, grp_red_cen_stellar_mass, blue_sigma, \
+            grp_blue_cen_stellar_mass = get_sigma_per_group_vishnu_qmcolour(gals_df, 
+            randint_logmstar)
+
         maxis_red_arr.append(red_model[0])
         phi_red_arr.append(red_model[1])
         maxis_blue_arr.append(blue_model[0])
@@ -1465,13 +1591,18 @@ def mp_func(a_list):
         # cen_std_blue_arr.append(centers_blue_model)
         f_red_cen_red_arr.append(f_red_cen_red)
         f_red_cen_blue_arr.append(f_red_cen_blue)
+        grp_red_cen_arr.append(grp_red_cen_stellar_mass)
+        grp_blue_cen_arr.append(grp_blue_cen_stellar_mass)
+        red_sigma_arr.append(red_sigma)
+        blue_sigma_arr.append(blue_sigma)
 
     return [maxis_red_arr, phi_red_arr, maxis_blue_arr, phi_blue_arr, 
     cen_gals_red_arr, cen_halos_red_arr, cen_gals_blue_arr, cen_halos_blue_arr,
     red_deltav_arr, blue_deltav_arr, deltav_arr, red_cen_arr, blue_cen_arr, 
     all_cen_arr,
     # std_red_arr, std_blue_arr, cen_std_red_arr, cen_std_blue_arr,
-    f_red_cen_red_arr, f_red_cen_blue_arr]
+    f_red_cen_red_arr, f_red_cen_blue_arr, grp_red_cen_arr, grp_blue_cen_arr, 
+    red_sigma_arr, blue_sigma_arr]
 
 def hybrid_quenching_model(theta, gals_df, mock, randint=None):
     """
@@ -1768,6 +1899,9 @@ def get_best_fit_model(best_fit_params, best_fit_mocknum):
     red_deltav, red_cen_stellar_mass, blue_deltav, \
         blue_cen_stellar_mass, deltav, cen_stellar_mass = \
         get_deltav_vishnu_qmcolour(gals_df, best_fit_mocknum)
+    red_sigma, grp_red_cen_stellar_mass, blue_sigma, \
+        grp_blue_cen_stellar_mass = get_sigma_per_group_vishnu_qmcolour(gals_df, 
+        best_fit_mocknum)
 
     max_red = red_model[0]
     phi_red = red_model[1]
@@ -1777,7 +1911,8 @@ def get_best_fit_model(best_fit_params, best_fit_mocknum):
     return max_red, phi_red, max_blue, phi_blue, cen_gals_red, cen_halos_red,\
         cen_gals_blue, cen_halos_blue, f_red_cen_red, f_red_cen_blue, \
         red_deltav, red_cen_stellar_mass, blue_deltav, blue_cen_stellar_mass, \
-        deltav, cen_stellar_mass
+        deltav, cen_stellar_mass, red_sigma, grp_red_cen_stellar_mass, blue_sigma, \
+        grp_blue_cen_stellar_mass
         # std_red, std_blue, std_centers_red, std_centers_blue
 
 def plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red, 
@@ -2018,15 +2153,17 @@ def plot_xmhm(result, gals_bf_red, halos_bf_red, gals_bf_blue, halos_bf_blue,
             return [l1, l2]  
 
     x_bf_red,y_bf_red,y_std_bf_red,y_std_err_bf_red = Stats_one_arr(halos_bf_red,\
-    gals_bf_red,base=0.4,bin_statval='average')
+    gals_bf_red,base=0.2,bin_statval='center')
     x_bf_blue,y_bf_blue,y_std_bf_blue,y_std_err_bf_blue = Stats_one_arr(halos_bf_blue,\
-    gals_bf_blue,base=0.4,bin_statval='average')
+    gals_bf_blue,base=0.2,bin_statval='center')
+    
+
     # x_b10,y_b10,y_std_b10,y_std_err_b10 = Stats_one_arr(halos_b10,\
     #     gals_b10,base=0.4,bin_statval='center')
     x_data_red,y_data_red,y_std_data_red,y_std_err_data_red = Stats_one_arr(halos_data_red,\
-        gals_data_red,base=0.4,bin_statval='average')
+        gals_data_red,base=0.4,bin_statval='center')
     x_data_blue,y_data_blue,y_std_data_blue,y_std_err_data_blue = Stats_one_arr(halos_data_blue,\
-        gals_data_blue,base=0.4,bin_statval='average')
+        gals_data_blue,base=0.4,bin_statval='center')
     # y_std_err_data = err_data
 
     fig1 = plt.figure(figsize=(10,10))
@@ -2045,56 +2182,56 @@ def plot_xmhm(result, gals_bf_red, halos_bf_red, gals_bf_blue, halos_bf_blue,
     for idx in range(len(result[0][0])):
         x_model_red,y_model_red,y_std_model_red,y_std_err_model_red = \
             Stats_one_arr(result[0][5][idx],result[0][4][idx],base=0.4,\
-                bin_statval='average')
+                bin_statval='center')
         plt.plot(x_model_red,y_model_red,color='indianred',linestyle='-', \
             alpha=0.5, zorder=0,label='model')
         x_model_blue,y_model_blue,y_std_model_blue,y_std_err_model_blue = \
             Stats_one_arr(result[0][7][idx],result[0][6][idx],base=0.4,\
-                bin_statval='average')
+                bin_statval='center')
         plt.plot(x_model_blue,y_model_blue,color='cornflowerblue',linestyle='-',alpha=0.5,\
             zorder=0,label='model')
     for idx in range(len(result[1][0])):
         x_model_red,y_model_red,y_std_model_red,y_std_err_model_red = \
             Stats_one_arr(result[1][5][idx],result[1][4][idx],base=0.4,\
-                bin_statval='average')
+                bin_statval='center')
         plt.plot(x_model_red,y_model_red,color='indianred',linestyle='-',alpha=0.5,\
             zorder=0,label='model')
         x_model_blue,y_model_blue,y_std_model_blue,y_std_err_model_blue = \
             Stats_one_arr(result[1][7][idx],result[1][6][idx],base=0.4,\
-                bin_statval='average')
+                bin_statval='center')
         plt.plot(x_model_blue,y_model_blue,color='cornflowerblue',linestyle='-',alpha=0.5,\
             zorder=0,label='model')
     for idx in range(len(result[2][0])):
         x_model_red,y_model_red,y_std_model_red,y_std_err_model_red = \
             Stats_one_arr(result[2][5][idx],result[2][4][idx],base=0.4,\
-                bin_statval='average')
+                bin_statval='center')
         plt.plot(x_model_red,y_model_red,color='indianred',linestyle='-',alpha=0.5,\
             zorder=0,label='model')
         x_model_blue,y_model_blue,y_std_model_blue,y_std_err_model_blue = \
             Stats_one_arr(result[2][7][idx],result[2][6][idx],base=0.4,\
-                bin_statval='average')
+                bin_statval='center')
         plt.plot(x_model_blue,y_model_blue,color='cornflowerblue',linestyle='-',alpha=0.5,\
-            zorder=0,label='average')
+            zorder=0,label='center')
     for idx in range(len(result[3][0])):
         x_model_red,y_model_red,y_std_model_red,y_std_err_model_red = \
             Stats_one_arr(result[3][5][idx],result[3][4][idx],base=0.4,\
-                bin_statval='average')
+                bin_statval='center')
         plt.plot(x_model_red,y_model_red,color='indianred',linestyle='-',alpha=0.5,\
             zorder=0,label='model')
         x_model_blue,y_model_blue,y_std_model_blue,y_std_err_model_blue = \
             Stats_one_arr(result[3][7][idx],result[3][6][idx],base=0.4,\
-                bin_statval='average')
+                bin_statval='center')
         plt.plot(x_model_blue,y_model_blue,color='cornflowerblue',linestyle='-',alpha=0.5,\
             zorder=0,label='model')
     for idx in range(len(result[4][0])):
         x_model_red,y_model_red,y_std_model_red,y_std_err_model_red = \
             Stats_one_arr(result[4][5][idx],result[4][4][idx],base=0.4,\
-                bin_statval='average')
+                bin_statval='center')
         plt.plot(x_model_red,y_model_red,color='indianred',linestyle='-',alpha=0.5,\
             zorder=0,label='model')
         x_model_blue,y_model_blue,y_std_model_blue,y_std_err_model_blue = \
             Stats_one_arr(result[4][7][idx],result[4][6][idx],base=0.4,\
-                bin_statval='average')
+                bin_statval='center')
         plt.plot(x_model_blue,y_model_blue,color='cornflowerblue',linestyle='-',alpha=0.5,\
             zorder=0,label='model')
 
@@ -2124,6 +2261,196 @@ def plot_xmhm(result, gals_bf_red, halos_bf_red, gals_bf_blue, halos_bf_blue,
         elif survey == 'resolveb':
             plt.ylim(np.log10((10**9.1)/2.041),)
         plt.ylabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=25)
+    # handles, labels = plt.gca().get_legend_handles_labels()
+    # by_label = OrderedDict(zip(labels, handles))
+    # plt.legend(by_label.values(), by_label.keys(), loc='best',prop={'size': 20})
+    plt.legend([("darkred", "darkblue", "-"), \
+        ("indianred","cornflowerblue", "-")],\
+        ["Best-fit", "Models"], handler_map={tuple: AnyObjectHandler()},\
+        loc='best', prop={'size': 30})
+    plt.annotate(r'$\boldsymbol\chi ^2 \approx$ {0}'.format(np.round(bf_chi2,2)), 
+        xy=(0.8, 0.1), xycoords='axes fraction', bbox=dict(boxstyle="square", 
+        ec='k', fc='lightgray', alpha=0.5), size=25)
+    plt.show()
+    # if mf_type == 'smf':
+    #     plt.savefig(path_to_figures + 'smhm_emcee_{0}.png'.format(survey))
+    # elif mf_type == 'bmf':
+    #     plt.savefig(path_to_figures + 'bmhm_emcee_{0}.png'.format(survey))
+
+def plot_hmxm(result, gals_bf_red, halos_bf_red, gals_bf_blue, halos_bf_blue,
+    gals_data_red, halos_data_red, gals_data_blue, 
+    halos_data_blue, bf_chi2):
+    """
+    Plot SMHM from data, best fit param values, param values corresponding to 
+    68th percentile 1000 lowest chi^2 values and behroozi 2010 param values
+
+    Parameters
+    ----------
+    result: multidimensional array
+        Array of central galaxy and halo masses
+    
+    gals_bf: array
+        Array of y-axis stellar mass values for best fit SMHM
+
+    halos_bf: array
+        Array of x-axis halo mass values for best fit SMHM
+    
+    gals_data: array
+        Array of y-axis stellar mass values for data SMF
+
+    halos_data: array
+        Array of x-axis halo mass values for data SMF
+
+    gals_b10: array
+        Array of y-axis stellar mass values for behroozi 2010 SMHM
+
+    halos_b10: array
+        Array of x-axis halo mass values for behroozi 2010 SMHM
+
+    Returns
+    ---------
+    Nothing; SMHM plot is saved in figures repository
+    """   
+    class AnyObjectHandler(HandlerBase): 
+        def create_artists(self, legend, orig_handle, x0, y0, width, height, 
+            fontsize, trans):
+            l1 = plt.Line2D([x0, x0+width], [0.7*height, 0.7*height], 
+                linestyle=orig_handle[2], color=orig_handle[0]) 
+            l2 = plt.Line2D([x0, x0+width], [0.3*height, 0.3*height],  
+                linestyle=orig_handle[2],
+                color=orig_handle[1])
+            return [l1, l2]  
+
+    x_bf_red,y_bf_red,y_std_bf_red,y_std_err_bf_red = Stats_one_arr(gals_bf_red,\
+    halos_bf_red,base=0.2,bin_statval='center')
+    x_bf_blue,y_bf_blue,y_std_bf_blue,y_std_err_bf_blue = Stats_one_arr(gals_bf_blue,\
+    halos_bf_blue,base=0.2,bin_statval='center')
+    
+    # stats_red = bs(halos_bf_red, gals_bf_red, bins=7, statistic='median')
+    # stats_blue = bs(halos_bf_blue, gals_bf_blue, bins=7, statistic='median')
+
+    # centers_red = 0.5 * (stats_red[1][1:] + \
+    #     stats_red[1][:-1])
+    # centers_blue = 0.5 * (stats_blue[1][1:] + \
+    #     stats_blue[1][:-1])
+
+
+    # plt.plot(centers_red,stats_red[0],color='darkred',lw=3,label='Best-fit',zorder=10)
+    # plt.plot(centers_blue,stats_blue[0],color='darkblue',lw=3,
+    #     label='Best-fit',zorder=10)
+
+    # plt.legend()
+    # plt.xlabel('Stellar Mass')
+    # plt.ylabel('Halo Mass')
+
+    # plt.xlabel('Halo Mass')
+    # plt.ylabel('Stellar Mass')
+
+    # plt.show()
+
+    # x_b10,y_b10,y_std_b10,y_std_err_b10 = Stats_one_arr(halos_b10,\
+    #     gals_b10,base=0.4,bin_statval='center')
+    x_data_red,y_data_red,y_std_data_red,y_std_err_data_red = Stats_one_arr(gals_data_red,\
+        halos_data_red,base=0.4,bin_statval='center')
+    x_data_blue,y_data_blue,y_std_data_blue,y_std_err_data_blue = Stats_one_arr(gals_data_blue,\
+        halos_data_blue,base=0.4,bin_statval='center')
+    # y_std_err_data = err_data
+
+    fig1 = plt.figure(figsize=(10,10))
+    # NOT PLOTTING DATA RELATION
+    # plt.errorbar(x_data_red,y_data_red,yerr=y_std_err_data_red,color='r',fmt='--',\
+    #     ecolor='r',markersize=5,capsize=5,capthick=0.5,\
+    #         label='data',zorder=10)
+    # plt.errorbar(x_data_blue,y_data_blue,yerr=y_std_err_data_blue,color='b',fmt='--',\
+    #     ecolor='b',markersize=5,capsize=5,capthick=0.5,\
+    #         label='data',zorder=10)
+
+    # NOT PLOTTING BEHROOZI RELATION
+    # plt.errorbar(x_b10,y_b10, color='k',fmt='--s',\
+    #     markersize=3, label='Behroozi10', zorder=10, alpha=0.7)
+
+    for idx in range(len(result[0][0])):
+        x_model_red,y_model_red,y_std_model_red,y_std_err_model_red = \
+            Stats_one_arr(result[0][4][idx],result[0][5][idx],base=0.4,\
+                bin_statval='center')
+        plt.plot(x_model_red,y_model_red,color='indianred',linestyle='-', \
+            alpha=0.5, zorder=0,label='model')
+        x_model_blue,y_model_blue,y_std_model_blue,y_std_err_model_blue = \
+            Stats_one_arr(result[0][6][idx],result[0][7][idx],base=0.4,\
+                bin_statval='center')
+        plt.plot(x_model_blue,y_model_blue,color='cornflowerblue',linestyle='-',alpha=0.5,\
+            zorder=0,label='model')
+    for idx in range(len(result[1][0])):
+        x_model_red,y_model_red,y_std_model_red,y_std_err_model_red = \
+            Stats_one_arr(result[1][4][idx],result[1][5][idx],base=0.4,\
+                bin_statval='center')
+        plt.plot(x_model_red,y_model_red,color='indianred',linestyle='-',alpha=0.5,\
+            zorder=0,label='model')
+        x_model_blue,y_model_blue,y_std_model_blue,y_std_err_model_blue = \
+            Stats_one_arr(result[1][6][idx],result[1][7][idx],base=0.4,\
+                bin_statval='center')
+        plt.plot(x_model_blue,y_model_blue,color='cornflowerblue',linestyle='-',alpha=0.5,\
+            zorder=0,label='model')
+    for idx in range(len(result[2][0])):
+        x_model_red,y_model_red,y_std_model_red,y_std_err_model_red = \
+            Stats_one_arr(result[2][4][idx],result[2][5][idx],base=0.4,\
+                bin_statval='center')
+        plt.plot(x_model_red,y_model_red,color='indianred',linestyle='-',alpha=0.5,\
+            zorder=0,label='model')
+        x_model_blue,y_model_blue,y_std_model_blue,y_std_err_model_blue = \
+            Stats_one_arr(result[2][6][idx],result[2][7][idx],base=0.4,\
+                bin_statval='center')
+        plt.plot(x_model_blue,y_model_blue,color='cornflowerblue',linestyle='-',alpha=0.5,\
+            zorder=0,label='center')
+    for idx in range(len(result[3][0])):
+        x_model_red,y_model_red,y_std_model_red,y_std_err_model_red = \
+            Stats_one_arr(result[3][4][idx],result[3][5][idx],base=0.4,\
+                bin_statval='center')
+        plt.plot(x_model_red,y_model_red,color='indianred',linestyle='-',alpha=0.5,\
+            zorder=0,label='model')
+        x_model_blue,y_model_blue,y_std_model_blue,y_std_err_model_blue = \
+            Stats_one_arr(result[3][6][idx],result[3][7][idx],base=0.4,\
+                bin_statval='center')
+        plt.plot(x_model_blue,y_model_blue,color='cornflowerblue',linestyle='-',alpha=0.5,\
+            zorder=0,label='model')
+    for idx in range(len(result[4][0])):
+        x_model_red,y_model_red,y_std_model_red,y_std_err_model_red = \
+            Stats_one_arr(result[4][4][idx],result[4][5][idx],base=0.4,\
+                bin_statval='center')
+        plt.plot(x_model_red,y_model_red,color='indianred',linestyle='-',alpha=0.5,\
+            zorder=0,label='model')
+        x_model_blue,y_model_blue,y_std_model_blue,y_std_err_model_blue = \
+            Stats_one_arr(result[4][6][idx],result[4][7][idx],base=0.4,\
+                bin_statval='center')
+        plt.plot(x_model_blue,y_model_blue,color='cornflowerblue',linestyle='-',alpha=0.5,\
+            zorder=0,label='model')
+
+    # REMOVED ERROR BAR ON BEST FIT
+    plt.plot(x_bf_red,y_bf_red,color='darkred',lw=3,label='Best-fit',zorder=10)
+    plt.plot(x_bf_blue,y_bf_blue,color='darkblue',lw=3,
+        label='Best-fit',zorder=10)
+
+    if survey == 'resolvea' and mf_type == 'smf':
+        plt.xlim(10,14)
+    else:
+        plt.ylim(10,)
+    plt.ylabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=25)
+    if mf_type == 'smf':
+        if survey == 'eco':
+            plt.xlim(np.log10((10**8.9)/2.041),)
+            plt.title('ECO')
+        elif survey == 'resolvea':
+            plt.xlim(np.log10((10**8.9)/2.041),13)
+        elif survey == 'resolveb':
+            plt.xlim(np.log10((10**8.7)/2.041),)
+        plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=25)
+    elif mf_type == 'bmf':
+        if survey == 'eco' or survey == 'resolvea':
+            plt.xlim(np.log10((10**9.4)/2.041),)
+            plt.title('ECO')
+        elif survey == 'resolveb':
+            plt.xlim(np.log10((10**9.1)/2.041),)
+        plt.xlabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=25)
     # handles, labels = plt.gca().get_legend_handles_labels()
     # by_label = OrderedDict(zip(labels, handles))
     # plt.legend(by_label.values(), by_label.keys(), loc='best',prop={'size': 20})
@@ -2571,6 +2898,83 @@ def plot_red_fraction(result, cen_gals_red, \
     plt.legend(loc='best', prop={'size':15})
     plt.show()
 
+def plot_mean_grpcen_vs_sigma(result, red_sigma_bf, \
+    grp_red_cen_stellar_mass_bf, blue_sigma_bf, grp_blue_cen_stellar_mass_bf):
+
+    grp_red_cen_gals_arr = []
+    grp_blue_cen_gals_arr = []
+    red_sigma_arr = []
+    blue_sigma_arr = []
+    chunk_counter = 0 # There are 5 chunks of all 16 statistics each with len 20
+    while chunk_counter < 5:
+        cen_gals_idx_arr = []
+        cen_halos_idx_arr = []
+        fred_idx_arr = []
+        for idx in range(len(result[chunk_counter][0])):
+            grp_red_cen_gals_idx = result[chunk_counter][16][idx]
+            grp_blue_cen_gals_idx = result[chunk_counter][17][idx]
+            red_sigma_idx = result[chunk_counter][18][idx]
+            blue_sigma_idx = result[chunk_counter][19][idx]
+
+            for idx,val in enumerate(grp_red_cen_gals_idx):
+                grp_red_cen_gals_arr.append(val)
+                red_sigma_arr.append(red_sigma_idx[idx])
+            
+            for idx,val in enumerate(grp_blue_cen_gals_idx):
+                grp_blue_cen_gals_arr.append(val)
+                blue_sigma_arr.append(blue_sigma_idx[idx])
+
+            # grp_red_cen_gals_arr.append(grp_red_cen_gals_idx)
+            # grp_blue_cen_gals_arr.append(grp_blue_cen_gals_idx)
+            # red_sigma_arr.append(red_sigma_idx)
+            # blue_sigma_arr.append(blue_sigma_idx)
+
+        chunk_counter+=1
+    
+    mean_stats_red = bs(red_sigma_arr, grp_red_cen_gals_arr, statistic='mean', 
+        bins=np.linspace(0,250,10))
+    mean_stats_blue = bs(blue_sigma_arr, grp_blue_cen_gals_arr, statistic='mean', 
+        bins=np.linspace(0,250,10))
+
+    std_stats_red = bs(red_sigma_arr, grp_red_cen_gals_arr, statistic='std', 
+        bins=np.linspace(0,250,10))
+    std_stats_blue = bs(blue_sigma_arr, grp_blue_cen_gals_arr, statistic='std', 
+        bins=np.linspace(0,250,10))
+
+    centers_red = 0.5 * (mean_stats_red[1][1:] + \
+        mean_stats_red[1][:-1])
+    centers_blue = 0.5 * (mean_stats_blue[1][1:] + \
+        mean_stats_blue[1][:-1])
+
+    mean_stats_red_bf = bs(red_sigma_bf, grp_red_cen_stellar_mass_bf, statistic='mean', 
+        bins=np.linspace(0,250,10))
+    mean_stats_blue_bf = bs(blue_sigma_bf, grp_blue_cen_stellar_mass_bf, statistic='mean', 
+        bins=np.linspace(0,250,10))
+
+
+
+    fig1 = plt.figure(figsize=(10,8))
+
+    mr = plt.fill_between(centers_red, mean_stats_red[0]+std_stats_red[0], 
+        mean_stats_red[0]-std_stats_red[0], color='lightcoral',alpha=0.4)
+    mb = plt.fill_between(centers_blue, mean_stats_blue[0]+std_stats_blue[0], 
+        mean_stats_blue[0]-std_stats_blue[0], color='cornflowerblue',alpha=0.4)
+
+    bfr = plt.scatter(centers_red, mean_stats_red_bf[0], c='indianred', s=200, marker='*')
+    bfb = plt.scatter(centers_blue, mean_stats_blue_bf[0], c='cornflowerblue', s=200, marker='*')
+
+    # plt.scatter(cen_gals_arr[0], fred_arr[0], alpha=1.0, s=150, c='cornflowerblue', label='Models')
+    # plt.scatter(cen_gals_bf, fred_bf, alpha=0.4, s=150, c='mediumorchid', label='Best-fit')
+    l = plt.legend([(mr, mb), (bfr, bfb)], 
+        ['Models','Best-fit'],
+        handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, markerscale=1.5)
+    if survey == 'eco':
+        plt.title('ECO')
+   
+    plt.xlabel(r'\boldmath$\sigma \left[\mathrm{km/s} \right]$', fontsize=30)
+    plt.ylabel(r'\boldmath$\overline{\log_{10}\ M_{*, cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=20)
+    plt.show()
+
 
 global survey
 global path_to_figures
@@ -2679,7 +3083,8 @@ print('Getting best fit model')
 maxis_bf_red, phi_bf_red, maxis_bf_blue, phi_bf_blue, cen_gals_red, \
     cen_halos_red, cen_gals_blue, cen_halos_blue, f_red_cen_red, \
     f_red_cen_blue, red_deltav_bf, red_cen_stellar_mass_bf, blue_deltav_bf, \
-    blue_cen_stellar_mass_bf, deltav_bf, cen_stellar_mass_bf, \
+    blue_cen_stellar_mass_bf, deltav_bf, cen_stellar_mass_bf, red_sigma_bf, \
+    grp_red_cen_stellar_mass_bf, blue_sigma_bf, grp_blue_cen_stellar_mass_bf \
     = get_best_fit_model(bf_params, bf_randint)
 
     # std_bf_red, std_bf_blue, std_cen_bf_red, std_cen_bf_blue \
