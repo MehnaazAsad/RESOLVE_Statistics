@@ -1589,10 +1589,10 @@ def mp_func(a_list):
     red_cen_arr = []
     blue_cen_arr = []
     all_cen_arr = []
-    # std_red_arr = []
-    # std_blue_arr = []
-    # cen_std_red_arr = []
-    # cen_std_blue_arr = []
+    std_red_arr = []
+    std_blue_arr = []
+    cen_std_red_arr = []
+    cen_std_blue_arr = []
     f_red_cen_red_arr = []
     f_red_cen_blue_arr = []
     grp_red_cen_arr = []
@@ -1632,8 +1632,8 @@ def mp_func(a_list):
         cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue,\
             f_red_cen_red, f_red_cen_blue = \
             get_centrals_mock(gals_df, randint_logmstar)
-        # std_red_model, std_blue_model, centers_red_model, centers_blue_model = \
-        #     get_deltav_sigma_vishnu_qmcolour(gals_df, randint_logmstar)
+        std_red_model, std_blue_model, centers_red_model, centers_blue_model = \
+            get_deltav_sigma_vishnu_qmcolour(gals_df, randint_logmstar)
         red_deltav, red_cen_stellar_mass, blue_deltav, \
             blue_cen_stellar_mass, deltav, cen_stellar_mass = \
             get_deltav_vishnu_qmcolour(gals_df, randint_logmstar)
@@ -1656,10 +1656,10 @@ def mp_func(a_list):
         red_cen_arr.append(red_cen_stellar_mass)
         blue_cen_arr.append(blue_cen_stellar_mass)
         all_cen_arr.append(cen_stellar_mass)
-        # std_red_arr.append(std_red_model)
-        # std_blue_arr.append(std_blue_model)
-        # cen_std_red_arr.append(centers_red_model)
-        # cen_std_blue_arr.append(centers_blue_model)
+        std_red_arr.append(std_red_model)
+        std_blue_arr.append(std_blue_model)
+        cen_std_red_arr.append(centers_red_model)
+        cen_std_blue_arr.append(centers_blue_model)
         f_red_cen_red_arr.append(f_red_cen_red)
         f_red_cen_blue_arr.append(f_red_cen_blue)
         grp_red_cen_arr.append(grp_red_cen_stellar_mass)
@@ -1670,10 +1670,8 @@ def mp_func(a_list):
     return [maxis_red_arr, phi_red_arr, maxis_blue_arr, phi_blue_arr, 
     cen_gals_red_arr, cen_halos_red_arr, cen_gals_blue_arr, cen_halos_blue_arr,
     red_deltav_arr, blue_deltav_arr, deltav_arr, red_cen_arr, blue_cen_arr, 
-    all_cen_arr,
-    # std_red_arr, std_blue_arr, cen_std_red_arr, cen_std_blue_arr,
-    f_red_cen_red_arr, f_red_cen_blue_arr, grp_red_cen_arr, grp_blue_cen_arr, 
-    red_sigma_arr, blue_sigma_arr]
+    all_cen_arr,f_red_cen_red_arr, f_red_cen_blue_arr, grp_red_cen_arr, grp_blue_cen_arr, 
+    red_sigma_arr, blue_sigma_arr,std_red_arr, std_blue_arr, cen_std_red_arr, cen_std_blue_arr,]
 
 def hybrid_quenching_model(theta, gals_df, mock, randint=None):
     """
@@ -2000,8 +1998,8 @@ def get_best_fit_model(best_fit_params, best_fit_mocknum):
     , False, best_fit_mocknum)     
     cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue, f_red_cen_red,\
         f_red_cen_blue = get_centrals_mock(gals_df, best_fit_mocknum)
-    # std_red, std_blue, std_centers_red, std_centers_blue = \
-    #     get_deltav_sigma_vishnu_qmcolour(gals_df, best_fit_mocknum)
+    std_red, std_blue, std_centers_red, std_centers_blue = \
+        get_deltav_sigma_vishnu_qmcolour(gals_df, best_fit_mocknum)
     red_deltav, red_cen_stellar_mass, blue_deltav, \
         blue_cen_stellar_mass, deltav, cen_stellar_mass = \
         get_deltav_vishnu_qmcolour(gals_df, best_fit_mocknum)
@@ -2018,8 +2016,7 @@ def get_best_fit_model(best_fit_params, best_fit_mocknum):
         cen_gals_blue, cen_halos_blue, f_red_cen_red, f_red_cen_blue, \
         red_deltav, red_cen_stellar_mass, blue_deltav, blue_cen_stellar_mass, \
         deltav, cen_stellar_mass, red_sigma, grp_red_cen_stellar_mass, blue_sigma, \
-        grp_blue_cen_stellar_mass
-        # std_red, std_blue, std_centers_red, std_centers_blue
+        grp_blue_cen_stellar_mass,std_red, std_blue, std_centers_red, std_centers_blue
 
 def plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red, 
     maxis_bf_blue, phi_bf_blue, bf_chi2, err_colour):
@@ -2593,34 +2590,34 @@ def plot_sigma_vdiff(result, std_red_data, cen_red_data, std_blue_data,
 
     fig1= plt.figure(figsize=(10,10))
     for idx in range(len(result[0][0])):
-        mr = plt.scatter(result[0][10][idx],result[0][8][idx],color='indianred',
+        mr = plt.scatter(result[0][22][idx],result[0][20][idx],color='indianred',
             alpha=0.3,zorder=5,s=120)
     for idx in range(len(result[0][2])):
-        mb = plt.scatter(result[0][11][idx],result[0][9][idx],color='cornflowerblue',
+        mb = plt.scatter(result[0][23][idx],result[0][21][idx],color='cornflowerblue',
             alpha=0.3,zorder=5,s=120)
     for idx in range(len(result[1][0])):
-        plt.scatter(result[1][10][idx],result[1][8][idx],color='indianred',
+        plt.scatter(result[1][22][idx],result[1][20][idx],color='indianred',
             alpha=0.3,zorder=5,s=120)
     for idx in range(len(result[1][2])):
-        plt.scatter(result[1][11][idx],result[1][9][idx],color='cornflowerblue',
+        plt.scatter(result[1][23][idx],result[1][21][idx],color='cornflowerblue',
             alpha=0.3,zorder=5,s=120)
     for idx in range(len(result[2][0])):
-        plt.scatter(result[2][10][idx],result[2][8][idx],color='indianred',
+        plt.scatter(result[2][22][idx],result[2][20][idx],color='indianred',
             alpha=0.3,zorder=5,s=120)
     for idx in range(len(result[2][2])):
-        plt.scatter(result[2][11][idx],result[2][9][idx],color='cornflowerblue',
+        plt.scatter(result[2][23][idx],result[2][21][idx],color='cornflowerblue',
             alpha=0.3,zorder=5,s=120)
     for idx in range(len(result[3][0])):
-        plt.scatter(result[3][10][idx],result[3][8][idx],color='indianred',
+        plt.scatter(result[3][22][idx],result[3][20][idx],color='indianred',
             alpha=0.3,zorder=5,s=120)
     for idx in range(len(result[3][2])):
-        plt.scatter(result[3][11][idx],result[3][9][idx],color='cornflowerblue',
+        plt.scatter(result[3][23][idx],result[3][21][idx],color='cornflowerblue',
             alpha=0.3,zorder=5,s=120)
     for idx in range(len(result[4][0])):
-        plt.scatter(result[4][10][idx],result[4][8][idx],color='indianred',
+        plt.scatter(result[4][22][idx],result[4][20][idx],color='indianred',
             alpha=0.3,zorder=5,s=120)
     for idx in range(len(result[4][2])):
-        plt.scatter(result[4][11][idx],result[4][9][idx],color='cornflowerblue',
+        plt.scatter(result[4][23][idx],result[4][21][idx],color='cornflowerblue',
             alpha=0.3,zorder=5,s=120)
 
     dr = plt.scatter(cen_red_data, std_red_data, c='maroon', marker='p', s=160, 
@@ -2677,14 +2674,14 @@ def plot_zumand_fig4(result, gals_bf_red, halos_bf_red, gals_bf_blue,
         logmstar_mod_arr = np.insert(logmstar_mod_arr, -1, result[idx][6])
     logmstar_mod_arr_flat = np.hstack(logmstar_mod_arr)
 
-    fred_mod_arr = result[0][12]
+    fred_mod_arr = result[0][14]
     for idx in range(5):
         idx+=1
         if idx == 5:
             break
-        fred_mod_arr = np.insert(fred_mod_arr, -1, result[idx][12])
+        fred_mod_arr = np.insert(fred_mod_arr, -1, result[idx][14])
     for idx in range(5):
-        fred_mod_arr = np.insert(fred_mod_arr, -1, result[idx][13])
+        fred_mod_arr = np.insert(fred_mod_arr, -1, result[idx][15])
     fred_mod_arr_flat = np.hstack(fred_mod_arr)
 
     fig1 = plt.figure()
@@ -2748,37 +2745,37 @@ def plot_sigma_vdiff_mod(result, std_red_data, cen_red_data, std_blue_data,
     blue_mod_arr = []
     while i_outer < 5:
         for idx in range(len(result[i_outer][0])):
-            red_mod_ii = result[i_outer][8][idx]
+            red_mod_ii = result[i_outer][20][idx]
             red_mod_arr.append(red_mod_ii)
-            blue_mod_ii = result[i_outer][9][idx]
+            blue_mod_ii = result[i_outer][21][idx]
             blue_mod_arr.append(blue_mod_ii)
         i_outer += 1
 
         for idx in range(len(result[i_outer][0])):
-            red_mod_ii = result[i_outer][8][idx]
+            red_mod_ii = result[i_outer][20][idx]
             red_mod_arr.append(red_mod_ii)
-            blue_mod_ii = result[i_outer][9][idx]
+            blue_mod_ii = result[i_outer][21][idx]
             blue_mod_arr.append(blue_mod_ii)
         i_outer += 1
 
         for idx in range(len(result[i_outer][0])):
-            red_mod_ii = result[i_outer][8][idx]
+            red_mod_ii = result[i_outer][20][idx]
             red_mod_arr.append(red_mod_ii)
-            blue_mod_ii = result[i_outer][9][idx]
+            blue_mod_ii = result[i_outer][21][idx]
             blue_mod_arr.append(blue_mod_ii)
         i_outer += 1
 
         for idx in range(len(result[i_outer][0])):
-            red_mod_ii = result[i_outer][8][idx]
+            red_mod_ii = result[i_outer][20][idx]
             red_mod_arr.append(red_mod_ii)
-            blue_mod_ii = result[i_outer][9][idx]
+            blue_mod_ii = result[i_outer][21][idx]
             blue_mod_arr.append(blue_mod_ii)
         i_outer += 1
 
         for idx in range(len(result[i_outer][0])):
-            red_mod_ii = result[i_outer][8][idx]
+            red_mod_ii = result[i_outer][20][idx]
             red_mod_arr.append(red_mod_ii)
-            blue_mod_ii = result[i_outer][9][idx]
+            blue_mod_ii = result[i_outer][21][idx]
             blue_mod_arr.append(blue_mod_ii)
         i_outer += 1
 
@@ -2982,9 +2979,6 @@ def plot_red_fraction(result, cen_gals_red, \
 
         chunk_counter+=1
     
-    # cen_halos_arr = np.array(cen_halos_arr)
-    # fred_arr = np.array(fred_arr)
-
     cen_gals_bf = []
     cen_halos_bf = []
     fred_bf = []
@@ -2995,12 +2989,22 @@ def plot_red_fraction(result, cen_gals_red, \
 
 
     fig1 = plt.figure(figsize=(10,8))
-    for idx in range(len(cen_gals_arr)):
-        plt.scatter(cen_gals_arr[idx], fred_arr[idx], alpha=0.4, s=150, c='cornflowerblue')
-    plt.scatter(cen_gals_arr[0], fred_arr[0], alpha=1.0, s=150, c='cornflowerblue', label='Models')
-    plt.scatter(cen_gals_bf, fred_bf, alpha=0.4, s=150, c='mediumorchid', label='Best-fit')
-    plt.ylabel(r'\boldmath$f_{red}$', fontsize=30)
-    plt.xlabel(r'\boldmath$\log_{10}\ M_{*, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=20)
+    if quenching == 'hybrid':
+        for idx in range(len(cen_gals_arr)):
+            plt.scatter(cen_gals_arr[idx], fred_arr[idx], alpha=0.4, s=150, c='cornflowerblue')
+        plt.xlabel(r'\boldmath$\log_{10}\ M_{*, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=20)
+        # Plotting again just so that adding label to legend is easier
+        plt.scatter(cen_gals_arr[0], fred_arr[0], alpha=1.0, s=150, c='cornflowerblue', label='Models')
+        plt.scatter(cen_gals_bf, fred_bf, alpha=0.4, s=150, c='mediumorchid', label='Best-fit')
+
+    elif quenching == 'halo':
+        for idx in range(len(cen_halos_arr)):
+            plt.scatter(cen_halos_arr[idx], fred_arr[idx], alpha=0.4, s=150, c='cornflowerblue') 
+        plt.xlabel(r'\boldmath$\log_{10}\ M_{h, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=20)
+        plt.scatter(cen_halos_arr[0], fred_arr[0], alpha=1.0, s=150, c='cornflowerblue', label='Models')
+        plt.scatter(cen_halos_bf, fred_bf, alpha=0.4, s=150, c='mediumorchid', label='Best-fit')
+
+    plt.ylabel(r'\boldmath$f_{red, cen}$', fontsize=30)
     plt.legend(loc='best', prop={'size':15})
     plt.show()
 
@@ -3179,8 +3183,8 @@ print('Measuring SMF for data')
 total_data, red_data, blue_data = measure_all_smf(catl, volume, True)
 
 # Returns masses in h=1.0
-# print('Measuring spread in vel difference for data')
-# std_red, centers_red, std_blue, centers_blue = get_deltav_sigma_data(catl)
+print('Measuring old dynamical metric for data')
+std_red, centers_red, std_blue, centers_blue = get_deltav_sigma_data(catl)
 
 print('Measuring new dynamical metric for data')
 # red_deltav_data, red_cen_stellar_mass_data, blue_deltav_data, \
@@ -3201,10 +3205,10 @@ maxis_bf_red, phi_bf_red, maxis_bf_blue, phi_bf_blue, cen_gals_red, \
     cen_halos_red, cen_gals_blue, cen_halos_blue, f_red_cen_red, \
     f_red_cen_blue, red_deltav_bf, red_cen_stellar_mass_bf, blue_deltav_bf, \
     blue_cen_stellar_mass_bf, deltav_bf, cen_stellar_mass_bf, red_sigma_bf, \
-    grp_red_cen_stellar_mass_bf, blue_sigma_bf, grp_blue_cen_stellar_mass_bf \
+    grp_red_cen_stellar_mass_bf, blue_sigma_bf, grp_blue_cen_stellar_mass_bf,\
+    std_bf_red, std_bf_blue, std_cen_bf_red, std_cen_bf_blue \
     = get_best_fit_model(bf_params, bf_randint)
 
-    # std_bf_red, std_bf_blue, std_cen_bf_red, std_cen_bf_blue \
 
 plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red, 
     maxis_bf_blue, phi_bf_blue, bf_chi2, err_colour_data)
@@ -3213,6 +3217,11 @@ plot_xmhm(result, cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue,
     cen_gals_data_red, cen_halos_data_red, cen_gals_data_blue, 
     cen_halos_data_blue, bf_chi2)
 
+plot_hmxm(result, cen_gals_red, cen_halos_red, cen_gals_blue, cen_halos_blue,
+    cen_gals_data_red, cen_halos_data_red, cen_gals_data_blue, 
+    cen_halos_data_blue, bf_chi2)
+
+
 plot_zumand_fig4(result, cen_gals_red, cen_halos_red, cen_gals_blue, 
     cen_halos_blue, bf_chi2)
 
@@ -3220,14 +3229,14 @@ plot_zumand_fig4(result, cen_gals_red, cen_halos_red, cen_gals_blue,
 #     std_bf_red, std_bf_blue, std_cen_bf_red, std_cen_bf_blue, bf_chi2, 
 #     err_colour_data)
 
-# plot_sigma_vdiff_mod(result, std_red, centers_red, std_blue, centers_blue, 
-#     std_bf_red, std_bf_blue, std_cen_bf_red, std_cen_bf_blue, bf_chi2, 
-#     err_colour_data)
+plot_sigma_vdiff_mod(result, std_red, centers_red, std_blue, centers_blue, 
+    std_bf_red, std_bf_blue, std_cen_bf_red, std_cen_bf_blue, bf_chi2, 
+    err_colour_data)
 
-plot_mean_fracdiff(result, red_deltav_data, red_cen_stellar_mass_data, \
-    blue_deltav_data, blue_cen_stellar_mass_data, deltav_data, \
-    cen_stellar_mass_data, red_cen_stellar_mass_bf, blue_deltav_bf, \
-    blue_cen_stellar_mass_bf, deltav_bf, cen_stellar_mass_bf)
+# plot_mean_fracdiff(result, red_deltav_data, red_cen_stellar_mass_data, \
+#     blue_deltav_data, blue_cen_stellar_mass_data, deltav_data, \
+#     cen_stellar_mass_data, red_cen_stellar_mass_bf, blue_deltav_bf, \
+#     blue_cen_stellar_mass_bf, deltav_bf, cen_stellar_mass_bf)
 
 plot_red_fraction(result,cen_gals_red, \
     cen_halos_red, cen_gals_blue, cen_halos_blue, f_red_cen_red, \
