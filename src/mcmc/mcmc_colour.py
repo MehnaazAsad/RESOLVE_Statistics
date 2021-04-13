@@ -13,6 +13,7 @@ import time
 from halotools.empirical_models import PrebuiltSubhaloModelFactory
 from halotools.sim_manager import CachedHaloCatalog
 from cosmo_utils.utils import work_paths as cwpaths
+from scipy.stats import binned_statistic as bs
 from multiprocessing import Pool, Queue
 import pandas as pd
 import numpy as np
@@ -451,7 +452,7 @@ def halocat_init(halo_catalog, z_median):
     return model
 
 def mcmc(nproc, nwalkers, nsteps, phi_red_data, phi_blue_data, std_red_data, 
-    std_blue_data, err, corr_mat_inv):
+    std_blue_data, av_grpcen_red_data, av_grpcen_blue_data, err, corr_mat_inv):
     """
     MCMC analysis
 
@@ -501,7 +502,7 @@ def mcmc(nproc, nwalkers, nsteps, phi_red_data, phi_blue_data, std_red_data,
     with Pool(processes=nproc) as pool:
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, 
             args=(phi_red_data, phi_blue_data, std_red_data, std_blue_data, 
-                err, corr_mat_inv), pool=pool)
+                av_grpcen_red_data, av_grpcen_blue_data, err, corr_mat_inv), pool=pool)
         start = time.time()
         for i,result in enumerate(sampler.sample(p0, iterations=nsteps, 
             storechain=False)):
@@ -708,7 +709,7 @@ def chi_squared(data, model, err_data, inv_corr_mat):
     return chi_squared[0][0]
 
 def lnprob(theta, phi_red_data, phi_blue_data, std_red_data, std_blue_data, 
-    err, corr_mat_inv):
+    av_grpcen_red_data, av_grpcen_blue_data, err, corr_mat_inv):
     """
     Calculates log probability for emcee
 
@@ -784,16 +785,23 @@ def lnprob(theta, phi_red_data, phi_blue_data, std_red_data, std_blue_data,
         ,data_bool=False, randint_logmstar=randint_logmstar)     
         std_red_model, std_blue_model, centers_red_model, centers_blue_model = \
             get_deltav_sigma_vishnu_qmcolour(gals_df_mock, randint_logmstar)
+        av_grpcen_red_model, centers_red_model, av_grpcen_blue_model, centers_blue_model = \
+            get_sigma_per_group_vishnu_qmcolour(gals_df_mock, randint_logmstar)
+        
         data_arr = []
         data_arr.append(phi_red_data)
         data_arr.append(phi_blue_data)
         data_arr.append(std_red_data)
         data_arr.append(std_blue_data)
+        data_arr.append(av_grpcen_red_data)
+        data_arr.append(av_grpcen_blue_data)
         model_arr = []
         model_arr.append(red_model[1])
         model_arr.append(blue_model[1])   
         model_arr.append(std_red_model)
         model_arr.append(std_blue_model)
+        model_arr.append(av_grpcen_red_model)
+        model_arr.append(av_grpcen_blue_model)
         err_arr = err
 
         data_arr, model_arr = np.array(data_arr), np.array(model_arr)
@@ -1031,6 +1039,10 @@ def get_err_data(survey, path):
     sig_arr_blue = []
     cen_arr_red = []
     cen_arr_blue = []
+    mean_cen_arr_red = []
+    mean_cen_arr_blue = []
+    new_sig_arr_red = []
+    new_sig_arr_blue = []
     box_id_arr = np.linspace(5001,5008,8)
     for box in box_id_arr:
         box = int(box)
@@ -1053,12 +1065,15 @@ def get_err_data(survey, path):
             # mu = 0.65
             # nu = 0.16
 
-            ## Using best-fit found for new ECO data using optimize_hybridqm_eco,py
+            ## Using best-fit found for new ECO data using optimize_qm_eco.py
+            ## for hybrid quenching model
             Mstar_q = 10.49 # Msun/h
             Mh_q = 14.03 # Msun/h
             mu = 0.69
             nu = 0.148
 
+            ## Using best-fit found for new ECO data using optimize_qm_eco.py 
+            ## for halo quenching model
             Mh_qc = 12.61 # Msun/h
             Mh_qs = 13.5 # Msun/h
             mu_c = 0.40
@@ -1090,13 +1105,22 @@ def get_err_data(survey, path):
             phi_arr_red.append(phi_red)
             phi_arr_blue.append(phi_blue)
 
-            sig_red, sig_blue, cen_red, cen_blue = \
+            sig_red, sig_blue, cen_red_sig, cen_blue_sig = \
                 get_deltav_sigma_mocks_qmcolour(survey, mock_pd)
+
+            new_mean_stats_red, new_centers_red, new_mean_stats_blue, \
+                new_centers_blue = \
+                get_sigma_per_group_mocks_qmcolour(survey, mock_pd)
 
             sig_arr_red.append(sig_red)
             sig_arr_blue.append(sig_blue)
-            cen_arr_red.append(cen_red)
-            cen_arr_blue.append(cen_blue)
+            cen_arr_red.append(cen_red_sig)
+            cen_arr_blue.append(cen_blue_sig)
+
+            new_sig_arr_red.append(new_centers_red)
+            new_sig_arr_blue.append(new_centers_blue)
+            mean_cen_arr_red.append(new_mean_stats_red[0])
+            mean_cen_arr_blue.append(new_mean_stats_blue[0])
 
     phi_arr_total = np.array(phi_arr_total)
     phi_arr_red = np.array(phi_arr_red)
@@ -1105,6 +1129,10 @@ def get_err_data(survey, path):
     sig_arr_blue = np.array(sig_arr_blue)
     cen_arr_red = np.array(cen_arr_red)
     cen_arr_blue = np.array(cen_arr_blue)
+    new_sig_arr_red = np.array(new_sig_arr_red)
+    new_sig_arr_blue = np.array(new_sig_arr_blue)
+    mean_cen_arr_red = np.array(mean_cen_arr_red)
+    mean_cen_arr_blue = np.array(mean_cen_arr_blue)
 
     # phi_arr_colour = np.append(phi_arr_red, phi_arr_blue, axis = 0)
 
@@ -1149,6 +1177,20 @@ def get_err_data(survey, path):
     dv_blue_3 = sig_arr_blue[:,3]
     dv_blue_4 = sig_arr_blue[:,4]
 
+    av_grpcen_red_0 = mean_cen_arr_red[:,0]
+    av_grpcen_red_1 = mean_cen_arr_red[:,1]
+    av_grpcen_red_2 = mean_cen_arr_red[:,2]
+    av_grpcen_red_3 = mean_cen_arr_red[:,3]
+    av_grpcen_red_4 = mean_cen_arr_red[:,4]
+
+    av_grpcen_blue_0 = mean_cen_arr_blue[:,0]
+    av_grpcen_blue_1 = mean_cen_arr_blue[:,1]
+    av_grpcen_blue_2 = mean_cen_arr_blue[:,2]
+    av_grpcen_blue_3 = mean_cen_arr_blue[:,3]
+    av_grpcen_blue_4 = mean_cen_arr_blue[:,4]
+
+
+
     combined_df = pd.DataFrame({'phi_red_0':phi_red_0, 'phi_red_1':phi_red_1,\
         'phi_red_2':phi_red_2, 'phi_red_3':phi_red_3, 'phi_red_4':phi_red_4, \
         'phi_blue_0':phi_blue_0, 'phi_blue_1':phi_blue_1, 
@@ -1157,7 +1199,12 @@ def get_err_data(survey, path):
         'dv_red_0':dv_red_0, 'dv_red_1':dv_red_1, 'dv_red_2':dv_red_2, \
         'dv_red_3':dv_red_3, 'dv_red_4':dv_red_4, \
         'dv_blue_0':dv_blue_0, 'dv_blue_1':dv_blue_1, 'dv_blue_2':dv_blue_2, \
-        'dv_blue_3':dv_blue_3, 'dv_blue_4':dv_blue_4})
+        'dv_blue_3':dv_blue_3, 'dv_blue_4':dv_blue_4, \
+        'av_grpcen_red_0':av_grpcen_red_0, 'av_grpcen_red_1':av_grpcen_red_1, \
+        'av_grpcen_red_2':av_grpcen_red_2, 'av_grpcen_red_3':av_grpcen_red_3, \
+        'av_grpcen_red_4':av_grpcen_red_4, 'av_grpcen_blue_0':av_grpcen_blue_0,\
+        'av_grpcen_blue_1':av_grpcen_blue_1, 'av_grpcen_blue_2':av_grpcen_blue_2, \
+        'av_grpcen_blue_3':av_grpcen_blue_3, 'av_grpcen_blue_4':av_grpcen_blue_4 })
 
     # Correlation matrix of phi and deltav colour measurements combined
     corr_mat_colour = combined_df.corr()
@@ -1553,6 +1600,296 @@ def get_deltav_sigma_vishnu_qmcolour(gals_df, randint):
             
     return std_red, std_blue, centers_red, centers_blue
 
+def get_sigma_per_group_data(df):
+
+    catl = df.copy()
+    if survey == 'eco' or survey == 'resolvea':
+        catl = catl.loc[catl.logmstar >= 8.9]
+    elif survey == 'resolveb':
+        catl = catl.loc[catl.logmstar >= 8.7]
+    catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
+
+    red_subset_grpids = np.unique(catl.groupid.loc[(catl.\
+        colour_label == 'R') & (catl.g_galtype == 1)].values)  
+    blue_subset_grpids = np.unique(catl.groupid.loc[(catl.\
+        colour_label == 'B') & (catl.g_galtype == 1)].values)
+
+    red_singleton_counter = 0
+    red_sigma_arr = []
+    red_cen_stellar_mass_arr = []
+    for key in red_subset_grpids: 
+        group = catl.loc[catl.groupid == key]
+        if len(group) == 1:
+            red_singleton_counter += 1
+        else:
+            cen_stellar_mass = group.logmstar.loc[group.g_galtype\
+                .values == 1].values[0]
+            
+            # Different velocity definitions
+            mean_cz_grp = np.round(np.mean(group.cz.values),2)
+            cen_cz_grp = group.cz.loc[group.g_galtype == 1].values[0]
+            # cz_grp = np.unique(group.grpcz.values)[0]
+
+            # Velocity difference
+            deltav = group.cz.values - len(group)*[mean_cz_grp]
+            # sigma = deltav[deltav!=0].std()
+            sigma = deltav.std()
+            
+            red_sigma_arr.append(sigma)
+            red_cen_stellar_mass_arr.append(cen_stellar_mass)
+
+    blue_singleton_counter = 0
+    blue_sigma_arr = []
+    blue_cen_stellar_mass_arr = []
+    for key in blue_subset_grpids: 
+        group = catl.loc[catl.groupid == key]
+        if len(group) == 1:
+            blue_singleton_counter += 1
+        else:
+            cen_stellar_mass = group.logmstar.loc[group.g_galtype\
+                .values == 1].values[0]
+            
+            # Different velocity definitions
+            mean_cz_grp = np.round(np.mean(group.cz.values),2)
+            cen_cz_grp = group.cz.loc[group.g_galtype == 1].values[0]
+            # cz_grp = np.unique(group.grpcz.values)[0]
+
+            # Velocity difference
+            deltav = group.cz.values - len(group)*[mean_cz_grp]
+            # sigma = deltav[deltav!=0].std()
+            sigma = deltav.std()
+            
+            blue_sigma_arr.append(sigma)
+            blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+
+    mean_stats_red = bs(red_sigma_arr, red_cen_stellar_mass_arr, 
+        statistic='mean', bins=np.linspace(0,250,6))
+    mean_stats_blue = bs(blue_sigma_arr, blue_cen_stellar_mass_arr, 
+        statistic='mean', bins=np.linspace(0,250,6))
+
+    centers_red = 0.5 * (mean_stats_red[1][1:] + \
+        mean_stats_red[1][:-1])
+    centers_blue = 0.5 * (mean_stats_blue[1][1:] + \
+        mean_stats_blue[1][:-1])
+
+    return mean_stats_red, centers_red, mean_stats_blue, centers_blue
+
+def get_sigma_per_group_mocks_qmcolour(survey, mock_df):
+    """
+    Calculate spread in velocity dispersion from survey mocks (logmstar converted
+    to h=1 units before analysis)
+
+    Parameters
+    ----------
+    survey: string
+        Name of survey
+    path: string
+        Path to mock catalogs
+
+    Returns
+    ---------
+    std_red_arr: numpy array
+        Spread in velocity dispersion of red galaxies
+    centers_red_arr: numpy array
+        Bin centers of central stellar mass for red galaxies
+    std_blue_arr: numpy array
+        Spread in velocity dispersion of blue galaxies
+    centers_blue_arr: numpy array
+        Bin centers of central stellar mass for blue galaxies
+    """
+    mock_pd = mock_df.copy()
+    mock_pd.logmstar = np.log10((10**mock_pd.logmstar) / 2.041)
+    red_subset_grpids = np.unique(mock_pd.groupid.loc[(mock_pd.\
+        colour_label == 'R') & (mock_pd.g_galtype == 1)].values)  
+    blue_subset_grpids = np.unique(mock_pd.groupid.loc[(mock_pd.\
+        colour_label == 'B') & (mock_pd.g_galtype == 1)].values)
+
+    red_singleton_counter = 0
+    red_sigma_arr = []
+    red_cen_stellar_mass_arr = []
+    for key in red_subset_grpids: 
+        group = mock_pd.loc[mock_pd.groupid == key]
+        if len(group) == 1:
+            red_singleton_counter += 1
+        else:
+            cen_stellar_mass = group.logmstar.loc[group.g_galtype\
+                .values == 1].values[0]
+            
+            # Different velocity definitions
+            mean_cz_grp = np.round(np.mean(group.cz.values),2)
+            cen_cz_grp = group.cz.loc[group.g_galtype == 1].values[0]
+            # cz_grp = np.unique(group.grpcz.values)[0]
+
+            # Velocity difference
+            deltav = group.cz.values - len(group)*[mean_cz_grp]
+            # sigma = deltav[deltav!=0].std()
+            sigma = deltav.std()
+            
+            red_sigma_arr.append(sigma)
+            red_cen_stellar_mass_arr.append(cen_stellar_mass)
+
+    blue_singleton_counter = 0
+    blue_sigma_arr = []
+    blue_cen_stellar_mass_arr = []
+    for key in blue_subset_grpids: 
+        group = mock_pd.loc[mock_pd.groupid == key]
+        if len(group) == 1:
+            blue_singleton_counter += 1
+        else:
+            cen_stellar_mass = group.logmstar.loc[group.g_galtype\
+                .values == 1].values[0]
+            
+            # Different velocity definitions
+            mean_cz_grp = np.round(np.mean(group.cz.values),2)
+            cen_cz_grp = group.cz.loc[group.g_galtype == 1].values[0]
+            # cz_grp = np.unique(group.grpcz.values)[0]
+
+            # Velocity difference
+            deltav = group.cz.values - len(group)*[mean_cz_grp]
+            # sigma = deltav[deltav!=0].std()
+            sigma = deltav.std()
+            
+            blue_sigma_arr.append(sigma)
+            blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+
+    mean_stats_red = bs(red_sigma_arr, red_cen_stellar_mass_arr, 
+        statistic='mean', bins=np.linspace(0,250,6))
+    mean_stats_blue = bs(blue_sigma_arr, blue_cen_stellar_mass_arr, 
+        statistic='mean', bins=np.linspace(0,250,6))
+
+    centers_red = 0.5 * (mean_stats_red[1][1:] + \
+        mean_stats_red[1][:-1])
+    centers_blue = 0.5 * (mean_stats_blue[1][1:] + \
+        mean_stats_blue[1][:-1])
+            
+    return mean_stats_red, centers_red, mean_stats_blue, centers_blue
+
+def get_sigma_per_group_vishnu_qmcolour(gals_df, randint):
+    """
+    Calculate spread in velocity dispersion from Vishnu mock (logmstar already 
+    in h=1)
+
+    Parameters
+    ----------
+    survey: string
+        Name of survey
+    path: string
+        Path to mock catalogs
+
+    Returns
+    ---------
+    std_red_arr: numpy array
+        Spread in velocity dispersion of red galaxies
+    centers_red_arr: numpy array
+        Bin centers of central stellar mass for red galaxies
+    std_blue_arr: numpy array
+        Spread in velocity dispersion of blue galaxies
+    centers_blue_arr: numpy array
+        Bin centers of central stellar mass for blue galaxies
+    """
+
+    mock_pd = gals_df.copy()
+
+    if survey == 'eco':
+        mock_name = 'ECO'
+        num_mocks = 8
+        min_cz = 3000
+        max_cz = 7000
+        mag_limit = -17.33
+        mstar_limit = 8.9
+        volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
+    elif survey == 'resolvea':
+        mock_name = 'A'
+        num_mocks = 59
+        min_cz = 4500
+        max_cz = 7000
+        mag_limit = -17.33
+        mstar_limit = 8.9
+        volume = 13172.384  # Survey volume without buffer [Mpc/h]^3 
+    elif survey == 'resolveb':
+        mock_name = 'B'
+        num_mocks = 104
+        min_cz = 4500
+        max_cz = 7000
+        mag_limit = -17
+        mstar_limit = 8.7
+        volume = 4709.8373  # Survey volume without buffer [Mpc/h]^3
+
+
+    logmstar_col = '{0}'.format(randint)
+    g_galtype_col = 'g_galtype_{0}'.format(randint)
+    groupid_col = 'groupid_{0}'.format(randint)
+    # Using the same survey definition as in mcmc smf i.e excluding the 
+    # buffer except no M_r cut since vishnu mock has no M_r info
+    mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & \
+        (mock_pd.cz.values <= max_cz) & \
+        (mock_pd[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
+
+    red_subset_grpids = np.unique(mock_pd[groupid_col].loc[(mock_pd.\
+        colour_label == 'R') & (mock_pd[g_galtype_col] == 1)].values)  
+    blue_subset_grpids = np.unique(mock_pd[groupid_col].loc[(mock_pd.\
+        colour_label == 'B') & (mock_pd[g_galtype_col] == 1)].values)
+
+    red_singleton_counter = 0
+    red_sigma_arr = []
+    red_cen_stellar_mass_arr = []
+    for key in red_subset_grpids: 
+        group = mock_pd.loc[mock_pd[groupid_col] == key]
+        if len(group) == 1:
+            red_singleton_counter += 1
+        else:
+            cen_stellar_mass = group['{0}'.format(randint)].loc[group[g_galtype_col].\
+                values == 1].values[0]
+            
+            # Different velocity definitions
+            mean_cz_grp = np.round(np.mean(group.cz.values),2)
+            cen_cz_grp = group.cz.loc[group[g_galtype_col].values == 1].values[0]
+            # cz_grp = np.unique(group.grpcz.values)[0]
+
+            # Velocity difference
+            deltav = group.cz.values - len(group)*[mean_cz_grp]
+            # sigma = deltav[deltav!=0].std()
+            sigma = deltav.std()
+            
+            red_sigma_arr.append(sigma)
+            red_cen_stellar_mass_arr.append(cen_stellar_mass)
+
+    blue_singleton_counter = 0
+    blue_sigma_arr = []
+    blue_cen_stellar_mass_arr = []
+    for key in blue_subset_grpids: 
+        group = mock_pd.loc[mock_pd[groupid_col] == key]
+        if len(group) == 1:
+            blue_singleton_counter += 1
+        else:
+            cen_stellar_mass = group['{0}'.format(randint)].loc[group[g_galtype_col].\
+                values == 1].values[0]
+            
+            # Different velocity definitions
+            mean_cz_grp = np.round(np.mean(group.cz.values),2)
+            cen_cz_grp = group.cz.loc[group[g_galtype_col].values == 1].values[0]
+            # cz_grp = np.unique(group.grpcz.values)[0]
+
+            # Velocity difference
+            deltav = group.cz.values - len(group)*[mean_cz_grp]
+            # sigma = deltav[deltav!=0].std()
+            sigma = deltav.std()
+            
+            blue_sigma_arr.append(sigma)
+            blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+
+    mean_stats_red = bs(red_sigma_arr, red_cen_stellar_mass_arr, 
+        statistic='mean', bins=np.linspace(0,250,6))
+    mean_stats_blue = bs(blue_sigma_arr, blue_cen_stellar_mass_arr, 
+        statistic='mean', bins=np.linspace(0,250,6))
+
+    centers_red = 0.5 * (mean_stats_red[1][1:] + \
+        mean_stats_red[1][:-1])
+    centers_blue = 0.5 * (mean_stats_blue[1][1:] + \
+        mean_stats_blue[1][:-1])
+            
+    return mean_stats_red, centers_red, mean_stats_blue, centers_blue
+
 def measure_all_smf(table, volume, data_bool, randint_logmstar=None):
     """
     Calculates differential stellar mass function for all, red and blue galaxies
@@ -1621,14 +1958,13 @@ def args_parser():
         help='Options: eco/resolvea/resolveb')
     parser.add_argument('mf_type', type=str, \
         help='Options: smf/bmf')
+    parser.add_argument('quenching', type=str, \
+        help='Options: hybrid/halo')
     parser.add_argument('nproc', type=int, nargs='?', 
         help='Number of processes')
     parser.add_argument('nwalkers', type=int, nargs='?', 
         help='Number of walkers')
     parser.add_argument('nsteps', type=int, nargs='?', help='Number of steps')
-    parser.add_argument('quenching', type=str, \
-        help='Options: hybrid/halo')
-
     args = parser.parse_args()
     return args
 
@@ -1710,7 +2046,11 @@ def main(args):
         data_bool=True)
 
     print('Measuring spread in vel disp for data')
-    std_red, centers_red, std_blue, centers_blue = get_deltav_sigma_data(catl)
+    std_red, old_centers_red, std_blue, old_centers_blue = get_deltav_sigma_data(catl)
+
+    print('Measuring binned spread in vel disp for data')
+    mean_grp_cen_red, new_centers_red, mean_grp_cen_blue, new_centers_blue = \
+        get_sigma_per_group_data(catl)
 
     print('Measuring error in data from mocks')
     sigma, corr_mat_inv = get_err_data(survey, path_to_mocks)
@@ -1721,6 +2061,8 @@ def main(args):
     print('blue phi data: \n', blue_data[1])
     print('red std data: \n', std_red)
     print('blue std data: \n', std_blue)
+    print('red grpcen data: \n', mean_grp_cen_red)
+    print('blue grpcen data: \n', mean_grp_cen_blue)
 
     print('Reading vishnu group catalog')
     gal_group_df = reading_catls(path_to_proc + "gal_group.hdf5") 
@@ -1759,7 +2101,7 @@ def main(args):
 
     print('Running MCMC')
     sampler = mcmc(nproc, nwalkers, nsteps, red_data[1], blue_data[1], std_red,
-        std_blue, sigma, corr_mat_inv)
+        std_blue, mean_grp_cen_red, mean_grp_cen_blue, sigma, corr_mat_inv)
 
 # Main function
 if __name__ == '__main__':
