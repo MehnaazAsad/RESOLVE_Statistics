@@ -3044,14 +3044,14 @@ def plot_mean_grpcen_vs_sigma(result, red_sigma_bf, \
         chunk_counter+=1
     
     mean_stats_red = bs(red_sigma_arr, grp_red_cen_gals_arr, statistic='mean', 
-        bins=np.linspace(0,250,10))
+        bins=np.linspace(0,250,6))
     mean_stats_blue = bs(blue_sigma_arr, grp_blue_cen_gals_arr, statistic='mean', 
-        bins=np.linspace(0,250,10))
+        bins=np.linspace(0,250,6))
 
     std_stats_red = bs(red_sigma_arr, grp_red_cen_gals_arr, statistic='std', 
-        bins=np.linspace(0,250,10))
+        bins=np.linspace(0,250,6))
     std_stats_blue = bs(blue_sigma_arr, grp_blue_cen_gals_arr, statistic='std', 
-        bins=np.linspace(0,250,10))
+        bins=np.linspace(0,250,6))
 
     centers_red = 0.5 * (mean_stats_red[1][1:] + \
         mean_stats_red[1][:-1])
@@ -3059,14 +3059,14 @@ def plot_mean_grpcen_vs_sigma(result, red_sigma_bf, \
         mean_stats_blue[1][:-1])
 
     mean_stats_red_bf = bs(red_sigma_bf, grp_red_cen_stellar_mass_bf, statistic='mean', 
-        bins=np.linspace(0,250,10))
+        bins=np.linspace(0,250,6))
     mean_stats_blue_bf = bs(blue_sigma_bf, grp_blue_cen_stellar_mass_bf, statistic='mean', 
-        bins=np.linspace(0,250,10))
+        bins=np.linspace(0,250,6))
 
     mean_stats_red_data = bs(red_sigma_data, grp_red_cen_stellar_mass_data, statistic='mean', 
-        bins=np.linspace(0,250,10))
+        bins=np.linspace(0,250,6))
     mean_stats_blue_data = bs(blue_sigma_data, grp_blue_cen_stellar_mass_data, statistic='mean', 
-        bins=np.linspace(0,250,10))
+        bins=np.linspace(0,250,6))
 
 
 
