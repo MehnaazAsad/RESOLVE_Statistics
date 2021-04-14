@@ -2119,12 +2119,3 @@ if __name__ == '__main__':
 
     # with open('profile_eco_2p_16w_5s.txt', 'w+') as f:
     #     f.write(s.getvalue())
-
-nproc, nwalkers, nsteps, phi_red_data, phi_blue_data, std_red_data, \
-std_blue_data, av_grpcen_red_data, av_grpcen_blue_data, err, corr_mat_inv = \
-nproc, nwalkers, nsteps, red_data[1], blue_data[1], std_red, \
-std_blue, mean_grp_cen_red, mean_grp_cen_blue, sigma, corr_mat_inv
-
-theta, phi_red_data, phi_blue_data, std_red_data, std_blue_data, \
-av_grpcen_red_data, av_grpcen_blue_data, err, corr_mat_inv = phi_red_data, phi_blue_data, std_red_data, std_blue_data, 
-av_grpcen_red_data, av_grpcen_blue_data, err, corr_mat_inv
