@@ -35,39 +35,57 @@ path_to_figures = dict_of_paths['plot_dir']
 
 survey = 'eco'
 mf_type = 'smf'
+quenching = 'hybrid'
 
 if mf_type == 'smf':
-    path_to_proc = '~/Desktop/'
-    # path_to_proc = path_to_proc + 'smhm_colour_run10/'
+    path_to_proc = path_to_proc + 'smhm_colour_run18/'
 else:
     path_to_proc = path_to_proc + 'bmhm_run3/'
 
-chain_fname = '~/Desktop/mcmc_{0}_colour_raw.txt'.format(survey)
-# chain_fname = path_to_proc + 'mcmc_{0}_colour_raw.txt'.format(survey)
-emcee_table = pd.read_csv(chain_fname, delim_whitespace=True, 
-    names=['Mstar_q','Mhalo_q','mu','nu'], 
-    header=None)
+chain_fname = path_to_proc + 'mcmc_{0}_colour_raw.txt'.format(survey)
 
-emcee_table = emcee_table[emcee_table.Mstar_q.values != '#']
-emcee_table.Mstar_q = emcee_table.Mstar_q.astype(np.float64)
-emcee_table.Mhalo_q = emcee_table.Mhalo_q.astype(np.float64)
-emcee_table.mu = emcee_table.mu.astype(np.float64)
-emcee_table.nu = emcee_table.nu.astype(np.float64)
+if quenching == 'hybrid':
+    emcee_table = pd.read_csv(chain_fname, delim_whitespace=True, 
+        names=['Mstar_q','Mhalo_q','mu','nu'], 
+        header=None)
 
-for idx,row in enumerate(emcee_table.values):
-    if np.isnan(row)[3] == True and np.isnan(row)[2] == False:
-        nu_val = emcee_table.values[idx+1][0]
-        row[3] = nu_val 
-emcee_table = emcee_table.dropna(axis='index', how='any').\
-    reset_index(drop=True)
+    emcee_table = emcee_table[emcee_table.Mstar_q.values != '#']
+    emcee_table.Mstar_q = emcee_table.Mstar_q.astype(np.float64)
+    emcee_table.Mhalo_q = emcee_table.Mhalo_q.astype(np.float64)
+    emcee_table.mu = emcee_table.mu.astype(np.float64)
+    emcee_table.nu = emcee_table.nu.astype(np.float64)
 
-# emcee_table.nu = np.log10(emcee_table.nu)
+    for idx,row in enumerate(emcee_table.values):
+        if np.isnan(row)[3] == True and np.isnan(row)[2] == False:
+            nu_val = emcee_table.values[idx+1][0]
+            row[3] = nu_val 
+    emcee_table = emcee_table.dropna(axis='index', how='any').\
+        reset_index(drop=True)
 
-chi2_fname = '~/Desktop/{0}_colour_chi2.txt'.format(survey)
-# chi2_fname = path_to_proc + '{0}_colour_chi2.txt'.format(survey)
+    # emcee_table.nu = np.log10(emcee_table.nu)
+
+elif quenching == 'halo':
+    emcee_table = pd.read_csv(chain_fname, delim_whitespace=True, 
+        names=['Mh_qc','Mh_qs','mu_c','mu_s'], 
+        header=None)
+
+    emcee_table = emcee_table[emcee_table.Mh_qc.values != '#']
+    emcee_table.Mh_qc = emcee_table.Mh_qc.astype(np.float64)
+    emcee_table.Mh_qs = emcee_table.Mh_qs.astype(np.float64)
+    emcee_table.mu_c = emcee_table.mu_c.astype(np.float64)
+    emcee_table.mu_s = emcee_table.mu_s.astype(np.float64)
+
+    for idx,row in enumerate(emcee_table.values):
+        if np.isnan(row)[3] == True and np.isnan(row)[2] == False:
+            mu_s_val = emcee_table.values[idx+1][0]
+            row[3] = mu_s_val 
+    emcee_table = emcee_table.dropna(axis='index', how='any').\
+        reset_index(drop=True)
+
+
+chi2_fname = path_to_proc + '{0}_colour_chi2.txt'.format(survey)
 chi2_df = pd.read_csv(chi2_fname,header=None,names=['chisquared'])
 chi2 = np.log10(chi2_df.chisquared.values)
-# chi2 = chi2_df.chisquared.values
 emcee_table['chi2'] = chi2
 
 # Each chunk is now a step and within each chunk, each row is a walker
@@ -95,111 +113,160 @@ emcee_table = emcee_table.astype(np.float64)
 grps = emcee_table.groupby('iteration_id')
 grp_keys = grps.groups.keys()
 
-Mstar_q = [np.zeros(len(grp_keys)),np.zeros(len(grp_keys))]
-Mhalo_q = [np.zeros(len(grp_keys)),np.zeros(len(grp_keys))]
-mu = [np.zeros(len(grp_keys)),np.zeros(len(grp_keys))]
-nu = [np.zeros(len(grp_keys)),np.zeros(len(grp_keys))]
-chi2 = [np.zeros(len(grp_keys)),np.zeros(len(grp_keys))]
-for idx,key in enumerate(grp_keys):
-    group = grps.get_group(key)
-    Mstar_q_mean = np.mean(group.Mstar_q.values)
-    Mstar_q_std = np.std(group.Mstar_q.values)
-    Mstar_q[0][idx] = Mstar_q_mean
-    Mstar_q[1][idx] = Mstar_q_std
-    Mhalo_q_mean = np.mean(group.Mhalo_q.values)
-    Mhalo_q_std = np.std(group.Mhalo_q.values)
-    Mhalo_q[0][idx] = Mhalo_q_mean
-    Mhalo_q[1][idx] = Mhalo_q_std
-    mu_mean = np.mean(group.mu.values)
-    mu_std = np.std(group.mu.values)
-    mu[0][idx] = mu_mean
-    mu[1][idx] = mu_std
-    nu_mean = np.mean(group.nu.values)
-    nu_std = np.std(group.nu.values)
-    nu[0][idx] = nu_mean
-    nu[1][idx] = nu_std
-    chi2_mean = np.mean(group.chi2.values)
-    chi2_std = np.std(group.chi2.values)
-    chi2[0][idx] = chi2_mean
-    chi2[1][idx] = chi2_std
+if quenching == 'hybrid':
+    Mstar_q = [np.zeros(len(grp_keys)),np.zeros(len(grp_keys))]
+    Mhalo_q = [np.zeros(len(grp_keys)),np.zeros(len(grp_keys))]
+    mu = [np.zeros(len(grp_keys)),np.zeros(len(grp_keys))]
+    nu = [np.zeros(len(grp_keys)),np.zeros(len(grp_keys))]
+    chi2 = [np.zeros(len(grp_keys)),np.zeros(len(grp_keys))]
+    for idx,key in enumerate(grp_keys):
+        group = grps.get_group(key)
+        Mstar_q_mean = np.mean(group.Mstar_q.values)
+        Mstar_q_std = np.std(group.Mstar_q.values)
+        Mstar_q[0][idx] = Mstar_q_mean
+        Mstar_q[1][idx] = Mstar_q_std
+        Mhalo_q_mean = np.mean(group.Mhalo_q.values)
+        Mhalo_q_std = np.std(group.Mhalo_q.values)
+        Mhalo_q[0][idx] = Mhalo_q_mean
+        Mhalo_q[1][idx] = Mhalo_q_std
+        mu_mean = np.mean(group.mu.values)
+        mu_std = np.std(group.mu.values)
+        mu[0][idx] = mu_mean
+        mu[1][idx] = mu_std
+        nu_mean = np.mean(group.nu.values)
+        nu_std = np.std(group.nu.values)
+        nu[0][idx] = nu_mean
+        nu[1][idx] = nu_std
+        chi2_mean = np.mean(group.chi2.values)
+        chi2_std = np.std(group.chi2.values)
+        chi2[0][idx] = chi2_mean
+        chi2[1][idx] = chi2_std
+    
+    zumandelbaum_param_vals = [10.5, 13.76, 0.69, 0.15]
+    grp_keys = list(grp_keys)
 
-# zumandelbaum_param_vals = [10.5, 13.76, 0.69, np.log10(0.15)]
-zumandelbaum_param_vals = [10.5, 13.76, 0.69, 0.15]
-grp_keys = list(grp_keys)
+    fig1, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(5, 1, sharex=True, \
+        figsize=(10,10))
+    ax1.plot(grp_keys, Mstar_q[0],c='#941266',ls='--', marker='o')
+    ax1.axhline(zumandelbaum_param_vals[0],color='lightgray')
+    ax2.plot(grp_keys, Mhalo_q[0], c='#941266',ls='--', marker='o')
+    ax2.axhline(zumandelbaum_param_vals[1],color='lightgray')
+    ax3.plot(grp_keys, mu[0], c='#941266',ls='--', marker='o')
+    ax3.axhline(zumandelbaum_param_vals[2],color='lightgray')
+    ax4.plot(grp_keys, nu[0], c='#941266',ls='--', marker='o')
+    ax4.axhline(zumandelbaum_param_vals[3],color='lightgray')
+    ax5.plot(grp_keys, chi2[0], c='#941266',ls='--', marker='o')
 
-iteration = 600.0
-emcee_table_it600 = emcee_table.loc[emcee_table.iteration_id == iteration]  
+    ax1.fill_between(grp_keys, Mstar_q[0]-Mstar_q[1], Mstar_q[0]+Mstar_q[1], 
+        alpha=0.3, color='#941266')
+    ax2.fill_between(grp_keys, Mhalo_q[0]-Mhalo_q[1], Mhalo_q[0]+Mhalo_q[1], \
+        alpha=0.3, color='#941266')
+    ax3.fill_between(grp_keys, mu[0]-mu[1], mu[0]+mu[1], \
+        alpha=0.3, color='#941266')
+    ax4.fill_between(grp_keys, nu[0]-nu[1], nu[0]+nu[1], \
+        alpha=0.3, color='#941266')
+    ax5.fill_between(grp_keys, chi2[0]-chi2[1], chi2[0]+chi2[1], \
+        alpha=0.3, color='#941266')
 
-chi2_std_it600 = np.std(emcee_table_it600.chi2)
-chi2_mean_it600 = np.mean(emcee_table_it600.chi2)
-# selecting value from within one sigma                                                              
-df_within_sig = emcee_table_it600.loc[(emcee_table_it600.chi2 < chi2_mean_it600 + chi2_std_it600)&(emcee_table_it600.chi2 > chi2_mean_it600 - chi2_std_it600)]
-chi2_within_sig = df_within_sig.chi2.values[3]
-mstar_within_sig = df_within_sig.Mstar_q.values[3]
-mhalo_within_sig = df_within_sig.Mhalo_q.values[3]
-mu_within_sig = df_within_sig.mu.values[3]
-nu_within_sig = df_within_sig.nu.values[3]
-# # selecting value from outside one sigma
-df_outside_sig = emcee_table_it600.loc[emcee_table_it600.chi2 > chi2_mean_it600 + chi2_std_it600]
-chi2_outside_sig = df_outside_sig.chi2.values[3]
-mstar_outside_sig = df_outside_sig.Mstar_q.values[3]
-mhalo_outside_sig = df_outside_sig.Mhalo_q.values[3]
-mu_outside_sig = df_outside_sig.mu.values[3]
-nu_outside_sig = df_outside_sig.nu.values[3]
+    ax1.set_ylabel(r"$\mathbf{log_{10}\ M^{q}_{*}}$")
+    ax2.set_ylabel(r"$\mathbf{log_{10}\ M^{q}_{h}}$")
+    ax3.set_ylabel(r"$\boldsymbol{\mu}$")
+    # ax4.set_ylabel(r"$\mathbf{log_{10}} \boldsymbol{\ \nu}$")
+    ax4.set_ylabel(r"$\boldsymbol{\nu}$")
+    ax5.set_ylabel(r"$\mathbf{log_{10}} \boldsymbol{{\ \chi}^2}$")
+    # ax5.set_ylabel(r"$\boldsymbol{{\chi}^2}$")
+    # ax1.set_yscale('log')
+    # ax2.set_yscale('log')
 
-fig1, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(5, 1, sharex=True, \
-    figsize=(10,10))
-ax1.plot(grp_keys, Mstar_q[0],c='#941266',ls='--', marker='o')
-ax1.axhline(zumandelbaum_param_vals[0],color='lightgray')
-# ax1.scatter(iteration, mstar_outside_sig, marker='*', c='k', s=70)
-# ax1.scatter(iteration, mstar_within_sig, marker='o', c='k', s=70)
-ax2.plot(grp_keys, Mhalo_q[0], c='#941266',ls='--', marker='o')
-ax2.axhline(zumandelbaum_param_vals[1],color='lightgray')
-# ax2.scatter(iteration, mhalo_outside_sig, marker='*', c='k', s=70)
-# ax2.scatter(iteration, mhalo_within_sig, marker='o', c='k', s=70)
-ax3.plot(grp_keys, mu[0], c='#941266',ls='--', marker='o')
-ax3.axhline(zumandelbaum_param_vals[2],color='lightgray')
-# ax3.scatter(iteration, mu_outside_sig, marker='*', c='k', s=70)
-# ax3.scatter(iteration, mu_within_sig, marker='o', c='k', s=70)
-ax4.plot(grp_keys, nu[0], c='#941266',ls='--', marker='o')
-ax4.axhline(zumandelbaum_param_vals[3],color='lightgray')
-# ax4.scatter(iteration, nu_outside_sig, marker='*', c='k', s=70)
-# ax4.scatter(iteration, nu_within_sig, marker='o', c='k', s=70) 
-ax5.plot(grp_keys, chi2[0], c='#941266',ls='--', marker='o')
-# ax5.scatter(iteration, chi2_outside_sig, marker='*', c='k', s=70)
-# ax5.scatter(iteration, chi2_within_sig, marker='o', c='k', s=70)
+    ax1.annotate(zumandelbaum_param_vals[0], (0.95,0.85), xycoords='axes fraction', 
+        bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
+    ax2.annotate(zumandelbaum_param_vals[1], (0.95,0.85), xycoords='axes fraction', 
+        bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
+    ax3.annotate(zumandelbaum_param_vals[2], (0.95,0.85), xycoords='axes fraction', 
+        bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
+    ax4.annotate(0.15, (0.95,0.85), xycoords='axes fraction', 
+        bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
+    plt.xlabel(r"$\mathbf{iteration\ number}$")
+    plt.show()
 
-ax1.fill_between(grp_keys, Mstar_q[0]-Mstar_q[1], Mstar_q[0]+Mstar_q[1], 
-    alpha=0.3, color='#941266')
-ax2.fill_between(grp_keys, Mhalo_q[0]-Mhalo_q[1], Mhalo_q[0]+Mhalo_q[1], \
-    alpha=0.3, color='#941266')
-ax3.fill_between(grp_keys, mu[0]-mu[1], mu[0]+mu[1], \
-    alpha=0.3, color='#941266')
-ax4.fill_between(grp_keys, nu[0]-nu[1], nu[0]+nu[1], \
-    alpha=0.3, color='#941266')
-ax5.fill_between(grp_keys, chi2[0]-chi2[1], chi2[0]+chi2[1], \
-    alpha=0.3, color='#941266')
+elif quenching == 'halo':
+    Mh_qc = [np.zeros(len(grp_keys)),np.zeros(len(grp_keys))]
+    Mh_qs = [np.zeros(len(grp_keys)),np.zeros(len(grp_keys))]
+    mu_c = [np.zeros(len(grp_keys)),np.zeros(len(grp_keys))]
+    mu_s = [np.zeros(len(grp_keys)),np.zeros(len(grp_keys))]
+    chi2 = [np.zeros(len(grp_keys)),np.zeros(len(grp_keys))]
+    for idx,key in enumerate(grp_keys):
+        group = grps.get_group(key)
+        Mh_qc_mean = np.mean(group.Mh_qc.values)
+        Mh_qc_std = np.std(group.Mh_qc.values)
+        Mh_qc[0][idx] = Mh_qc_mean
+        Mh_qc[1][idx] = Mh_qc_std
+        Mh_qs_mean = np.mean(group.Mh_qs.values)
+        Mh_qs_std = np.std(group.Mh_qs.values)
+        Mh_qs[0][idx] = Mh_qs_mean
+        Mh_qs[1][idx] = Mh_qs_std
+        mu_c_mean = np.mean(group.mu_c.values)
+        mu_c_std = np.std(group.mu_c.values)
+        mu_c[0][idx] = mu_c_mean
+        mu_c[1][idx] = mu_c_std
+        mu_s_mean = np.mean(group.mu_s.values)
+        mu_s_std = np.std(group.mu_s.values)
+        mu_s[0][idx] = mu_s_mean
+        mu_s[1][idx] = mu_s_std
+        chi2_mean = np.mean(group.chi2.values)
+        chi2_std = np.std(group.chi2.values)
+        chi2[0][idx] = chi2_mean
+        chi2[1][idx] = chi2_std
 
-ax1.set_ylabel(r"$\mathbf{log_{10}\ M^{q}_{*}}$")
-ax2.set_ylabel(r"$\mathbf{log_{10}\ M^{q}_{h}}$")
-ax3.set_ylabel(r"$\boldsymbol{\mu}$")
-# ax4.set_ylabel(r"$\mathbf{log_{10}} \boldsymbol{\ \nu}$")
-ax4.set_ylabel(r"$\boldsymbol{\nu}$")
-ax5.set_ylabel(r"$\mathbf{log_{10}} \boldsymbol{{\ \chi}^2}$")
-# ax5.set_ylabel(r"$\boldsymbol{{\chi}^2}$")
-# ax1.set_yscale('log')
-# ax2.set_yscale('log')
+    zumandelbaum_param_vals = [12.2, 12.17, 0.38, 0.15]
+    grp_keys = list(grp_keys)
 
-ax1.annotate(zumandelbaum_param_vals[0], (0.95,0.85), xycoords='axes fraction', 
-    bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
-ax2.annotate(zumandelbaum_param_vals[1], (0.95,0.85), xycoords='axes fraction', 
-    bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
-ax3.annotate(zumandelbaum_param_vals[2], (0.95,0.85), xycoords='axes fraction', 
-    bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
-ax4.annotate(0.15, (0.95,0.85), xycoords='axes fraction', 
-    bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
-plt.xlabel(r"$\mathbf{iteration\ number}$")
-plt.show()
+    fig1, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(5, 1, sharex=True, \
+        figsize=(10,10))
+    ax1.plot(grp_keys, Mh_qc[0],c='#941266',ls='--', marker='o')
+    ax1.axhline(zumandelbaum_param_vals[0],color='lightgray')
+    ax2.plot(grp_keys, Mh_qs[0], c='#941266',ls='--', marker='o')
+    ax2.axhline(zumandelbaum_param_vals[1],color='lightgray')
+    ax3.plot(grp_keys, mu_c[0], c='#941266',ls='--', marker='o')
+    ax3.axhline(zumandelbaum_param_vals[2],color='lightgray')
+    ax4.plot(grp_keys, mu_s[0], c='#941266',ls='--', marker='o')
+    ax4.axhline(zumandelbaum_param_vals[3],color='lightgray')
+    ax5.plot(grp_keys, chi2[0], c='#941266',ls='--', marker='o')
+
+    ax1.fill_between(grp_keys, Mh_qc[0]-Mh_qc[1], Mh_qc[0]+Mh_qc[1], 
+        alpha=0.3, color='#941266')
+    ax2.fill_between(grp_keys, Mh_qs[0]-Mh_qs[1], Mh_qs[0]+Mh_qs[1], \
+        alpha=0.3, color='#941266')
+    ax3.fill_between(grp_keys, mu_c[0]-mu_c[1], mu_c[0]+mu_c[1], \
+        alpha=0.3, color='#941266')
+    ax4.fill_between(grp_keys, mu_s[0]-mu_s[1], mu_s[0]+mu_s[1], \
+        alpha=0.3, color='#941266')
+    ax5.fill_between(grp_keys, chi2[0]-chi2[1], chi2[0]+chi2[1], \
+        alpha=0.3, color='#941266')
+
+    ax1.set_ylabel(r"$\mathbf{log_{10}\ Mh_{qc}}$")
+    ax2.set_ylabel(r"$\mathbf{log_{10}\ Mh_{qs}}$")
+    ax3.set_ylabel(r"$\boldsymbol{\ mu_{c}}$")
+    # ax4.set_ylabel(r"$\mathbf{log_{10}} \boldsymbol{\ \nu}$")
+    ax4.set_ylabel(r"$\boldsymbol{\ mu_{s}}$")
+    ax5.set_ylabel(r"$\mathbf{log_{10}} \boldsymbol{{\ \chi}^2}$")
+    # ax5.set_ylabel(r"$\boldsymbol{{\chi}^2}$")
+    # ax1.set_yscale('log')
+    # ax2.set_yscale('log')
+
+    ax1.annotate(zumandelbaum_param_vals[0], (0.95,0.85), xycoords='axes fraction', 
+        bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
+    ax2.annotate(zumandelbaum_param_vals[1], (0.95,0.85), xycoords='axes fraction', 
+        bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
+    ax3.annotate(zumandelbaum_param_vals[2], (0.95,0.85), xycoords='axes fraction', 
+        bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
+    ax4.annotate(0.15, (0.95,0.85), xycoords='axes fraction', 
+        bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
+    plt.xlabel(r"$\mathbf{iteration\ number}$")
+    plt.show()
+
+
+
 
 
 def hybrid_quenching_model(theta, gals_df, mock, randint=None):
@@ -1275,166 +1342,170 @@ def get_err_data(survey, path):
 
     return err_colour, corr_mat_inv_colour
 
-dict_of_paths = cwpaths.cookiecutter_paths()
-path_to_raw = dict_of_paths['raw_dir']
-path_to_proc = dict_of_paths['proc_dir']
-path_to_interim = dict_of_paths['int_dir']
-path_to_figures = dict_of_paths['plot_dir']
-path_to_data = dict_of_paths['data_dir']
+def debug_within_outside_1sig(emcee_table, grp_keys, Mstar_q, Mhalo_q, mu, nu, chi2):
+    zumandelbaum_param_vals = [10.5, 13.76, 0.69, 0.15]
+    iteration = 600.0
+    emcee_table_it600 = emcee_table.loc[emcee_table.iteration_id == iteration]  
 
-catl_file = path_to_raw + "eco/eco_all.csv"
-path_to_mocks = path_to_data + 'mocks/m200b/eco/'
-randint_logmstar_file = pd.read_csv("/Users/asadm2/Desktop/randint_logmstar.txt", 
-    header=None)
-mock_num = randint_logmstar_file[0].values[int(iteration)-1]
-gals_df_ = reading_catls(path_to_proc + "gal_group.hdf5")
-theta_within = [mstar_within_sig, mhalo_within_sig, mu_within_sig, nu_within_sig]
-f_red_cen, f_red_sat = hybrid_quenching_model(theta_within, gals_df_, 'vishnu', \
-    mock_num)
-gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, gals_df_)
-v_sim = 130**3
-total_model, red_model, blue_model = measure_all_smf(gals_df, v_sim 
-, False, mock_num)  
-sig_red_within, sig_blue_within, cen_red_within, cen_blue_within = \
-    get_deltav_sigma_vishnu_qmcolour(gals_df, mock_num)
-total_model_within, red_model_within, blue_model_within = total_model, \
-    red_model, blue_model 
+    chi2_std_it600 = np.std(emcee_table_it600.chi2)
+    chi2_mean_it600 = np.mean(emcee_table_it600.chi2)
+    # selecting value from within one sigma                                                              
+    df_within_sig = emcee_table_it600.loc[(emcee_table_it600.chi2 < chi2_mean_it600 + chi2_std_it600)&(emcee_table_it600.chi2 > chi2_mean_it600 - chi2_std_it600)]
+    chi2_within_sig = df_within_sig.chi2.values[3]
+    mstar_within_sig = df_within_sig.Mstar_q.values[3]
+    mhalo_within_sig = df_within_sig.Mhalo_q.values[3]
+    mu_within_sig = df_within_sig.mu.values[3]
+    nu_within_sig = df_within_sig.nu.values[3]
+    # # selecting value from outside one sigma
+    df_outside_sig = emcee_table_it600.loc[emcee_table_it600.chi2 > chi2_mean_it600 + chi2_std_it600]
+    chi2_outside_sig = df_outside_sig.chi2.values[3]
+    mstar_outside_sig = df_outside_sig.Mstar_q.values[3]
+    mhalo_outside_sig = df_outside_sig.Mhalo_q.values[3]
+    mu_outside_sig = df_outside_sig.mu.values[3]
+    nu_outside_sig = df_outside_sig.nu.values[3]
 
-theta_outside = [mstar_outside_sig, mhalo_outside_sig, mu_outside_sig, \
-    nu_outside_sig]
-f_red_cen, f_red_sat = hybrid_quenching_model(theta_outside, gals_df_, 'vishnu', \
-    mock_num)
-gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, gals_df_)
-v_sim = 130**3
-total_model, red_model, blue_model = measure_all_smf(gals_df, v_sim 
-, False, mock_num)  
-sig_red_outside, sig_blue_outside, cen_red_outside, cen_blue_outside = \
-    get_deltav_sigma_vishnu_qmcolour(gals_df, mock_num)
-total_model_outside, red_model_outside, blue_model_outside = total_model, \
-    red_model, blue_model 
+    fig1, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(5, 1, sharex=True, \
+        figsize=(10,10))
+    ax1.plot(grp_keys, Mstar_q[0],c='#941266',ls='--', marker='o')
+    ax1.axhline(zumandelbaum_param_vals[0],color='lightgray')
+    ax1.scatter(iteration, mstar_outside_sig, marker='*', c='k', s=70)
+    ax1.scatter(iteration, mstar_within_sig, marker='o', c='k', s=70)
+    ax2.plot(grp_keys, Mhalo_q[0], c='#941266',ls='--', marker='o')
+    ax2.axhline(zumandelbaum_param_vals[1],color='lightgray')
+    ax2.scatter(iteration, mhalo_outside_sig, marker='*', c='k', s=70)
+    ax2.scatter(iteration, mhalo_within_sig, marker='o', c='k', s=70)
+    ax3.plot(grp_keys, mu[0], c='#941266',ls='--', marker='o')
+    ax3.axhline(zumandelbaum_param_vals[2],color='lightgray')
+    ax3.scatter(iteration, mu_outside_sig, marker='*', c='k', s=70)
+    ax3.scatter(iteration, mu_within_sig, marker='o', c='k', s=70)
+    ax4.plot(grp_keys, nu[0], c='#941266',ls='--', marker='o')
+    ax4.axhline(zumandelbaum_param_vals[3],color='lightgray')
+    ax4.scatter(iteration, nu_outside_sig, marker='*', c='k', s=70)
+    ax4.scatter(iteration, nu_within_sig, marker='o', c='k', s=70) 
+    ax5.plot(grp_keys, chi2[0], c='#941266',ls='--', marker='o')
+    ax5.scatter(iteration, chi2_outside_sig, marker='*', c='k', s=70)
+    ax5.scatter(iteration, chi2_within_sig, marker='o', c='k', s=70)
 
-catl, volume, z_median = read_data_catl(catl_file, survey)
-catl = assign_colour_label_data(catl)
-total_data, red_data, blue_data = measure_all_smf(catl, volume, True)
-std_red, centers_red, std_blue, centers_blue = get_deltav_sigma_data(catl)
+    ax1.fill_between(grp_keys, Mstar_q[0]-Mstar_q[1], Mstar_q[0]+Mstar_q[1], 
+        alpha=0.3, color='#941266')
+    ax2.fill_between(grp_keys, Mhalo_q[0]-Mhalo_q[1], Mhalo_q[0]+Mhalo_q[1], \
+        alpha=0.3, color='#941266')
+    ax3.fill_between(grp_keys, mu[0]-mu[1], mu[0]+mu[1], \
+        alpha=0.3, color='#941266')
+    ax4.fill_between(grp_keys, nu[0]-nu[1], nu[0]+nu[1], \
+        alpha=0.3, color='#941266')
+    ax5.fill_between(grp_keys, chi2[0]-chi2[1], chi2[0]+chi2[1], \
+        alpha=0.3, color='#941266')
 
-sigma, corr_mat_inv = get_err_data(survey, path_to_mocks)
+    ax1.set_ylabel(r"$\mathbf{log_{10}\ M^{q}_{*}}$")
+    ax2.set_ylabel(r"$\mathbf{log_{10}\ M^{q}_{h}}$")
+    ax3.set_ylabel(r"$\boldsymbol{\mu}$")
+    # ax4.set_ylabel(r"$\mathbf{log_{10}} \boldsymbol{\ \nu}$")
+    ax4.set_ylabel(r"$\boldsymbol{\nu}$")
+    ax5.set_ylabel(r"$\mathbf{log_{10}} \boldsymbol{{\ \chi}^2}$")
+    # ax5.set_ylabel(r"$\boldsymbol{{\chi}^2}$")
+    # ax1.set_yscale('log')
+    # ax2.set_yscale('log')
 
-plt.plot(total_model_within[0], total_model_within[1], c='k', linestyle='-', \
-    label='total within 1sig')
-plt.plot(total_model_outside[0], total_model_outside[1], c='k', linestyle='--',\
-    label='total outside 1sig')
-plt.plot(red_model_within[0], red_model_within[1], color='maroon', 
-    linestyle='--', label='within 1sig')
-plt.plot(blue_model_within[0], blue_model_within[1], color='mediumblue', 
-    linestyle='--', label='within 1sig')
-plt.plot(red_model_outside[0], red_model_outside[1], color='indianred', 
-    linestyle='--', label='outside 1sig')
-plt.plot(blue_model_outside[0], blue_model_outside[1], color='cornflowerblue', 
-    linestyle='--', label='outside 1sig')
-plt.errorbar(x=red_data[0], y=red_data[1], yerr=sigma[0:5], xerr=None, 
-    color='r', label='data')
-plt.errorbar(x=blue_data[0], y=blue_data[1], yerr=sigma[5:10], xerr=None, 
-    color='b', label='data')
-plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=20)
-plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=20)
-plt.legend(loc='best')
-plt.title('ECO SMF')
-plt.show()
+    ax1.annotate(zumandelbaum_param_vals[0], (0.95,0.85), xycoords='axes fraction', 
+        bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
+    ax2.annotate(zumandelbaum_param_vals[1], (0.95,0.85), xycoords='axes fraction', 
+        bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
+    ax3.annotate(zumandelbaum_param_vals[2], (0.95,0.85), xycoords='axes fraction', 
+        bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
+    ax4.annotate(0.15, (0.95,0.85), xycoords='axes fraction', 
+        bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
+    plt.xlabel(r"$\mathbf{iteration\ number}$")
+    plt.show()
 
-plt.plot(max_total, phi_total, c='k')
-plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=20)
-plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=20)
-plt.legend(loc='best')
-plt.title('ECO SMF')
-plt.show()
+    dict_of_paths = cwpaths.cookiecutter_paths()
+    path_to_raw = dict_of_paths['raw_dir']
+    path_to_proc = dict_of_paths['proc_dir']
+    path_to_interim = dict_of_paths['int_dir']
+    path_to_figures = dict_of_paths['plot_dir']
+    path_to_data = dict_of_paths['data_dir']
 
-plt.scatter(cen_red_within, sig_red_within, c='maroon', label='within 1sig')
-plt.scatter(cen_red_outside, sig_red_outside, c='indianred', label='outside 1sig')
-plt.scatter(cen_blue_within, sig_blue_within, c='mediumblue', label='within 1sig')
-plt.scatter(cen_blue_outside, sig_blue_outside, c='cornflowerblue', \
-    label='outside 1sig')
-plt.errorbar(x=centers_red, y=std_red, yerr=sigma[10:15], xerr=None, color='r',\
-    label='data', fmt='')
-plt.errorbar(x=centers_blue, y=std_blue, yerr=sigma[15:20], xerr=None, \
-    color='b', label='data', fmt='')
-plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=20)
-plt.ylabel(r'$\sigma$')
-plt.legend(loc='best')
-plt.title(r'ECO spread in $\delta v$')
-plt.show()
-# walker_within_sig_df = emcee_table_it600.loc[emcee_table_it600.walker_id == \
-#     walker_within_sig]
-# walker_outside_sig_df = emcee_table_it600.loc[emcee_table_it600.walker_id == \
-#     walker_outside_sig]
+    catl_file = path_to_raw + "eco/eco_all.csv"
+    path_to_mocks = path_to_data + 'mocks/m200b/eco/'
+    randint_logmstar_file = pd.read_csv("/Users/asadm2/Desktop/randint_logmstar.txt", 
+        header=None)
+    mock_num = randint_logmstar_file[0].values[int(iteration)-1]
+    gals_df_ = reading_catls(path_to_proc + "gal_group.hdf5")
+    theta_within = [mstar_within_sig, mhalo_within_sig, mu_within_sig, nu_within_sig]
+    f_red_cen, f_red_sat = hybrid_quenching_model(theta_within, gals_df_, 'vishnu', \
+        mock_num)
+    gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, gals_df_)
+    v_sim = 130**3
+    total_model, red_model, blue_model = measure_all_smf(gals_df, v_sim 
+    , False, mock_num)  
+    sig_red_within, sig_blue_within, cen_red_within, cen_blue_within = \
+        get_deltav_sigma_vishnu_qmcolour(gals_df, mock_num)
+    total_model_within, red_model_within, blue_model_within = total_model, \
+        red_model, blue_model 
 
-# selecting value from within one sigma                                                              
-# emcee_table_it600.loc[emcee_table_it600.nu > 2.3]
-# num_within_sig = 2.301931 # actual number is 2.301930568379833
-# num_to_match = find_nearest(emcee_table_it600.nu.values, num_within_sig)
-# walker_within_sig = emcee_table_it600.walker_id.loc[emcee_table_it600.nu.values\
-#     == num_to_match].values[0]
-# # selecting value from outside one sigma
-# emcee_table_it600.loc[emcee_table_it600.nu < 0.0]
-# num_outside_sig = -1.165710 # actual number is -1.1657098586318317
-# num_to_match = find_nearest(emcee_table_it600.nu.values, num_outside_sig)
-# walker_outside_sig = emcee_table_it600.walker_id.loc[emcee_table_it600.nu.values\
-#     == num_to_match].values[0]
+    theta_outside = [mstar_outside_sig, mhalo_outside_sig, mu_outside_sig, \
+        nu_outside_sig]
+    f_red_cen, f_red_sat = hybrid_quenching_model(theta_outside, gals_df_, 'vishnu', \
+        mock_num)
+    gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, gals_df_)
+    v_sim = 130**3
+    total_model, red_model, blue_model = measure_all_smf(gals_df, v_sim 
+    , False, mock_num)  
+    sig_red_outside, sig_blue_outside, cen_red_outside, cen_blue_outside = \
+        get_deltav_sigma_vishnu_qmcolour(gals_df, mock_num)
+    total_model_outside, red_model_outside, blue_model_outside = total_model, \
+        red_model, blue_model 
 
-# walker_within_sig_df = emcee_table_it600.loc[emcee_table_it600.walker_id == \
-#     walker_within_sig]
-# walker_outside_sig_df = emcee_table_it600.loc[emcee_table_it600.walker_id == \
-#     walker_outside_sig]
+    catl, volume, z_median = read_data_catl(catl_file, survey)
+    catl = assign_colour_label_data(catl)
+    total_data, red_data, blue_data = measure_all_smf(catl, volume, True)
+    std_red, centers_red, std_blue, centers_blue = get_deltav_sigma_data(catl)
 
-# fig1, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(5, 1, sharex=True, \
-#     figsize=(10,10))
-# ax1.plot(grp_keys, Mstar_q[0],c='#941266',ls='--', marker='o')
-# ax1.axhline(zumandelbaum_param_vals[0],color='lightgray')
-# ax1.scatter(iteration, walker_outside_sig_df.iloc[0][0], marker='*', c='k', s=70)
-# ax1.scatter(iteration, walker_within_sig_df.iloc[0][0], marker='o', c='k', s=70)
-# ax2.plot(grp_keys, Mhalo_q[0], c='#941266',ls='--', marker='o')
-# ax2.axhline(zumandelbaum_param_vals[1],color='lightgray')
-# ax2.scatter(iteration, walker_outside_sig_df.iloc[0][1], marker='*', c='k', s=70)
-# ax2.scatter(iteration, walker_within_sig_df.iloc[0][1], marker='o', c='k', s=70)
-# ax3.plot(grp_keys, mu[0], c='#941266',ls='--', marker='o')
-# ax3.axhline(zumandelbaum_param_vals[2],color='lightgray')
-# ax3.scatter(iteration, walker_outside_sig_df.iloc[0][2], marker='*', c='k', s=70)
-# ax3.scatter(iteration, walker_within_sig_df.iloc[0][2], marker='o', c='k', s=70)
-# ax4.plot(grp_keys, nu[0], c='#941266',ls='--', marker='o')
-# ax4.axhline(zumandelbaum_param_vals[3],color='lightgray')
-# ax4.scatter(iteration, walker_outside_sig_df.iloc[0][3], marker='*', c='k', s=70)
-# ax4.scatter(iteration, walker_within_sig_df.iloc[0][3], marker='o', c='k', s=70) 
-# ax5.plot(grp_keys, chi2[0], c='#941266',ls='--', marker='o')
-# ax5.scatter(iteration, walker_outside_sig_df.iloc[0][4], marker='*', c='k', s=70)
-# ax5.scatter(iteration, walker_within_sig_df.iloc[0][4], marker='o', c='k', s=70)
+    sigma, corr_mat_inv = get_err_data(survey, path_to_mocks)
 
-# ax1.fill_between(grp_keys, Mstar_q[0]-Mstar_q[1], Mstar_q[0]+Mstar_q[1], 
-#     alpha=0.3, color='#941266')
-# ax2.fill_between(grp_keys, Mhalo_q[0]-Mhalo_q[1], Mhalo_q[0]+Mhalo_q[1], \
-#     alpha=0.3, color='#941266')
-# ax3.fill_between(grp_keys, mu[0]-mu[1], mu[0]+mu[1], \
-#     alpha=0.3, color='#941266')
-# ax4.fill_between(grp_keys, nu[0]-nu[1], nu[0]+nu[1], \
-#     alpha=0.3, color='#941266')
-# ax5.fill_between(grp_keys, chi2[0]-chi2[1], chi2[0]+chi2[1], \
-#     alpha=0.3, color='#941266')
+    plt.clf()
+    plt.plot(total_model_within[0], total_model_within[1], c='k', linestyle='-', \
+        label='total within 1sig')
+    plt.plot(total_model_outside[0], total_model_outside[1], c='k', linestyle='--',\
+        label='total outside 1sig')
+    plt.plot(red_model_within[0], red_model_within[1], color='maroon', 
+        linestyle='--', label='within 1sig')
+    plt.plot(blue_model_within[0], blue_model_within[1], color='mediumblue', 
+        linestyle='--', label='within 1sig')
+    plt.plot(red_model_outside[0], red_model_outside[1], color='indianred', 
+        linestyle='--', label='outside 1sig')
+    plt.plot(blue_model_outside[0], blue_model_outside[1], color='cornflowerblue', 
+        linestyle='--', label='outside 1sig')
+    plt.errorbar(x=red_data[0], y=red_data[1], yerr=sigma[0:5], xerr=None, 
+        color='r', label='data')
+    plt.errorbar(x=blue_data[0], y=blue_data[1], yerr=sigma[5:10], xerr=None, 
+        color='b', label='data')
+    plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=20)
+    plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=20)
+    plt.legend(loc='best')
+    plt.title('ECO SMF')
+    plt.show()
 
-# ax1.set_ylabel(r"$\mathbf{log_{10}\ M^{q}_{*}}$")
-# ax2.set_ylabel(r"$\mathbf{log_{10}\ M^{q}_{h}}$")
-# ax3.set_ylabel(r"$\boldsymbol{\mu}$")
-# # ax4.set_ylabel(r"$\mathbf{log_{10}} \boldsymbol{\ \nu}$")
-# ax4.set_ylabel(r"$\boldsymbol{\nu}$")
-# ax5.set_ylabel(r"$\mathbf{log_{10}} \boldsymbol{{\ \chi}^2}$")
-# # ax1.set_yscale('log')
-# # ax2.set_yscale('log')
+    plt.clf()
+    plt.plot(max_total, phi_total, c='k')
+    plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=20)
+    plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=20)
+    plt.legend(loc='best')
+    plt.title('ECO SMF')
+    plt.show()
 
-# ax1.annotate(zumandelbaum_param_vals[0], (0.95,0.85), xycoords='axes fraction', 
-#     bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
-# ax2.annotate(zumandelbaum_param_vals[1], (0.95,0.85), xycoords='axes fraction', 
-#     bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
-# ax3.annotate(zumandelbaum_param_vals[2], (0.95,0.85), xycoords='axes fraction', 
-#     bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
-# ax4.annotate(0.15, (0.95,0.85), xycoords='axes fraction', 
-#     bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
-# plt.xlabel(r"$\mathbf{iteration\ number}$")
-# plt.show()
+    plt.clf()
+    plt.scatter(cen_red_within, sig_red_within, c='maroon', label='within 1sig')
+    plt.scatter(cen_red_outside, sig_red_outside, c='indianred', label='outside 1sig')
+    plt.scatter(cen_blue_within, sig_blue_within, c='mediumblue', label='within 1sig')
+    plt.scatter(cen_blue_outside, sig_blue_outside, c='cornflowerblue', \
+        label='outside 1sig')
+    plt.errorbar(x=centers_red, y=std_red, yerr=sigma[10:15], xerr=None, color='r',\
+        label='data', fmt='')
+    plt.errorbar(x=centers_blue, y=std_blue, yerr=sigma[15:20], xerr=None, \
+        color='b', label='data', fmt='')
+    plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=20)
+    plt.ylabel(r'$\sigma$')
+    plt.legend(loc='best')
+    plt.title(r'ECO spread in $\delta v$')
+    plt.show()
