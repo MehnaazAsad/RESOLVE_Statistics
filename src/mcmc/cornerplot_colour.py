@@ -27,133 +27,124 @@ rc('ytick.major', width=2, size=7)
 
 survey = 'eco'
 file_ver = 2.0
+quenching = 'hybrid'
+mf_type = 'smf'
 
 
-# chain_fname_smf_1 = path_to_proc + 'smhm_colour_run10/mcmc_{0}_colour_raw.txt'.\
-#     format(survey)
-chain_fname_smf_1 = '~/Desktop/mcmc_{0}_colour_raw.txt'.\
-    format(survey)
-mcmc_smf_1 = pd.read_csv(chain_fname_smf_1, 
-    names=['Mstar_q','Mhalo_q','mu','nu'],header=None, delim_whitespace=True)
-mcmc_smf_1 = mcmc_smf_1[mcmc_smf_1.Mstar_q.values != '#']
-mcmc_smf_1.Mstar_q = mcmc_smf_1.Mstar_q.astype(np.float64)
-mcmc_smf_1.Mhalo_q = mcmc_smf_1.Mhalo_q.astype(np.float64)
-mcmc_smf_1.mu = mcmc_smf_1.mu.astype(np.float64)
-mcmc_smf_1.nu = mcmc_smf_1.nu.astype(np.float64)
+## For SMF
+if mf_type == 'smf' or mf_type == 'both':
+     chain_fname_smf = path_to_proc + 'smhm_colour_run18/mcmc_{0}_colour_raw.txt'.\
+     format(survey)
 
-# chain_fname_bmf_1 = path_to_proc + 'bmhm_run3/combined_processed_{0}_raw.txt'.\
-#      format(survey)
-# mcmc_bmf_1 = pd.read_csv(chain_fname_bmf_1,
-#     names=['mhalo_c','mstellar_c','lowmass_slope','highmass_slope','scatter'], 
-#     header=None, delim_whitespace=True)
-# # mcmc_bmf_1 = mcmc_bmf_1[mcmc_bmf_1.mhalo_c.values != '#']
-# mcmc_bmf_1.mhalo_c = mcmc_bmf_1.mhalo_c.astype(np.float64)
-# mcmc_bmf_1.mstellar_c = mcmc_bmf_1.mstellar_c.astype(np.float64)
-# mcmc_bmf_1.lowmass_slope = mcmc_bmf_1.lowmass_slope.astype(np.float64)
+     if quenching == 'hybrid':
+          mcmc_smf_1 = pd.read_csv(chain_fname_smf, 
+          names=['Mstar_q','Mhalo_q','mu','nu'],header=None, delim_whitespace=True)
 
-# Cases where last parameter was a NaN and its value was being written to 
-# the first element of the next line followed by 4 NaNs for the other parameters
-# for idx,row in enumerate(mcmc_bmf_1.values):
-#      if np.isnan(row)[4] == True and np.isnan(row)[3] == False:
-#           scatter_val = mcmc_bmf_1.values[idx+1][0]
-#           row[4] = scatter_val 
+          mcmc_smf_1 = mcmc_smf_1[mcmc_smf_1.Mstar_q.values != '#']
+          mcmc_smf_1.Mstar_q = mcmc_smf_1.Mstar_q.astype(np.float64)
+          mcmc_smf_1.Mhalo_q = mcmc_smf_1.Mhalo_q.astype(np.float64)
+          mcmc_smf_1.mu = mcmc_smf_1.mu.astype(np.float64)
+          mcmc_smf_1.nu = mcmc_smf_1.nu.astype(np.float64)
 
-for idx,row in enumerate(mcmc_smf_1.values):
-     if np.isnan(row)[3] == True and np.isnan(row)[2] == False:
-          nu_val = mcmc_smf_1.values[idx+1][0]
-          row[3] = nu_val
+          for idx,row in enumerate(mcmc_smf_1.values):
+               if np.isnan(row)[3] == True and np.isnan(row)[2] == False:
+                    nu_val = mcmc_smf_1.values[idx+1][0]
+                    row[3] = nu_val
 
-# mcmc_bmf_1 = mcmc_bmf_1.dropna(axis='index', how='any').reset_index(drop=True)
-mcmc_smf_1 = mcmc_smf_1.dropna(axis='index', how='any').reset_index(drop=True)
-# mcmc_smf_1.nu = np.log10(mcmc_smf_1.nu)
+     elif quenching == 'halo':
+          mcmc_smf_1 = pd.read_csv(chain_fname_smf, delim_whitespace=True, 
+               names=['Mh_qc','Mh_qs','mu_c','mu_s'], 
+               header=None)
 
-# sampler_bmf_1 = mcmc_bmf_1.values.reshape(250,1000,5)
-sampler_smf_1 = mcmc_smf_1.values.reshape(1000,260,4)
+          mcmc_smf_1 = mcmc_smf_1[mcmc_smf_1.Mh_qc.values != '#']
+          mcmc_smf_1.Mh_qc = mcmc_smf_1.Mh_qc.astype(np.float64)
+          mcmc_smf_1.Mh_qs = mcmc_smf_1.Mh_qs.astype(np.float64)
+          mcmc_smf_1.mu_c = mcmc_smf_1.mu_c.astype(np.float64)
+          mcmc_smf_1.mu_s = mcmc_smf_1.mu_s.astype(np.float64)
 
-# Removing burn-in
-ndim = 4
-# samples_bmf_1 = sampler_bmf_1[:, 130:, :].reshape((-1, ndim))
-samples_smf_1 = sampler_smf_1[200:, :, :].reshape((-1, ndim))
+          for idx,row in enumerate(mcmc_smf_1.values):
+               if np.isnan(row)[3] == True and np.isnan(row)[2] == False:
+                    mu_s_val = mcmc_smf_1.values[idx+1][0]
+                    row[3] = mu_s_val 
 
-survey = 'eco'
-file_ver = 2.0
 
-if survey == 'eco' and file_ver == 1.0:
-     chain_fname_smf_2 = path_to_proc + 'smhm_run4_errjk/mcmc_eco.dat'
-     mcmc_smf_2 = pd.read_csv(chain_fname_smf_2,
-          names=['mhalo_c','mstellar_c','lowmass_slope','highmass_slope',
-          'scatter'],sep='\s+',dtype=np.float64)
-else:
-     chain_fname_smf_2 = '~/Desktop/mcmc_{0}_colour_raw.txt'.\
-          format(survey)
-     # chain_fname_smf_2 = path_to_proc + 'smhm_run5_errmock/mcmc_{0}_raw.txt'.\
-     #      format(survey)
-     mcmc_smf_2 = pd.read_csv(chain_fname_smf_2, 
-     names=['Mstar_q','Mhalo_q','mu','nu'],header=None, delim_whitespace=True)
-     mcmc_smf_2 = mcmc_smf_2[mcmc_smf_2.Mstar_q.values != '#']
-     mcmc_smf_2.Mstar_q = mcmc_smf_2.Mstar_q.astype(np.float64)
-     mcmc_smf_2.Mhalo_q = mcmc_smf_2.Mhalo_q.astype(np.float64)
-     mcmc_smf_2.mu = mcmc_smf_2.mu.astype(np.float64)
-     mcmc_smf_2.nu = mcmc_smf_2.nu.astype(np.float64)
+     mcmc_smf_1 = mcmc_smf_1.dropna(axis='index', how='any').reset_index(drop=True)
+     sampler_smf_1 = mcmc_smf_1.values.reshape(780,260,4)
 
-# chain_fname_bmf_2 = path_to_proc + 'bmhm_run3/combined_processed_{0}_raw.txt'.format(survey)
-# mcmc_bmf_2 = pd.read_csv(chain_fname_bmf_2,
-#     names=['mhalo_c','mstellar_c','lowmass_slope','highmass_slope','scatter'], 
-#     header=None, delim_whitespace=True)
-# mcmc_bmf_2 = mcmc_bmf_2[mcmc_bmf_2.mhalo_c.values != '#']
-# mcmc_bmf_2.mhalo_c = mcmc_bmf_2.mhalo_c.astype(np.float64)
-# mcmc_bmf_2.mstellar_c = mcmc_bmf_2.mstellar_c.astype(np.float64)
-# mcmc_bmf_2.lowmass_slope = mcmc_bmf_2.lowmass_slope.astype(np.float64)
+     # Removing burn-in
+     ndim = 4
+     samples_smf_1 = sampler_smf_1[100:, :, :].reshape((-1, ndim))
 
-# # Cases where last parameter was a NaN and its value was being written to 
-# # the first element of the next line followed by 4 NaNs for the other parameters
-# for idx,row in enumerate(mcmc_bmf_2.values):
-#      if np.isnan(row)[4] == True and np.isnan(row)[3] == False:
-#           scatter_val = mcmc_bmf_2.values[idx+1][0]
-#           row[4] = scatter_val 
+if mf_type == 'bmf' or mf_type == 'both':
+     chain_fname_bmf = path_to_proc + 'bmhm_run3/combined_processed_{0}_raw.txt'.\
+     format(survey)
 
-for idx,row in enumerate(mcmc_smf_1.values):
-     if np.isnan(row)[3] == True and np.isnan(row)[2] == False:
-          nu_val = mcmc_smf_1.values[idx+1][0]
-          row[3] = nu_val
+     ## For BMF
+     if quenching == 'hybrid':
+          mcmc_bmf_1 = pd.read_csv(chain_fname_bmf, 
+          names=['Mstar_q','Mhalo_q','mu','nu'],header=None, delim_whitespace=True)
 
-# mcmc_bmf_2 = mcmc_bmf_2.dropna(axis='index', how='any').reset_index(drop=True)
-mcmc_smf_2 = mcmc_smf_2.dropna(axis='index', how='any').reset_index(drop=True)
-mcmc_smf_2.nu = np.log10(mcmc_smf_2.nu) # so that both run 9 and run 10 chains can be plotted 
+          mcmc_bmf_1 = mcmc_bmf_1[mcmc_bmf_1.Mstar_q.values != '#']
+          mcmc_bmf_1.Mstar_q = mcmc_bmf_1.Mstar_q.astype(np.float64)
+          mcmc_bmf_1.Mhalo_q = mcmc_bmf_1.Mhalo_q.astype(np.float64)
+          mcmc_bmf_1.mu = mcmc_bmf_1.mu.astype(np.float64)
+          mcmc_bmf_1.nu = mcmc_bmf_1.nu.astype(np.float64)
 
-# sampler_bmf_2 = mcmc_bmf_2.values.reshape(250,1000,5)
-sampler_smf_2 = mcmc_smf_2.values.reshape(1000,260,4)
+          for idx,row in enumerate(mcmc_bmf_1.values):
+               if np.isnan(row)[3] == True and np.isnan(row)[2] == False:
+                    nu_val = mcmc_bmf_1.values[idx+1][0]
+                    row[3] = nu_val
 
-# Removing burn-in
-ndim = 4
-# samples_bmf_2 = sampler_bmf_2[:, 130:, :].reshape((-1, ndim))
-samples_smf_2 = sampler_smf_2[200:, :, :].reshape((-1, ndim))
+     elif quenching == 'halo':
+          mcmc_bmf_1 = pd.read_csv(chain_fname_bmf, delim_whitespace=True, 
+               names=['Mh_qc','Mh_qs','mu_c','mu_s'], 
+               header=None)
 
-zumandelbaum_param_vals = [10.5, 13.76, 0.69, 0.15]
-optimizer_best_fit_eco_smf = [10.39, 14.85, 0.65, 0.16]
+          mcmc_bmf_1 = mcmc_bmf_1[mcmc_bmf_1.Mh_qc.values != '#']
+          mcmc_bmf_1.Mh_qc = mcmc_bmf_1.Mh_qc.astype(np.float64)
+          mcmc_bmf_1.Mh_qs = mcmc_bmf_1.Mh_qs.astype(np.float64)
+          mcmc_bmf_1.mu_c = mcmc_bmf_1.mu_c.astype(np.float64)
+          mcmc_bmf_1.mu_s = mcmc_bmf_1.mu_s.astype(np.float64)
+
+          for idx,row in enumerate(mcmc_bmf_1.values):
+               if np.isnan(row)[3] == True and np.isnan(row)[2] == False:
+                    mu_s_val = mcmc_bmf_1.values[idx+1][0]
+                    row[3] = mu_s_val 
+
+
+     mcmc_bmf_1 = mcmc_bmf_1.dropna(axis='index', how='any').reset_index(drop=True)
+     sampler_bmf_1 = mcmc_bmf_1.values.reshape(780,260,4)
+
+     # Removing burn-in
+     ndim = 4
+     samples_bmf_1 = sampler_bmf_1[100:, :, :].reshape((-1, ndim))
+
+
+zumandelbaum_param_vals_hybrid = [10.5, 13.76, 0.69, 0.15] # For hybrid model
+optimizer_best_fit_eco_smf_hybrid = [10.49, 14.03, 0.69, 0.14] # For hybrid model
+zumandelbaum_param_vals_halo = [12.20, 0.38, 12.17, 0.15] # For halo model
+optimizer_best_fit_eco_smf_halo = [12.61, 13.5, 0.40, 0.148] # For halo model
 
 c = ChainConsumer()
-c.add_chain(samples_smf_1,parameters=[r"$\mathbf{M^{q}_{*}}$", \
-     r"$\mathbf{M^{q}_{h}}$", r"$\boldsymbol{\mu}$",\
-          r"$\boldsymbol{\nu}$"],\
-               name="ECO run 11", color='#E766EA', zorder=10)
-# c.add_chain(samples_bmf_1,parameters=[r"$\mathbf{M_{1}}$", \
-#      r"$\mathbf{M_{*(b),0}}$", r"$\boldsymbol{\beta}$",\
-#           r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$"],\
-#                name="ECO baryonic", color='#53A48D')
-# c.add_chain(samples_smf_2,parameters=[r"$\mathbf{M^{q}_{*}}$", \
-#      r"$\mathbf{M^{q}_{h}}$", r"$\boldsymbol{\mu}$",\
-#           r"$\boldsymbol{\nu}$"],\
-#                name="ECO run 11", color='#53A48D', zorder=10)
-# c.add_chain(samples_bmf_2,parameters=[r"$\mathbf{M_{1}}$", \
-#      r"$\mathbf{M_{*(b),0}}$", r"$\boldsymbol{\beta}$",\
-#           r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$"],\
-#                name="RESOLVE A BMHM", color='b')
+if mf_type == 'smf' or mf_type == 'both':
+     c.add_chain(samples_smf_1,parameters=[r"$\mathbf{M^{q}_{*}}$", 
+          r"$\mathbf{M^{q}_{h}}$", r"$\boldsymbol{\mu}$", r"$\boldsymbol{\nu}$"],
+          name=r"ECO (smf only) additional prior on $\mathbf{M^{q}_{h}}$", 
+          color='#E766EA', zorder=10)
+if mf_type == 'bmf' or mf_type == 'both':
+     c.add_chain(samples_bmf_1,parameters=[r"$\mathbf{M_{1}}$", \
+          r"$\mathbf{M_{*(b),0}}$", r"$\boldsymbol{\beta}$",\
+               r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$"],\
+                    name="ECO baryonic", color='#53A48D')
 # c.configure(shade_gradient=[0.1, 3.0], colors=['r', 'b'], \
 #      sigmas=[1,2], shade_alpha=0.4)
-c.configure(smooth=True,label_font_size=20,tick_font_size=8,summary=True,\
-     sigma2d=True, sigmas=[1, 2]) #1d gaussian showing 68%,95% conf intervals
-fig2 = c.plotter.plot(display=True,truth=zumandelbaum_param_vals)
+c.configure(smooth=True,label_font_size=25,tick_font_size=10,summary=True,\
+     sigma2d=True, sigmas=[1, 2],legend_kwargs={"fontsize": 30}) #1d gaussian showing 68%,95% conf intervals
+if quenching == 'hybrid':
+     if mf_type == 'smf':
+          fig1 = c.plotter.plot(display=True,truth=optimizer_best_fit_eco_smf_hybrid)
+elif quenching == 'halo':
+     if mf_type == 'smf':
+          fig1 = c.plotter.plot(display=True,truth=optimizer_best_fit_eco_smf_halo)
 # fig2 = c.plotter.plot(filename=path_to_figures+'emcee_cc_mp_eco_corrscatter.png',\
 #      truth=behroozi10_param_vals)
-
