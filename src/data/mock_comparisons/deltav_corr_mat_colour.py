@@ -384,6 +384,80 @@ def get_deltav_sigma_data(df):
 
     return std_red, centers_red, std_blue, centers_blue
 
+def get_sigma_per_group_data(df):
+
+    catl = df.copy()
+    if survey == 'eco' or survey == 'resolvea':
+        catl = catl.loc[catl.logmstar >= 8.9]
+    elif survey == 'resolveb':
+        catl = catl.loc[catl.logmstar >= 8.7]
+    catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
+
+    red_subset_grpids = np.unique(catl.groupid.loc[(catl.\
+        colour_label == 'R') & (catl.g_galtype == 1)].values)  
+    blue_subset_grpids = np.unique(catl.groupid.loc[(catl.\
+        colour_label == 'B') & (catl.g_galtype == 1)].values)
+
+    red_singleton_counter = 0
+    red_sigma_arr = []
+    red_cen_stellar_mass_arr = []
+    for key in red_subset_grpids: 
+        group = catl.loc[catl.groupid == key]
+        if len(group) == 1:
+            red_singleton_counter += 1
+        else:
+            cen_stellar_mass = group.logmstar.loc[group.g_galtype\
+                .values == 1].values[0]
+            
+            # Different velocity definitions
+            mean_cz_grp = np.round(np.mean(group.cz.values),2)
+            cen_cz_grp = group.cz.loc[group.g_galtype == 1].values[0]
+            # cz_grp = np.unique(group.grpcz.values)[0]
+
+            # Velocity difference
+            deltav = group.cz.values - len(group)*[mean_cz_grp]
+            # sigma = deltav[deltav!=0].std()
+            sigma = deltav.std()
+            
+            red_sigma_arr.append(sigma)
+            red_cen_stellar_mass_arr.append(cen_stellar_mass)
+
+    blue_singleton_counter = 0
+    blue_sigma_arr = []
+    blue_cen_stellar_mass_arr = []
+    for key in blue_subset_grpids: 
+        group = catl.loc[catl.groupid == key]
+        if len(group) == 1:
+            blue_singleton_counter += 1
+        else:
+            cen_stellar_mass = group.logmstar.loc[group.g_galtype\
+                .values == 1].values[0]
+            
+            # Different velocity definitions
+            mean_cz_grp = np.round(np.mean(group.cz.values),2)
+            cen_cz_grp = group.cz.loc[group.g_galtype == 1].values[0]
+            # cz_grp = np.unique(group.grpcz.values)[0]
+
+            # Velocity difference
+            deltav = group.cz.values - len(group)*[mean_cz_grp]
+            # sigma = deltav[deltav!=0].std()
+            sigma = deltav.std()
+            
+            blue_sigma_arr.append(sigma)
+            blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+
+    mean_stats_red = bs(red_sigma_arr, red_cen_stellar_mass_arr, 
+        statistic='mean', bins=np.linspace(0,250,6))
+    mean_stats_blue = bs(blue_sigma_arr, blue_cen_stellar_mass_arr, 
+        statistic='mean', bins=np.linspace(0,250,6))
+
+    centers_red = 0.5 * (mean_stats_red[1][1:] + \
+        mean_stats_red[1][:-1])
+    centers_blue = 0.5 * (mean_stats_blue[1][1:] + \
+        mean_stats_blue[1][:-1])
+
+    return mean_stats_red, centers_red, mean_stats_blue, centers_blue
+
 def diff_smf(mstar_arr, volume, h1_bool, colour_flag=False):
     """
     Calculates differential stellar mass function in units of h=1.0
@@ -1731,6 +1805,57 @@ def get_err_data(survey, path):
 
     return combined_df
 
+def measure_all_smf(table, volume, data_bool, randint_logmstar=None):
+    """
+    Calculates differential stellar mass function for all, red and blue galaxies
+    from mock/data
+
+    Parameters
+    ----------
+    table: pandas Dataframe
+        Dataframe of either mock or data 
+    volume: float
+        Volume of simulation/survey
+    cvar: float
+        Cosmic variance error
+    data_bool: Boolean
+        Data or mock
+
+    Returns
+    ---------
+    3 multidimensional arrays of stellar mass, phi, total error in SMF and 
+    counts per bin for all, red and blue galaxies
+    """
+
+    colour_col = 'colour_label'
+
+    if data_bool:
+        logmstar_col = 'logmstar'
+        max_total, phi_total, err_total, bins_total, counts_total = \
+            diff_smf(table[logmstar_col], volume, h1_bool=False)
+        max_red, phi_red, err_red, bins_red, counts_red = \
+            diff_smf(table[logmstar_col].loc[table[colour_col] == 'R'], 
+            volume, h1_bool=False, colour_flag='R')
+        max_blue, phi_blue, err_blue, bins_blue, counts_blue = \
+            diff_smf(table[logmstar_col].loc[table[colour_col] == 'B'], 
+            volume, h1_bool=False, colour_flag='B')
+    else:
+        # logmstar_col = 'stellar_mass'
+        logmstar_col = '{0}'.format(randint_logmstar)
+        ## Changed to 10**X because Behroozi mocks now have M* values in log
+        max_total, phi_total, err_total, bins_total, counts_total = \
+            diff_smf(10**(table[logmstar_col]), volume, h1_bool=True)
+        max_red, phi_red, err_red, bins_red, counts_red = \
+            diff_smf(10**(table[logmstar_col].loc[table[colour_col] == 'R']), 
+            volume,h1_bool=True, colour_flag='R')
+        max_blue, phi_blue, err_blue, bins_blue, counts_blue = \
+            diff_smf(10**(table[logmstar_col].loc[table[colour_col] == 'B']), 
+            volume, h1_bool=True, colour_flag='B')
+    
+    return [max_total, phi_total, err_total, counts_total] , \
+        [max_red, phi_red, err_red, counts_red] , \
+            [max_blue, phi_blue, err_blue, counts_blue]
+
 global model_init
 global survey
 global path_to_proc
@@ -2004,7 +2129,10 @@ plt.title(r'Original matrix')
 plt.show()
 
 
-U, s, Vh = linalg.svd(used_corr_mat_colour)
+## Help from http://www.math.usm.edu/lambers/cos702/cos702_files/docs/PCA.pdf
+## Help from https://stats.stackexchange.com/questions/134282/relationship-between-svd-and-pca-how-to-use-svd-to-perform-pca
+
+U, s, Vh = linalg.svd(used_corr_mat_colour) # columns of U are the eigenvectors
 eigenvalue_threshold = np.sqrt(np.sqrt(2/num_mocks))
 
 idxs_cut = []
@@ -2034,3 +2162,35 @@ plt.hlines(eigenvalue_threshold, 0, 30, ls='--')
 plt.xlabel('Component number')
 plt.ylabel('Eigenvalue')
 plt.show()
+
+## Projecting data onto new orthogonal space
+
+print('Measuring SMF for data')
+total_data, red_data, blue_data = measure_all_smf(catl, volume, \
+    data_bool=True)
+
+print('Measuring spread in vel disp for data')
+std_red, old_centers_red, std_blue, old_centers_blue = get_deltav_sigma_data(catl)
+
+print('Measuring binned spread in vel disp for data')
+mean_grp_cen_red, new_centers_red, mean_grp_cen_blue, new_centers_blue = \
+    get_sigma_per_group_data(catl)
+
+full_data_arr = []
+full_data_arr = np.insert(full_data_arr, 0, red_data[1])
+full_data_arr = np.insert(full_data_arr, len(full_data_arr), blue_data[1])
+full_data_arr = np.insert(full_data_arr, len(full_data_arr), std_red)
+full_data_arr = np.insert(full_data_arr, len(full_data_arr), std_blue)
+full_data_arr = np.insert(full_data_arr, len(full_data_arr), mean_grp_cen_red[0])
+full_data_arr = np.insert(full_data_arr, len(full_data_arr), mean_grp_cen_blue[0])
+
+full_data_arr = full_data_arr.reshape(1,30) #N,n - N:# of data , n:# of dims
+eigenvector_subset = np.matrix(U[:, :last_idx_to_keep]) 
+
+full_data_arr_new_space = full_data_arr @ eigenvector_subset
+
+## Projecting simga (error from mocks) onto new orthogonal space
+
+mock_data_df_new_space = pd.DataFrame(used_combined_df @ eigenvector_subset)
+err_colour_new_space = np.sqrt(np.diag(mock_data_df_new_space.cov()))
+
