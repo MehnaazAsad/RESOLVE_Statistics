@@ -691,22 +691,50 @@ def chi_squared(data, model, err_data, inv_corr_mat):
         Value of chi-squared given a model 
 
     """
-    # chi_squared_arr = (data - model)**2 / (err_data**2)
-    # chi_squared = np.sum(chi_squared_arr)
 
-    data = data.flatten() # from (2,5) to (1,10)
-    model = model.flatten() # same as above
+    #### Using full matrix
+    # data = data.flatten() # from (6,5) to (1,30)
+    # model = model.flatten() # same as above
 
-    # print('data: \n', data)
-    # print('model: \n', model)
+    # first_term = ((data - model) / (err_data)).reshape(1,data.size)
+    # third_term = np.transpose(first_term)
 
-    first_term = ((data - model) / (err_data)).reshape(1,data.size)
+    # # chi_squared is saved as [[value]]
+    # chi_squared = np.dot(np.dot(first_term,inv_corr_mat),third_term)
+
+    # return chi_squared[0][0]
+    ####
+    
+    ### Using matrix only for phi 
+
+    phi_data = data[0:10]
+    phi_model = model[0:10]
+    phi_error = err_data[0:10]
+
+    first_term = ((phi_data - phi_model) / (phi_error)).reshape(1,phi_data.size)
     third_term = np.transpose(first_term)
 
     # chi_squared is saved as [[value]]
-    chi_squared = np.dot(np.dot(first_term,inv_corr_mat),third_term)
+    phi_chi_squared = np.dot(np.dot(first_term,inv_corr_mat),third_term)[0][0]
 
-    return chi_squared[0][0]
+    other_data = data[10:]
+    other_model = model[10:]
+    other_error = err_data[10:]
+
+    other_chi_squared = np.power(((other_data - other_model)/other_error),2)
+
+    total_chi_sqared = phi_chi_squared + np.sum(other_chi_squared)
+
+    print('phi data: \n', phi_data)
+    print('phi model: \n', phi_model)
+    print('phi error: \n', phi_error)
+    print('phi chi2: \n', phi_chi_squared)
+    print('other data: \n', other_data)
+    print('other model: \n', other_model)
+    print('other error: \n', other_error)
+    print('other chi2: \n', other_chi_squared)
+
+    return total_chi_sqared
 
 def lnprob(theta, phi_red_data, phi_blue_data, std_red_data, std_blue_data, 
     av_grpcen_red_data, av_grpcen_blue_data, err, corr_mat_inv):
@@ -1207,23 +1235,37 @@ def get_err_data(survey, path):
         'av_grpcen_blue_1':av_grpcen_blue_1, 'av_grpcen_blue_2':av_grpcen_blue_2, \
         'av_grpcen_blue_3':av_grpcen_blue_3, 'av_grpcen_blue_4':av_grpcen_blue_4 })
 
+    phi_df = combined_df[combined_df.columns[0:10]]
+    phi_corr_mat_colour = phi_df.corr()
+    phi_corr_mat_inv_colour = np.linalg.inv(phi_corr_mat_colour.values)  
+    phi_err_colour = np.sqrt(np.diag(phi_df.cov()))
+
+    other_df = combined_df[combined_df.columns[10:]]
+    other_error = other_df.std(axis=0).values
+
+    err_colour = np.insert(phi_err_colour, len(phi_err_colour), other_error)
     # Correlation matrix of phi and deltav colour measurements combined
-    corr_mat_colour = combined_df.corr()
-    corr_mat_inv_colour = np.linalg.inv(corr_mat_colour.values)  
-    err_colour = np.sqrt(np.diag(combined_df.cov()))
+    # corr_mat_colour = combined_df.corr()
+    # corr_mat_inv_colour = np.linalg.inv(corr_mat_colour.values)  
+    # err_colour = np.sqrt(np.diag(combined_df.cov()))
 
-    # deltav_sig_colour = np.append(deltav_sig_red, deltav_sig_blue, axis = 0)
-    # cov_mat_colour = np.cov(phi_arr_colour,deltav_sig_colour, rowvar=False)
-    # err_colour = np.sqrt(cov_mat_colour.diagonal())
-    # corr_mat_colour = cov_mat_colour / np.outer(err_colour, err_colour)                                                           
-    # corr_mat_inv_colour = np.linalg.inv(corr_mat_colour)
+    # import matplotlib.pyplot as plt
+    # from matplotlib import cm as cm
 
-    # cov_mat_colour = np.cov(phi_arr_red,phi_arr_blue, rowvar=False)
-    # err_colour = np.sqrt(cov_mat_colour.diagonal())
-    # corr_mat_colour = cov_mat_colour / np.outer(err_colour, err_colour)                                                           
-    # corr_mat_inv_colour = np.linalg.inv(corr_mat_colour)
+    # fig1 = plt.figure()
+    # ax1 = fig1.add_subplot(111)
+    # cmap = cm.get_cmap('Spectral')
+    # cax = ax1.matshow(combined_df.corr(), cmap=cmap)
+    # tick_marks = [i for i in range(len(corr_mat_colour.columns))]
+    # plt.xticks(tick_marks, corr_mat_colour.columns, rotation='vertical')
+    # plt.yticks(tick_marks, corr_mat_colour.columns)    
+    # plt.gca().invert_yaxis() 
+    # plt.gca().xaxis.tick_bottom()
+    # fig1.colorbar(cax)
+    # plt.title(r'Mass function and old and new sigma observable')
+    # plt.show()
 
-    return err_colour, corr_mat_inv_colour
+    return err_colour, phi_corr_mat_inv_colour
 
 def std_func(bins, mass_arr, vel_arr):
     """
@@ -2056,14 +2098,14 @@ def main(args):
     print('Measuring error in data from mocks')
     sigma, corr_mat_inv = get_err_data(survey, path_to_mocks)
 
-    print('sigma: \n', sigma)
-    print('inv corr mat: \n', corr_mat_inv)
-    print('red phi data: \n', red_data[1])
-    print('blue phi data: \n', blue_data[1])
-    print('red std data: \n', std_red)
-    print('blue std data: \n', std_blue)
-    print('red grpcen data: \n', mean_grp_cen_red)
-    print('blue grpcen data: \n', mean_grp_cen_blue)
+    # print('sigma: \n', sigma)
+    # print('inv corr mat: \n', corr_mat_inv)
+    # print('red phi data: \n', red_data[1])
+    # print('blue phi data: \n', blue_data[1])
+    # print('red std data: \n', std_red)
+    # print('blue std data: \n', std_blue)
+    # print('red grpcen data: \n', mean_grp_cen_red)
+    # print('blue grpcen data: \n', mean_grp_cen_blue)
 
     print('Reading vishnu group catalog')
     gal_group_df = reading_catls(path_to_proc + "gal_group.hdf5") 
