@@ -2121,7 +2121,7 @@ used_err_colour = np.sqrt(np.diag(used_combined_df.cov()))
 fig1 = plt.figure()
 ax1 = fig1.add_subplot(111)
 cmap = cm.get_cmap('Spectral')
-cax = ax1.matshow(used_corr_mat_colour, cmap=cmap)
+cax = ax1.matshow(used_corr_mat_colour, cmap=cmap, vmin=-1, vmax=1)
 plt.gca().invert_yaxis() 
 plt.gca().xaxis.tick_bottom()
 fig1.colorbar(cax)
@@ -2147,7 +2147,7 @@ reconst = np.matrix(U[:, :last_idx_to_keep]) * np.diag(s[:last_idx_to_keep]) * \
 fig2 = plt.figure()
 ax1 = fig2.add_subplot(111)
 cmap = cm.get_cmap('Spectral')
-cax = ax1.matshow(reconst, cmap=cmap)
+cax = ax1.matshow(reconst, cmap=cmap, vmin=-1, vmax=1)
 plt.gca().invert_yaxis() 
 plt.gca().xaxis.tick_bottom()
 fig2.colorbar(cax)
@@ -2194,3 +2194,73 @@ full_data_arr_new_space = full_data_arr @ eigenvector_subset
 mock_data_df_new_space = pd.DataFrame(used_combined_df @ eigenvector_subset)
 err_colour_new_space = np.sqrt(np.diag(mock_data_df_new_space.cov()))
 
+
+## Plotting post-svd reduced correlation and covariance matrices
+corr_mat_colour_new_space = mock_data_df_new_space.corr()
+cov_mat_colour_new_space = mock_data_df_new_space.cov()
+
+fig4 = plt.figure()
+ax1 = fig4.add_subplot(111)
+cmap = cm.get_cmap('Spectral')
+cax = ax1.matshow(corr_mat_colour_new_space, cmap=cmap, vmin=-1, vmax=1)
+plt.gca().invert_yaxis() 
+plt.gca().xaxis.tick_bottom()
+fig4.colorbar(cax)
+plt.title(r'Partial correlation matrix in new orthogonal space')
+plt.show()
+
+fig5 = plt.figure()
+ax1 = fig5.add_subplot(111)
+cmap = cm.get_cmap('Spectral')
+cax = ax1.matshow(cov_mat_colour_new_space, cmap=cmap)
+plt.gca().invert_yaxis() 
+plt.gca().xaxis.tick_bottom()
+fig5.colorbar(cax)
+plt.title(r'Partial covariance matrix in new orthogonal space')
+plt.show()
+
+## Plotting post-svd full correlation matrix
+full_mock_new_space = pd.DataFrame(used_combined_df @ np.matrix(U))
+full_corr_mat_colour_new_space = full_mock_new_space.corr()
+
+fig6 = plt.figure()
+ax1 = fig6.add_subplot(111)
+cmap = cm.get_cmap('Spectral')
+cax = ax1.matshow(full_corr_mat_colour_new_space, cmap=cmap, vmin=-1, vmax=1)
+plt.gca().invert_yaxis() 
+plt.gca().xaxis.tick_bottom()
+fig6.colorbar(cax)
+plt.title(r'Full correlation matrix in new orthogonal space')
+plt.show()
+
+
+## Testing implementation of using correlation matrix for mass function 
+## measurements but calculating individual chi-squared measurements for 
+## rest of the observables
+
+test_data = full_data_arr[0]
+test_model = np.random.uniform(size=30) + full_data_arr[0]
+test_error = used_err_colour
+
+# Using the correlation matrix ONLY for phi measurements
+test_df = used_combined_df[used_combined_df.columns[0:10]]
+test_corr_mat_colour = test_df.corr()
+test_corr_mat_inv = np.linalg.inv(test_corr_mat_colour.values)  
+
+phi_data = test_data[0:10]
+phi_model = test_model[0:10]
+phi_error = test_error[0:10]
+
+first_term = ((phi_data - phi_model) / (phi_error)).reshape(1,phi_data.size)
+third_term = np.transpose(first_term)
+
+# chi_squared is saved as [[value]]
+phi_chi_squared = np.dot(np.dot(first_term,test_corr_mat_inv),third_term)[0][0]
+
+other_data = test_data[10:]
+other_model = test_model[10:]
+other_error = test_error[10:]
+
+other_chi_squared = np.power(((other_data - other_model)/other_error),2)
+
+total_chi_sqared = phi_chi_squared + np.sum(other_chi_squared)
