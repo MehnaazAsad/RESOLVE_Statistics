@@ -707,6 +707,9 @@ def chi_squared(data, model, err_data, inv_corr_mat):
     
     ### Using matrix only for phi 
 
+    data = data.flatten() # from (6,5) to (1,30)
+    model = model.flatten() # same as above
+
     phi_data = data[0:10]
     phi_model = model[0:10]
     phi_error = err_data[0:10]
@@ -834,6 +837,8 @@ def lnprob(theta, phi_red_data, phi_blue_data, std_red_data, std_blue_data,
         err_arr = err
 
         data_arr, model_arr = np.array(data_arr), np.array(model_arr)
+        print('data: \n', data_arr)
+
         chi2 = chi_squared(data_arr, model_arr, err_arr, corr_mat_inv)
         lnp = -chi2 / 2
 
