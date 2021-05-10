@@ -719,10 +719,10 @@ def chi_squared(data, model, err_data, eigenvectors):
 
     total_chi_squared = np.sum(chi_squared_indiv)
 
-    print('data: \n', data_new_space)
-    print('model: \n', model_new_space)
-    print('error: \n', err_data)
-    print('chi2: \n', total_chi_squared)
+    # print('data: \n', data_new_space)
+    # print('model: \n', model_new_space)
+    # print('error: \n', err_data)
+    # print('chi2: \n', total_chi_squared)
 
 
     ## Using correlation matrix for mass function 
@@ -856,7 +856,7 @@ def lnprob(theta, phi_red_data, phi_blue_data, std_red_data, std_blue_data,
         err_arr = err
 
         data_arr, model_arr = np.array(data_arr), np.array(model_arr)
-        print('data: \n', data_arr)
+        # print('data: \n', data_arr)
 
         chi2 = chi_squared(data_arr, model_arr, err_arr, eigenvectors)
         lnp = -chi2 / 2
