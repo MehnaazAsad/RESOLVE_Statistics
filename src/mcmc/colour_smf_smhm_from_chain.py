@@ -3177,7 +3177,7 @@ def plot_red_fraction(result, cen_gals_red, \
 def plot_mean_grpcen_vs_sigma(result, red_sigma_bf, \
     grp_red_cen_stellar_mass_bf, blue_sigma_bf, grp_blue_cen_stellar_mass_bf, \
     red_sigma_data, grp_red_cen_stellar_mass_data, blue_sigma_data, \
-    grp_blue_cen_stellar_mass_data):
+    grp_blue_cen_stellar_mass_data, err_colour):
 
     grp_red_cen_gals_arr = []
     grp_blue_cen_gals_arr = []
@@ -3238,8 +3238,12 @@ def plot_mean_grpcen_vs_sigma(result, red_sigma_bf, \
 
     fig1 = plt.figure(figsize=(10,8))
 
-    dr = plt.scatter(centers_red, mean_stats_red_data[0], c='darkred', s=200, marker='*', zorder=10)
-    db = plt.scatter(centers_blue, mean_stats_blue_data[0], c='darkblue', s=200, marker='*', zorder=10)
+    dr = plt.errorbar(centers_red,mean_stats_red_data[0],yerr=err_colour[20:25],
+        color='darkred',fmt='*-',ecolor='darkred',markersize=10,capsize=10,
+        capthick=1.0,zorder=10)
+    db = plt.errorbar(centers_blue,mean_stats_blue_data[0],yerr=err_colour[25:30],
+        color='darkblue',fmt='*-',ecolor='darkblue',markersize=10,capsize=10,
+        capthick=1.0,zorder=10)
 
     mr = plt.fill_between(centers_red, mean_stats_red[0]+std_stats_red[0], 
         mean_stats_red[0]-std_stats_red[0], color='lightcoral',alpha=0.4)
@@ -3410,5 +3414,6 @@ plot_red_fraction(result,cen_gals_red, \
 
 plot_mean_grpcen_vs_sigma(result, red_sigma_bf, grp_red_cen_stellar_mass_bf, \
     blue_sigma_bf, grp_blue_cen_stellar_mass_bf, red_sigma_data, \
-    red_cen_stellar_mass_data, blue_sigma_data, blue_cen_stellar_mass_data)
+    red_cen_stellar_mass_data, blue_sigma_data, blue_cen_stellar_mass_data, \
+    err_colour_data)
     
