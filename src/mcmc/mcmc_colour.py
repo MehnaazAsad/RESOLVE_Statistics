@@ -15,6 +15,7 @@ from halotools.sim_manager import CachedHaloCatalog
 from cosmo_utils.utils import work_paths as cwpaths
 from scipy.stats import binned_statistic as bs
 from multiprocessing import Pool, Queue
+from scipy import linalg
 import pandas as pd
 import numpy as np
 import argparse
@@ -452,7 +453,7 @@ def halocat_init(halo_catalog, z_median):
     return model
 
 def mcmc(nproc, nwalkers, nsteps, phi_red_data, phi_blue_data, std_red_data, 
-    std_blue_data, av_grpcen_red_data, av_grpcen_blue_data, err, corr_mat_inv):
+    std_blue_data, av_grpcen_red_data, av_grpcen_blue_data, err, eigenvectors):
     """
     MCMC analysis
 
@@ -502,7 +503,7 @@ def mcmc(nproc, nwalkers, nsteps, phi_red_data, phi_blue_data, std_red_data,
     with Pool(processes=nproc) as pool:
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, 
             args=(phi_red_data, phi_blue_data, std_red_data, std_blue_data, 
-                av_grpcen_red_data, av_grpcen_blue_data, err, corr_mat_inv), pool=pool)
+                av_grpcen_red_data, av_grpcen_blue_data, err, eigenvectors), pool=pool)
         start = time.time()
         for i,result in enumerate(sampler.sample(p0, iterations=nsteps, 
             storechain=False)):
@@ -620,6 +621,7 @@ def get_host_halo_mock(gals_df, mock):
         sat_halos = []
         for index, value in enumerate(df.cs_flag):
             if value == 1:
+                # using m200b mock
                 cen_halos.append(10**(df.loghalom.values[index]))
             else:
                 sat_halos.append(10**(df.loghalom.values[index]))
@@ -670,7 +672,7 @@ def get_stellar_mock(gals_df, mock, randint=None):
 
     return cen_gals, sat_gals
 
-def chi_squared(data, model, err_data, inv_corr_mat):
+def chi_squared(data, model, err_data, eigenvectors):
     """
     Calculates chi squared
 
@@ -710,37 +712,54 @@ def chi_squared(data, model, err_data, inv_corr_mat):
     data = data.flatten() # from (6,5) to (1,30)
     model = model.flatten() # same as above
 
-    phi_data = data[0:10]
-    phi_model = model[0:10]
-    phi_error = err_data[0:10]
+    data_new_space = np.array(np.matrix(data) @ eigenvectors)[0]
+    model_new_space = np.array(np.matrix(model) @ eigenvectors)[0]
 
-    first_term = ((phi_data - phi_model) / (phi_error)).reshape(1,phi_data.size)
-    third_term = np.transpose(first_term)
+    chi_squared_indiv = np.power(((data_new_space - model_new_space)/err_data),2)
 
-    # chi_squared is saved as [[value]]
-    phi_chi_squared = np.dot(np.dot(first_term,inv_corr_mat),third_term)[0][0]
+    total_chi_squared = np.sum(chi_squared_indiv)
 
-    other_data = data[10:]
-    other_model = model[10:]
-    other_error = err_data[10:]
+    print('data: \n', data_new_space)
+    print('model: \n', model_new_space)
+    print('error: \n', err_data)
+    print('chi2: \n', total_chi_squared)
 
-    other_chi_squared = np.power(((other_data - other_model)/other_error),2)
 
-    total_chi_sqared = phi_chi_squared + np.sum(other_chi_squared)
+    ## Using correlation matrix for mass function 
+    ## measurements but calculating individual chi-squared values for 
+    ## rest of the measurements
 
-    print('phi data: \n', phi_data)
-    print('phi model: \n', phi_model)
-    print('phi error: \n', phi_error)
-    print('phi chi2: \n', phi_chi_squared)
-    print('other data: \n', other_data)
-    print('other model: \n', other_model)
-    print('other error: \n', other_error)
-    print('other chi2: \n', other_chi_squared)
+    # phi_data = data[0:10]
+    # phi_model = model[0:10]
+    # phi_error = err_data[0:10]
+
+    # first_term = ((phi_data - phi_model) / (phi_error)).reshape(1,phi_data.size)
+    # third_term = np.transpose(first_term)
+
+    # # chi_squared is saved as [[value]]
+    # phi_chi_squared = np.dot(np.dot(first_term,inv_corr_mat),third_term)[0][0]
+
+    # other_data = data[10:]
+    # other_model = model[10:]
+    # other_error = err_data[10:]
+
+    # other_chi_squared = np.power(((other_data - other_model)/other_error),2)
+
+    # total_chi_sqared = phi_chi_squared + np.sum(other_chi_squared)
+
+    # print('phi data: \n', phi_data)
+    # print('phi model: \n', phi_model)
+    # print('phi error: \n', phi_error)
+    # print('phi chi2: \n', phi_chi_squared)
+    # print('other data: \n', other_data)
+    # print('other model: \n', other_model)
+    # print('other error: \n', other_error)
+    # print('other chi2: \n', other_chi_squared)
 
     return total_chi_sqared
 
 def lnprob(theta, phi_red_data, phi_blue_data, std_red_data, std_blue_data, 
-    av_grpcen_red_data, av_grpcen_blue_data, err, corr_mat_inv):
+    av_grpcen_red_data, av_grpcen_blue_data, err, eigenvectors):
     """
     Calculates log probability for emcee
 
@@ -839,7 +858,7 @@ def lnprob(theta, phi_red_data, phi_blue_data, std_red_data, std_blue_data,
         data_arr, model_arr = np.array(data_arr), np.array(model_arr)
         print('data: \n', data_arr)
 
-        chi2 = chi_squared(data_arr, model_arr, err_arr, corr_mat_inv)
+        chi2 = chi_squared(data_arr, model_arr, err_arr, eigenvectors)
         lnp = -chi2 / 2
 
         if math.isnan(lnp):
@@ -1240,16 +1259,39 @@ def get_err_data(survey, path):
         'av_grpcen_blue_1':av_grpcen_blue_1, 'av_grpcen_blue_2':av_grpcen_blue_2, \
         'av_grpcen_blue_3':av_grpcen_blue_3, 'av_grpcen_blue_4':av_grpcen_blue_4 })
 
-    phi_df = combined_df[combined_df.columns[0:10]]
-    phi_corr_mat_colour = phi_df.corr()
-    phi_corr_mat_inv_colour = np.linalg.inv(phi_corr_mat_colour.values)  
-    phi_err_colour = np.sqrt(np.diag(phi_df.cov()))
+    corr_mat_colour = combined_df.corr()
+    U, s, Vh = linalg.svd(corr_mat_colour) # columns of U are the eigenvectors
+    eigenvalue_threshold = np.sqrt(np.sqrt(2/num_mocks))
 
-    other_df = combined_df[combined_df.columns[10:]]
-    other_error = other_df.std(axis=0).values
+    idxs_cut = []
+    for idx,eigenval in enumerate(s):
+        if eigenval < eigenvalue_threshold:
+            idxs_cut.append(idx)
 
-    err_colour = np.insert(phi_err_colour, len(phi_err_colour), other_error)
-    # Correlation matrix of phi and deltav colour measurements combined
+    last_idx_to_keep = min(idxs_cut)-1
+
+    eigenvector_subset = np.matrix(U[:, :last_idx_to_keep]) 
+
+    mock_data_df_new_space = pd.DataFrame(combined_df @ eigenvector_subset)
+
+    err_colour = np.sqrt(np.diag(mock_data_df_new_space.cov()))
+
+
+    ## Using matrix only for the phi measurements and using individual chi2
+    ## values for other measurements
+    # phi_df = combined_df[combined_df.columns[0:10]]
+    # phi_corr_mat_colour = phi_df.corr()
+    # phi_corr_mat_inv_colour = np.linalg.inv(phi_corr_mat_colour.values)  
+    # phi_err_colour = np.sqrt(np.diag(phi_df.cov()))
+
+    # other_df = combined_df[combined_df.columns[10:]]
+    # other_error = other_df.std(axis=0).values
+
+    # err_colour = np.insert(phi_err_colour, len(phi_err_colour), other_error)
+
+
+
+    ## Correlation matrix of phi and deltav colour measurements combined
     # corr_mat_colour = combined_df.corr()
     # corr_mat_inv_colour = np.linalg.inv(corr_mat_colour.values)  
     # err_colour = np.sqrt(np.diag(combined_df.cov()))
@@ -1270,7 +1312,7 @@ def get_err_data(survey, path):
     # plt.title(r'Mass function and old and new sigma observable')
     # plt.show()
 
-    return err_colour, phi_corr_mat_inv_colour
+    return err_colour, eigenvector_subset
 
 def std_func(bins, mass_arr, vel_arr):
     """
@@ -2101,7 +2143,7 @@ def main(args):
         get_sigma_per_group_data(catl)
 
     print('Measuring error in data from mocks')
-    sigma, corr_mat_inv = get_err_data(survey, path_to_mocks)
+    sigma, eigenvectors = get_err_data(survey, path_to_mocks)
 
     # print('sigma: \n', sigma)
     # print('inv corr mat: \n', corr_mat_inv)
@@ -2149,7 +2191,7 @@ def main(args):
 
     print('Running MCMC')
     sampler = mcmc(nproc, nwalkers, nsteps, red_data[1], blue_data[1], std_red,
-        std_blue, mean_grp_cen_red, mean_grp_cen_blue, sigma, corr_mat_inv)
+        std_blue, mean_grp_cen_red, mean_grp_cen_blue, sigma, eigenvectors)
 
 # Main function
 if __name__ == '__main__':
