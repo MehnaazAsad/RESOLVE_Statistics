@@ -20,6 +20,7 @@ from collections import OrderedDict
 from multiprocessing import Pool
 import matplotlib.pyplot as plt
 from matplotlib import rc
+from scipy import linalg
 import pandas as pd
 import numpy as np
 import argparse
@@ -1203,7 +1204,97 @@ def get_sigma_per_group_data(df):
 
     return red_sigma_arr, red_cen_stellar_mass_arr, blue_sigma_arr, \
         blue_cen_stellar_mass_arr
- 
+
+def get_sigma_per_group_mocks_qmcolour(survey, mock_df):
+    """
+    Calculate spread in velocity dispersion from survey mocks (logmstar converted
+    to h=1 units before analysis)
+
+    Parameters
+    ----------
+    survey: string
+        Name of survey
+    path: string
+        Path to mock catalogs
+
+    Returns
+    ---------
+    std_red_arr: numpy array
+        Spread in velocity dispersion of red galaxies
+    centers_red_arr: numpy array
+        Bin centers of central stellar mass for red galaxies
+    std_blue_arr: numpy array
+        Spread in velocity dispersion of blue galaxies
+    centers_blue_arr: numpy array
+        Bin centers of central stellar mass for blue galaxies
+    """
+    mock_pd = mock_df.copy()
+    mock_pd.logmstar = np.log10((10**mock_pd.logmstar) / 2.041)
+    red_subset_grpids = np.unique(mock_pd.groupid.loc[(mock_pd.\
+        colour_label == 'R') & (mock_pd.g_galtype == 1)].values)  
+    blue_subset_grpids = np.unique(mock_pd.groupid.loc[(mock_pd.\
+        colour_label == 'B') & (mock_pd.g_galtype == 1)].values)
+
+    red_singleton_counter = 0
+    red_sigma_arr = []
+    red_cen_stellar_mass_arr = []
+    for key in red_subset_grpids: 
+        group = mock_pd.loc[mock_pd.groupid == key]
+        if len(group) == 1:
+            red_singleton_counter += 1
+        else:
+            cen_stellar_mass = group.logmstar.loc[group.g_galtype\
+                .values == 1].values[0]
+            
+            # Different velocity definitions
+            mean_cz_grp = np.round(np.mean(group.cz.values),2)
+            cen_cz_grp = group.cz.loc[group.g_galtype == 1].values[0]
+            # cz_grp = np.unique(group.grpcz.values)[0]
+
+            # Velocity difference
+            deltav = group.cz.values - len(group)*[mean_cz_grp]
+            # sigma = deltav[deltav!=0].std()
+            sigma = deltav.std()
+            
+            red_sigma_arr.append(sigma)
+            red_cen_stellar_mass_arr.append(cen_stellar_mass)
+
+    blue_singleton_counter = 0
+    blue_sigma_arr = []
+    blue_cen_stellar_mass_arr = []
+    for key in blue_subset_grpids: 
+        group = mock_pd.loc[mock_pd.groupid == key]
+        if len(group) == 1:
+            blue_singleton_counter += 1
+        else:
+            cen_stellar_mass = group.logmstar.loc[group.g_galtype\
+                .values == 1].values[0]
+            
+            # Different velocity definitions
+            mean_cz_grp = np.round(np.mean(group.cz.values),2)
+            cen_cz_grp = group.cz.loc[group.g_galtype == 1].values[0]
+            # cz_grp = np.unique(group.grpcz.values)[0]
+
+            # Velocity difference
+            deltav = group.cz.values - len(group)*[mean_cz_grp]
+            # sigma = deltav[deltav!=0].std()
+            sigma = deltav.std()
+            
+            blue_sigma_arr.append(sigma)
+            blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+
+    mean_stats_red = bs(red_sigma_arr, red_cen_stellar_mass_arr, 
+        statistic='mean', bins=np.linspace(0,250,6))
+    mean_stats_blue = bs(blue_sigma_arr, blue_cen_stellar_mass_arr, 
+        statistic='mean', bins=np.linspace(0,250,6))
+
+    centers_red = 0.5 * (mean_stats_red[1][1:] + \
+        mean_stats_red[1][:-1])
+    centers_blue = 0.5 * (mean_stats_blue[1][1:] + \
+        mean_stats_blue[1][:-1])
+            
+    return mean_stats_red, centers_red, mean_stats_blue, centers_blue
+
 def get_sigma_per_group_vishnu_qmcolour(gals_df, randint):
     """
     Calculate spread in velocity dispersion from Vishnu mock (logmstar already 
