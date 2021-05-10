@@ -1374,6 +1374,10 @@ def get_err_data(survey, path):
     sig_arr_blue = []
     cen_arr_red = []
     cen_arr_blue = []
+    mean_cen_arr_red = []
+    mean_cen_arr_blue = []
+    new_sig_arr_red = []
+    new_sig_arr_blue = []
     # colour_err_arr = []
     # colour_corr_mat_inv = []
     box_id_arr = np.linspace(5001,5008,8)
@@ -1398,17 +1402,26 @@ def get_err_data(survey, path):
             # mu = 0.65
             # nu = 0.16
 
-            ## Using best-fit found for new ECO data using optimize_hybridqm_eco,py
+            ## Using best-fit found for new ECO data using optimize_hybridqm_eco.py
+            ## for hybrid quenching model
             Mstar_q = 10.49 # Msun/h
             Mh_q = 14.03 # Msun/h
             mu = 0.69
             nu = 0.148
 
+            ## Using best-fit found for new ECO data using optimize_qm_eco.py 
+            ## for halo quenching model
+            Mh_qc = 12.61 # Msun/h
+            Mh_qs = 13.5 # Msun/h
+            mu_c = 0.40
+            mu_s = 0.148
 
-            theta = [Mstar_q, Mh_q, mu, nu]
+
             if quenching == 'hybrid':
+                theta = [Mstar_q, Mh_q, mu, nu]
                 f_red_c, f_red_s = hybrid_quenching_model(theta, mock_pd, 'nonvishnu')
             elif quenching == 'halo':
+                theta = [Mh_qc, Mh_qs, mu_c, mu_s]
                 f_red_c, f_red_s = halo_quenching_model(theta, mock_pd, 'nonvishnu')
             mock_pd = assign_colour_label_mock(f_red_c, f_red_s, mock_pd)
 
@@ -1430,10 +1443,19 @@ def get_err_data(survey, path):
             sig_red, sig_blue, cen_red, cen_blue = \
                 get_deltav_sigma_mocks_qmcolour(survey, mock_pd)
 
+            new_mean_stats_red, new_centers_red, new_mean_stats_blue, \
+                new_centers_blue = \
+                get_sigma_per_group_mocks_qmcolour(survey, mock_pd)
+
             sig_arr_red.append(sig_red)
             sig_arr_blue.append(sig_blue)
             cen_arr_red.append(cen_red)
             cen_arr_blue.append(cen_blue)
+
+            new_sig_arr_red.append(new_centers_red)
+            new_sig_arr_blue.append(new_centers_blue)
+            mean_cen_arr_red.append(new_mean_stats_red[0])
+            mean_cen_arr_blue.append(new_mean_stats_blue[0])
 
     phi_arr_total = np.array(phi_arr_total)
     phi_arr_red = np.array(phi_arr_red)
@@ -1442,6 +1464,10 @@ def get_err_data(survey, path):
     sig_arr_blue = np.array(sig_arr_blue)
     cen_arr_red = np.array(cen_arr_red)
     cen_arr_blue = np.array(cen_arr_blue)
+    new_sig_arr_red = np.array(new_sig_arr_red)
+    new_sig_arr_blue = np.array(new_sig_arr_blue)
+    mean_cen_arr_red = np.array(mean_cen_arr_red)
+    mean_cen_arr_blue = np.array(mean_cen_arr_blue)
 
     # Covariance matrix for total phi (all galaxies)
     cov_mat = np.cov(phi_arr_total, rowvar=False) # default norm is N-1
@@ -1471,6 +1497,19 @@ def get_err_data(survey, path):
     dv_blue_3 = sig_arr_blue[:,3]
     dv_blue_4 = sig_arr_blue[:,4]
 
+    av_grpcen_red_0 = mean_cen_arr_red[:,0]
+    av_grpcen_red_1 = mean_cen_arr_red[:,1]
+    av_grpcen_red_2 = mean_cen_arr_red[:,2]
+    av_grpcen_red_3 = mean_cen_arr_red[:,3]
+    av_grpcen_red_4 = mean_cen_arr_red[:,4]
+
+    av_grpcen_blue_0 = mean_cen_arr_blue[:,0]
+    av_grpcen_blue_1 = mean_cen_arr_blue[:,1]
+    av_grpcen_blue_2 = mean_cen_arr_blue[:,2]
+    av_grpcen_blue_3 = mean_cen_arr_blue[:,3]
+    av_grpcen_blue_4 = mean_cen_arr_blue[:,4]
+
+
     combined_df = pd.DataFrame({'phi_red_0':phi_red_0, 'phi_red_1':phi_red_1,\
         'phi_red_2':phi_red_2, 'phi_red_3':phi_red_3, 'phi_red_4':phi_red_4, \
         'phi_blue_0':phi_blue_0, 'phi_blue_1':phi_blue_1, 
@@ -1479,12 +1518,34 @@ def get_err_data(survey, path):
         'dv_red_0':dv_red_0, 'dv_red_1':dv_red_1, 'dv_red_2':dv_red_2, \
         'dv_red_3':dv_red_3, 'dv_red_4':dv_red_4, \
         'dv_blue_0':dv_blue_0, 'dv_blue_1':dv_blue_1, 'dv_blue_2':dv_blue_2, \
-        'dv_blue_3':dv_blue_3, 'dv_blue_4':dv_blue_4})
+        'dv_blue_3':dv_blue_3, 'dv_blue_4':dv_blue_4, \
+        'av_grpcen_red_0':av_grpcen_red_0, 'av_grpcen_red_1':av_grpcen_red_1, \
+        'av_grpcen_red_2':av_grpcen_red_2, 'av_grpcen_red_3':av_grpcen_red_3, \
+        'av_grpcen_red_4':av_grpcen_red_4, 'av_grpcen_blue_0':av_grpcen_blue_0,\
+        'av_grpcen_blue_1':av_grpcen_blue_1, 'av_grpcen_blue_2':av_grpcen_blue_2, \
+        'av_grpcen_blue_3':av_grpcen_blue_3, 'av_grpcen_blue_4':av_grpcen_blue_4 })
+
+    corr_mat_colour = combined_df.corr()
+    U, s, Vh = linalg.svd(corr_mat_colour) # columns of U are the eigenvectors
+    eigenvalue_threshold = np.sqrt(np.sqrt(2/num_mocks))
+
+    idxs_cut = []
+    for idx,eigenval in enumerate(s):
+        if eigenval < eigenvalue_threshold:
+            idxs_cut.append(idx)
+
+    last_idx_to_keep = min(idxs_cut)-1
+
+    eigenvector_subset = np.matrix(U[:, :last_idx_to_keep]) 
+
+    mock_data_df_new_space = pd.DataFrame(combined_df @ eigenvector_subset)
+
+    err_colour = np.sqrt(np.diag(mock_data_df_new_space.cov()))
 
     # Correlation matrix of phi and deltav colour measurements combined
-    corr_mat_colour = combined_df.corr()
-    corr_mat_inv_colour = np.linalg.inv(corr_mat_colour.values)  
-    err_colour = np.sqrt(np.diag(combined_df.cov()))
+    # corr_mat_colour = combined_df.corr()
+    # corr_mat_inv_colour = np.linalg.inv(corr_mat_colour.values)  
+    # err_colour = np.sqrt(np.diag(combined_df.cov()))
 
     return err_total, err_colour
 
@@ -3111,7 +3172,7 @@ machine = 'mac'
 mf_type = 'smf'
 survey = 'eco'
 nproc = 2
-quenching = 'halo'
+quenching = 'hybrid'
 
 if machine == 'bender':
     halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
@@ -3119,11 +3180,11 @@ if machine == 'bender':
 elif machine == 'mac':
     halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
 
-chi2_file = path_to_proc + 'smhm_colour_run19/{0}_colour_chi2.txt'.\
+chi2_file = path_to_proc + 'smhm_colour_run21/{0}_colour_chi2.txt'.\
     format(survey)
-chain_file = path_to_proc + 'smhm_colour_run19/mcmc_{0}_colour_raw.txt'.\
+chain_file = path_to_proc + 'smhm_colour_run21/mcmc_{0}_colour_raw.txt'.\
     format(survey)
-randint_file = path_to_proc + 'smhm_colour_run19/{0}_colour_mocknum.txt'.\
+randint_file = path_to_proc + 'smhm_colour_run21/{0}_colour_mocknum.txt'.\
     format(survey)
 
 if survey == 'eco':
@@ -3245,3 +3306,4 @@ plot_red_fraction(result,cen_gals_red, \
 plot_mean_grpcen_vs_sigma(result, red_sigma_bf, grp_red_cen_stellar_mass_bf, \
     blue_sigma_bf, grp_blue_cen_stellar_mass_bf, red_sigma_data, \
     red_cen_stellar_mass_data, blue_sigma_data, blue_cen_stellar_mass_data)
+    
