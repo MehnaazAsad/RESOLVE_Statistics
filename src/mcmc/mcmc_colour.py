@@ -756,7 +756,7 @@ def chi_squared(data, model, err_data, eigenvectors):
     # print('other error: \n', other_error)
     # print('other chi2: \n', other_chi_squared)
 
-    return total_chi_sqared
+    return total_chi_squared
 
 def lnprob(theta, phi_red_data, phi_blue_data, std_red_data, std_blue_data, 
     av_grpcen_red_data, av_grpcen_blue_data, err, eigenvectors):
