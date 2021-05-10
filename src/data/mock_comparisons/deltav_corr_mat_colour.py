@@ -127,7 +127,7 @@ def read_data_catl(path_to_file, survey):
         #             'logmstar', 'logmgas', 'grp', 'grpn', 'logmh', 'logmh_s', 
         #             'fc', 'grpmb', 'grpms','modelu_rcorr']
 
-        # 13878 galaxies
+        # # 13878 galaxies
         # eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0, \
         #     usecols=columns)
 
@@ -2264,3 +2264,48 @@ other_error = test_error[10:]
 other_chi_squared = np.power(((other_data - other_model)/other_error),2)
 
 total_chi_sqared = phi_chi_squared + np.sum(other_chi_squared)
+
+
+## Testing implementation of using trimmed post-SVD matrix
+
+test_data = full_data_arr[0]
+test_model = np.random.uniform(size=30) + full_data_arr[0]
+test_df = used_combined_df
+
+corr_mat_colour = test_df.corr()
+U, s, Vh = linalg.svd(corr_mat_colour) # columns of U are the eigenvectors
+eigenvalue_threshold = np.sqrt(np.sqrt(2/num_mocks))
+
+idxs_cut = []
+for idx,eigenval in enumerate(s):
+    if eigenval < eigenvalue_threshold:
+        idxs_cut.append(idx)
+
+last_idx_to_keep = min(idxs_cut)-1
+eigenvector_subset = np.matrix(U[:, :last_idx_to_keep]) 
+
+mock_data_df_new_space = pd.DataFrame(test_df @ eigenvector_subset)
+test_data_new_space = np.array(np.matrix(test_data) @ eigenvector_subset)[0]
+test_model_new_space = np.array(np.matrix(test_model) @ eigenvector_subset)[0]
+test_error_new_space = np.sqrt(np.diag(mock_data_df_new_space.cov()))
+
+chi_squared_indiv = np.power(((test_data_new_space - test_model_new_space)/test_error_new_space),2)
+
+total_chi_squared = np.sum(chi_squared_indiv)
+
+################################################################################
+# eco_nobuff = eco_catl.loc[(eco_catl.cz.values >= 3000) &
+#     (eco_catl.cz.values <= 7000)]
+
+# eco_buff = eco_catl.loc[(eco_catl.cz.values >= 2530) &
+#     (eco_catl.cz.values <= 7470)]
+
+# plt.scatter(eco_buff.cz.values/(3*10**5), eco_buff.absrmag, label=r'With buffer (2530 $\leq$ cz $\leq$ 7470)',s=3)
+# plt.scatter(eco_nobuff.cz.values/(3*10**5), eco_nobuff.absrmag, label=r'Without buffer (3000 $\leq$ cz $\leq$ 7000)',s=3)
+# plt.gca().invert_yaxis()
+# plt.hlines(-17.33, 0.008, 0.025, colors='k', ls='--', label='-17.33', lw=3)
+# plt.hlines(-17, 0.008, 0.025, colors='gray', ls='--', label='-17', lw=3)
+# plt.legend(prop={'size': 25})
+# plt.xlabel(r'\boldmath$z$', fontsize=30)
+# plt.ylabel(r'\boldmath$M_{r}$', fontsize=30)
+# plt.show()
