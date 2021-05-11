@@ -36,9 +36,10 @@ path_to_figures = dict_of_paths['plot_dir']
 survey = 'eco'
 mf_type = 'smf'
 quenching = 'hybrid'
+nwalkers = 260
 
 if mf_type == 'smf':
-    path_to_proc = path_to_proc + 'smhm_colour_run18/'
+    path_to_proc = path_to_proc + 'smhm_colour_run21/'
 else:
     path_to_proc = path_to_proc + 'bmhm_run3/'
 
@@ -98,7 +99,7 @@ counter_wid = 0
 counter_stepid = 0
 for idx,row in emcee_table.iterrows():
     counter_wid += 1
-    if idx % 260 == 0:
+    if idx % nwalkers == 0:
         counter_stepid += 1
         counter_wid = 1
     walker_id_arr[idx] = counter_wid
