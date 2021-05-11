@@ -3177,7 +3177,7 @@ def plot_red_fraction(result, cen_gals_red, \
 def plot_mean_grpcen_vs_sigma(result, red_sigma_bf, \
     grp_red_cen_stellar_mass_bf, blue_sigma_bf, grp_blue_cen_stellar_mass_bf, \
     red_sigma_data, grp_red_cen_stellar_mass_data, blue_sigma_data, \
-    grp_blue_cen_stellar_mass_data, err_colour):
+    grp_blue_cen_stellar_mass_data, err_colour, bf_chi2):
 
     grp_red_cen_gals_arr = []
     grp_blue_cen_gals_arr = []
@@ -3239,10 +3239,10 @@ def plot_mean_grpcen_vs_sigma(result, red_sigma_bf, \
     fig1 = plt.figure(figsize=(10,8))
 
     dr = plt.errorbar(centers_red,mean_stats_red_data[0],yerr=err_colour[20:25],
-        color='darkred',fmt='*-',ecolor='darkred',markersize=10,capsize=10,
+        color='darkred',fmt='*',ecolor='darkred',markersize=10,capsize=10,
         capthick=1.0,zorder=10)
     db = plt.errorbar(centers_blue,mean_stats_blue_data[0],yerr=err_colour[25:30],
-        color='darkblue',fmt='*-',ecolor='darkblue',markersize=10,capsize=10,
+        color='darkblue',fmt='*',ecolor='darkblue',markersize=10,capsize=10,
         capthick=1.0,zorder=10)
 
     mr = plt.fill_between(centers_red, mean_stats_red[0]+std_stats_red[0], 
@@ -3256,6 +3256,11 @@ def plot_mean_grpcen_vs_sigma(result, red_sigma_bf, \
     l = plt.legend([(dr, db), (mr, mb), (bfr, bfb)], 
         ['Data','Models','Best-fit'],
         handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, markerscale=1.5, loc='upper left')
+
+    plt.annotate(r'$\boldsymbol\chi ^2 \approx$ {0}'.format(np.round(bf_chi2,2)), 
+    xy=(0.02, 0.75), xycoords='axes fraction', bbox=dict(boxstyle="square", 
+    ec='k', fc='lightgray', alpha=0.5), size=25)
+
     if survey == 'eco':
         plt.title('ECO')
    
@@ -3368,7 +3373,7 @@ err_total_data, err_colour_data = \
 
 print('Multiprocessing')
 result = mp_init(mcmc_table_pctl, nproc)
-# Most recent run took 9.5 minutes 20/1/2021
+# Most recent run took 42 minutes 10/5/2021
 
 print('Getting best fit model')
 maxis_bf_red, phi_bf_red, maxis_bf_blue, phi_bf_blue, cen_gals_red, \
@@ -3415,5 +3420,5 @@ plot_red_fraction(result,cen_gals_red, \
 plot_mean_grpcen_vs_sigma(result, red_sigma_bf, grp_red_cen_stellar_mass_bf, \
     blue_sigma_bf, grp_blue_cen_stellar_mass_bf, red_sigma_data, \
     red_cen_stellar_mass_data, blue_sigma_data, blue_cen_stellar_mass_data, \
-    err_colour_data)
+    err_colour_data, bf_chi2)
     
