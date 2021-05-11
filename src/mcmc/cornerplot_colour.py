@@ -29,12 +29,17 @@ survey = 'eco'
 file_ver = 2.0
 quenching = 'hybrid'
 mf_type = 'smf'
-
+nwalkers = 260
+nsteps = 1000
+burnin = 150
+ndim = 4
+run_smf = 21
+# run_bmf = 
 
 ## For SMF
 if mf_type == 'smf' or mf_type == 'both':
-     chain_fname_smf = path_to_proc + 'smhm_colour_run18/mcmc_{0}_colour_raw.txt'.\
-     format(survey)
+     chain_fname_smf = path_to_proc + 'smhm_colour_run{0}/mcmc_{1}_colour_raw.txt'.\
+     format(run_smf, survey)
 
      if quenching == 'hybrid':
           mcmc_smf_1 = pd.read_csv(chain_fname_smf, 
@@ -69,11 +74,10 @@ if mf_type == 'smf' or mf_type == 'both':
 
 
      mcmc_smf_1 = mcmc_smf_1.dropna(axis='index', how='any').reset_index(drop=True)
-     sampler_smf_1 = mcmc_smf_1.values.reshape(780,260,4)
+     sampler_smf_1 = mcmc_smf_1.values.reshape(nsteps,nwalkers,ndim)
 
      # Removing burn-in
-     ndim = 4
-     samples_smf_1 = sampler_smf_1[100:, :, :].reshape((-1, ndim))
+     samples_smf_1 = sampler_smf_1[burnin:, :, :].reshape((-1, ndim))
 
 if mf_type == 'bmf' or mf_type == 'both':
      chain_fname_bmf = path_to_proc + 'bmhm_run3/combined_processed_{0}_raw.txt'.\
@@ -113,11 +117,10 @@ if mf_type == 'bmf' or mf_type == 'both':
 
 
      mcmc_bmf_1 = mcmc_bmf_1.dropna(axis='index', how='any').reset_index(drop=True)
-     sampler_bmf_1 = mcmc_bmf_1.values.reshape(780,260,4)
+     sampler_bmf_1 = mcmc_bmf_1.values.reshape(nsteps,nwalkers,ndim)
 
      # Removing burn-in
-     ndim = 4
-     samples_bmf_1 = sampler_bmf_1[100:, :, :].reshape((-1, ndim))
+     samples_bmf_1 = sampler_bmf_1[burnin:, :, :].reshape((-1, ndim))
 
 
 zumandelbaum_param_vals_hybrid = [10.5, 13.76, 0.69, 0.15] # For hybrid model
@@ -138,8 +141,8 @@ if mf_type == 'bmf' or mf_type == 'both':
                     name="ECO baryonic", color='#53A48D')
 # c.configure(shade_gradient=[0.1, 3.0], colors=['r', 'b'], \
 #      sigmas=[1,2], shade_alpha=0.4)
-c.configure(smooth=True,label_font_size=25,tick_font_size=10,summary=True,\
-     sigma2d=True, sigmas=[1, 2],legend_kwargs={"fontsize": 30}) #1d gaussian showing 68%,95% conf intervals
+c.configure(smooth=5,label_font_size=25,tick_font_size=10,summary=True,\
+     sigma2d=False,legend_kwargs={"fontsize": 30}) #1d gaussian showing 68%,95% conf intervals
 if quenching == 'hybrid':
      if mf_type == 'smf':
           fig1 = c.plotter.plot(display=True,truth=optimizer_best_fit_eco_smf_hybrid)
