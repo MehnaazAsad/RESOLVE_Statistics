@@ -1617,34 +1617,34 @@ def get_err_data(survey, path):
         'av_grpcen_blue_3':av_grpcen_blue_3, 'av_grpcen_blue_4':av_grpcen_blue_4 })
 
     ## !Uncomment below when making plots from run 22
-    # corr_mat_colour = combined_df.corr()
-    # U, s, Vh = linalg.svd(corr_mat_colour) # columns of U are the eigenvectors
-    # eigenvalue_threshold = np.sqrt(np.sqrt(2/num_mocks))
+    corr_mat_colour = combined_df.corr()
+    U, s, Vh = linalg.svd(corr_mat_colour) # columns of U are the eigenvectors
+    eigenvalue_threshold = np.sqrt(np.sqrt(2/num_mocks))
 
-    # idxs_cut = []
-    # for idx,eigenval in enumerate(s):
-    #     if eigenval < eigenvalue_threshold:
-    #         idxs_cut.append(idx)
+    idxs_cut = []
+    for idx,eigenval in enumerate(s):
+        if eigenval < eigenvalue_threshold:
+            idxs_cut.append(idx)
 
-    # last_idx_to_keep = min(idxs_cut)-1
+    last_idx_to_keep = min(idxs_cut)-1
 
-    # eigenvector_subset = np.matrix(U[:, :last_idx_to_keep]) 
+    eigenvector_subset = np.matrix(U[:, :last_idx_to_keep]) 
 
-    # mock_data_df_new_space = pd.DataFrame(combined_df @ eigenvector_subset)
+    mock_data_df_new_space = pd.DataFrame(combined_df @ eigenvector_subset)
 
-    # err_colour = np.sqrt(np.diag(mock_data_df_new_space.cov()))
+    err_colour = np.sqrt(np.diag(mock_data_df_new_space.cov()))
 
     ## Using matrix only for the phi measurements and using individual chi2
     ## values for other measurements (RUN 21 error calculation)
-    phi_df = combined_df[combined_df.columns[0:10]]
-    phi_corr_mat_colour = phi_df.corr()
-    phi_corr_mat_inv_colour = np.linalg.inv(phi_corr_mat_colour.values)  
-    phi_err_colour = np.sqrt(np.diag(phi_df.cov()))
+    # phi_df = combined_df[combined_df.columns[0:10]]
+    # phi_corr_mat_colour = phi_df.corr()
+    # phi_corr_mat_inv_colour = np.linalg.inv(phi_corr_mat_colour.values)  
+    # phi_err_colour = np.sqrt(np.diag(phi_df.cov()))
 
-    other_df = combined_df[combined_df.columns[10:]]
-    other_error = other_df.std(axis=0).values
+    # other_df = combined_df[combined_df.columns[10:]]
+    # other_error = other_df.std(axis=0).values
 
-    err_colour = np.insert(phi_err_colour, len(phi_err_colour), other_error)
+    # err_colour = np.insert(phi_err_colour, len(phi_err_colour), other_error)
 
 
     # Correlation matrix of phi and deltav colour measurements combined
@@ -3294,11 +3294,11 @@ if machine == 'bender':
 elif machine == 'mac':
     halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
 
-chi2_file = path_to_proc + 'smhm_colour_run21/{0}_colour_chi2.txt'.\
+chi2_file = path_to_proc + 'smhm_colour_run22/{0}_colour_chi2.txt'.\
     format(survey)
-chain_file = path_to_proc + 'smhm_colour_run21/mcmc_{0}_colour_raw.txt'.\
+chain_file = path_to_proc + 'smhm_colour_run22/mcmc_{0}_colour_raw.txt'.\
     format(survey)
-randint_file = path_to_proc + 'smhm_colour_run21/{0}_colour_mocknum.txt'.\
+randint_file = path_to_proc + 'smhm_colour_run22/{0}_colour_mocknum.txt'.\
     format(survey)
 
 if survey == 'eco':
