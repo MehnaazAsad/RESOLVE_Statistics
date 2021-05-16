@@ -2294,18 +2294,40 @@ chi_squared_indiv = np.power(((test_data_new_space - test_model_new_space)/test_
 total_chi_squared = np.sum(chi_squared_indiv)
 
 ################################################################################
-# eco_nobuff = eco_catl.loc[(eco_catl.cz.values >= 3000) &
-#     (eco_catl.cz.values <= 7000)]
+# Plotting absolute magnitude vs redshift for eco data with and without buffer #
+################################################################################
 
-# eco_buff = eco_catl.loc[(eco_catl.cz.values >= 2530) &
-#     (eco_catl.cz.values <= 7470)]
+from cosmo_utils.utils import work_paths as cwpaths
+import matplotlib.pyplot as plt
+from matplotlib import rc
+import pandas as pd
 
-# plt.scatter(eco_buff.cz.values/(3*10**5), eco_buff.absrmag, label=r'With buffer (2530 $\leq$ cz $\leq$ 7470)',s=3)
-# plt.scatter(eco_nobuff.cz.values/(3*10**5), eco_nobuff.absrmag, label=r'Without buffer (3000 $\leq$ cz $\leq$ 7000)',s=3)
-# plt.gca().invert_yaxis()
-# plt.hlines(-17.33, 0.008, 0.025, colors='k', ls='--', label='-17.33', lw=3)
-# plt.hlines(-17, 0.008, 0.025, colors='gray', ls='--', label='-17', lw=3)
-# plt.legend(prop={'size': 25})
-# plt.xlabel(r'\boldmath$z$', fontsize=30)
-# plt.ylabel(r'\boldmath$M_{r}$', fontsize=30)
-# plt.show()
+rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=20)
+rc('text', usetex=True)
+rc('axes', linewidth=2)
+rc('xtick.major', width=2, size=7)
+rc('ytick.major', width=2, size=7)
+
+dict_of_paths = cwpaths.cookiecutter_paths()
+path_to_raw = dict_of_paths['raw_dir']
+
+catl_file = path_to_raw + "eco/eco_all.csv"
+eco_catl = pd.read_csv(catl_file,delimiter=",", header=0)
+
+eco_nobuff = eco_catl.loc[(eco_catl.cz.values >= 3000) &
+    (eco_catl.cz.values <= 7000)]
+
+eco_buff = eco_catl.loc[(eco_catl.cz.values >= 2530) &
+    (eco_catl.cz.values <= 7470)]
+
+plt.scatter(eco_buff.cz.values/(3*10**5), eco_buff.absrmag, 
+    label=r'With buffer (2530 $\leq$ cz $\leq$ 7470)',s=3)
+plt.scatter(eco_nobuff.cz.values/(3*10**5), eco_nobuff.absrmag, 
+    label=r'Without buffer (3000 $\leq$ cz $\leq$ 7000)',s=3)
+plt.gca().invert_yaxis()
+plt.hlines(-17.33, 0.008, 0.025, colors='k', ls='--', label='-17.33', lw=3)
+plt.hlines(-17, 0.008, 0.025, colors='gray', ls='--', label='-17', lw=3)
+plt.legend(prop={'size': 25})
+plt.xlabel(r'\boldmath$z$', fontsize=30)
+plt.ylabel(r'\boldmath$M_{r}$', fontsize=30)
+plt.show()
