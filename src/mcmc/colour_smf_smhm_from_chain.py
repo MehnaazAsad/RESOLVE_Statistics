@@ -1617,34 +1617,34 @@ def get_err_data(survey, path):
         'av_grpcen_blue_3':av_grpcen_blue_3, 'av_grpcen_blue_4':av_grpcen_blue_4 })
 
     ## !Uncomment below when making plots from run 22
-    corr_mat_colour = combined_df.corr()
-    U, s, Vh = linalg.svd(corr_mat_colour) # columns of U are the eigenvectors
-    eigenvalue_threshold = np.sqrt(np.sqrt(2/num_mocks))
+    # corr_mat_colour = combined_df.corr()
+    # U, s, Vh = linalg.svd(corr_mat_colour) # columns of U are the eigenvectors
+    # eigenvalue_threshold = np.sqrt(np.sqrt(2/num_mocks))
 
-    idxs_cut = []
-    for idx,eigenval in enumerate(s):
-        if eigenval < eigenvalue_threshold:
-            idxs_cut.append(idx)
+    # idxs_cut = []
+    # for idx,eigenval in enumerate(s):
+    #     if eigenval < eigenvalue_threshold:
+    #         idxs_cut.append(idx)
 
-    last_idx_to_keep = min(idxs_cut)-1
+    # last_idx_to_keep = min(idxs_cut)-1
 
-    eigenvector_subset = np.matrix(U[:, :last_idx_to_keep]) 
+    # eigenvector_subset = np.matrix(U[:, :last_idx_to_keep]) 
 
-    mock_data_df_new_space = pd.DataFrame(combined_df @ eigenvector_subset)
+    # mock_data_df_new_space = pd.DataFrame(combined_df @ eigenvector_subset)
 
-    err_colour = np.sqrt(np.diag(mock_data_df_new_space.cov()))
+    # err_colour = np.sqrt(np.diag(mock_data_df_new_space.cov()))
 
-    ## Using matrix only for the phi measurements and using individual chi2
-    ## values for other measurements (RUN 21 error calculation)
-    # phi_df = combined_df[combined_df.columns[0:10]]
-    # phi_corr_mat_colour = phi_df.corr()
-    # phi_corr_mat_inv_colour = np.linalg.inv(phi_corr_mat_colour.values)  
-    # phi_err_colour = np.sqrt(np.diag(phi_df.cov()))
+    ##! Using matrix only for the phi measurements and using individual chi2
+    ##! values for other measurements (RUN 21 error calculation)
+    phi_df = combined_df[combined_df.columns[0:10]]
+    phi_corr_mat_colour = phi_df.corr()
+    phi_corr_mat_inv_colour = np.linalg.inv(phi_corr_mat_colour.values)  
+    phi_err_colour = np.sqrt(np.diag(phi_df.cov()))
 
-    # other_df = combined_df[combined_df.columns[10:]]
-    # other_error = other_df.std(axis=0).values
+    other_df = combined_df[combined_df.columns[10:]]
+    other_error = other_df.std(axis=0).values
 
-    # err_colour = np.insert(phi_err_colour, len(phi_err_colour), other_error)
+    err_colour = np.insert(phi_err_colour, len(phi_err_colour), other_error)
 
 
     # Correlation matrix of phi and deltav colour measurements combined
@@ -3178,63 +3178,88 @@ def plot_mean_grpcen_vs_sigma(result, red_sigma_bf, \
     grp_red_cen_stellar_mass_bf, blue_sigma_bf, grp_blue_cen_stellar_mass_bf, \
     red_sigma_data, grp_red_cen_stellar_mass_data, blue_sigma_data, \
     grp_blue_cen_stellar_mass_data, err_colour, bf_chi2):
+    
+    # grp_red_cen_gals_arr = []
+    # grp_blue_cen_gals_arr = []
+    # red_sigma_arr = []
+    # blue_sigma_arr = []
+    # chunk_counter = 0 # There are 5 chunks of all 16 statistics each with len 20
+    # while chunk_counter < 5:
+    #     for idx in range(len(result[chunk_counter][0])):
+    #         grp_red_cen_gals_idx = result[chunk_counter][16][idx]
+    #         grp_blue_cen_gals_idx = result[chunk_counter][17][idx]
+    #         red_sigma_idx = result[chunk_counter][18][idx]
+    #         blue_sigma_idx = result[chunk_counter][19][idx]
 
-    grp_red_cen_gals_arr = []
-    grp_blue_cen_gals_arr = []
+    #         for idx,val in enumerate(grp_red_cen_gals_idx):
+    #             grp_red_cen_gals_arr.append(val)
+    #             red_sigma_arr.append(red_sigma_idx[idx])
+            
+    #         for idx,val in enumerate(grp_blue_cen_gals_idx):
+    #             grp_blue_cen_gals_arr.append(val)
+    #             blue_sigma_arr.append(blue_sigma_idx[idx])
+
+    #         # grp_red_cen_gals_arr.append(grp_red_cen_gals_idx)
+    #         # grp_blue_cen_gals_arr.append(grp_blue_cen_gals_idx)
+    #         # red_sigma_arr.append(red_sigma_idx)
+    #         # blue_sigma_arr.append(blue_sigma_idx)
+
+    #     chunk_counter+=1
+    
+    # mean_stats_red = bs(red_sigma_arr, grp_red_cen_gals_arr, statistic='mean', 
+    #     bins=np.linspace(0,250,6))
+    # mean_stats_blue = bs(blue_sigma_arr, grp_blue_cen_gals_arr, statistic='mean', 
+    #     bins=np.linspace(0,250,6))
+
+    # std_stats_red = bs(red_sigma_arr, grp_red_cen_gals_arr, statistic='std', 
+    #     bins=np.linspace(0,250,6))
+    # std_stats_blue = bs(blue_sigma_arr, grp_blue_cen_gals_arr, statistic='std', 
+    #     bins=np.linspace(0,250,6))
+
+    mean_grp_red_cen_gals_arr = []
+    mean_grp_blue_cen_gals_arr = []
     red_sigma_arr = []
     blue_sigma_arr = []
     chunk_counter = 0 # There are 5 chunks of all 16 statistics each with len 20
     while chunk_counter < 5:
-        cen_gals_idx_arr = []
-        cen_halos_idx_arr = []
-        fred_idx_arr = []
         for idx in range(len(result[chunk_counter][0])):
             grp_red_cen_gals_idx = result[chunk_counter][16][idx]
             grp_blue_cen_gals_idx = result[chunk_counter][17][idx]
             red_sigma_idx = result[chunk_counter][18][idx]
             blue_sigma_idx = result[chunk_counter][19][idx]
 
-            for idx,val in enumerate(grp_red_cen_gals_idx):
-                grp_red_cen_gals_arr.append(val)
-                red_sigma_arr.append(red_sigma_idx[idx])
-            
-            for idx,val in enumerate(grp_blue_cen_gals_idx):
-                grp_blue_cen_gals_arr.append(val)
-                blue_sigma_arr.append(blue_sigma_idx[idx])
-
-            # grp_red_cen_gals_arr.append(grp_red_cen_gals_idx)
-            # grp_blue_cen_gals_arr.append(grp_blue_cen_gals_idx)
-            # red_sigma_arr.append(red_sigma_idx)
-            # blue_sigma_arr.append(blue_sigma_idx)
+            mean_stats_red = bs(red_sigma_idx, grp_red_cen_gals_idx, 
+                statistic='mean', bins=np.linspace(0,250,6))
+            mean_stats_blue = bs(blue_sigma_idx, grp_blue_cen_gals_idx, 
+                statistic='mean', bins=np.linspace(0,250,6))
+            red_sigma_arr.append(mean_stats_red[1])
+            blue_sigma_arr.append(mean_stats_blue[1])
+            mean_grp_red_cen_gals_arr.append(mean_stats_red[0])
+            mean_grp_blue_cen_gals_arr.append(mean_stats_blue[0])
 
         chunk_counter+=1
-    
-    mean_stats_red = bs(red_sigma_arr, grp_red_cen_gals_arr, statistic='mean', 
-        bins=np.linspace(0,250,6))
-    mean_stats_blue = bs(blue_sigma_arr, grp_blue_cen_gals_arr, statistic='mean', 
-        bins=np.linspace(0,250,6))
 
-    std_stats_red = bs(red_sigma_arr, grp_red_cen_gals_arr, statistic='std', 
-        bins=np.linspace(0,250,6))
-    std_stats_blue = bs(blue_sigma_arr, grp_blue_cen_gals_arr, statistic='std', 
-        bins=np.linspace(0,250,6))
+    red_models_max = np.nanmax(mean_grp_red_cen_gals_arr, axis=0)
+    red_models_min = np.nanmin(mean_grp_red_cen_gals_arr, axis=0)
+    blue_models_max = np.nanmax(mean_grp_blue_cen_gals_arr, axis=0)
+    blue_models_min = np.nanmin(mean_grp_blue_cen_gals_arr, axis=0)
 
+    ## Same centers used for all sets of lines since binning is the same for 
+    ## models, bf and data
     centers_red = 0.5 * (mean_stats_red[1][1:] + \
         mean_stats_red[1][:-1])
     centers_blue = 0.5 * (mean_stats_blue[1][1:] + \
         mean_stats_blue[1][:-1])
 
-    mean_stats_red_bf = bs(red_sigma_bf, grp_red_cen_stellar_mass_bf, statistic='mean', 
-        bins=np.linspace(0,250,6))
-    mean_stats_blue_bf = bs(blue_sigma_bf, grp_blue_cen_stellar_mass_bf, statistic='mean', 
-        bins=np.linspace(0,250,6))
+    mean_stats_red_bf = bs(red_sigma_bf, grp_red_cen_stellar_mass_bf, 
+        statistic='mean', bins=np.linspace(0,250,6))
+    mean_stats_blue_bf = bs(blue_sigma_bf, grp_blue_cen_stellar_mass_bf, 
+        statistic='mean', bins=np.linspace(0,250,6))
 
-    mean_stats_red_data = bs(red_sigma_data, grp_red_cen_stellar_mass_data, statistic='mean', 
-        bins=np.linspace(0,250,6))
-    mean_stats_blue_data = bs(blue_sigma_data, grp_blue_cen_stellar_mass_data, statistic='mean', 
-        bins=np.linspace(0,250,6))
-
-
+    mean_stats_red_data = bs(red_sigma_data, grp_red_cen_stellar_mass_data, 
+        statistic='mean', bins=np.linspace(0,250,6))
+    mean_stats_blue_data = bs(blue_sigma_data, grp_blue_cen_stellar_mass_data, 
+        statistic='mean', bins=np.linspace(0,250,6))
 
     fig1 = plt.figure(figsize=(10,8))
 
@@ -3244,11 +3269,23 @@ def plot_mean_grpcen_vs_sigma(result, red_sigma_bf, \
     db = plt.errorbar(centers_blue,mean_stats_blue_data[0],yerr=err_colour[25:30],
         color='darkblue',fmt='*',ecolor='darkblue',markersize=10,capsize=10,
         capthick=1.0,zorder=10)
+    
+    mr = plt.fill_between(x=centers_red, y1=red_models_max, 
+        y2=red_models_min, color='lightcoral',alpha=0.4)
+    mb = plt.fill_between(x=centers_blue, y1=blue_models_max, 
+        y2=blue_models_min, color='cornflowerblue',alpha=0.4)
 
-    mr = plt.fill_between(centers_red, mean_stats_red[0]+std_stats_red[0], 
-        mean_stats_red[0]-std_stats_red[0], color='lightcoral',alpha=0.4)
-    mb = plt.fill_between(centers_blue, mean_stats_blue[0]+std_stats_blue[0], 
-        mean_stats_blue[0]-std_stats_blue[0], color='lightskyblue',alpha=0.4)
+    ## Plotting models as individual lines
+    # for idx in range(len(mean_grp_red_cen_gals_arr)):
+    #     mr, = plt.plot(centers_red, mean_grp_red_cen_gals_arr[idx], 
+    #         ls='-', c='darkred')
+    #     mb, = plt.plot(centers_blue, mean_grp_blue_cen_gals_arr[idx], 
+    #         ls='-', c='darkblue')    
+    
+    # mr = plt.fill_between(centers_red, mean_stats_red[0]+std_stats_red[0], 
+    #     mean_stats_red[0]-std_stats_red[0], color='lightcoral',alpha=0.4)
+    # mb = plt.fill_between(centers_blue, mean_stats_blue[0]+std_stats_blue[0], 
+    #     mean_stats_blue[0]-std_stats_blue[0], color='lightskyblue',alpha=0.4)
 
     bfr = plt.scatter(centers_red, mean_stats_red_bf[0], c='indianred', s=200, marker='*', zorder=9)
     bfb = plt.scatter(centers_blue, mean_stats_blue_bf[0], c='cornflowerblue', s=200, marker='*', zorder=9)
@@ -3265,7 +3302,7 @@ def plot_mean_grpcen_vs_sigma(result, red_sigma_bf, \
         plt.title('ECO')
    
     plt.xlabel(r'\boldmath$\sigma \left[\mathrm{km/s} \right]$', fontsize=30)
-    plt.ylabel(r'\boldmath$\overline{\log_{10}\ M_{*, cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=20)
+    plt.ylabel(r'\boldmath$\overline{\log_{10}\ M_{*, cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
     plt.show()
 
 
@@ -3294,11 +3331,11 @@ if machine == 'bender':
 elif machine == 'mac':
     halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
 
-chi2_file = path_to_proc + 'smhm_colour_run22/{0}_colour_chi2.txt'.\
+chi2_file = path_to_proc + 'smhm_colour_run21/{0}_colour_chi2.txt'.\
     format(survey)
-chain_file = path_to_proc + 'smhm_colour_run22/mcmc_{0}_colour_raw.txt'.\
+chain_file = path_to_proc + 'smhm_colour_run21/mcmc_{0}_colour_raw.txt'.\
     format(survey)
-randint_file = path_to_proc + 'smhm_colour_run22/{0}_colour_mocknum.txt'.\
+randint_file = path_to_proc + 'smhm_colour_run21/{0}_colour_mocknum.txt'.\
     format(survey)
 
 if survey == 'eco':
@@ -3373,7 +3410,8 @@ err_total_data, err_colour_data = \
 
 print('Multiprocessing')
 result = mp_init(mcmc_table_pctl, nproc)
-# Most recent run took 42 minutes 10/5/2021
+# Second most recent run took 42 minutes 10/5/2021
+# Most recent run took 26 minutes 18/5/2021
 
 print('Getting best fit model')
 maxis_bf_red, phi_bf_red, maxis_bf_blue, phi_bf_blue, cen_gals_red, \
