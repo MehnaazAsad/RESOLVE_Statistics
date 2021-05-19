@@ -89,5 +89,7 @@ src/single_use/figures
 *.sh
 *.txt
 *.hdf5
+*.h5
+*.pickle
 src/template.py
 resolve_statistics.code-workspace
