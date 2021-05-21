@@ -2182,7 +2182,7 @@ def get_best_fit_model(best_fit_params, best_fit_mocknum):
         cen_gals_blue, cen_halos_blue, f_red_cen_red, f_red_cen_blue, \
         red_deltav, red_cen_stellar_mass, blue_deltav, blue_cen_stellar_mass, \
         deltav, cen_stellar_mass, red_sigma, grp_red_cen_stellar_mass, blue_sigma, \
-        grp_blue_cen_stellar_mass,std_red, std_blue, std_centers_red, std_centers_blue
+        grp_blue_cen_stellar_mass, std_red, std_blue, std_centers_red, std_centers_blue
 
 def plot_mf(result, red_data, blue_data, maxis_bf_red, phi_bf_red, 
     maxis_bf_blue, phi_bf_blue, bf_chi2, err_colour):
@@ -3264,10 +3264,10 @@ def plot_mean_grpcen_vs_sigma(result, red_sigma_bf, \
     fig1 = plt.figure(figsize=(10,8))
 
     dr = plt.errorbar(centers_red,mean_stats_red_data[0],yerr=err_colour[20:25],
-        color='darkred',fmt='*',ecolor='darkred',markersize=10,capsize=10,
+        color='darkred',fmt='o',ecolor='darkred',markersize=13,capsize=10,
         capthick=1.0,zorder=10)
     db = plt.errorbar(centers_blue,mean_stats_blue_data[0],yerr=err_colour[25:30],
-        color='darkblue',fmt='*',ecolor='darkblue',markersize=10,capsize=10,
+        color='darkblue',fmt='o',ecolor='darkblue',markersize=13,capsize=10,
         capthick=1.0,zorder=10)
     
     mr = plt.fill_between(x=centers_red, y1=red_models_max, 
@@ -3287,8 +3287,8 @@ def plot_mean_grpcen_vs_sigma(result, red_sigma_bf, \
     # mb = plt.fill_between(centers_blue, mean_stats_blue[0]+std_stats_blue[0], 
     #     mean_stats_blue[0]-std_stats_blue[0], color='lightskyblue',alpha=0.4)
 
-    bfr = plt.scatter(centers_red, mean_stats_red_bf[0], c='indianred', s=200, marker='*', zorder=9)
-    bfb = plt.scatter(centers_blue, mean_stats_blue_bf[0], c='cornflowerblue', s=200, marker='*', zorder=9)
+    bfr, = plt.plot(centers_red, mean_stats_red_bf[0], c='indianred', zorder=9)
+    bfb, = plt.plot(centers_blue, mean_stats_blue_bf[0], c='cornflowerblue', zorder=9)
 
     l = plt.legend([(dr, db), (mr, mb), (bfr, bfb)], 
         ['Data','Models','Best-fit'],
