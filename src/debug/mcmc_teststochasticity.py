@@ -978,7 +978,7 @@ def assign_colour_label_mock(f_red_cen, f_red_sat, df, drop_fred=False):
     for ii, cs_ii in enumerate(df['cs_flag']):
         # Draw a random number
         # rng = np.random.uniform()
-        rng = 0.5
+        rng = 0.3
         # Comparing against f_red
         if (rng >= f_red_arr[ii]):
             color_label = 'B'
@@ -2061,528 +2061,484 @@ def measure_all_smf(table, volume, data_bool, randint_logmstar=None):
         [max_red, phi_red, err_red, counts_red] , \
             [max_blue, phi_blue, err_blue, counts_blue]
 
-def args_parser():
-    """
-    Parsing arguments passed to script
+# global model_init
+global survey
+global path_to_proc
+global mf_type
+global ver
+global quenching
+global gal_group_df_one
+global gal_group_df_two
 
-    Returns
-    -------
-    args: 
-        Input arguments to the script
-    """
-    print('Parsing in progress')
-    parser = argparse.ArgumentParser()
-    parser.add_argument('machine', type=str, \
-        help='Options: mac/bender')
-    parser.add_argument('survey', type=str, \
-        help='Options: eco/resolvea/resolveb')
-    parser.add_argument('mf_type', type=str, \
-        help='Options: smf/bmf')
-    parser.add_argument('quenching', type=str, \
-        help='Options: hybrid/halo')
-    parser.add_argument('nproc', type=int, nargs='?', 
-        help='Number of processes')
-    parser.add_argument('nwalkers', type=int, nargs='?', 
-        help='Number of walkers')
-    parser.add_argument('nsteps', type=int, nargs='?', help='Number of steps')
-    args = parser.parse_args()
-    return args
+# global mocknum_queue
 
-def main():
-    """
-    Main function that calls all other functions
+survey = 'eco'
+machine = 'mac'
+nproc = 2
+nwalkers = 10
+nsteps = 5
+mf_type = 'smf'
+quenching = 'hybrid'
+calc_data = False
+rseed = 12
+np.random.seed(rseed)
+ver = 2.0
+
+dict_of_paths = cwpaths.cookiecutter_paths()
+path_to_raw = dict_of_paths['raw_dir']
+path_to_proc = dict_of_paths['proc_dir']
+path_to_external = dict_of_paths['ext_dir']
+path_to_data = dict_of_paths['data_dir']
+path_to_int = dict_of_paths['int_dir']
+
+if machine == 'bender':
+    halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
+                'vishnu/rockstar/vishnu_rockstar_test.hdf5'
+elif machine == 'mac':
+    halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
+
+if survey == 'eco':
+    catl_file = path_to_proc + "gal_group_eco_data.hdf5"
+elif survey == 'resolvea' or survey == 'resolveb':
+    catl_file = path_to_raw + "resolve/RESOLVE_liveJune2018.csv"
+
+# mocknum_file = path_to_int + 'precalc_mock_num.txt'
+
+if survey == 'eco':
+    path_to_mocks = path_to_data + 'mocks/m200b/eco/'
+elif survey == 'resolvea':
+    path_to_mocks = path_to_external + 'RESOLVE_A_mvir_catls/'
+elif survey == 'resolveb':
+    path_to_mocks = path_to_external + 'RESOLVE_B_mvir_catls/'
+
+if calc_data:
+    print('Reading catalog') 
+    # No Mstar cut needed
+    # grpcz values of -99 exist as well as >7000 so grpcz cut required
+    # absrmag cut required
+    # Masses in h=0.7
+    catl, volume, z_median = read_data_catl(catl_file, survey)
+
+    print('Assigning colour to data')
+    # Assigned using masses in h=0.7
+    catl = assign_colour_label_data(catl)
+
+    print('Measuring SMF for data')
+    total_data, red_data, blue_data = measure_all_smf(catl, volume, \
+        data_bool=True)
+
+    print('Measuring spread in vel disp for data')
+    std_red, old_centers_red, std_blue, old_centers_blue = get_deltav_sigma_data(catl)
+
+    print('Measuring binned spread in vel disp for data')
+    mean_grp_cen_red, new_centers_red, mean_grp_cen_blue, new_centers_blue = \
+        get_sigma_per_group_data(catl)
+
+    print('Measuring error in data from mocks')
+    # sigma, eigenvectors = get_err_data(survey, path_to_mocks)
+    sigma, inv_corr_mat = get_err_data(survey, path_to_mocks)
+
+    print('Reading vishnu group catalog')
+    gal_group_df = reading_catls(path_to_proc + "gal_group.hdf5") 
+
+    col_idxs = [str(int(x)) for x in np.linspace(1,101,101)] 
+    cols_to_keep_set_one = [] 
+    for idx in range(len(col_idxs)): 
+        idx+=1 
+        cols_to_keep_set_one.append('g_galtype_{0}'.format(idx)) 
+        cols_to_keep_set_one.append('groupid_{0}'.format(idx)) 
+        cols_to_keep_set_one.append('{0}_y'.format(idx)) 
+        if idx == 50:
+            break
+    cols_to_keep_set_one.append('cz') 
+    cols_to_keep_set_one.append('halo_mvir')
+    cols_to_keep_set_one.append('cs_flag')
+
+    cols_to_keep_set_two = [] 
+    for idx in range(len(col_idxs)): 
+        idx+=51
+        cols_to_keep_set_two.append('g_galtype_{0}'.format(idx)) 
+        cols_to_keep_set_two.append('groupid_{0}'.format(idx)) 
+        cols_to_keep_set_two.append('{0}_y'.format(idx)) 
+        if idx == 101:
+            break
+    cols_to_keep_set_two.append('cz') 
+    cols_to_keep_set_two.append('halo_mvir')
+    cols_to_keep_set_two.append('cs_flag')
+
+    gal_group_df_one = gal_group_df[cols_to_keep_set_one]
+    for idx in range(0,51):
+        gal_group_df_one = gal_group_df_one.rename(columns={'{0}_y'.\
+            format(idx):'{0}'.format(idx)})
+
+    gal_group_df_two = gal_group_df[cols_to_keep_set_two]
+    for idx in range(51,102):
+        gal_group_df_two = gal_group_df_two.rename(columns={'{0}_y'.\
+            format(idx):'{0}'.format(idx)})
+
+    with open('sigma.pickle', 'wb') as handle:
+        pickle.dump(sigma, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    with open('phi_corr_mat_inv.pickle', 'wb') as handle:
+        pickle.dump(inv_corr_mat, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    with open('redsmf.pickle', 'wb') as handle:
+        pickle.dump(red_data[1], handle, protocol=pickle.HIGHEST_PROTOCOL)
+    with open('bluesmf.pickle', 'wb') as handle:
+        pickle.dump(blue_data[1], handle, protocol=pickle.HIGHEST_PROTOCOL)
+    with open('redobstwo.pickle', 'wb') as handle:
+        pickle.dump(std_red, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    with open('blueobstwo.pickle', 'wb') as handle:
+        pickle.dump(std_blue, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    with open('redobsthree.pickle', 'wb') as handle:
+        pickle.dump(mean_grp_cen_red, handle, 
+            protocol=pickle.HIGHEST_PROTOCOL)
+    with open('blueobsthree.pickle', 'wb') as handle:
+        pickle.dump(mean_grp_cen_blue, handle, 
+            protocol=pickle.HIGHEST_PROTOCOL)
+    with open('galgroupdfone.pickle', 'wb') as handle:
+        pickle.dump(gal_group_df_one, handle, 
+            protocol=pickle.HIGHEST_PROTOCOL)
+    with open('galgroupdftwo.pickle', 'wb') as handle:
+        pickle.dump(gal_group_df_two, handle, 
+            protocol=pickle.HIGHEST_PROTOCOL)
+else:
+    print('Unpickling')
+    file = open("redsmf.pickle",'rb')
+    red_data = pickle.load(file)   
+    file = open("bluesmf.pickle",'rb')
+    blue_data = pickle.load(file) 
+    file = open("redobstwo.pickle",'rb')
+    std_red = pickle.load(file) 
+    file = open("blueobstwo.pickle",'rb')
+    std_blue = pickle.load(file) 
+    file = open("redobsthree.pickle",'rb')
+    mean_grp_cen_red = pickle.load(file) 
+    file = open("blueobsthree.pickle",'rb')
+    mean_grp_cen_blue = pickle.load(file) 
+    file = open("sigma.pickle",'rb')
+    sigma = pickle.load(file) 
+    # file = open("eigenvectors.pickle",'rb')
+    # eigenvectors = pickle.load(file) 
+    file = open("phi_corr_mat_inv.pickle",'rb')
+    inv_corr_mat = pickle.load(file) 
+    file = open("galgroupdfone.pickle",'rb')
+    gal_group_df_one = pickle.load(file) 
+    file = open("galgroupdftwo.pickle",'rb')
+    gal_group_df_two = pickle.load(file) 
+
+
     
-    Parameters
-    ----------
-    args: 
-        Input arguments to the script
-
-    """
-    # global model_init
-    global survey
-    global path_to_proc
-    global mf_type
-    global ver
-    global quenching
-    global gal_group_df_one
-    global gal_group_df_two
-
-    # global mocknum_queue
-
-    survey = 'eco'
-    machine = 'mac'
-    nproc = 2
-    nwalkers = 10
-    nsteps = 5
-    mf_type = 'smf'
-    quenching = 'hybrid'
-    calc_data = False
-    rseed = 12
-    np.random.seed(rseed)
-    # survey = args.survey
-    # machine = args.machine
-    # nproc = args.nproc
-    # nwalkers = args.nwalkers
-    # nsteps = args.nsteps
-    # mf_type = args.mf_type
-    # quenching = args.quenching
-    ver = 2.0
-    
-    dict_of_paths = cwpaths.cookiecutter_paths()
-    path_to_raw = dict_of_paths['raw_dir']
-    path_to_proc = dict_of_paths['proc_dir']
-    path_to_external = dict_of_paths['ext_dir']
-    path_to_data = dict_of_paths['data_dir']
-    path_to_int = dict_of_paths['int_dir']
-    
-    if machine == 'bender':
-        halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
-                    'vishnu/rockstar/vishnu_rockstar_test.hdf5'
-    elif machine == 'mac':
-        halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
-
-    if survey == 'eco':
-        catl_file = path_to_proc + "gal_group_eco_data.hdf5"
-    elif survey == 'resolvea' or survey == 'resolveb':
-        catl_file = path_to_raw + "resolve/RESOLVE_liveJune2018.csv"
-    
-    # mocknum_file = path_to_int + 'precalc_mock_num.txt'
-
-    if survey == 'eco':
-        path_to_mocks = path_to_data + 'mocks/m200b/eco/'
-    elif survey == 'resolvea':
-        path_to_mocks = path_to_external + 'RESOLVE_A_mvir_catls/'
-    elif survey == 'resolveb':
-        path_to_mocks = path_to_external + 'RESOLVE_B_mvir_catls/'
-
-    # print('Reading mock number file and starting queue')
-    # mocknum_df = pd.read_csv(mocknum_file, header=None, names=['mock_num'])
-    # mocknum_arr = mocknum_df['mock_num'].values
-    # mocknum_queue = Queue()
-    # mocknum_queue.put(mocknum_arr)
-
-    if calc_data:
-        print('Reading catalog') 
-        # No Mstar cut needed
-        # grpcz values of -99 exist as well as >7000 so grpcz cut required
-        # absrmag cut required
-        # Masses in h=0.7
-        catl, volume, z_median = read_data_catl(catl_file, survey)
-
-        print('Assigning colour to data')
-        # Assigned using masses in h=0.7
-        catl = assign_colour_label_data(catl)
-
-        print('Measuring SMF for data')
-        total_data, red_data, blue_data = measure_all_smf(catl, volume, \
-            data_bool=True)
-
-        print('Measuring spread in vel disp for data')
-        std_red, old_centers_red, std_blue, old_centers_blue = get_deltav_sigma_data(catl)
-
-        print('Measuring binned spread in vel disp for data')
-        mean_grp_cen_red, new_centers_red, mean_grp_cen_blue, new_centers_blue = \
-            get_sigma_per_group_data(catl)
-
-        print('Measuring error in data from mocks')
-        # sigma, eigenvectors = get_err_data(survey, path_to_mocks)
-        sigma, inv_corr_mat = get_err_data(survey, path_to_mocks)
-
-        print('Reading vishnu group catalog')
-        gal_group_df = reading_catls(path_to_proc + "gal_group.hdf5") 
-
-        col_idxs = [str(int(x)) for x in np.linspace(1,101,101)] 
-        cols_to_keep_set_one = [] 
-        for idx in range(len(col_idxs)): 
-            idx+=1 
-            cols_to_keep_set_one.append('g_galtype_{0}'.format(idx)) 
-            cols_to_keep_set_one.append('groupid_{0}'.format(idx)) 
-            cols_to_keep_set_one.append('{0}_y'.format(idx)) 
-            if idx == 50:
-                break
-        cols_to_keep_set_one.append('cz') 
-        cols_to_keep_set_one.append('halo_mvir')
-        cols_to_keep_set_one.append('cs_flag')
-
-        cols_to_keep_set_two = [] 
-        for idx in range(len(col_idxs)): 
-            idx+=51
-            cols_to_keep_set_two.append('g_galtype_{0}'.format(idx)) 
-            cols_to_keep_set_two.append('groupid_{0}'.format(idx)) 
-            cols_to_keep_set_two.append('{0}_y'.format(idx)) 
-            if idx == 101:
-                break
-        cols_to_keep_set_two.append('cz') 
-        cols_to_keep_set_two.append('halo_mvir')
-        cols_to_keep_set_two.append('cs_flag')
-
-        gal_group_df_one = gal_group_df[cols_to_keep_set_one]
-        for idx in range(0,51):
-            gal_group_df_one = gal_group_df_one.rename(columns={'{0}_y'.\
-                format(idx):'{0}'.format(idx)})
-
-        gal_group_df_two = gal_group_df[cols_to_keep_set_two]
-        for idx in range(51,102):
-            gal_group_df_two = gal_group_df_two.rename(columns={'{0}_y'.\
-                format(idx):'{0}'.format(idx)})
-
-        with open('sigma.pickle', 'wb') as handle:
-            pickle.dump(sigma, handle, protocol=pickle.HIGHEST_PROTOCOL)
-        with open('phi_corr_mat_inv.pickle', 'wb') as handle:
-            pickle.dump(inv_corr_mat, handle, protocol=pickle.HIGHEST_PROTOCOL)
-        with open('redsmf.pickle', 'wb') as handle:
-            pickle.dump(red_data[1], handle, protocol=pickle.HIGHEST_PROTOCOL)
-        with open('bluesmf.pickle', 'wb') as handle:
-            pickle.dump(blue_data[1], handle, protocol=pickle.HIGHEST_PROTOCOL)
-        with open('redobstwo.pickle', 'wb') as handle:
-            pickle.dump(std_red, handle, protocol=pickle.HIGHEST_PROTOCOL)
-        with open('blueobstwo.pickle', 'wb') as handle:
-            pickle.dump(std_blue, handle, protocol=pickle.HIGHEST_PROTOCOL)
-        with open('redobsthree.pickle', 'wb') as handle:
-            pickle.dump(mean_grp_cen_red, handle, 
-                protocol=pickle.HIGHEST_PROTOCOL)
-        with open('blueobsthree.pickle', 'wb') as handle:
-            pickle.dump(mean_grp_cen_blue, handle, 
-                protocol=pickle.HIGHEST_PROTOCOL)
-        with open('galgroupdfone.pickle', 'wb') as handle:
-            pickle.dump(gal_group_df_one, handle, 
-                protocol=pickle.HIGHEST_PROTOCOL)
-        with open('galgroupdftwo.pickle', 'wb') as handle:
-            pickle.dump(gal_group_df_two, handle, 
-                protocol=pickle.HIGHEST_PROTOCOL)
+iter=0
+global_models_arr = []
+while iter<20:
+    print("Iteration {0}/20".format(iter+1))
+    randint_logmstar = random.randint(1,101)
+    cols_to_use = ['halo_mvir', 'cs_flag', 'cz', \
+        '{0}'.format(randint_logmstar), \
+        'g_galtype_{0}'.format(randint_logmstar), \
+        'groupid_{0}'.format(randint_logmstar)]
+    if randint_logmstar < 51:
+        gals_df_mock = gal_group_df_one[cols_to_use]
     else:
-        print('Unpickling')
-        file = open("redsmf.pickle",'rb')
-        red_data = pickle.load(file)   
-        file = open("bluesmf.pickle",'rb')
-        blue_data = pickle.load(file) 
-        file = open("redobstwo.pickle",'rb')
-        std_red = pickle.load(file) 
-        file = open("blueobstwo.pickle",'rb')
-        std_blue = pickle.load(file) 
-        file = open("redobsthree.pickle",'rb')
-        mean_grp_cen_red = pickle.load(file) 
-        file = open("blueobsthree.pickle",'rb')
-        mean_grp_cen_blue = pickle.load(file) 
-        file = open("sigma.pickle",'rb')
-        sigma = pickle.load(file) 
-        # file = open("eigenvectors.pickle",'rb')
-        # eigenvectors = pickle.load(file) 
-        file = open("phi_corr_mat_inv.pickle",'rb')
-        inv_corr_mat = pickle.load(file) 
-        file = open("galgroupdfone.pickle",'rb')
-        gal_group_df_one = pickle.load(file) 
-        file = open("galgroupdftwo.pickle",'rb')
-        gal_group_df_two = pickle.load(file) 
+        gals_df_mock = gal_group_df_two[cols_to_use]
+
+    theta = [10.49, 14.03, 0.69, 0.148]
+
+    # Masses in h=1.0
+    if quenching == 'hybrid':
+        f_red_cen, f_red_sat = hybrid_quenching_model(theta, gals_df_mock, \
+            'vishnu', randint_logmstar)
+    elif quenching == 'halo':
+        f_red_cen, f_red_sat = halo_quenching_model(theta, gals_df_mock, \
+            'vishnu')
+    assign_colour_label_mock(f_red_cen, f_red_sat, gals_df_mock)
+
+    # v_sim = 130**3
+    v_sim = 890641.5172927063 #survey volume used in group_finder.py
+    total_model, red_model, blue_model = measure_all_smf(gals_df_mock, 
+        v_sim ,data_bool=False, randint_logmstar=randint_logmstar)     
+    std_red_model, std_blue_model, centers_red_model, centers_blue_model = \
+        get_deltav_sigma_vishnu_qmcolour(gals_df_mock, randint_logmstar)
+    av_grpcen_red_model, centers_red_model, av_grpcen_blue_model, \
+        centers_blue_model = get_sigma_per_group_vishnu_qmcolour(gals_df_mock, randint_logmstar)
+    
+    data_arr = []
+    data_arr.append(red_data)
+    data_arr.append(blue_data)
+    data_arr.append(std_red)
+    data_arr.append(std_blue)
+    ## Full binned_statistic output which is why indexing is needed
+    data_arr.append(mean_grp_cen_red[0]) 
+    data_arr.append(mean_grp_cen_blue[0])
+    model_arr = []
+    model_arr.append(red_model[1])
+    model_arr.append(blue_model[1])   
+    model_arr.append(std_red_model)
+    model_arr.append(std_blue_model)
+    model_arr.append(av_grpcen_red_model[0])
+    model_arr.append(av_grpcen_blue_model[0])
+    err_arr = sigma
+
+    data_arr, model_arr = np.array(data_arr), np.array(model_arr)
+    global_models_arr.append(model_arr)
+    iter+=1
+global_models_arr = np.array(global_models_arr)
+
+## Standard deviation across all models for each measurement
+sigma_models = []
+for idx in range(global_models_arr.shape[1]):
+    sigma_models.append(np.std(global_models_arr[:,idx:idx+1,:],axis=0))
+sigma_models = np.array(sigma_models).flatten()
+sigma_frac = (sigma_models/err_arr)*100
+
+"""
+[ 53.83367228  55.37182974  60.59019426  59.38173527  60.59610514
+84.83284323  78.74896761  78.59299169  77.44293886  67.78727534
+46.37176802  22.43678634  32.15931728  20.51978024  21.86565205
+26.67013146  14.64098959  20.94604988  30.64788624  22.29650637
+79.56532268 137.12225633 119.23723169 169.50910951 115.89809271
+95.61818266  83.11082109  71.42282134  76.44597354  65.78827221]
+"""
+
+iter=0
+global_models_arr = []
+while iter<20:
+    print("Iteration {0}/20".format(iter+1))
+    # randint_logmstar = random.randint(1,101)
+    ##! Remove one source of stochasticity
+    randint_logmstar = 30
+    cols_to_use = ['halo_mvir', 'cs_flag', 'cz', \
+        '{0}'.format(randint_logmstar), \
+        'g_galtype_{0}'.format(randint_logmstar), \
+        'groupid_{0}'.format(randint_logmstar)]
+    if randint_logmstar < 51:
+        gals_df_mock = gal_group_df_one[cols_to_use]
+    else:
+        gals_df_mock = gal_group_df_two[cols_to_use]
+
+    theta = [10.49, 14.03, 0.69, 0.148]
+
+    # Masses in h=1.0
+    if quenching == 'hybrid':
+        f_red_cen, f_red_sat = hybrid_quenching_model(theta, gals_df_mock, \
+            'vishnu', randint_logmstar)
+    elif quenching == 'halo':
+        f_red_cen, f_red_sat = halo_quenching_model(theta, gals_df_mock, \
+            'vishnu')
+    assign_colour_label_mock(f_red_cen, f_red_sat, gals_df_mock)
+
+    # v_sim = 130**3
+    v_sim = 890641.5172927063 #survey volume used in group_finder.py
+    total_model, red_model, blue_model = measure_all_smf(gals_df_mock, 
+        v_sim ,data_bool=False, randint_logmstar=randint_logmstar)     
+    std_red_model, std_blue_model, centers_red_model, centers_blue_model = \
+        get_deltav_sigma_vishnu_qmcolour(gals_df_mock, randint_logmstar)
+    av_grpcen_red_model, centers_red_model, av_grpcen_blue_model, \
+        centers_blue_model = get_sigma_per_group_vishnu_qmcolour(gals_df_mock, randint_logmstar)
+    
+    data_arr = []
+    data_arr.append(red_data)
+    data_arr.append(blue_data)
+    data_arr.append(std_red)
+    data_arr.append(std_blue)
+    ## Full binned_statistic output which is why indexing is needed
+    data_arr.append(mean_grp_cen_red[0]) 
+    data_arr.append(mean_grp_cen_blue[0])
+    model_arr = []
+    model_arr.append(red_model[1])
+    model_arr.append(blue_model[1])   
+    model_arr.append(std_red_model)
+    model_arr.append(std_blue_model)
+    model_arr.append(av_grpcen_red_model[0])
+    model_arr.append(av_grpcen_blue_model[0])
+    err_arr = sigma
+
+    data_arr, model_arr = np.array(data_arr), np.array(model_arr)
+    global_models_arr.append(model_arr)
+    iter+=1
+global_models_arr = np.array(global_models_arr)
+
+sigma_models = []
+for idx in range(global_models_arr.shape[1]):
+    sigma_models.append(np.std(global_models_arr[:,idx:idx+1,:],axis=0))
+sigma_models = np.array(sigma_models).flatten()
+sigma_frac = (sigma_models/err_arr)*100
+
+# [ 3.76220484,  4.21410636,  4.20753562,  2.97928364,  2.38918403,
+#     1.14096355,  1.64305187,  2.51360852,  3.60099615,  6.00828428,
+#    20.34506803, 19.01933399, 21.71038706,  9.20242842, 23.75130916,
+#    22.00213138, 14.82615996, 14.79656504, 19.02540621, 16.70005007,
+#    43.47990007, 35.92702663, 63.56207161, 67.77720651, 34.41256564,
+#    43.70932216, 50.32345494, 47.29133268, 40.7986743 ,         nan]    
+
+iter=0
+global_models_arr = []
+while iter<20:
+    print("Iteration {0}/20".format(iter+1))
+    randint_logmstar = random.randint(1,101)
+    cols_to_use = ['halo_mvir', 'cs_flag', 'cz', \
+        '{0}'.format(randint_logmstar), \
+        'g_galtype_{0}'.format(randint_logmstar), \
+        'groupid_{0}'.format(randint_logmstar)]
+    if randint_logmstar < 51:
+        gals_df_mock = gal_group_df_one[cols_to_use]
+    else:
+        gals_df_mock = gal_group_df_two[cols_to_use]
+
+    theta = [10.49, 14.03, 0.69, 0.148]
+
+    # Masses in h=1.0
+    if quenching == 'hybrid':
+        f_red_cen, f_red_sat = hybrid_quenching_model(theta, gals_df_mock, \
+            'vishnu', randint_logmstar)
+    elif quenching == 'halo':
+        f_red_cen, f_red_sat = halo_quenching_model(theta, gals_df_mock, \
+            'vishnu')
+
+    ##! Remove one source of stochasticity (rng within this function)
+    assign_colour_label_mock(f_red_cen, f_red_sat, gals_df_mock)
+
+    # v_sim = 130**3
+    v_sim = 890641.5172927063 #survey volume used in group_finder.py
+    total_model, red_model, blue_model = measure_all_smf(gals_df_mock, 
+        v_sim ,data_bool=False, randint_logmstar=randint_logmstar)     
+    std_red_model, std_blue_model, centers_red_model, centers_blue_model = \
+        get_deltav_sigma_vishnu_qmcolour(gals_df_mock, randint_logmstar)
+    av_grpcen_red_model, centers_red_model, av_grpcen_blue_model, \
+        centers_blue_model = get_sigma_per_group_vishnu_qmcolour(gals_df_mock, randint_logmstar)
+    
+    data_arr = []
+    data_arr.append(red_data)
+    data_arr.append(blue_data)
+    data_arr.append(std_red)
+    data_arr.append(std_blue)
+    ## Full binned_statistic output which is why indexing is needed
+    data_arr.append(mean_grp_cen_red[0]) 
+    data_arr.append(mean_grp_cen_blue[0])
+    model_arr = []
+    model_arr.append(red_model[1])
+    model_arr.append(blue_model[1])   
+    model_arr.append(std_red_model)
+    model_arr.append(std_blue_model)
+    model_arr.append(av_grpcen_red_model[0])
+    model_arr.append(av_grpcen_blue_model[0])
+    err_arr = sigma
+
+    data_arr, model_arr = np.array(data_arr), np.array(model_arr)
+    global_models_arr.append(model_arr)
+    iter+=1
+global_models_arr = np.array(global_models_arr)
+
+sigma_models = []
+for idx in range(global_models_arr.shape[1]):
+    sigma_models.append(np.std(global_models_arr[:,idx:idx+1,:],axis=0))
+sigma_models = np.array(sigma_models).flatten()
+sigma_frac = (sigma_models/err_arr)*100
+
+"""
+[         nan, 187.47737889,  51.73780875,  63.65530546,
+64.12536496,  77.61302792,  77.30220961,  85.50529574,
+78.83351264,          nan,          nan,          nan,
+31.75848078,  29.80600364,  32.45335182,  12.34549932,
+11.24091063,  10.51084224,  14.70801366,          nan,
+43.46740579,  74.22667776, 104.11258903,  89.92731291,
+66.51992085,  73.36494027,  67.68899784,  55.69009473,
+81.12338089,          nan])
+"""
+
+##! Remove both sources of stochasticity
+iter=0
+global_models_arr = []
+while iter<20:
+    print("Iteration {0}/20".format(iter+1))
+    # randint_logmstar = random.randint(1,101)
+    randint_logmstar = 30
+    cols_to_use = ['halo_mvir', 'cs_flag', 'cz', \
+        '{0}'.format(randint_logmstar), \
+        'g_galtype_{0}'.format(randint_logmstar), \
+        'groupid_{0}'.format(randint_logmstar)]
+    if randint_logmstar < 51:
+        gals_df_mock = gal_group_df_one[cols_to_use]
+    else:
+        gals_df_mock = gal_group_df_two[cols_to_use]
+
+    theta = [10.49, 14.03, 0.69, 0.148]
+
+    # Masses in h=1.0
+    if quenching == 'hybrid':
+        f_red_cen, f_red_sat = hybrid_quenching_model(theta, gals_df_mock, \
+            'vishnu', randint_logmstar)
+    elif quenching == 'halo':
+        f_red_cen, f_red_sat = halo_quenching_model(theta, gals_df_mock, \
+            'vishnu')
+
+    assign_colour_label_mock(f_red_cen, f_red_sat, gals_df_mock)
+
+    # v_sim = 130**3
+    v_sim = 890641.5172927063 #survey volume used in group_finder.py
+    total_model, red_model, blue_model = measure_all_smf(gals_df_mock, 
+        v_sim ,data_bool=False, randint_logmstar=randint_logmstar)     
+    std_red_model, std_blue_model, centers_red_model, centers_blue_model = \
+        get_deltav_sigma_vishnu_qmcolour(gals_df_mock, randint_logmstar)
+    av_grpcen_red_model, centers_red_model, av_grpcen_blue_model, \
+        centers_blue_model = get_sigma_per_group_vishnu_qmcolour(gals_df_mock, randint_logmstar)
+    
+    data_arr = []
+    data_arr.append(red_data)
+    data_arr.append(blue_data)
+    data_arr.append(std_red)
+    data_arr.append(std_blue)
+    ## Full binned_statistic output which is why indexing is needed
+    data_arr.append(mean_grp_cen_red[0]) 
+    data_arr.append(mean_grp_cen_blue[0])
+    model_arr = []
+    model_arr.append(red_model[1])
+    model_arr.append(blue_model[1])   
+    model_arr.append(std_red_model)
+    model_arr.append(std_blue_model)
+    model_arr.append(av_grpcen_red_model[0])
+    model_arr.append(av_grpcen_blue_model[0])
+    err_arr = sigma
+
+    data_arr, model_arr = np.array(data_arr), np.array(model_arr)
+    global_models_arr.append(model_arr)
+    iter+=1
+global_models_arr = np.array(global_models_arr)
+
+sigma_models = []
+for idx in range(global_models_arr.shape[1]):
+    sigma_models.append(np.std(global_models_arr[:,idx:idx+1,:],axis=0))
+sigma_models = np.array(sigma_models).flatten()
+sigma_frac = (sigma_models/err_arr)*100
+
+"""
+[nan, 0.00000000e+00, 2.52721042e-13, 2.32652777e-13,
+4.10427688e-13, 6.18145790e-13, 1.78057743e-13, 0.00000000e+00,
+1.60859924e-13,            nan,            nan, 5.81492477e-14,
+7.13714401e-14, 6.45384570e-14, 6.77293271e-14, 0.00000000e+00,
+2.77416104e-14, 1.42318166e-14, 3.85780768e-14,            nan,
+8.69959759e-12, 5.15628066e-12, 0.00000000e+00, 2.46685886e-12,
+1.35243484e-12, 1.04753225e-11, 4.02231294e-12, 0.00000000e+00,
+1.20368139e-12, 0.00000000e+00]
+"""
 
 
-        
-    iter=0
-    global_models_arr = []
-    while iter<20:
-        print("Iteration {0}/20".format(iter+1))
-        randint_logmstar = random.randint(1,101)
-        cols_to_use = ['halo_mvir', 'cs_flag', 'cz', \
-            '{0}'.format(randint_logmstar), \
-            'g_galtype_{0}'.format(randint_logmstar), \
-            'groupid_{0}'.format(randint_logmstar)]
-        if randint_logmstar < 51:
-            gals_df_mock = gal_group_df_one[cols_to_use]
-        else:
-            gals_df_mock = gal_group_df_two[cols_to_use]
+## Without randint_logmstar
+# [ 3.76220484,  4.21410636,  4.20753562,  2.97928364,  2.38918403,
+#     1.14096355,  1.64305187,  2.51360852,  3.60099615,  6.00828428,
+#    20.34506803, 19.01933399, 21.71038706,  9.20242842, 23.75130916,
+#    22.00213138, 14.82615996, 14.79656504, 19.02540621, 16.70005007,
+#    43.47990007, 35.92702663, 63.56207161, 67.77720651, 34.41256564,
+#    43.70932216, 50.32345494, 47.29133268, 40.7986743 ,         nan]    
 
-        theta = [10.49, 14.03, 0.69, 0.148]
 
-        # Masses in h=1.0
-        if quenching == 'hybrid':
-            f_red_cen, f_red_sat = hybrid_quenching_model(theta, gals_df_mock, \
-                'vishnu', randint_logmstar)
-        elif quenching == 'halo':
-            f_red_cen, f_red_sat = halo_quenching_model(theta, gals_df_mock, \
-                'vishnu')
-        assign_colour_label_mock(f_red_cen, f_red_sat, gals_df_mock)
-
-        # v_sim = 130**3
-        v_sim = 890641.5172927063 #survey volume used in group_finder.py
-        total_model, red_model, blue_model = measure_all_smf(gals_df_mock, 
-            v_sim ,data_bool=False, randint_logmstar=randint_logmstar)     
-        std_red_model, std_blue_model, centers_red_model, centers_blue_model = \
-            get_deltav_sigma_vishnu_qmcolour(gals_df_mock, randint_logmstar)
-        av_grpcen_red_model, centers_red_model, av_grpcen_blue_model, \
-            centers_blue_model = get_sigma_per_group_vishnu_qmcolour(gals_df_mock, randint_logmstar)
-        
-        data_arr = []
-        data_arr.append(red_data)
-        data_arr.append(blue_data)
-        data_arr.append(std_red)
-        data_arr.append(std_blue)
-        ## Full binned_statistic output which is why indexing is needed
-        data_arr.append(mean_grp_cen_red[0]) 
-        data_arr.append(mean_grp_cen_blue[0])
-        model_arr = []
-        model_arr.append(red_model[1])
-        model_arr.append(blue_model[1])   
-        model_arr.append(std_red_model)
-        model_arr.append(std_blue_model)
-        model_arr.append(av_grpcen_red_model[0])
-        model_arr.append(av_grpcen_blue_model[0])
-        err_arr = sigma
-
-        data_arr, model_arr = np.array(data_arr), np.array(model_arr)
-        global_models_arr.append(model_arr)
-        iter+=1
-    global_models_arr = np.array(global_models_arr)
-
-    ## Standard deviation across all models for each measurement
-    sigma_models = []
-    for idx in range(global_models_arr.shape[1]):
-        sigma_models.append(np.std(global_models_arr[:,idx:idx+1,:],axis=0))
-    sigma_models = np.array(sigma_models).flatten()
-    sigma_frac = (sigma_models/err_arr)*100
-
-    """
-    [ 53.83367228  55.37182974  60.59019426  59.38173527  60.59610514
-    84.83284323  78.74896761  78.59299169  77.44293886  67.78727534
-    46.37176802  22.43678634  32.15931728  20.51978024  21.86565205
-    26.67013146  14.64098959  20.94604988  30.64788624  22.29650637
-    79.56532268 137.12225633 119.23723169 169.50910951 115.89809271
-    95.61818266  83.11082109  71.42282134  76.44597354  65.78827221]
-    """
-
-    iter=0
-    global_models_arr = []
-    while iter<20:
-        print("Iteration {0}/20".format(iter+1))
-        # randint_logmstar = random.randint(1,101)
-        ##! Remove one source of stochasticity
-        randint_logmstar = 30
-        cols_to_use = ['halo_mvir', 'cs_flag', 'cz', \
-            '{0}'.format(randint_logmstar), \
-            'g_galtype_{0}'.format(randint_logmstar), \
-            'groupid_{0}'.format(randint_logmstar)]
-        if randint_logmstar < 51:
-            gals_df_mock = gal_group_df_one[cols_to_use]
-        else:
-            gals_df_mock = gal_group_df_two[cols_to_use]
-
-        theta = [10.49, 14.03, 0.69, 0.148]
-
-        # Masses in h=1.0
-        if quenching == 'hybrid':
-            f_red_cen, f_red_sat = hybrid_quenching_model(theta, gals_df_mock, \
-                'vishnu', randint_logmstar)
-        elif quenching == 'halo':
-            f_red_cen, f_red_sat = halo_quenching_model(theta, gals_df_mock, \
-                'vishnu')
-        assign_colour_label_mock(f_red_cen, f_red_sat, gals_df_mock)
-
-        # v_sim = 130**3
-        v_sim = 890641.5172927063 #survey volume used in group_finder.py
-        total_model, red_model, blue_model = measure_all_smf(gals_df_mock, 
-            v_sim ,data_bool=False, randint_logmstar=randint_logmstar)     
-        std_red_model, std_blue_model, centers_red_model, centers_blue_model = \
-            get_deltav_sigma_vishnu_qmcolour(gals_df_mock, randint_logmstar)
-        av_grpcen_red_model, centers_red_model, av_grpcen_blue_model, \
-            centers_blue_model = get_sigma_per_group_vishnu_qmcolour(gals_df_mock, randint_logmstar)
-        
-        data_arr = []
-        data_arr.append(red_data)
-        data_arr.append(blue_data)
-        data_arr.append(std_red)
-        data_arr.append(std_blue)
-        ## Full binned_statistic output which is why indexing is needed
-        data_arr.append(mean_grp_cen_red[0]) 
-        data_arr.append(mean_grp_cen_blue[0])
-        model_arr = []
-        model_arr.append(red_model[1])
-        model_arr.append(blue_model[1])   
-        model_arr.append(std_red_model)
-        model_arr.append(std_blue_model)
-        model_arr.append(av_grpcen_red_model[0])
-        model_arr.append(av_grpcen_blue_model[0])
-        err_arr = sigma
-
-        data_arr, model_arr = np.array(data_arr), np.array(model_arr)
-        global_models_arr.append(model_arr)
-        iter+=1
-    global_models_arr = np.array(global_models_arr)
-
-    sigma_models = []
-    for idx in range(global_models_arr.shape[1]):
-        sigma_models.append(np.std(global_models_arr[:,idx:idx+1,:],axis=0))
-    sigma_models = np.array(sigma_models).flatten()
-    sigma_frac = (sigma_models/err_arr)*100
-
-    # [ 3.76220484,  4.21410636,  4.20753562,  2.97928364,  2.38918403,
-    #     1.14096355,  1.64305187,  2.51360852,  3.60099615,  6.00828428,
-    #    20.34506803, 19.01933399, 21.71038706,  9.20242842, 23.75130916,
-    #    22.00213138, 14.82615996, 14.79656504, 19.02540621, 16.70005007,
-    #    43.47990007, 35.92702663, 63.56207161, 67.77720651, 34.41256564,
-    #    43.70932216, 50.32345494, 47.29133268, 40.7986743 ,         nan]    
-
-    iter=0
-    global_models_arr = []
-    while iter<20:
-        print("Iteration {0}/20".format(iter+1))
-        randint_logmstar = random.randint(1,101)
-        cols_to_use = ['halo_mvir', 'cs_flag', 'cz', \
-            '{0}'.format(randint_logmstar), \
-            'g_galtype_{0}'.format(randint_logmstar), \
-            'groupid_{0}'.format(randint_logmstar)]
-        if randint_logmstar < 51:
-            gals_df_mock = gal_group_df_one[cols_to_use]
-        else:
-            gals_df_mock = gal_group_df_two[cols_to_use]
-
-        theta = [10.49, 14.03, 0.69, 0.148]
-
-        # Masses in h=1.0
-        if quenching == 'hybrid':
-            f_red_cen, f_red_sat = hybrid_quenching_model(theta, gals_df_mock, \
-                'vishnu', randint_logmstar)
-        elif quenching == 'halo':
-            f_red_cen, f_red_sat = halo_quenching_model(theta, gals_df_mock, \
-                'vishnu')
-
-        ##! Remove one source of stochasticity (rng within this function)
-        assign_colour_label_mock(f_red_cen, f_red_sat, gals_df_mock)
-
-        # v_sim = 130**3
-        v_sim = 890641.5172927063 #survey volume used in group_finder.py
-        total_model, red_model, blue_model = measure_all_smf(gals_df_mock, 
-            v_sim ,data_bool=False, randint_logmstar=randint_logmstar)     
-        std_red_model, std_blue_model, centers_red_model, centers_blue_model = \
-            get_deltav_sigma_vishnu_qmcolour(gals_df_mock, randint_logmstar)
-        av_grpcen_red_model, centers_red_model, av_grpcen_blue_model, \
-            centers_blue_model = get_sigma_per_group_vishnu_qmcolour(gals_df_mock, randint_logmstar)
-        
-        data_arr = []
-        data_arr.append(red_data)
-        data_arr.append(blue_data)
-        data_arr.append(std_red)
-        data_arr.append(std_blue)
-        ## Full binned_statistic output which is why indexing is needed
-        data_arr.append(mean_grp_cen_red[0]) 
-        data_arr.append(mean_grp_cen_blue[0])
-        model_arr = []
-        model_arr.append(red_model[1])
-        model_arr.append(blue_model[1])   
-        model_arr.append(std_red_model)
-        model_arr.append(std_blue_model)
-        model_arr.append(av_grpcen_red_model[0])
-        model_arr.append(av_grpcen_blue_model[0])
-        err_arr = sigma
-
-        data_arr, model_arr = np.array(data_arr), np.array(model_arr)
-        global_models_arr.append(model_arr)
-        iter+=1
-    global_models_arr = np.array(global_models_arr)
-
-    sigma_models = []
-    for idx in range(global_models_arr.shape[1]):
-        sigma_models.append(np.std(global_models_arr[:,idx:idx+1,:],axis=0))
-    sigma_models = np.array(sigma_models).flatten()
-    sigma_frac = (sigma_models/err_arr)*100
-
-    """
-    [         nan, 187.47737889,  51.73780875,  63.65530546,
-    64.12536496,  77.61302792,  77.30220961,  85.50529574,
-    78.83351264,          nan,          nan,          nan,
-    31.75848078,  29.80600364,  32.45335182,  12.34549932,
-    11.24091063,  10.51084224,  14.70801366,          nan,
-    43.46740579,  74.22667776, 104.11258903,  89.92731291,
-    66.51992085,  73.36494027,  67.68899784,  55.69009473,
-    81.12338089,          nan])
-    """
-
-    ##! Remove both sources of stochasticity
-    iter=0
-    global_models_arr = []
-    while iter<20:
-        print("Iteration {0}/20".format(iter+1))
-        # randint_logmstar = random.randint(1,101)
-        randint_logmstar = 30
-        cols_to_use = ['halo_mvir', 'cs_flag', 'cz', \
-            '{0}'.format(randint_logmstar), \
-            'g_galtype_{0}'.format(randint_logmstar), \
-            'groupid_{0}'.format(randint_logmstar)]
-        if randint_logmstar < 51:
-            gals_df_mock = gal_group_df_one[cols_to_use]
-        else:
-            gals_df_mock = gal_group_df_two[cols_to_use]
-
-        theta = [10.49, 14.03, 0.69, 0.148]
-
-        # Masses in h=1.0
-        if quenching == 'hybrid':
-            f_red_cen, f_red_sat = hybrid_quenching_model(theta, gals_df_mock, \
-                'vishnu', randint_logmstar)
-        elif quenching == 'halo':
-            f_red_cen, f_red_sat = halo_quenching_model(theta, gals_df_mock, \
-                'vishnu')
-
-        assign_colour_label_mock(f_red_cen, f_red_sat, gals_df_mock)
-
-        # v_sim = 130**3
-        v_sim = 890641.5172927063 #survey volume used in group_finder.py
-        total_model, red_model, blue_model = measure_all_smf(gals_df_mock, 
-            v_sim ,data_bool=False, randint_logmstar=randint_logmstar)     
-        std_red_model, std_blue_model, centers_red_model, centers_blue_model = \
-            get_deltav_sigma_vishnu_qmcolour(gals_df_mock, randint_logmstar)
-        av_grpcen_red_model, centers_red_model, av_grpcen_blue_model, \
-            centers_blue_model = get_sigma_per_group_vishnu_qmcolour(gals_df_mock, randint_logmstar)
-        
-        data_arr = []
-        data_arr.append(red_data)
-        data_arr.append(blue_data)
-        data_arr.append(std_red)
-        data_arr.append(std_blue)
-        ## Full binned_statistic output which is why indexing is needed
-        data_arr.append(mean_grp_cen_red[0]) 
-        data_arr.append(mean_grp_cen_blue[0])
-        model_arr = []
-        model_arr.append(red_model[1])
-        model_arr.append(blue_model[1])   
-        model_arr.append(std_red_model)
-        model_arr.append(std_blue_model)
-        model_arr.append(av_grpcen_red_model[0])
-        model_arr.append(av_grpcen_blue_model[0])
-        err_arr = sigma
-
-        data_arr, model_arr = np.array(data_arr), np.array(model_arr)
-        global_models_arr.append(model_arr)
-        iter+=1
-    global_models_arr = np.array(global_models_arr)
-
-    sigma_models = []
-    for idx in range(global_models_arr.shape[1]):
-        sigma_models.append(np.std(global_models_arr[:,idx:idx+1,:],axis=0))
-    sigma_models = np.array(sigma_models).flatten()
-    sigma_frac = (sigma_models/err_arr)*100
-
-    """
-    [nan, 0.00000000e+00, 2.52721042e-13, 2.32652777e-13,
-    4.10427688e-13, 6.18145790e-13, 1.78057743e-13, 0.00000000e+00,
-    1.60859924e-13,            nan,            nan, 5.81492477e-14,
-    7.13714401e-14, 6.45384570e-14, 6.77293271e-14, 0.00000000e+00,
-    2.77416104e-14, 1.42318166e-14, 3.85780768e-14,            nan,
-    8.69959759e-12, 5.15628066e-12, 0.00000000e+00, 2.46685886e-12,
-    1.35243484e-12, 1.04753225e-11, 4.02231294e-12, 0.00000000e+00,
-    1.20368139e-12, 0.00000000e+00]
-    """
-
-# Main function
-if __name__ == '__main__':
-    # args = args_parser()
-    # pr = cProfile.Profile()
-    # pr.enable()
-
-    main()
-
-    # pr.disable()
-    # s = io.StringIO()
-    # ps = pstats.Stats(pr, stream=s).sort_stats('tottime')
-    # ps.print_stats()
-
-    # with open('profile_eco_2p_16w_5s.txt', 'w+') as f:
-    #     f.write(s.getvalue())
+## Without rng
+"""
+[         nan, 187.47737889,  51.73780875,  63.65530546,
+64.12536496,  77.61302792,  77.30220961,  85.50529574,
+78.83351264,          nan,          nan,          nan,
+31.75848078,  29.80600364,  32.45335182,  12.34549932,
+11.24091063,  10.51084224,  14.70801366,          nan,
+43.46740579,  74.22667776, 104.11258903,  89.92731291,
+66.51992085,  73.36494027,  67.68899784,  55.69009473,
+81.12338089,          nan])
+"""
