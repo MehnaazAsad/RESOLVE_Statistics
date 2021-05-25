@@ -252,6 +252,32 @@ def get_paramvals_percentile(table, chi2_arr, percentile1, percentile2=None):
 
     return subset
 
+def assign_cen_sat_flag(gals_df):
+    """
+    Assign centrals and satellites flag to dataframe
+
+    Parameters
+    ----------
+    gals_df: pandas dataframe
+        Mock catalog
+
+    Returns
+    ---------
+    gals_df: pandas dataframe
+        Mock catalog with centrals/satellites flag as new column
+    """
+
+    C_S = []
+    for idx in range(len(gals_df)):
+        if gals_df['halo_hostid'][idx] == gals_df['halo_id'][idx]:
+            C_S.append(1)
+        else:
+            C_S.append(0)
+
+    C_S = np.array(C_S)
+    gals_df['cs_flag'] = C_S
+    return gals_df
+
 def halocat_init(halo_catalog, z_median):
     """
     Initial population of halo catalog using populate_mock function
@@ -851,6 +877,7 @@ def main():
     print('Populating halos')
     model_init = halocat_init(halo_catalog, z_median)
     gals_df = populate_mock(params, model_init)
+    gals_df = assign_cen_sat_flag(gals_df)
 
     print('Applying RSD')
     gals_rsd_df = apply_rsd(gals_df)
