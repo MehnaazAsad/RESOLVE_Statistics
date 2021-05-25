@@ -247,7 +247,7 @@ def get_paramvals_percentile(table, chi2_arr, percentile1, percentile2=None):
         percentile2 = percentile2/100
         mcmc_table_pctl = table.loc[(table.chi2 > 
             np.percentile(table.chi2, 68)) & (table.chi2 <= np.percentile(table\
-            .chi2, 95))].reset_index()
+            .chi2, 95))].reset_index(drop=True)
         subset = mcmc_table_pctl.drop_duplicates().sample(1).values[:,:5][0] 
 
     return subset
@@ -842,7 +842,7 @@ def main():
     print('Reading mcmc chain file')
     mcmc_table = read_mcmc(chain_file)
 
-    print('Getting subset of 100 Behroozi parameters')
+    print('Getting parameters')
     params = get_paramvals_percentile(mcmc_table, chi2, 68, 95)
 
     print('Reading survey data')
