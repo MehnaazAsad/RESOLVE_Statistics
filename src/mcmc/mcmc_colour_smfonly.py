@@ -497,11 +497,11 @@ def mcmc(nproc, nwalkers, nsteps, phi_red_data, phi_blue_data, err, corr_mat_inv
             storechain=False)):
             position = result[0]
             chi2 = np.array(result[3])[:,0]
-            mock_num = np.array(result[3])[:,1].astype(int)
+            # mock_num = np.array(result[3])[:,1].astype(int)
             print("Iteration number {0} of {1}".format(i+1,nsteps))
             chain_fname = open("mcmc_{0}_colour_raw.txt".format(survey), "a")
             chi2_fname = open("{0}_colour_chi2.txt".format(survey), "a")
-            mocknum_fname = open("{0}_colour_mocknum.txt".format(survey), "a")
+            # mocknum_fname = open("{0}_colour_mocknum.txt".format(survey), "a")
             for k in range(position.shape[0]):
                 chain_fname.write(str(position[k]).strip("[]"))
                 chain_fname.write("\n")
@@ -509,12 +509,12 @@ def mcmc(nproc, nwalkers, nsteps, phi_red_data, phi_blue_data, err, corr_mat_inv
             for k in range(chi2.shape[0]):
                 chi2_fname.write(str(chi2[k]).strip("[]"))
                 chi2_fname.write("\n")
-            for k in range(mock_num.shape[0]):
-                mocknum_fname.write(str(mock_num[k]).strip("[]"))
-                mocknum_fname.write("\n")
+            # for k in range(mock_num.shape[0]):
+            #     mocknum_fname.write(str(mock_num[k]).strip("[]"))
+            #     mocknum_fname.write("\n")
             chain_fname.close()
             chi2_fname.close()
-            mocknum_fname.close()
+            # mocknum_fname.close()
         end = time.time()
         multi_time = end - start
         print("Multiprocessing took {0:.1f} seconds".format(multi_time))
