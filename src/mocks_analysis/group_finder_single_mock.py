@@ -778,9 +778,11 @@ def group_mass_assignment(mockgal_pd, mockgroup_pd, param_dict):
 def main():
     global survey
     global mf_type
+    global ver
     survey = 'eco'
     mf_type = 'smf'
     machine = 'bender'
+    ver=2.0
 
     H0 = 100 # h(km/s)/Mpc
     cz_inner = 3000 # not starting at corner of box
