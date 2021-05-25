@@ -636,7 +636,7 @@ def get_stellar_mock(gals_df, mock, randint=None):
     """
 
     df = gals_df.copy()
-    if mock == 'vishnu':
+    if mock == 'vishnu' and randint:
         cen_gals = []
         sat_gals = []
         for idx,value in enumerate(df.cs_flag):
@@ -645,6 +645,15 @@ def get_stellar_mock(gals_df, mock, randint=None):
             elif value == 0:
                 sat_gals.append(10**(df['{0}'.format(randint)].values[idx]))
 
+    elif mock == 'vishnu':
+        cen_gals = []
+        sat_gals = []
+        for idx,value in enumerate(df.cs_flag):
+            if value == 1:
+                cen_gals.append(10**(df['stellar_mass'].values[idx]))
+            elif value == 0:
+                sat_gals.append(10**(df['stellar_mass'].values[idx]))
+    
     else:
         cen_gals = []
         sat_gals = []
@@ -726,7 +735,8 @@ def lnprob(theta, phi_red_data, phi_blue_data, err, corr_mat_inv):
     """
     # Moved to outside the try clause for cases where parameter values are 
     # outside the prior (specific one was when theta[1] was > 14)
-    randint_logmstar = random.randint(1,101)
+    # randint_logmstar = random.randint(1,101)
+    randint_logmstar = None
 
     if theta[0] < 0:
         chi2 = -np.inf
@@ -743,20 +753,26 @@ def lnprob(theta, phi_red_data, phi_blue_data, err, corr_mat_inv):
 
     warnings.simplefilter("error", (UserWarning, RuntimeWarning))
     try: 
-        cols_to_use = ['halo_mvir', 'cs_flag', 'cz', \
-            '{0}_y'.format(randint_logmstar), \
-            'g_galtype_{0}'.format(randint_logmstar), \
-            'groupid_{0}'.format(randint_logmstar)]
-        
-        if randint_logmstar < 51:
-            gals_df_mock = gal_group_df_one.loc[gal_group_df_one['{0}_y'.\
-                format(randint_logmstar)] >= 8.6][cols_to_use]
-        else:
-            gals_df_mock = gal_group_df_two.loc[gal_group_df_two['{0}_y'.\
-                format(randint_logmstar)] >= 8.6][cols_to_use]
+        if randint_logmstar:
+            cols_to_use = ['halo_mvir', 'cs_flag', 'cz', \
+                '{0}_y'.format(randint_logmstar), \
+                'g_galtype_{0}'.format(randint_logmstar), \
+                'groupid_{0}'.format(randint_logmstar)]
 
-        gals_df_mock = gals_df_mock.rename(columns=\
-            {'{0}_y'.format(randint_logmstar):'{0}'.format(randint_logmstar)})
+            if randint_logmstar < 51:
+                gals_df_mock = gal_group_df_one.loc[gal_group_df_one['{0}_y'.\
+                    format(randint_logmstar)] >= 8.6][cols_to_use]
+            else:
+                gals_df_mock = gal_group_df_two.loc[gal_group_df_two['{0}_y'.\
+                    format(randint_logmstar)] >= 8.6][cols_to_use]
+
+            gals_df_mock = gals_df_mock.rename(columns=\
+                {'{0}_y'.format(randint_logmstar):'{0}'.format(randint_logmstar)})
+        else:
+            cols_to_use = ['halo_mvir', 'cs_flag', 'cz', \
+                'stellar_mass', 'g_galtype', 'groupid']
+            gals_df_mock = gal_group_df.loc[gal_group_df['stellar_mass'] >= 10**8.6][cols_to_use]
+            gals_df_mock.stellar_mass = np.log10(gals_df_mock.stellar_mass)
 
         f_red_cen, f_red_sat = hybrid_quenching_model(theta, gals_df_mock, \
             'vishnu', randint_logmstar)
@@ -1089,8 +1105,10 @@ def measure_all_smf(table, volume, data_bool, randint_logmstar=None):
             diff_smf(table[logmstar_col].loc[table[colour_col] == 'B'], 
             volume, False, 'B')
     else:
-        # logmstar_col = 'stellar_mass'
-        logmstar_col = '{0}'.format(randint_logmstar)
+        if randint_logmstar:
+            logmstar_col = '{0}'.format(randint_logmstar)
+        else:
+            logmstar_col = 'stellar_mass'
         ## Changed to 10**X because Behroozi mocks now have M* values in log
         max_total, phi_total, err_total, bins_total, counts_total = \
             diff_smf(10**(table[logmstar_col]), volume, True)
@@ -1141,6 +1159,7 @@ def main(args):
 
     """
     # global model_init
+    global gal_group_df
     global survey
     global path_to_proc
     global mf_type
@@ -1155,6 +1174,7 @@ def main(args):
     nwalkers = args.nwalkers
     nsteps = args.nsteps
     mf_type = args.mf_type
+    use_behroozi_sample = False
     ver = 2.0
     
     dict_of_paths = cwpaths.cookiecutter_paths()
@@ -1199,39 +1219,45 @@ def main(args):
     print('red phi data: \n', red_data[1])
     print('blue phi data: \n', blue_data[1])
 
-    print('Reading vishnu group catalog')
-    gal_group_df = reading_catls(path_to_proc + "gal_group.hdf5") 
+    if use_behroozi_sample:
+        print('Reading 100 vishnu group catalogs')
 
-    col_idxs = [str(int(x)) for x in np.linspace(1,101,101)] 
-    cols_to_keep_set_one = [] 
-    for idx in range(len(col_idxs)): 
-        idx+=1 
-        cols_to_keep_set_one.append('g_galtype_{0}'.format(idx)) 
-        cols_to_keep_set_one.append('groupid_{0}'.format(idx)) 
-        cols_to_keep_set_one.append('{0}_y'.format(idx)) 
-        if idx == 50:
-            break
-    cols_to_keep_set_one.append('cz') 
-    cols_to_keep_set_one.append('halo_mvir')
-    cols_to_keep_set_one.append('cs_flag')
+        gal_group_df = reading_catls(path_to_proc + "gal_group.hdf5") 
+        col_idxs = [str(int(x)) for x in np.linspace(1,101,101)] 
+        cols_to_keep_set_one = [] 
+        for idx in range(len(col_idxs)): 
+            idx+=1 
+            cols_to_keep_set_one.append('g_galtype_{0}'.format(idx)) 
+            cols_to_keep_set_one.append('groupid_{0}'.format(idx)) 
+            cols_to_keep_set_one.append('{0}_y'.format(idx)) 
+            if idx == 50:
+                break
+        cols_to_keep_set_one.append('cz') 
+        cols_to_keep_set_one.append('halo_mvir')
+        cols_to_keep_set_one.append('cs_flag')
 
-    cols_to_keep_set_two = [] 
-    for idx in range(len(col_idxs)): 
-        idx+=51
-        cols_to_keep_set_two.append('g_galtype_{0}'.format(idx)) 
-        cols_to_keep_set_two.append('groupid_{0}'.format(idx)) 
-        cols_to_keep_set_two.append('{0}_y'.format(idx)) 
-        if idx == 101:
-            break
-    cols_to_keep_set_two.append('cz') 
-    cols_to_keep_set_two.append('halo_mvir')
-    cols_to_keep_set_two.append('cs_flag')
+        cols_to_keep_set_two = [] 
+        for idx in range(len(col_idxs)): 
+            idx+=51
+            cols_to_keep_set_two.append('g_galtype_{0}'.format(idx)) 
+            cols_to_keep_set_two.append('groupid_{0}'.format(idx)) 
+            cols_to_keep_set_two.append('{0}_y'.format(idx)) 
+            if idx == 101:
+                break
+        cols_to_keep_set_two.append('cz') 
+        cols_to_keep_set_two.append('halo_mvir')
+        cols_to_keep_set_two.append('cs_flag')
 
-    global gal_group_df_one
-    global gal_group_df_two
+        global gal_group_df_one
+        global gal_group_df_two
 
-    gal_group_df_one = gal_group_df[cols_to_keep_set_one]
-    gal_group_df_two = gal_group_df[cols_to_keep_set_two]
+        gal_group_df_one = gal_group_df[cols_to_keep_set_one]
+        gal_group_df_two = gal_group_df[cols_to_keep_set_two]
+    else:
+        ## Stellar mass in this is not in log whereas in the df in the if it is
+        print('Reading single Vishnu group catalog')
+        gal_group_df = reading_catls(path_to_proc + "gal_group_95perc.hdf5") 
+
 
 
     print('Running MCMC')
