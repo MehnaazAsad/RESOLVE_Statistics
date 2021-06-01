@@ -1254,9 +1254,10 @@ def main(args):
         gal_group_df_one = gal_group_df[cols_to_keep_set_one]
         gal_group_df_two = gal_group_df[cols_to_keep_set_two]
     else:
-        ## Stellar mass in this is not in log whereas in the df in the if it is
+        ## Stellar mass in this is not in log whereas in the df in the if above
+        ## it is
         print('Reading single Vishnu group catalog')
-        gal_group_df = reading_catls(path_to_proc + "gal_group_95perc.hdf5") 
+        gal_group_df = reading_catls(path_to_proc + "gal_group_bestfit.hdf5") 
 
 
 
