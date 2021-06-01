@@ -869,7 +869,7 @@ def main():
     mcmc_table = read_mcmc(chain_file)
 
     print('Getting parameters')
-    params = get_paramvals_percentile(mcmc_table, chi2, 68, 95)
+    params = get_paramvals_percentile(mcmc_table, chi2, 68)
 
     print('Reading survey data')
     catl, volume, cvar, z_median = read_data_catl(catl_file, survey)
@@ -892,9 +892,9 @@ def main():
 
     print('Writing to output files')
     pandas_df_to_hdf5_file(data=gal_group_df_new,
-        hdf5_file=path_to_processed + 'gal_group_95perc.hdf5', key='gal_group_df')
+        hdf5_file=path_to_processed + 'gal_group_bestfit.hdf5', key='gal_group_df')
     pandas_df_to_hdf5_file(data=group_df_new,
-        hdf5_file=path_to_processed + 'group_95perc.hdf5', key='group_df')
+        hdf5_file=path_to_processed + 'group_bestfit.hdf5', key='group_df')
 
 # Main function
 if __name__ == '__main__':
