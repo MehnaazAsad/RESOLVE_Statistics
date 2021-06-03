@@ -1,5 +1,5 @@
 """
-{This TEST script applies redshift-space distortions to Vishnu mock and runs
+{This script applies redshift-space distortions to a single Vishnu mock and runs
  group finder so that velocity dispersion measurements can be obtained since
  we are including that as a second observable in constraining red and blue
  SHMRs.}
