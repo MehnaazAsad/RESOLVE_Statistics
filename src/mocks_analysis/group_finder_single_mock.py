@@ -248,7 +248,8 @@ def get_paramvals_percentile(table, chi2_arr, percentile1, percentile2=None):
         mcmc_table_pctl = table.loc[(table.chi2 > 
             np.percentile(table.chi2, 68)) & (table.chi2 <= np.percentile(table\
             .chi2, 95))].reset_index(drop=True)
-        subset = mcmc_table_pctl.drop_duplicates().sample(1).values[:,:5][0] 
+        subset = mcmc_table_pctl.drop_duplicates().sample(1).values[:,:5][0]
+        print("Behroozi parameters: {0}".format(subset))
 
     return subset
 
@@ -869,7 +870,7 @@ def main():
     mcmc_table = read_mcmc(chain_file)
 
     print('Getting parameters')
-    params = get_paramvals_percentile(mcmc_table, chi2, 68)
+    params = get_paramvals_percentile(mcmc_table, chi2, 68, 95)
 
     print('Reading survey data')
     catl, volume, cvar, z_median = read_data_catl(catl_file, survey)
@@ -892,9 +893,9 @@ def main():
 
     print('Writing to output files')
     pandas_df_to_hdf5_file(data=gal_group_df_new,
-        hdf5_file=path_to_processed + 'gal_group_bestfit.hdf5', key='gal_group_df')
+        hdf5_file=path_to_processed + 'gal_group_95perc_r2.hdf5', key='gal_group_df')
     pandas_df_to_hdf5_file(data=group_df_new,
-        hdf5_file=path_to_processed + 'group_bestfit.hdf5', key='group_df')
+        hdf5_file=path_to_processed + 'group_95perc_r2.hdf5', key='group_df')
 
 # Main function
 if __name__ == '__main__':
