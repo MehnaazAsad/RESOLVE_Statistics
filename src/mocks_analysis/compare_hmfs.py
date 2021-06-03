@@ -4,11 +4,11 @@ Tinker08 (default spherical overdensity of 200m) and Tinker08 (spherical
 overdensity of 337m which is what we want to use instead of Warren to make ECO
 mvir mocks)
 """
-
-import hmf
 import astropy.cosmology as astrocosmo
 import matplotlib.pyplot as plt
 from matplotlib import rc
+import numpy as np
+import hmf
 
 rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=25)
 rc('text', usetex=True)
@@ -59,6 +59,6 @@ plt.annotate('Planck15\n\n $h=1.0$\n$\Omega_{m}=0.3075$\n$\Omega_{\Lambda}'\
 
 # plt.xscale('log')
 # plt.yscale('log')
-plt.title('Ratio of HMFs to Warren (default ECO')
+plt.title('Ratio of HMFs to Warren (default ECO)')
 plt.legend(prop={"size":25})
 plt.show()
