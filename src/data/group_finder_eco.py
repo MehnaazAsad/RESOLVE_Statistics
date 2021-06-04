@@ -379,9 +379,10 @@ def pandas_df_to_hdf5_file(data, hdf5_file, key=None, mode='w',
 
 
 survey = 'eco'
-cz_inner = 3000
-cz_outer = 7000
-volume = 151829.26 * 2.915 # survey volume without buffer in h=0.7
+## Running group-finding on data including the buffer
+cz_inner = 2530
+cz_outer = 7470
+volume = 192351.36 * 2.915 # survey volume with buffer in h=0.7
 
 eco = {
     'c': 3*10**5,
@@ -423,4 +424,4 @@ gal_group_df_new, group_df_new = \
 
 print('Writing to output files')
 pandas_df_to_hdf5_file(data=gal_group_df_new,
-    hdf5_file=path_to_processed + 'gal_group_eco_data_vol_update.hdf5', key='gal_group_df')
+    hdf5_file=path_to_processed + 'gal_group_eco_data_buffer.hdf5', key='gal_group_df')
