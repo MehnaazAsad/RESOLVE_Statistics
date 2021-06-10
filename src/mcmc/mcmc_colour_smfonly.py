@@ -1257,7 +1257,7 @@ def main(args):
         ## Stellar mass in this is not in log whereas in the df in the if above
         ## it is
         print('Reading single Vishnu group catalog')
-        gal_group_df = reading_catls(path_to_proc + "gal_group_95perc_r2.hdf5") 
+        gal_group_df = reading_catls(path_to_proc + "gal_group_95perc_r3.hdf5") 
 
 
 
