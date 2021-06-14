@@ -893,9 +893,9 @@ def main():
 
     print('Writing to output files')
     pandas_df_to_hdf5_file(data=gal_group_df_new,
-        hdf5_file=path_to_processed + 'gal_group_95perc_r3.hdf5', key='gal_group_df')
+        hdf5_file=path_to_processed + 'gal_group_95perc_r4.hdf5', key='gal_group_df')
     pandas_df_to_hdf5_file(data=group_df_new,
-        hdf5_file=path_to_processed + 'group_95perc_r3.hdf5', key='group_df')
+        hdf5_file=path_to_processed + 'group_95perc_r4.hdf5', key='group_df')
 
 # Main function
 if __name__ == '__main__':
