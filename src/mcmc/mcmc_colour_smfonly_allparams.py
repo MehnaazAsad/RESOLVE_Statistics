@@ -1241,7 +1241,6 @@ def main(args):
     """
     global model_init
     global survey
-    global path_to_proc
     global mf_type
 
     rseed = 12
