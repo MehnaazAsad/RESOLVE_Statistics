@@ -15,12 +15,11 @@ from halotools.sim_manager import CachedHaloCatalog
 from cosmo_utils.utils import work_paths as cwpaths
 from matplotlib.pyplot import sca
 from scipy.stats import binned_statistic as bs
-from multiprocessing import Pool, Queue
+from multiprocessing import Pool
 import pandas as pd
 import numpy as np
 import argparse
 import warnings
-import random
 import emcee 
 import math
 import os
@@ -276,12 +275,12 @@ def measure_all_smf(table, volume, data_bool, randint_logmstar=None):
         ## Changed to 10**X because Behroozi mocks now have M* values in log
         max_total, phi_total, err_total, bins_total, counts_total = \
             diff_smf(10**(table[logmstar_col]), volume, True)
-        max_red, phi_red, err_red, bins_red, counts_red = \
-            diff_smf(10**(table[logmstar_col].loc[table[colour_col] == 'R']), 
-            volume, True, 'R')
-        max_blue, phi_blue, err_blue, bins_blue, counts_blue = \
-            diff_smf(10**(table[logmstar_col].loc[table[colour_col] == 'B']), 
-            volume, True, 'B')
+        # max_red, phi_red, err_red, bins_red, counts_red = \
+        #     diff_smf(10**(table[logmstar_col].loc[table[colour_col] == 'R']), 
+        #     volume, True, 'R')
+        # max_blue, phi_blue, err_blue, bins_blue, counts_blue = \
+        #     diff_smf(10**(table[logmstar_col].loc[table[colour_col] == 'B']), 
+        #     volume, True, 'B')
 
     return [max_total, phi_total, err_total, counts_total]
     # return [max_total, phi_total, err_total, counts_total] , \
@@ -366,7 +365,7 @@ def blue_frac_helper(arr):
     blue_counter = list(arr).count('B')
     return blue_counter/total_num
 
-def blue_frac(catl, h1_bool):
+def blue_frac(catl, h1_bool, data_bool):
     """
     Calculates blue fraction in bins of stellar mass (which are converted to h=1)
 
@@ -386,7 +385,11 @@ def blue_frac(catl, h1_bool):
     f_blue: array
         Array of y-axis blue fraction values
     """
-    mstar_arr = catl.logmstar.values
+    if data_bool:
+        mstar_arr = catl.logmstar.values
+    else:
+        mstar_arr = catl.stellar_mass.values
+
     colour_label_arr = catl.colour_label.values
 
     if not h1_bool:
@@ -803,7 +806,7 @@ def get_err_data(survey, path):
 
 
             #Measure blue fraction of galaxies
-            max, f_blue = blue_frac(mock_pd, False)
+            max, f_blue = blue_frac(mock_pd, False, True)
             f_blue_arr.append(f_blue)
 
 
@@ -907,7 +910,7 @@ def get_err_data(survey, path):
 
     return err_colour, corr_mat_inv_colour
 
-def mcmc(nproc, nwalkers, nsteps, phi_red_data, f_blue_data, err, corr_mat_inv):
+def mcmc(nproc, nwalkers, nsteps, phi_total_data, f_blue_data, err, corr_mat_inv):
     """
     MCMC analysis
 
@@ -957,7 +960,7 @@ def mcmc(nproc, nwalkers, nsteps, phi_red_data, f_blue_data, err, corr_mat_inv):
 
     with Pool(processes=nproc) as pool:
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, 
-            args=(phi_red_data, f_blue_data, err, corr_mat_inv), pool=pool)
+            args=(phi_total_data, f_blue_data, err, corr_mat_inv), pool=pool)
         start = time.time()
         for i,result in enumerate(sampler.sample(p0, iterations=nsteps, 
             storechain=False)):
@@ -1032,45 +1035,33 @@ def populate_mock(theta, model):
 
     return gals_df
 
-def chi_squared(data, model, err_data, inv_corr_mat):
+def assign_cen_sat_flag(gals_df):
     """
-    Calculates chi squared
+    Assign centrals and satellites flag to dataframe
 
     Parameters
     ----------
-    data: array
-        Array of data values
-    
-    model: array
-        Array of model values
-    
-    err_data: array
-        Array of error in data values
+    gals_df: pandas dataframe
+        Mock catalog
 
     Returns
     ---------
-    chi_squared: float
-        Value of chi-squared given a model 
-
+    gals_df: pandas dataframe
+        Mock catalog with centrals/satellites flag as new column
     """
-    # chi_squared_arr = (data - model)**2 / (err_data**2)
-    # chi_squared = np.sum(chi_squared_arr)
 
-    data = data.flatten() # from (2,5) to (1,10)
-    model = model.flatten() # same as above
+    C_S = []
+    for idx in range(len(gals_df)):
+        if gals_df['halo_hostid'][idx] == gals_df['halo_id'][idx]:
+            C_S.append(1)
+        else:
+            C_S.append(0)
 
-    # print('data: \n', data)
-    # print('model: \n', model)
+    C_S = np.array(C_S)
+    gals_df['cs_flag'] = C_S
+    return gals_df
 
-    first_term = ((data - model) / (err_data)).reshape(1,data.size)
-    third_term = np.transpose(first_term)
-
-    # chi_squared is saved as [[value]]
-    chi_squared = np.dot(np.dot(first_term,inv_corr_mat),third_term)
-
-    return chi_squared[0][0]
-
-def lnprob(theta, phi_red_data, f_blue_data, err, corr_mat_inv):
+def lnprob(theta, phi_total_data, f_blue_data, err, corr_mat_inv):
     """
     Calculates log probability for emcee
 
@@ -1133,42 +1124,33 @@ def lnprob(theta, phi_red_data, f_blue_data, err, corr_mat_inv):
 
     warnings.simplefilter("error", (UserWarning, RuntimeWarning))
     try: 
-        if randint_logmstar:
-            cols_to_use = ['halo_mvir', 'cs_flag', 'cz', \
-                '{0}_y'.format(randint_logmstar), \
-                'g_galtype_{0}'.format(randint_logmstar), \
-                'groupid_{0}'.format(randint_logmstar)]
+        gals_df = populate_mock(theta[:5], model_init)
+        gals_df = gals_df.loc[gals_df['stellar_mass'] >= 10**8.6].reset_index(drop=True)
+        gals_df = assign_cen_sat_flag(gals_df)
 
-            if randint_logmstar < 51:
-                gals_df_mock = gal_group_df_one.loc[gal_group_df_one['{0}_y'.\
-                    format(randint_logmstar)] >= 8.6][cols_to_use]
-            else:
-                gals_df_mock = gal_group_df_two.loc[gal_group_df_two['{0}_y'.\
-                    format(randint_logmstar)] >= 8.6][cols_to_use]
+        cols_to_use = ['halo_mvir', 'cs_flag', 'stellar_mass']
+        gals_df = gals_df[cols_to_use]
 
-            gals_df_mock = gals_df_mock.rename(columns=\
-                {'{0}_y'.format(randint_logmstar):'{0}'.format(randint_logmstar)})
-        else:
-            gals_df = populate_mock(theta[:5], model_init)
-            cols_to_use = ['halo_mvir', 'cs_flag', 'cz', \
-                'stellar_mass', 'g_galtype', 'groupid']
-            gals_df_mock = gal_group_df.loc[gal_group_df['stellar_mass'] >= 10**8.6][cols_to_use]
-            gals_df_mock.stellar_mass = np.log10(gals_df_mock.stellar_mass)
+        gals_df.stellar_mass = np.log10(gals_df.stellar_mass)
 
-        f_red_cen, f_red_sat = hybrid_quenching_model(theta, gals_df_mock, \
-            'vishnu', randint_logmstar)
-        gals_df_mock = assign_colour_label_mock(f_red_cen, f_red_sat, \
-            gals_df_mock)
-        # v_sim = 130**3
-        v_sim = 890641.5172927063 #survey volume used in group_finder.py
-        total_model, red_model, blue_model = measure_all_smf(gals_df_mock, v_sim 
-        , False, randint_logmstar)     
+        f_red_cen, f_red_sat = hybrid_quenching_model(theta[5:], gals_df, \
+            'vishnu')
+        gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, \
+            gals_df)
+        v_sim = 130**3
+        # v_sim = 890641.5172927063 #survey volume used in group_finder.py
+
+        ## Observable #1 - Total SMF
+        total_model = measure_all_smf(gals_df, v_sim, False)  
+        ## Observable #2 - Blue fraction
+        f_blue = blue_frac(gals_df, False, False)
+
         data_arr = []
-        data_arr.append(phi_red_data)
-        data_arr.append(phi_blue_data)
+        data_arr.append(phi_total_data)
+        data_arr.append(f_blue_data)
         model_arr = []
-        model_arr.append(red_model[1])
-        model_arr.append(blue_model[1])   
+        model_arr.append(total_model[1])
+        model_arr.append(f_blue[1])   
         err_arr = err
 
         data_arr, model_arr = np.array(data_arr), np.array(model_arr)
@@ -1182,6 +1164,44 @@ def lnprob(theta, phi_red_data, f_blue_data, err, corr_mat_inv):
         chi2 = np.inf
 
     return lnp, [chi2, randint_logmstar]
+
+def chi_squared(data, model, err_data, inv_corr_mat):
+    """
+    Calculates chi squared
+
+    Parameters
+    ----------
+    data: array
+        Array of data values
+    
+    model: array
+        Array of model values
+    
+    err_data: array
+        Array of error in data values
+
+    Returns
+    ---------
+    chi_squared: float
+        Value of chi-squared given a model 
+
+    """
+    # chi_squared_arr = (data - model)**2 / (err_data**2)
+    # chi_squared = np.sum(chi_squared_arr)
+
+    data = data.flatten() # from (2,5) to (1,10)
+    model = model.flatten() # same as above
+
+    # print('data: \n', data)
+    # print('model: \n', model)
+
+    first_term = ((data - model) / (err_data)).reshape(1,data.size)
+    third_term = np.transpose(first_term)
+
+    # chi_squared is saved as [[value]]
+    chi_squared = np.dot(np.dot(first_term,inv_corr_mat),third_term)
+
+    return chi_squared[0][0]
 
 def args_parser():
     """
@@ -1219,7 +1239,6 @@ def main(args):
 
     """
     global model_init
-    global gal_group_df
     global survey
     global path_to_proc
     global mf_type
@@ -1238,7 +1257,6 @@ def main(args):
     path_to_proc = dict_of_paths['proc_dir']
     path_to_external = dict_of_paths['ext_dir']
     path_to_data = dict_of_paths['data_dir']
-    path_to_int = dict_of_paths['int_dir']
     
     if machine == 'bender':
         halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
@@ -1268,7 +1286,7 @@ def main(args):
     total_data = measure_all_smf(catl, volume, True)
 
     print('Measuring blue fraction for data')
-    f_blue = blue_frac(catl, False)
+    f_blue = blue_frac(catl, False, True)
 
     print('Initial population of halo catalog')
     model_init = halocat_init(halo_catalog, z_median)
