@@ -1,6 +1,7 @@
 """
-{This script carries out an MCMC analysis to parametrize the SMHM for red and 
- blue galaxies in ECO}
+{This script carries out an MCMC analysis and varies Behroozi parameters as well 
+ as quenching parameters simultaneously. Observables used are total SMF and blue
+ fraction of galaxies both in bins of stellar mass.}
 """
 
 # Built-in/Generic Imports
