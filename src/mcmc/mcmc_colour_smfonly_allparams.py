@@ -968,6 +968,7 @@ def mcmc(nproc, nwalkers, nsteps, phi_total_data, f_blue_data, err, corr_mat_inv
         end = time.time()
         multi_time = end - start
         print("Multiprocessing took {0:.1f} seconds".format(multi_time))
+
     
     return sampler
 
@@ -1258,6 +1259,11 @@ def main(args):
     print('Running MCMC')
     sampler = mcmc(nproc, nwalkers, nsteps, total_data[1], f_blue[1], 
         sigma, corr_mat_inv)
+
+    print("Mean acceptance fraction: {0:.3f}".format(
+        np.mean(sampler.acceptance_fraction)))
+    print("Mean autocorrelation time: {0:.3f} steps".format(
+        np.mean(sampler.get_autocorr_time())))
 
 # Main function
 if __name__ == '__main__':
