@@ -547,7 +547,7 @@ def hybrid_quenching_model(theta, gals_df, mock, randint=None):
 
     return f_red_cen, f_red_sat
 
-def assign_colour_label_mock(f_red_cen, f_red_sat, gals_df, drop_fred=False):
+def assign_colour_label_mock(f_red_cen, f_red_sat, df, drop_fred=False):
     """
     Assign colour label to mock catalog
 
@@ -570,8 +570,6 @@ def assign_colour_label_mock(f_red_cen, f_red_sat, gals_df, drop_fred=False):
         new columns
     """
 
-    # Copy of dataframe
-    df = gals_df.copy()
     # Saving labels
     color_label_arr = [[] for x in range(len(df))]
     rng_arr = [[] for x in range(len(df))]
@@ -603,7 +601,7 @@ def assign_colour_label_mock(f_red_cen, f_red_sat, gals_df, drop_fred=False):
 
     return df
 
-def get_host_halo_mock(gals_df, mock):
+def get_host_halo_mock(df, mock):
     """
     Get host halo mass from mock catalog
 
@@ -619,8 +617,6 @@ def get_host_halo_mock(gals_df, mock):
     sat_halos: array
         Array of satellite host halo masses
     """
-
-    df = gals_df.copy()
 
     # groups = df.groupby('halo_id')
     # keys = groups.groups.keys()
@@ -655,7 +651,7 @@ def get_host_halo_mock(gals_df, mock):
 
     return cen_halos, sat_halos
 
-def get_stellar_mock(gals_df, mock, randint=None):
+def get_stellar_mock(df, mock, randint=None):
     """
     Get stellar mass from mock catalog
 
@@ -672,7 +668,6 @@ def get_stellar_mock(gals_df, mock, randint=None):
         Array of satellite stellar masses
     """
 
-    df = gals_df.copy()
     if mock == 'vishnu' and randint:
         cen_gals = []
         sat_gals = []
@@ -1036,32 +1031,6 @@ def populate_mock(theta, model):
 
     return gals_df
 
-def assign_cen_sat_flag(gals_df):
-    """
-    Assign centrals and satellites flag to dataframe
-
-    Parameters
-    ----------
-    gals_df: pandas dataframe
-        Mock catalog
-
-    Returns
-    ---------
-    gals_df: pandas dataframe
-        Mock catalog with centrals/satellites flag as new column
-    """
-
-    C_S = []
-    for idx in range(len(gals_df)):
-        if gals_df['halo_hostid'][idx] == gals_df['halo_id'][idx]:
-            C_S.append(1)
-        else:
-            C_S.append(0)
-
-    C_S = np.array(C_S)
-    gals_df['cs_flag'] = C_S
-    return gals_df
-
 def lnprob(theta, phi_total_data, f_blue_data, err, corr_mat_inv):
     """
     Calculates log probability for emcee
@@ -1127,7 +1096,8 @@ def lnprob(theta, phi_total_data, f_blue_data, err, corr_mat_inv):
     try: 
         gals_df = populate_mock(theta[:5], model_init)
         gals_df = gals_df.loc[gals_df['stellar_mass'] >= 10**8.6].reset_index(drop=True)
-        gals_df = assign_cen_sat_flag(gals_df)
+        gals_df['cs_flag'] = np.where(gals_df['halo_hostid'] == \
+            gals_df['halo_id'], 1, 0)
 
         cols_to_use = ['halo_mvir', 'cs_flag', 'stellar_mass']
         gals_df = gals_df[cols_to_use]
