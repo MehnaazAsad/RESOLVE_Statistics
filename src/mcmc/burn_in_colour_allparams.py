@@ -82,32 +82,32 @@ if quenching == 'hybrid':
 elif quenching == 'halo':
     emcee_table = pd.read_csv(chain_fname, header=None, comment='#', 
         names=['Mhalo_c', 'Mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter',
-        'Mstar_q','Mhalo_q','mu','nu'], sep='\s+')
+        'Mhalo_qc','Mhalo_qs','mu_c','mu_s'], sep='\s+')
 
     for idx,row in enumerate(emcee_table.values):
 
         ## For cases where 5 params on one line and 3 on the next
         if np.isnan(row)[6] == True and np.isnan(row)[5] == False:
-            mhalo_q_val = emcee_table.values[idx+1][0]
-            mu_val = emcee_table.values[idx+1][1]
-            nu_val = emcee_table.values[idx+1][2]
-            row[6] = mhalo_q_val
-            row[7] = mu_val
-            row[8] = nu_val 
+            mhalo_qs_val = emcee_table.values[idx+1][0]
+            mu_c_val = emcee_table.values[idx+1][1]
+            mu_s_val = emcee_table.values[idx+1][2]
+            row[6] = mhalo_qs_val
+            row[7] = mu_c_val
+            row[8] = mu_s_val 
 
         ## For cases where 4 params on one line, 4 on the next and 1 on the 
         ## third line (numbers in scientific notation unlike case above)
         elif np.isnan(row)[4] == True and np.isnan(row)[3] == False:
             scatter_val = emcee_table.values[idx+1][0]
-            mstar_q_val = emcee_table.values[idx+1][1]
-            mhalo_q_val = emcee_table.values[idx+1][2]
-            mu_val = emcee_table.values[idx+1][3]
-            nu_val = emcee_table.values[idx+2][0]
+            mhalo_qc_val = emcee_table.values[idx+1][1]
+            mhalo_qs_val = emcee_table.values[idx+1][2]
+            mu_c_val = emcee_table.values[idx+1][3]
+            mu_s_val = emcee_table.values[idx+2][0]
             row[4] = scatter_val
-            row[5] = mstar_q_val
-            row[6] = mhalo_q_val
-            row[7] = mu_val
-            row[8] = nu_val 
+            row[5] = mhalo_qc_val
+            row[6] = mhalo_qs_val
+            row[7] = mu_c_val
+            row[8] = mu_s_val 
 
     emcee_table = emcee_table.dropna(axis='index', how='any').\
         reset_index(drop=True)
@@ -359,6 +359,7 @@ elif quenching == 'halo':
         chi2[0][idx] = chi2_mean
         chi2[1][idx] = chi2_std
 
+    #TODO modify plot making to add behroozi params
     zumandelbaum_param_vals = [12.2, 12.17, 0.38, 0.15]
     grp_keys = list(grp_keys)
 
