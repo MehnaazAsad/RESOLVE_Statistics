@@ -630,21 +630,11 @@ def get_host_halo_mock(df, mock):
     #         sat_halos.append(group.loghalom.values[index])
 
     if mock == 'vishnu':
-        cen_halos = []
-        sat_halos = []
-        for index, value in enumerate(df.cs_flag):
-            if value == 1:
-                cen_halos.append(df.halo_mvir.values[index])
-            else:
-                sat_halos.append(df.halo_mvir.values[index])
+        cen_halos = df.halo_mvir[df.cs_flag == 1].reset_index(drop=True)
+        sat_halos = df.halo_mvir_host_halo[df.cs_flag == 0].reset_index(drop=True)
     else:
-        cen_halos = []
-        sat_halos = []
-        for index, value in enumerate(df.cs_flag):
-            if value == 1:
-                cen_halos.append(10**(df.loghalom.values[index]))
-            else:
-                sat_halos.append(10**(df.loghalom.values[index]))
+        cen_halos = 10**(df.loghalom[df.cs_flag == 1]).reset_index(drop=True)
+        sat_halos = 10**(df.loghalom[df.cs_flag == 0]).reset_index(drop=True)
 
     cen_halos = np.array(cen_halos)
     sat_halos = np.array(sat_halos)
@@ -678,13 +668,8 @@ def get_stellar_mock(df, mock, randint=None):
                 sat_gals.append(10**(df['{0}'.format(randint)].values[idx]))
 
     elif mock == 'vishnu':
-        cen_gals = []
-        sat_gals = []
-        for idx,value in enumerate(df.cs_flag):
-            if value == 1:
-                cen_gals.append(10**(df['stellar_mass'].values[idx]))
-            elif value == 0:
-                sat_gals.append(10**(df['stellar_mass'].values[idx]))
+        cen_gals = 10**(df.stellar_mass[df.cs_flag == 1]).reset_index(drop=True)
+        sat_gals = 10**(df.stellar_mass[df.cs_flag == 0]).reset_index(drop=True)
     
     else:
         cen_gals = []
@@ -1099,7 +1084,8 @@ def lnprob(theta, phi_total_data, f_blue_data, err, corr_mat_inv):
         gals_df['cs_flag'] = np.where(gals_df['halo_hostid'] == \
             gals_df['halo_id'], 1, 0)
 
-        cols_to_use = ['halo_mvir', 'cs_flag', 'stellar_mass']
+        cols_to_use = ['halo_mvir', 'halo_mvir_host_halo', 'cs_flag', 
+            'stellar_mass']
         gals_df = gals_df[cols_to_use]
 
         gals_df.stellar_mass = np.log10(gals_df.stellar_mass)
