@@ -1086,12 +1086,12 @@ def lnprob(theta, phi_total_data, f_blue_data, err, corr_mat_inv):
     warnings.simplefilter("error", (UserWarning, RuntimeWarning))
     try: 
         gals_df = populate_mock(theta[:5], model_init)
-        gals_df = gals_df.loc[gals_df['stellar_mass'] >= 10**8.6].reset_index(drop=True)
+        # gals_df = gals_df.loc[gals_df['stellar_mass'] >= 10**8.6].reset_index(drop=True)
         gals_df['cs_flag'] = np.where(gals_df['halo_hostid'] == \
             gals_df['halo_id'], 1, 0)
 
         cols_to_use = ['halo_mvir', 'halo_mvir_host_halo', 'cs_flag', 
-            'stellar_mass']
+            'stellar_mass', 'x', 'y', 'z', 'vx', 'vy', 'vz']
         gals_df = gals_df[cols_to_use]
 
         print('Applying RSD')
