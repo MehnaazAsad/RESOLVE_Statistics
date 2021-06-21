@@ -36,10 +36,11 @@ path_to_figures = dict_of_paths['plot_dir']
 survey = 'eco'
 mf_type = 'smf'
 quenching = 'hybrid'
-nwalkers = 30
+nwalkers = 100
+run = 30
 
 if mf_type == 'smf':
-    path_to_proc = path_to_proc + 'smhm_colour_run28/'
+    path_to_proc = path_to_proc + 'smhm_colour_run{0}/'.format(run)
 else:
     path_to_proc = path_to_proc + 'bmhm_run3/'
 
@@ -414,7 +415,7 @@ dict_of_paths = cwpaths.cookiecutter_paths()
 path_to_proc = dict_of_paths['proc_dir']
 
 if mf_type == 'smf':
-    path_to_proc = path_to_proc + 'smhm_colour_run28/'
+    path_to_proc = path_to_proc + 'smhm_colour_run{0}/'.format(run)
 else:
     path_to_proc = path_to_proc + 'bmhm_run3/'
 
