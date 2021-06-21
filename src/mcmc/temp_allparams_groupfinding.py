@@ -1006,18 +1006,18 @@ def populate_mock(theta, model):
 
     model.mock.populate()
 
-    # if survey == 'eco' or survey == 'resolvea':
-    #     if mf_type == 'smf':
-    #         limit = np.round(np.log10((10**8.9) / 2.041), 1)
-    #     elif mf_type == 'bmf':
-    #         limit = np.round(np.log10((10**9.4) / 2.041), 1)
-    # elif survey == 'resolveb':
-    #     if mf_type == 'smf':
-    #         limit = np.round(np.log10((10**8.7) / 2.041), 1)
-    #     elif mf_type == 'bmf':
-    #         limit = np.round(np.log10((10**9.1) / 2.041), 1)
-    # sample_mask = model_init.mock.galaxy_table['stellar_mass'] >= 10**limit
-    gals = model.mock.galaxy_table#[sample_mask]
+    if survey == 'eco' or survey == 'resolvea':
+        if mf_type == 'smf':
+            limit = np.round(np.log10((10**8.9) / 2.041), 1)
+        elif mf_type == 'bmf':
+            limit = np.round(np.log10((10**9.4) / 2.041), 1)
+    elif survey == 'resolveb':
+        if mf_type == 'smf':
+            limit = np.round(np.log10((10**8.7) / 2.041), 1)
+        elif mf_type == 'bmf':
+            limit = np.round(np.log10((10**9.1) / 2.041), 1)
+    sample_mask = model_init.mock.galaxy_table['stellar_mass'] >= 10**limit
+    gals = model.mock.galaxy_table[sample_mask]
     gals_df = pd.DataFrame(np.array(gals))
 
     return gals_df
