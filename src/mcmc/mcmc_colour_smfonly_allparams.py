@@ -1101,7 +1101,7 @@ def lnprob(theta, phi_total_data, f_blue_data, err, corr_mat_inv):
         ## Observable #1 - Total SMF
         total_model = measure_all_smf(gals_df, v_sim, False)  
         ## Observable #2 - Blue fraction
-        f_blue = blue_frac(gals_df, False, False)
+        f_blue = blue_frac(gals_df, True, False)
 
         data_arr = []
         data_arr.append(phi_total_data)
