@@ -397,7 +397,7 @@ def blue_frac(catl, h1_bool, data_bool):
         # changing from h=0.7 to h=1 assuming h^-2 dependence
         logmstar_arr = np.log10((10**mstar_arr) / 2.041)
     else:
-        logmstar_arr = np.log10(mstar_arr)
+        logmstar_arr = mstar_arr
 
     if survey == 'eco' or survey == 'resolvea':
         bin_min = np.round(np.log10((10**8.9) / 2.041), 1)
