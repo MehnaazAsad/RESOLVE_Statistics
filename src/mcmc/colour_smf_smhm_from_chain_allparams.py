@@ -19,7 +19,7 @@ import os
 
 __author__ = '{Mehnaaz Asad}'
 
-rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=30)
+rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=25)
 rc('text', usetex=True)
 rc('text.latex', preamble=r"\usepackage{amsmath}")
 rc('axes', linewidth=2)
@@ -688,6 +688,10 @@ def get_host_halo_mock(df, mock):
         cen_halos = df.halo_mvir[df.cs_flag == 1].reset_index(drop=True)
         sat_halos = df.halo_mvir_host_halo[df.cs_flag == 0].reset_index(drop=True)
     else:
+        # Loghalom in the mock catalogs is actually host halo mass i.e. 
+        # For satellites, the loghalom value will be the value of the central's
+        # loghalom in that halo group and the haloids for the satellites are the 
+        # haloid of the central 
         cen_halos = 10**(df.loghalom[df.cs_flag == 1]).reset_index(drop=True)
         sat_halos = 10**(df.loghalom[df.cs_flag == 0]).reset_index(drop=True)
 
@@ -856,6 +860,7 @@ def get_err_data(survey, path):
 
             # Using the same survey definition as in mcmc smf i.e excluding the 
             # buffer
+            #! Need group cz here
             mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & \
                 (mock_pd.cz.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
                 (mock_pd.logmstar.values >= mstar_limit)]
@@ -1857,45 +1862,50 @@ def plot_xmhm(result, gals_bf, halos_bf, bf_chi2):
     fig1 = plt.figure(figsize=(10,10))
     for idx in range(len(result[0][0])):
         x_model,y_model,y_std_model,y_std_err_model = \
-            Stats_one_arr(np.log10(result[0][19][idx]),result[0][18][idx],base=0.4,\
+            Stats_one_arr(result[0][19][idx],result[0][18][idx],base=0.4,\
                 bin_statval='center')
         plt.plot(x_model,y_model,color='lightgray',linestyle='-',alpha=0.5,\
             zorder=0,label='Models')
     for idx in range(len(result[1][0])):
         x_model,y_model,y_std_model,y_std_err_model = \
-            Stats_one_arr(np.log10(result[1][19][idx]),result[1][18][idx],base=0.4,\
+            Stats_one_arr(result[1][19][idx],result[1][18][idx],base=0.4,\
                 bin_statval='center')
         plt.plot(x_model,y_model,color='lightgray',linestyle='-',alpha=0.5,\
             zorder=1)
     for idx in range(len(result[2][0])):
         x_model,y_model,y_std_model,y_std_err_model = \
-            Stats_one_arr(np.log10(result[2][19][idx]),result[2][18][idx],base=0.4,\
+            Stats_one_arr(result[2][19][idx],result[2][18][idx],base=0.4,\
                 bin_statval='center')
         plt.plot(x_model,y_model,color='lightgray',linestyle='-',alpha=0.5,\
             zorder=2)
     for idx in range(len(result[3][0])):
         x_model,y_model,y_std_model,y_std_err_model = \
-            Stats_one_arr(np.log10(result[3][19][idx]),result[3][18][idx],base=0.4,\
+            Stats_one_arr(result[3][19][idx],result[3][18][idx],base=0.4,\
                 bin_statval='center')
         plt.plot(x_model,y_model,color='lightgray',linestyle='-',alpha=0.5,\
             zorder=3)
     for idx in range(len(result[4][0])):
         x_model,y_model,y_std_model,y_std_err_model = \
-            Stats_one_arr(np.log10(result[4][19][idx]),result[4][18][idx],base=0.4,\
+            Stats_one_arr(result[4][19][idx],result[4][18][idx],base=0.4,\
                 bin_statval='center')
         plt.plot(x_model,y_model,color='lightgray',linestyle='-',alpha=0.5,\
             zorder=4)
 
     plt.plot(x_bf, y_bf, color='k', lw=4, label='Best-fit', zorder=10)
 
+    plt.fill([13.5, plt.gca().get_xlim()[1], plt.gca().get_xlim()[1], 13.5], 
+        [plt.gca().get_ylim()[0], plt.gca().get_ylim()[0], 
+        plt.gca().get_ylim()[1], plt.gca().get_ylim()[1]], fill=False, 
+        hatch='\\')
+
     if survey == 'resolvea' and mf_type == 'smf':
         plt.xlim(10,14)
     else:
-        plt.xlim(10,)
+        plt.xlim(10,15)
     plt.xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
     if mf_type == 'smf':
         if survey == 'eco':
-            plt.ylim(np.log10((10**8.9)/2.041),)
+            plt.ylim(np.log10((10**8.9)/2.041),12.8)
         elif survey == 'resolvea':
             plt.ylim(np.log10((10**8.9)/2.041),13)
         elif survey == 'resolveb':
