@@ -1,5 +1,5 @@
 """
-{This TEST script applies redshift-space distortions to Vishnu mock and runs
+{This script applies redshift-space distortions to Vishnu mock and runs
  group finder so that velocity dispersion measurements can be obtained since
  we are including that as a second observable in constraining red and blue
  SHMRs.}
@@ -56,6 +56,75 @@ def vol_sphere(r):
     volume = (4/3)*np.pi*(r**3)
     return volume
 
+def read_mock_catl(filename, catl_format='.hdf5'):
+    """
+    Function to read ECO/RESOLVE catalogues.
+
+    Parameters
+    ----------
+    filename: string
+        path and name of the ECO/RESOLVE catalogue to read
+
+    catl_format: string, optional (default = '.hdf5')
+        type of file to read.
+        Options:
+            - '.hdf5': Reads in a catalogue in HDF5 format
+
+    Returns
+    -------
+    mock_pd: pandas DataFrame
+        DataFrame with galaxy/group information
+
+    Examples
+    --------
+    # Specifying `filename`
+    >>> filename = 'ECO_catl.hdf5'
+
+    # Reading in Catalogue
+    >>> mock_pd = reading_catls(filename, format='.hdf5')
+
+    >>> mock_pd.head()
+               x          y         z          vx          vy          vz  \
+    0  10.225435  24.778214  3.148386  356.112457 -318.894409  366.721832
+    1  20.945772  14.500367 -0.237940  168.731766   37.558834  447.436951
+    2  21.335835  14.808488  0.004653  967.204407 -701.556763 -388.055115
+    3  11.102760  21.782235  2.947002  611.646484 -179.032089  113.388794
+    4  13.217764  21.214905  2.113904  120.689598  -63.448833  400.766541
+
+       loghalom  cs_flag  haloid  halo_ngal    ...        cz_nodist      vel_tot  \
+    0    12.170        1  196005          1    ...      2704.599189   602.490355
+    1    11.079        1  197110          1    ...      2552.681697   479.667489
+    2    11.339        1  197131          1    ...      2602.377466  1256.285409
+    3    11.529        1  199056          1    ...      2467.277182   647.318259
+    4    10.642        1  199118          1    ...      2513.381124   423.326770
+
+           vel_tan     vel_pec     ra_orig  groupid    M_group g_ngal  g_galtype  \
+    0   591.399858 -115.068833  215.025116        0  11.702527      1          1
+    1   453.617221  155.924074  182.144134        1  11.524787      4          0
+    2  1192.742240  394.485714  182.213220        1  11.524787      4          0
+    3   633.928896  130.977416  210.441320        2  11.502205      1          1
+    4   421.064495   43.706352  205.525386        3  10.899680      1          1
+
+       halo_rvir
+    0   0.184839
+    1   0.079997
+    2   0.097636
+    3   0.113011
+    4   0.057210
+    """
+    ## Checking if file exists
+    if not os.path.exists(filename):
+        msg = '`filename`: {0} NOT FOUND! Exiting..'.format(filename)
+        raise ValueError(msg)
+    ## Reading file
+    if catl_format=='.hdf5':
+        mock_pd = pd.read_hdf(filename)
+    else:
+        msg = '`catl_format` ({0}) not supported! Exiting...'.format(catl_format)
+        raise ValueError(msg)
+
+    return mock_pd
+
 def read_data_catl(path_to_file, survey):
     """
     Reads survey catalog from file
@@ -85,7 +154,9 @@ def read_data_catl(path_to_file, survey):
     """
     if survey == 'eco':
         # 13878 galaxies
-        eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0)
+        # eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0)
+
+        eco_buff = read_mock_catl(path_to_file)
 
         if mf_type == 'smf':
             # 6456 galaxies
@@ -182,34 +253,68 @@ def read_mcmc(path_to_file):
     emcee_table: pandas dataframe
         Dataframe of mcmc chain values with NANs removed
     """
-    colnames = ['mhalo_c','mstellar_c','lowmass_slope','highmass_slope',\
-        'scatter']
+    # colnames = ['mhalo_c','mstellar_c','lowmass_slope','highmass_slope',\
+    #     'scatter']
     
-    if mf_type == 'smf' and survey == 'eco' and ver==1.0:
-        emcee_table = pd.read_csv(path_to_file,names=colnames,sep='\s+',\
-            dtype=np.float64)
+    # if mf_type == 'smf' and survey == 'eco' and ver==1.0:
+    #     emcee_table = pd.read_csv(path_to_file,names=colnames,sep='\s+',\
+    #         dtype=np.float64)
 
-    else:
-        emcee_table = pd.read_csv(path_to_file, names=colnames, 
-            delim_whitespace=True, header=None)
+    # else:
+    #     emcee_table = pd.read_csv(path_to_file, names=colnames, 
+    #         delim_whitespace=True, header=None)
 
-        emcee_table = emcee_table[emcee_table.mhalo_c.values != '#']
-        emcee_table.mhalo_c = emcee_table.mhalo_c.astype(np.float64)
-        emcee_table.mstellar_c = emcee_table.mstellar_c.astype(np.float64)
-        emcee_table.lowmass_slope = emcee_table.lowmass_slope.astype(np.float64)
+    #     emcee_table = emcee_table[emcee_table.mhalo_c.values != '#']
+    #     emcee_table.mhalo_c = emcee_table.mhalo_c.astype(np.float64)
+    #     emcee_table.mstellar_c = emcee_table.mstellar_c.astype(np.float64)
+    #     emcee_table.lowmass_slope = emcee_table.lowmass_slope.astype(np.float64)
 
-    # Cases where last parameter was a NaN and its value was being written to 
-    # the first element of the next line followed by 4 NaNs for the other 
-    # parameters
+    # # Cases where last parameter was a NaN and its value was being written to 
+    # # the first element of the next line followed by 4 NaNs for the other 
+    # # parameters
+    # for idx,row in enumerate(emcee_table.values):
+    #     if np.isnan(row)[4] == True and np.isnan(row)[3] == False:
+    #         scatter_val = emcee_table.values[idx+1][0]
+    #         row[4] = scatter_val
+    
+    # # Cases where rows of NANs appear
+    # emcee_table = emcee_table.dropna(axis='index', how='any').\
+    #     reset_index(drop=True)
+    
+    colnames = ['mhalo_c', 'mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter',
+        'mstar_q','mh_q','mu','nu']
+
+    emcee_table = pd.read_csv(path_to_file, names=colnames, comment='#',
+        header=None, sep='\s+')
+
     for idx,row in enumerate(emcee_table.values):
-        if np.isnan(row)[4] == True and np.isnan(row)[3] == False:
+
+        ## For cases where 5 params on one line and 3 on the next
+        if np.isnan(row)[6] == True and np.isnan(row)[5] == False:
+            mhalo_q_val = emcee_table.values[idx+1][0]
+            mu_val = emcee_table.values[idx+1][1]
+            nu_val = emcee_table.values[idx+1][2]
+            row[6] = mhalo_q_val
+            row[7] = mu_val
+            row[8] = nu_val 
+
+        ## For cases where 4 params on one line, 4 on the next and 1 on the 
+        ## third line (numbers in scientific notation unlike case above)
+        elif np.isnan(row)[4] == True and np.isnan(row)[3] == False:
             scatter_val = emcee_table.values[idx+1][0]
+            mstar_q_val = emcee_table.values[idx+1][1]
+            mhalo_q_val = emcee_table.values[idx+1][2]
+            mu_val = emcee_table.values[idx+1][3]
+            nu_val = emcee_table.values[idx+2][0]
             row[4] = scatter_val
-    
-    # Cases where rows of NANs appear
+            row[5] = mstar_q_val
+            row[6] = mhalo_q_val
+            row[7] = mu_val
+            row[8] = nu_val 
+
     emcee_table = emcee_table.dropna(axis='index', how='any').\
         reset_index(drop=True)
-    
+
     return emcee_table
 
 def get_paramvals_percentile(table, percentile, chi2_arr):
@@ -239,8 +344,9 @@ def get_paramvals_percentile(table, percentile, chi2_arr):
     mcmc_table_pctl = table[:slice_end]
     # Best fit params are the parameters that correspond to the smallest chi2
     bf_params = mcmc_table_pctl.drop_duplicates().reset_index(drop=True).\
-        values[0][:5]
-    subset = mcmc_table_pctl.drop_duplicates().sample(100).values[:,:5] 
+        values[0][:9]
+    # subset = mcmc_table_pctl.drop_duplicates().sample(100).values[:,:5] 
+    subset = mcmc_table_pctl.drop_duplicates().sample(100).values[:,:9]
     subset = np.insert(subset, 0, bf_params, axis=0)
 
     return subset
@@ -1005,13 +1111,14 @@ def main():
         halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
 
     if survey == 'eco':
-        catl_file = path_to_raw + "eco/eco_all.csv"
+        # catl_file = path_to_raw + "eco/eco_all.csv"
+        catl_file = path_to_processed + "gal_group_eco_data_buffer.hdf5"
 
-    chi2_file = path_to_processed + 'smhm_run6/{0}_chi2.txt'.format(survey)
+    chi2_file = path_to_processed + 'smhm_colour_run32/{0}_colour_chi2.txt'.format(survey)
     if mf_type == 'smf' and survey == 'eco' and ver == 1.0:
         chain_file = path_to_processed + 'mcmc_{0}.dat'.format(survey)
     else:
-        chain_file = path_to_processed + 'smhm_run6/mcmc_{0}_raw.txt'.\
+        chain_file = path_to_processed + 'smhm_colour_run32/mcmc_{0}_colour_raw.txt'.\
             format(survey)
 
     print('Reading chi-squared file')
@@ -1023,6 +1130,10 @@ def main():
     print('Getting subset of 100 Behroozi parameters')
     mcmc_table_subset = get_paramvals_percentile(mcmc_table, 68, chi2)
 
+    params_df = pd.DataFrame(mcmc_table_subset)
+    params_df.to_csv(path_to_processed + 'run32_params_subset.txt', 
+        header=None, index=None, sep=' ', mode='w')
+
     print('Reading survey data')
     # No M* cut
     catl, volume, cvar, z_median = read_data_catl(catl_file, survey)
@@ -1030,7 +1141,7 @@ def main():
     print('Populating halos')
     # Populating halos with best fit set of params
     model_init = halocat_init(halo_catalog, z_median)
-    bf_params = mcmc_table_subset[0]
+    bf_params = mcmc_table_subset[0][:5]
     gals_df_ = populate_mock(bf_params, model_init)
     gals_df_ = assign_cen_sat_flag(gals_df_)
     gals_df_ = gals_df_.rename(columns={"stellar_mass": "1"})
@@ -1039,13 +1150,14 @@ def main():
     # Populating 100 out of the 101 set of params
     i=2
     for params in mcmc_table_subset[1:]:
+        params = params[:5]
         mock = populate_mock(params, model_init)
         mock = mock.sort_values(by='halo_mvir_host_halo')
         gals_df_['{0}'.format(i)] = mock.stellar_mass.values
         i+=1
     gals_df_.reset_index(inplace=True, drop=True)
 
-    h5File = path_to_processed + "mocks101.h5"
+    h5File = path_to_processed + "mocks101_run32.h5"
     gals_df_.to_hdf(h5File, "/gals_df_/d1")
 
     print('Applying RSD')
@@ -1075,7 +1187,7 @@ def main():
 
     print('Writing to output files')
     pandas_df_to_hdf5_file(data=gals_final,
-        hdf5_file=path_to_processed + 'gal_group.hdf5', key='gal_group_df')
+        hdf5_file=path_to_processed + 'gal_group_run32.hdf5', key='gal_group_df')
     # pandas_df_to_hdf5_file(data=group_df_new,
     #     hdf5_file=path_to_processed + 'group.hdf5', key='group_df')
 
