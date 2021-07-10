@@ -28,16 +28,16 @@ rc('ytick.major', width=2, size=7)
 survey = 'eco'
 quenching = 'hybrid'
 mf_type = 'smf'
-nwalkers = 30
-nsteps = 500
-burnin = 100
+nwalkers = 100
+nsteps = 1000
+burnin = 200
 ndim = 9
-run = 28
+run = 32
 
 
-def get_samples(chain_file, nsteps, nwalkers, ndim):
+def get_samples(chain_file, nsteps, nwalkers, ndim, burnin):
     if quenching == 'hybrid':
-        emcee_table = pd.read_csv(chain_fname, header=None, comment='#', 
+        emcee_table = pd.read_csv(chain_file, header=None, comment='#', 
             names=['Mhalo_c', 'Mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter',
             'Mstar_q','Mhalo_q','mu','nu'], sep='\s+')
 
@@ -67,7 +67,7 @@ def get_samples(chain_file, nsteps, nwalkers, ndim):
                 row[8] = nu_val 
 
     elif quenching == 'halo':
-        emcee_table = pd.read_csv(chain_fname, header=None, comment='#', 
+        emcee_table = pd.read_csv(chain_file, header=None, comment='#', 
             names=['Mhalo_c', 'Mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter',
             'Mhalo_qc','Mhalo_qs','mu_c','mu_s'], sep='\s+')
 
@@ -109,7 +109,7 @@ def get_samples(chain_file, nsteps, nwalkers, ndim):
 chain_fname = path_to_proc + 'smhm_colour_run{0}/mcmc_{1}_colour_raw.txt'.\
     format(run, survey)
 
-samples = get_samples(chain_fname, nsteps, nwalkers, ndim)
+samples = get_samples(chain_fname, nsteps, nwalkers, ndim, burnin)
 
 Mhalo_c_fid = 12.35
 Mstar_c_fid = 10.72
@@ -136,7 +136,7 @@ c.add_chain(samples,parameters=[r"$\mathbf{log_{10}\ M_{1}}$",
 #      sigmas=[1,2], shade_alpha=0.4)
 
 # sigma levels for 1D gaussian showing 68%,95% conf intervals
-c.configure(smooth=5, label_font_size=20, tick_font_size=10, summary=True, 
+c.configure(kde=2.0, label_font_size=20, tick_font_size=10, summary=True, 
     sigma2d=False, legend_kwargs={"fontsize": 30}) 
 if quenching == 'hybrid':
     fig1 = c.plotter.plot(display=True, 
@@ -146,3 +146,189 @@ elif quenching == 'halo':
         truth=behroozi10_param_vals+optimizer_best_fit_eco_smf_halo)
 # fig2 = c.plotter.plot(filename=path_to_figures+'emcee_cc_mp_eco_corrscatter.png',\
 #      truth=behroozi10_param_vals)
+
+################################################################################
+# CHAIN 6 + CHAIN 32 BEHROOZI
+
+behroozi_subset = samples[:,:5]
+
+chain_six_behroozi = path_to_proc + 'smhm_run6/mcmc_{0}_raw.txt'.\
+    format(survey)
+mcmc_smf_1 = pd.read_csv(chain_six_behroozi, 
+    names=['mhalo_c','mstellar_c','lowmass_slope','highmass_slope',
+    'scatter'],header=None, delim_whitespace=True)
+mcmc_smf_1 = mcmc_smf_1[mcmc_smf_1.mhalo_c.values != '#']
+mcmc_smf_1.mhalo_c = mcmc_smf_1.mhalo_c.astype(np.float64)
+mcmc_smf_1.mstellar_c = mcmc_smf_1.mstellar_c.astype(np.float64)
+mcmc_smf_1.lowmass_slope = mcmc_smf_1.lowmass_slope.astype(np.float64)
+
+for idx,row in enumerate(mcmc_smf_1.values):
+     if np.isnan(row)[4] == True and np.isnan(row)[3] == False:
+          scatter_val = mcmc_smf_1.values[idx+1][0]
+          row[4] = scatter_val
+
+mcmc_smf_1 = mcmc_smf_1.dropna(axis='index', how='any').reset_index(drop=True)
+
+sampler_smf_1 = mcmc_smf_1.values.reshape(1000,250,5)
+
+# Removing burn-in
+ndim = 5
+# samples_bmf_1 = sampler_bmf_1[:, 130:, :].reshape((-1, ndim))
+samples_smf_1 = sampler_smf_1[130:, :, :].reshape((-1, ndim))
+
+c = ChainConsumer()
+c.add_chain(samples_smf_1,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
+    r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
+    r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$"],\
+    name=r"ECO Behroozi: $\mathbf{\Phi}$", color='#E766EA', zorder=15)
+c.add_chain(behroozi_subset,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
+    r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
+    r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$"],
+    name=r"ECO Behroozi: $\mathbf{\Phi}$  + $\mathbf{f_{blue}}$", color='#1f77b4', 
+    zorder=13)
+c.configure(smooth=[5, False], kde=[False, 2.0], label_font_size=20, 
+    tick_font_size=8,summary=True, sigma2d=False, 
+    legend_kwargs={"fontsize": 30}) #1d gaussian showing 68%,95% conf intervals
+fig2 = c.plotter.plot(display=True,truth=behroozi10_param_vals)
+
+################################################################################
+# CHAIN 17 + CHAIN 32 quenching
+
+quenching_subset = samples[:,5:]
+zumandelbaum_param_vals_hybrid = [10.5, 13.76, 0.69, 0.15] # For hybrid model
+
+nwalkers = 260
+nsteps = 780
+burnin = 130
+ndim = 4
+run_smf = 17
+
+## For SMF
+chain_fname_smf = path_to_proc + 'smhm_colour_run{0}/mcmc_{1}_colour_raw.txt'.\
+format(run_smf, survey)
+
+if quenching == 'hybrid':
+    mcmc_smf_1 = pd.read_csv(chain_fname_smf, 
+    names=['Mstar_q','Mhalo_q','mu','nu'],header=None, delim_whitespace=True)
+
+    mcmc_smf_1 = mcmc_smf_1[mcmc_smf_1.Mstar_q.values != '#']
+    mcmc_smf_1.Mstar_q = mcmc_smf_1.Mstar_q.astype(np.float64)
+    mcmc_smf_1.Mhalo_q = mcmc_smf_1.Mhalo_q.astype(np.float64)
+    mcmc_smf_1.mu = mcmc_smf_1.mu.astype(np.float64)
+    mcmc_smf_1.nu = mcmc_smf_1.nu.astype(np.float64)
+
+    for idx,row in enumerate(mcmc_smf_1.values):
+        if np.isnan(row)[3] == True and np.isnan(row)[2] == False:
+            nu_val = mcmc_smf_1.values[idx+1][0]
+            row[3] = nu_val
+
+mcmc_smf_1 = mcmc_smf_1.dropna(axis='index', how='any').reset_index(drop=True)
+sampler_smf_1 = mcmc_smf_1.values.reshape(nsteps,nwalkers,ndim)
+
+# Removing burn-in
+samples_smf_1 = sampler_smf_1[burnin:, :, :].reshape((-1, ndim))
+
+c = ChainConsumer()
+c.add_chain(samples_smf_1,parameters=[r"$\mathbf{M^{q}_{*}}$", 
+    r"$\mathbf{M^{q}_{h}}$", r"$\boldsymbol{\mu}$", r"$\boldsymbol{\nu}$"],\
+    name=r"ECO quenching: $\mathbf{\Phi}$ + $\mathbf{\sigma}$-$\mathbf{M_{*}}$", 
+    color='#E766EA', zorder=10)
+c.add_chain(quenching_subset,parameters=[r"$\mathbf{M^{q}_{*}}$", 
+    r"$\mathbf{M^{q}_{h}}$", r"$\boldsymbol{\mu}$", r"$\boldsymbol{\nu}$"],
+    name=r"ECO quenching: $\mathbf{\Phi}$ + $\mathbf{f_{blue}}$", color='#1f77b4', 
+    zorder=13)
+c.configure(smooth=[5, 5],label_font_size=20, tick_font_size=8,summary=True,\
+     sigma2d=False, legend_kwargs={"fontsize": 30}) #1d gaussian showing 68%,95% conf intervals
+fig2 = c.plotter.plot(display=True,truth=zumandelbaum_param_vals_hybrid)
+
+################################################################################
+# CHAIN 16 + CHAIN 32 quenching
+
+nwalkers = 260
+nsteps = 780
+burnin = 130
+ndim = 4
+run_smf = 16
+
+chain_fname_smf = path_to_proc + 'smhm_colour_run{0}/mcmc_{1}_colour_raw.txt'.\
+format(run_smf, survey)
+
+if quenching == 'hybrid':
+    mcmc_smf_1 = pd.read_csv(chain_fname_smf, 
+    names=['Mstar_q','Mhalo_q','mu','nu'],header=None, delim_whitespace=True)
+
+    mcmc_smf_1 = mcmc_smf_1[mcmc_smf_1.Mstar_q.values != '#']
+    mcmc_smf_1.Mstar_q = mcmc_smf_1.Mstar_q.astype(np.float64)
+    mcmc_smf_1.Mhalo_q = mcmc_smf_1.Mhalo_q.astype(np.float64)
+    mcmc_smf_1.mu = mcmc_smf_1.mu.astype(np.float64)
+    mcmc_smf_1.nu = mcmc_smf_1.nu.astype(np.float64)
+
+    for idx,row in enumerate(mcmc_smf_1.values):
+        if np.isnan(row)[3] == True and np.isnan(row)[2] == False:
+            nu_val = mcmc_smf_1.values[idx+1][0]
+            row[3] = nu_val
+
+mcmc_smf_1 = mcmc_smf_1.dropna(axis='index', how='any').reset_index(drop=True)
+sampler_smf_1 = mcmc_smf_1.values.reshape(nsteps,nwalkers,ndim)
+
+# Removing burn-in
+samples_smf_1 = sampler_smf_1[burnin:, :, :].reshape((-1, ndim))
+
+c = ChainConsumer()
+c.add_chain(samples_smf_1,parameters=[r"$\mathbf{M^{q}_{*}}$", 
+    r"$\mathbf{M^{q}_{h}}$", r"$\boldsymbol{\mu}$", r"$\boldsymbol{\nu}$"],\
+    name=r"ECO quenching: $\mathbf{\Phi}$", 
+    color='#E766EA', zorder=10)
+c.add_chain(quenching_subset,parameters=[r"$\mathbf{M^{q}_{*}}$", 
+    r"$\mathbf{M^{q}_{h}}$", r"$\boldsymbol{\mu}$", r"$\boldsymbol{\nu}$"],
+    name=r"ECO quenching: $\mathbf{\Phi}$ + $\mathbf{f_{blue}}$", color='#1f77b4', 
+    zorder=13)
+c.configure(smooth=[5, 5],label_font_size=20, tick_font_size=8,summary=True,\
+     sigma2d=False, legend_kwargs={"fontsize": 30}) #1d gaussian showing 68%,95% conf intervals
+fig2 = c.plotter.plot(display=True,truth=zumandelbaum_param_vals_hybrid)
+
+################################################################################
+# CHAIN 21 + CHAIN 32 quenching
+
+nwalkers = 260
+nsteps = 1000
+burnin = 200
+ndim = 4
+run_smf = 21
+
+chain_fname_smf = path_to_proc + 'smhm_colour_run{0}/mcmc_{1}_colour_raw.txt'.\
+format(run_smf, survey)
+
+if quenching == 'hybrid':
+    mcmc_smf_1 = pd.read_csv(chain_fname_smf, 
+    names=['Mstar_q','Mhalo_q','mu','nu'],header=None, delim_whitespace=True)
+
+    mcmc_smf_1 = mcmc_smf_1[mcmc_smf_1.Mstar_q.values != '#']
+    mcmc_smf_1.Mstar_q = mcmc_smf_1.Mstar_q.astype(np.float64)
+    mcmc_smf_1.Mhalo_q = mcmc_smf_1.Mhalo_q.astype(np.float64)
+    mcmc_smf_1.mu = mcmc_smf_1.mu.astype(np.float64)
+    mcmc_smf_1.nu = mcmc_smf_1.nu.astype(np.float64)
+
+    for idx,row in enumerate(mcmc_smf_1.values):
+        if np.isnan(row)[3] == True and np.isnan(row)[2] == False:
+            nu_val = mcmc_smf_1.values[idx+1][0]
+            row[3] = nu_val
+
+mcmc_smf_1 = mcmc_smf_1.dropna(axis='index', how='any').reset_index(drop=True)
+sampler_smf_1 = mcmc_smf_1.values.reshape(nsteps,nwalkers,ndim)
+
+# Removing burn-in
+samples_smf_1 = sampler_smf_1[burnin:, :, :].reshape((-1, ndim))
+
+c = ChainConsumer()
+c.add_chain(samples_smf_1,parameters=[r"$\mathbf{M^{q}_{*}}$", 
+    r"$\mathbf{M^{q}_{h}}$", r"$\boldsymbol{\mu}$", r"$\boldsymbol{\nu}$"],\
+    name=r"ECO quenching: $\mathbf{\Phi}$ + $\mathbf{\sigma}$-$\mathbf{M_{*}}$ + $\mathbf{M_{*}}$-$\mathbf{\sigma}$", 
+    color='#E766EA', zorder=10)
+c.add_chain(quenching_subset,parameters=[r"$\mathbf{M^{q}_{*}}$", 
+    r"$\mathbf{M^{q}_{h}}$", r"$\boldsymbol{\mu}$", r"$\boldsymbol{\nu}$"],
+    name=r"ECO quenching: $\mathbf{\Phi}$ + $\mathbf{f_{blue}}$", color='#1f77b4', 
+    zorder=13)
+c.configure(smooth=[5, 5],label_font_size=20, tick_font_size=8,summary=True,\
+     sigma2d=False, legend_kwargs={"fontsize": 30}) #1d gaussian showing 68%,95% conf intervals
+fig2 = c.plotter.plot(display=True,truth=zumandelbaum_param_vals_hybrid)
