@@ -777,6 +777,7 @@ def get_err_data(survey, path):
             # logmstar_red_max_arr.append(logmstar_red_max)
             # logmstar_blue_max = mock_pd.logmstar.loc[mock_pd.colour_label == 'B'].max() 
             # logmstar_blue_max_arr.append(logmstar_blue_max)
+            #! change back to using all galaxies for diff_smf() and blue_frac()
             logmstar_arr = mock_pd.logmstar.loc[mock_pd.cs_flag == 1].values
 
             #Measure SMF of mock using diff_smf function
