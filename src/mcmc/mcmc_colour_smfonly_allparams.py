@@ -27,6 +27,13 @@ import os
 
 __author__ = '[Mehnaaz Asad]'
 
+def mock_add_grpcz(mock_df):
+    grpcz = mock_df.groupby('groupid').cz.mean().values
+    grpn = mock_df.groupby('groupid').cz.size().values
+    full_grpcz_arr = np.repeat(grpcz, grpn)
+    mock_df['grpcz'] = full_grpcz_arr
+    return mock_df
+
 def reading_catls(filename, catl_format='.hdf5'):
     """
     Function to read ECO/RESOLVE catalogues.
@@ -387,11 +394,11 @@ def blue_frac(catl, h1_bool, data_bool):
         Array of y-axis blue fraction values
     """
     if data_bool:
-        mstar_arr = catl.logmstar.values
+        mstar_arr = catl.logmstar.loc[catl.cs_flag == 1].values
     else:
         mstar_arr = catl.stellar_mass.values
 
-    colour_label_arr = catl.colour_label.values
+    colour_label_arr = catl.colour_label.loc[catl.cs_flag == 1].values
 
     if not h1_bool:
         # changing from h=0.7 to h=1 assuming h^-2 dependence
@@ -744,12 +751,12 @@ def get_err_data(survey, path):
             filename = temp_path + '{0}_cat_{1}_Planck_memb_cat.hdf5'.format(
                 mock_name, num)
             mock_pd = reading_catls(filename) 
-
+            mock_pd = mock_add_grpcz(mock_pd)
             # Using the same survey definition as in mcmc smf i.e excluding the 
             # buffer
             mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & \
                 (mock_pd.cz.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
-                (mock_pd.logmstar.values >= mstar_limit)]
+                (mock_pd.logmstar.values >= mstar_limit)].reset_index(drop=True)
 
             # ## Using best-fit found for old ECO data using optimize_hybridqm_eco,py
             # Mstar_q = 10.39 # Msun/h
@@ -770,7 +777,7 @@ def get_err_data(survey, path):
             # logmstar_red_max_arr.append(logmstar_red_max)
             # logmstar_blue_max = mock_pd.logmstar.loc[mock_pd.colour_label == 'B'].max() 
             # logmstar_blue_max_arr.append(logmstar_blue_max)
-            logmstar_arr = mock_pd.logmstar.values
+            logmstar_arr = mock_pd.logmstar.loc[mock_pd.cs_flag == 1].values
 
             #Measure SMF of mock using diff_smf function
             max_total, phi_total, err_total, bins_total, counts_total = \
@@ -858,7 +865,7 @@ def get_err_data(survey, path):
     # plt.gca().invert_yaxis() 
     # plt.gca().xaxis.tick_bottom()
     # fig1.colorbar(cax)
-    # plt.title(r'Total mass function and blue fraction')
+    # plt.title(r'Total mass function and blue fraction (centrals only)')
     # plt.show()
 
     # rc('text', usetex=True)
