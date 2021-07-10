@@ -84,6 +84,13 @@ def read_mcmc(path_to_file):
     
     return emcee_table
 
+def mock_add_grpcz(mock_df):
+    grpcz = mock_df.groupby('groupid').cz.mean().values
+    grpn = mock_df.groupby('groupid').cz.size().values
+    full_grpcz_arr = np.repeat(grpcz, grpn)
+    mock_df['grpcz'] = full_grpcz_arr
+    return mock_df
+
 def read_mock_catl(filename, catl_format='.hdf5'):
     """
     Function to read ECO/RESOLVE catalogues.
@@ -1480,12 +1487,12 @@ def get_err_data(survey, path):
             filename = temp_path + '{0}_cat_{1}_Planck_memb_cat.hdf5'.format(
                 mock_name, num)
             mock_pd = read_mock_catl(filename) 
-
+            mock_pd = mock_add_grpcz(mock_pd)
             # Using the same survey definition as in mcmc smf i.e excluding the 
             # buffer
             mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & \
                 (mock_pd.cz.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
-                (mock_pd.logmstar.values >= mstar_limit)]
+                (mock_pd.logmstar.values >= mstar_limit)].reset_index(drop=True)
 
             ## Using best-fit found for old ECO data using optimize_hybridqm_eco,py
             # Mstar_q = 10.39 # Msun/h
