@@ -39,7 +39,7 @@ quenching = 'hybrid'
 nwalkers = 260
 
 if mf_type == 'smf':
-    path_to_proc = path_to_proc + 'smhm_colour_run21/'
+    path_to_proc = path_to_proc + 'smhm_colour_run27/'
 else:
     path_to_proc = path_to_proc + 'bmhm_run3/'
 
@@ -108,8 +108,6 @@ for idx,row in emcee_table.iterrows():
 id_data = {'walker_id': walker_id_arr, 'iteration_id': iteration_id_arr}
 id_df = pd.DataFrame(id_data, index=emcee_table.index)
 emcee_table = emcee_table.assign(**id_df)
-emcee_table = emcee_table.loc[emcee_table.walker_id.values > 0]
-emcee_table = emcee_table.astype(np.float64)
 
 grps = emcee_table.groupby('iteration_id')
 grp_keys = grps.groups.keys()
@@ -267,7 +265,88 @@ elif quenching == 'halo':
     plt.show()
 
 
+######################## Calculate acceptance fraction ########################
+dict_of_paths = cwpaths.cookiecutter_paths()
+path_to_proc = dict_of_paths['proc_dir']
 
+if mf_type == 'smf':
+    path_to_proc = path_to_proc + 'smhm_colour_run21/'
+else:
+    path_to_proc = path_to_proc + 'bmhm_run3/'
+
+chain_fname = path_to_proc + 'mcmc_{0}_colour_raw.txt'.format(survey)
+
+if quenching == 'hybrid':
+    emcee_table = pd.read_csv(chain_fname, delim_whitespace=True, 
+        names=['Mstar_q','Mhalo_q','mu','nu'], 
+        header=None)
+
+    emcee_table = emcee_table[emcee_table.Mstar_q.values != '#']
+    emcee_table.Mstar_q = emcee_table.Mstar_q.astype(np.float64)
+    emcee_table.Mhalo_q = emcee_table.Mhalo_q.astype(np.float64)
+    emcee_table.mu = emcee_table.mu.astype(np.float64)
+    emcee_table.nu = emcee_table.nu.astype(np.float64)
+
+    for idx,row in enumerate(emcee_table.values):
+        if np.isnan(row)[3] == True and np.isnan(row)[2] == False:
+            nu_val = emcee_table.values[idx+1][0]
+            row[3] = nu_val 
+    emcee_table = emcee_table.dropna(axis='index', how='any').\
+        reset_index(drop=True)
+
+    # emcee_table.nu = np.log10(emcee_table.nu)
+
+elif quenching == 'halo':
+    emcee_table = pd.read_csv(chain_fname, delim_whitespace=True, 
+        names=['Mh_qc','Mh_qs','mu_c','mu_s'], 
+        header=None)
+
+    emcee_table = emcee_table[emcee_table.Mh_qc.values != '#']
+    emcee_table.Mh_qc = emcee_table.Mh_qc.astype(np.float64)
+    emcee_table.Mh_qs = emcee_table.Mh_qs.astype(np.float64)
+    emcee_table.mu_c = emcee_table.mu_c.astype(np.float64)
+    emcee_table.mu_s = emcee_table.mu_s.astype(np.float64)
+
+    for idx,row in enumerate(emcee_table.values):
+        if np.isnan(row)[3] == True and np.isnan(row)[2] == False:
+            mu_s_val = emcee_table.values[idx+1][0]
+            row[3] = mu_s_val 
+    emcee_table = emcee_table.dropna(axis='index', how='any').\
+        reset_index(drop=True)
+
+num_unique_rows = emcee_table[['Mstar_q','Mhalo_q','mu','nu']].drop_duplicates().shape[0]
+num_rows = len(emcee_table)
+acceptance_fraction = num_unique_rows / num_rows
+print("Acceptance fraction: {0}%".format(np.round(acceptance_fraction,2)*100))
+
+# For behroozi chains
+dict_of_paths = cwpaths.cookiecutter_paths()
+path_to_proc = dict_of_paths['proc_dir']
+
+chain_fname = path_to_proc + 'smhm_run6/mcmc_{0}_raw.txt'.\
+    format(survey)
+emcee_table = pd.read_csv(chain_fname, 
+    names=['mhalo_c','mstellar_c','lowmass_slope','highmass_slope',
+    'scatter'],header=None, delim_whitespace=True)
+emcee_table = emcee_table[emcee_table.mhalo_c.values != '#']
+emcee_table.mhalo_c = emcee_table.mhalo_c.astype(np.float64)
+emcee_table.mstellar_c = emcee_table.mstellar_c.astype(np.float64)
+emcee_table.lowmass_slope = emcee_table.lowmass_slope.astype(np.float64)
+
+for idx,row in enumerate(emcee_table.values):
+     if np.isnan(row)[4] == True and np.isnan(row)[3] == False:
+          scatter_val = emcee_table.values[idx+1][0]
+          row[4] = scatter_val
+
+emcee_table = emcee_table.dropna(axis='index', how='any').reset_index(drop=True)
+
+num_unique_rows = emcee_table[['mhalo_c','mstellar_c','lowmass_slope',\
+    'highmass_slope']].drop_duplicates().shape[0]
+num_rows = len(emcee_table)
+acceptance_fraction = num_unique_rows / num_rows
+print("Acceptance fraction: {0}%".format(np.round(acceptance_fraction,2)*100))
+
+################################################################################
 
 
 def hybrid_quenching_model(theta, gals_df, mock, randint=None):
@@ -1414,7 +1493,7 @@ def debug_within_outside_1sig(emcee_table, grp_keys, Mstar_q, Mhalo_q, mu, nu, c
         bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
     ax3.annotate(zumandelbaum_param_vals[2], (0.95,0.85), xycoords='axes fraction', 
         bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
-    ax4.annotate(0.15, (0.95,0.85), xycoords='axes fraction', 
+    ax4.annotate(zumandelbaum_param_vals[3], (0.95,0.85), xycoords='axes fraction', 
         bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
     plt.xlabel(r"$\mathbf{iteration\ number}$")
     plt.show()
