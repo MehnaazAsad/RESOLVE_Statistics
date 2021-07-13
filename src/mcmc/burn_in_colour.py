@@ -22,7 +22,16 @@ rc('axes', linewidth=2)
 rc('xtick.major', width=2, size=7)
 rc('ytick.major', width=2, size=7)
 
-def find_nearest(array, value): 
+def find_nearest(array, value):
+    """Finds the element in array that is closest to the value
+
+    Args:
+        array (numpy.array): Array of values
+        value (numpy.float): Value to find closest match to
+
+    Returns:
+        numpy.float: Closest match found in array
+    """
     array = np.asarray(array) 
     idx = (np.abs(array - value)).argmin() 
     return array[idx] 
