@@ -1,3 +1,14 @@
+"""
+{This script plots SMF, blue fraction, SMHM and average group central stellar 
+ mass vs. velocity dispersion from results of the chain where all 9 params 
+ (behroozi and quenching) were varied. Rsd and group-finding is done on a subset 
+ of 100 models from the chain that correspond to 68th percentile of lowest 
+ chi-squared values so that the dynamical observable can be measured even though 
+ it was not used to constrain the modeling. All plots are compared with data. 
+ The rsd and group-finding were done separately and the file is simply read in 
+ this script.}
+"""
+
 from halotools.empirical_models import PrebuiltSubhaloModelFactory
 from cosmo_utils.utils.stats_funcs import Stats_one_arr
 from halotools.sim_manager import CachedHaloCatalog
@@ -11,9 +22,6 @@ import matplotlib.pyplot as plt
 from matplotlib import rc
 import pandas as pd
 import numpy as np
-import argparse
-import random
-import math
 import time
 import os
 
@@ -40,7 +48,7 @@ def read_chi2(path_to_file):
     Returns
     ---------
     chi2: array
-        Array of reshaped chi^2 values to match chain values
+        Array of chi^2 values to match chain values
     """
     chi2_df = pd.read_csv(path_to_file,header=None,names=['chisquared'])
     chi2 = chi2_df.chisquared.values
@@ -58,7 +66,7 @@ def read_mcmc(path_to_file):
 
     Returns
     ---------
-    emcee_table: pandas dataframe
+    emcee_table: pandas.DataFrame
         Dataframe of mcmc chain values with NANs removed
     """
     colnames = ['mhalo_c', 'mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter',
@@ -167,6 +175,14 @@ def read_mock_catl(filename, catl_format='.hdf5'):
     return mock_pd
 
 def mock_add_grpcz(mock_df):
+    """Adds column of group cz values to mock catalogues
+
+    Args:
+        mock_df (pandas.DataFrame): Mock catalogue
+
+    Returns:
+        pandas.DataFrame: Mock catalogue with new column called grpcz added
+    """
     grpcz = mock_df.groupby('groupid').cz.mean().values
     grpn = mock_df.groupby('groupid').cz.size().values
     full_grpcz_arr = np.repeat(grpcz, grpn)
@@ -270,7 +286,7 @@ def get_paramvals_percentile(mcmc_table, pctl, chi2, randints_df=None):
 
     Parameters
     ----------
-    mcmc_table: pandas dataframe
+    mcmc_table: pandas.DataFrame
         Mcmc chain dataframe
 
     pctl: int
@@ -278,11 +294,22 @@ def get_paramvals_percentile(mcmc_table, pctl, chi2, randints_df=None):
 
     chi2: array
         Array of chi^2 values
+    
+    randints_df (optional): pandas.DataFrame
+        Dataframe of mock numbers in case many Behroozi mocks were used.
+        Defaults to None.
 
     Returns
     ---------
     mcmc_table_pctl: pandas dataframe
         Sample of 100 68th percentile lowest chi^2 values
+    bf_params: numpy array
+        Array of parameter values corresponding to the best-fit model
+    bf_chi2: float
+        Chi-squared value corresponding to the best-fit model
+    bf_randint: int
+        In case multiple Behroozi mocks were used, this is the mock number
+        that corresponds to the best-fit model. Otherwise, this is not returned.
     """ 
     pctl = pctl/100
     mcmc_table['chi2'] = chi2
@@ -312,12 +339,12 @@ def assign_colour_label_data(catl):
 
     Parameters
     ----------
-    catl: pandas Dataframe 
+    catl: pandas.DataFrame 
         Data catalog
 
     Returns
     ---------
-    catl: pandas Dataframe
+    catl: pandas.DataFrame
         Data catalog with colour label assigned as new column
     """
 
@@ -360,19 +387,19 @@ def measure_all_smf(table, volume, data_bool, randint_logmstar=None):
 
     Parameters
     ----------
-    table: pandas Dataframe
+    table: pandas.DataFrame
         Dataframe of either mock or data 
     volume: float
         Volume of simulation/survey
-    cvar: float
-        Cosmic variance error
-    data_bool: Boolean
+    data_bool: boolean
         Data or mock
+    randint_logmstar (optional): int
+        Mock number in case many Behroozi mocks were used. Defaults to None.
 
     Returns
     ---------
-    3 multidimensional arrays of stellar mass, phi, total error in SMF and 
-    counts per bin for all, red and blue galaxies
+    3 multidimensional arrays of [stellar mass, phi, total error in SMF and 
+    counts per bin] for all, red and blue galaxies
     """
 
     colour_col = 'colour_label'
@@ -422,6 +449,10 @@ def diff_smf(mstar_arr, volume, h1_bool, colour_flag=False):
 
     h1_bool: boolean
         True if units of masses are h=1, False if units of masses are not h=1
+    
+    colour_flag (optional): boolean
+        'R' if galaxy masses correspond to red galaxies & 'B' if galaxy masses
+        correspond to blue galaxies. Defaults to False.
 
     Returns
     ---------
@@ -436,6 +467,9 @@ def diff_smf(mstar_arr, volume, h1_bool, colour_flag=False):
     
     bins: array
         Array of bin edge values
+    
+    counts: array
+        Array of number of things in each bin
     """
     if not h1_bool:
         # changing from h=0.7 to h=1 assuming h^-2 dependence
@@ -483,6 +517,17 @@ def diff_smf(mstar_arr, volume, h1_bool, colour_flag=False):
     return maxis, phi, err_tot, bins, counts
 
 def blue_frac_helper(arr):
+    """Helper function for blue_frac() that calculates the fraction of blue 
+    galaxies
+
+    Args:
+        arr (numpy array): Array of 'R' and 'B' characters depending on whether
+        galaxy is red or blue
+
+    Returns:
+        numpy array: Array of floats representing fractions of blue galaxies in 
+        each bin
+    """
     total_num = len(arr)
     blue_counter = list(arr).count('B')
     return blue_counter/total_num
@@ -498,6 +543,12 @@ def blue_frac(catl, h1_bool, data_bool, randint_logmstar=None):
 
     h1_bool: boolean
         True if units of masses are h=1, False if units of masses are not h=1
+    
+    data_bool: boolean
+        True if data, False if mocks
+    
+    randint_logmstar (optional): int
+        Mock number in case many Behroozi mocks were used. Defaults to None.
 
     Returns
     ---------
@@ -542,9 +593,22 @@ def blue_frac(catl, h1_bool, data_bool, randint_logmstar=None):
 
     return maxis, f_blue
 
-def get_sigma_per_group_data(df):
+def get_sigma_per_group_data(catl):
+    """Calculating velocity dispersion of groups from real data
 
-    catl = df.copy()
+    Args:
+        catl (pandas.DataFrame): Data catalogue 
+
+    Returns:
+        red_sigma_arr (numpy array): Velocity dispersion of red galaxies
+
+        red_cen_stellar_mass_arr (numpy array): Group red central stellar mass
+
+        blue_sigma_arr (numpy array): Velocity dispersion of blue galaxies
+        
+        blue_cen_stellar_mass_arr (numpy array): Group blue central stellar mass
+
+    """
     if survey == 'eco' or survey == 'resolvea':
         catl = catl.loc[catl.logmstar >= 8.9]
     elif survey == 'resolveb':
@@ -637,8 +701,15 @@ def hybrid_quenching_model(theta, gals_df, mock, randint=None):
 
     Parameters
     ----------
+    theta: numpy array
+        Array of quenching model parameter values
     gals_df: pandas dataframe
         Mock catalog
+    mock: string
+        'vishnu' or 'nonvishnu' depending on what mock it is
+    randint (optional): int
+        Mock number in the case where many Behroozi mocks were used.
+        Defaults to None.
 
     Returns
     ---------
@@ -673,8 +744,10 @@ def get_host_halo_mock(df, mock):
 
     Parameters
     ----------
-    gals_df: pandas dataframe
+    df: pandas dataframe
         Mock catalog
+    mock: string
+        'vishnu' or 'nonvishnu' depending on what mock it is
 
     Returns
     ---------
@@ -683,18 +756,6 @@ def get_host_halo_mock(df, mock):
     sat_halos: array
         Array of satellite host halo masses
     """
-
-    # groups = df.groupby('halo_id')
-    # keys = groups.groups.keys()
-
-    # for key in keys:
-    #     group = groups.get_group(key)
-    # for index, value in enumerate(group.cs_flag):
-    #     if value == 1:
-    #         cen_halos.append(group.loghalom.values[index])
-    #     else:
-    #         sat_halos.append(group.loghalom.values[index])
-
     if mock == 'vishnu':
         cen_halos = df.halo_mvir[df.cs_flag == 1].reset_index(drop=True)
         sat_halos = df.halo_mvir_host_halo[df.cs_flag == 0].reset_index(drop=True)
@@ -717,8 +778,13 @@ def get_stellar_mock(df, mock, randint=None):
 
     Parameters
     ----------
-    gals_df: pandas dataframe
+    df: pandas dataframe
         Mock catalog
+    mock: string
+        'Vishnu' or 'nonVishnu' depending on what mock it is
+    randint (optional): int
+        Mock number in the case where many Behroozi mocks were used.
+        Defaults to None.
 
     Returns
     ---------
@@ -768,11 +834,11 @@ def assign_colour_label_mock(f_red_cen, f_red_sat, df, drop_fred=False):
         Array of central red fractions
     f_red_sat: array
         Array of satellite red fractions
-    gals_df: pandas Dataframe
+    df: pandas Dataframe
         Mock catalog
-    drop_fred: boolean
+    drop_fred (optional): boolean
         Whether or not to keep red fraction column after colour has been
-        assigned
+        assigned. Defaults to False.
 
     Returns
     ---------
@@ -825,12 +891,19 @@ def get_err_data(survey, path):
 
     Returns
     ---------
-    err_total: array
-        Standard deviation of phi values between all mocks and for all galaxies
-    err_red: array
-        Standard deviation of phi values between all mocks and for red galaxies
-    err_blue: array
-        Standard deviation of phi values between all mocks and for blue galaxies
+    err_colour: array
+        Standard deviation from matrix of phi values and blue fractions values
+        between all mocks and for all galaxies
+    std_phi_red: array
+        Standard deviation of phi values between all mocks for red galaxies
+    std_phi_blue: array
+        Standard deviation of phi values between all mocks for blue galaxies
+    std_mean_cen_arr_red: array
+        Standard deviation of observable number 3 (mean grp central stellar mass
+        in bins of velocity dispersion) for red galaxies
+    std_mean_cen_arr_blue: array
+        Standard deviation of observable number 3 (mean grp central stellar mass
+        in bins of velocity dispersion) for blue galaxies
     """
 
     if survey == 'eco':
@@ -935,6 +1008,7 @@ def get_err_data(survey, path):
 
     phi_arr_total = np.array(phi_arr_total)
     f_blue_arr = np.array(f_blue_arr)
+
     phi_arr_red = np.array(phi_arr_red)
     phi_arr_blue = np.array(phi_arr_blue)
 
@@ -995,8 +1069,8 @@ def populate_mock(theta, model):
 
     Returns
     ---------
-    gals_df: pandas dataframe
-        Dataframe of mock catalog
+    gals_df: pandas.DataFrame
+        Dataframe of Vishnu mock catalog
     """
     """"""
 
@@ -1035,6 +1109,10 @@ def get_centrals_mock(gals_df, randint=None):
     gals_df: pandas dataframe
         Mock catalog
 
+    randint (optional): int
+        Mock number in the case where many Behroozi mocks were used.
+        Defaults to None.
+
     Returns
     ---------
     cen_gals: array
@@ -1042,6 +1120,24 @@ def get_centrals_mock(gals_df, randint=None):
 
     cen_halos: array
         Array of central halo masses
+
+    cen_gals_red: array
+        Array of red central galaxy masses
+
+    cen_halos_red: array
+        Array of red central halo masses
+
+    cen_gals_blue: array
+        Array of blue central galaxy masses
+
+    cen_halos_blue: array
+        Array of blue central halo masses
+
+    f_red_cen_gals_red: array
+        Array of red fractions for red central galaxies
+
+    f_red_cen_gals_blue: array
+        Array of red fractions for blue central galaxies
     """
     cen_gals = []
     cen_halos = []
@@ -1111,14 +1207,31 @@ def get_satellites_mock(gals_df, randint=None):
     ----------
     gals_df: pandas dataframe
         Mock catalog
+        
+    randint (optional): int
+        Mock number in the case where many Behroozi mocks were used. 
+        Defaults to None.
 
     Returns
     ---------
-    sat_gals: array
-        Array of central galaxy masses
+    sat_gals_red: array
+        Array of red satellite galaxy masses
 
-    sat_halos: array
-        Array of central halo masses
+    sat_halos_red: array
+        Array of red satellite host halo masses
+
+    sat_gals_blue: array
+        Array of blue satellite galaxy masses
+
+    sat_halos_blue: array
+        Array of blue satellite host halo masses
+
+    f_red_sat_gals_red: array
+        Array of red fractions for red satellite galaxies
+
+    f_red_sat_gals_blue: array
+        Array of red fractions for blue satellite galaxies
+
     """
     sat_gals_red = []
     sat_halos_red = []
@@ -1186,7 +1299,7 @@ def mp_init(mcmc_table_pctl, nproc):
     Returns
     ---------
     result: multidimensional array
-        Array of smf and smhm data
+        Arrays of smf and smhm data for all, red and blue galaxies
     """
     start = time.time()
     params_df = mcmc_table_pctl.iloc[:,:9].reset_index(drop=True)
@@ -1213,29 +1326,87 @@ def mp_init(mcmc_table_pctl, nproc):
 
 def mp_func(a_list):
     """
-    Apply hybrid quenching model based on four parameter values
+    Apply behroozi and hybrid quenching model based on nine parameter values
 
     Parameters
     ----------
     a_list: multidimensional array
-        Array of five parameter values
+        Array of nine parameter values
 
     Returns
     ---------
-    max_model_arr: array
-        Array of x-axis mass values
+    maxis_total_arr: array
+        Array of x-axis mass values for all galaxies
 
-    phi_model_arr: array
-        Array of y-axis values
+    phi_total_arr: array
+        Array of y-axis phi values for all galaxies
 
-    err_tot_model_arr: array
-        Array of error values per bin
+    maxis_fblue_arr: array
+        Array of x_axis mass values for bleu fraction measurement
+
+    f_blue_arr: array
+        Array of blue fraction values
+
+    phi_red_model_arr: array
+        Array of y-axis phi values for red galaxies
+
+    phi_blue_model_arr: array
+        Array of y-axis phi values for blue galaxies
+
+    cen_gals_red_arr: array
+        Array of red central galaxy masses
+
+    cen_halos_red_arr: array
+        Array of red central halo masses
+
+    cen_gals_blue_arr: array
+        Array of blue central galaxy masses
+    
+    cen_halos_blue_arr: array
+        Array of blue central halo masses
+
+    f_red_cen_red_arr: array
+        Array of red fractions for red central galaxies
+
+    f_red_cen_blue_arr: array
+        Array of red fractions for blue central galaxies
+
+    sat_gals_red_arr: array
+        Array of red satellite galaxy masses
+
+    sat_halos_red_arr: array
+        Array of red satellite host halo masses
+
+    sat_gals_blue_arr: array
+        Array of blue satellite galaxy masses
+
+    sat_halos_blue_arr: array
+        Array of blue satellite host halo masses
+
+    f_red_sat_red_arr: array
+        Array of red fractions for red satellite galaxies
+
+    f_red_sat_blue_arr: array
+        Array of red fractions for blue satellite galaxies
 
     cen_gals_arr: array
         Array of central galaxy masses
 
     cen_halos_arr: array
         Array of central halo masses
+
+    grp_red_cen_arr: array
+        Array of red group central stellar masses
+
+    grp_blue_cen_arr: array
+        Array of blue group central stellar masses
+
+    red_sigma_arr: array
+        Array of velocity dispersion of galaxies with red group centrals
+
+    blue_sigma_arr: array
+        Array of velocity dispersion of galaxies with blue group centrals
+
     """
     # v_sim = 130**3
     v_sim = 890641.5172927063 
@@ -1393,25 +1564,86 @@ def get_best_fit_model(best_fit_params, best_fit_mocknum=None):
 
     Parameters
     ----------
-    survey: string
-        Name of survey
+    best_fit_params: array
+        Array of parameter values corresponding to the best-fit model
+    
+    best_fit_mocknum (optional): int
+        Mock number corresponding to the best-fit model. Defaults to None.
 
     Returns
     ---------
-    max_model: array
-        Array of x-axis mass values
+    max_total: array
+        Array of x-axis mass values for all galaxies
 
-    phi_model: array
-        Array of y-axis values
+    phi_total: array
+        Array of y-axis phi values for all galaxies
 
-    err_tot_model: array
-        Array of error values per bin
+    maxis_fblue: array
+        Array of x_axis mass values for bleu fraction measurement
+
+    f_blue: array
+        Array of blue fraction values
+
+    phi_red_model: array
+        Array of y-axis phi values for red galaxies
+
+    phi_blue_model: array
+        Array of y-axis phi values for blue galaxies
+
+    cen_gals_red: array
+        Array of red central galaxy masses
+
+    cen_halos_red: array
+        Array of red central halo masses
+
+    cen_gals_blue: array
+        Array of blue central galaxy masses
+    
+    cen_halos_blue: array
+        Array of blue central halo masses
+
+    f_red_cen_red: array
+        Array of red fractions for red central galaxies
+
+    f_red_cen_blue: array
+        Array of red fractions for blue central galaxies
+
+    sat_gals_red: array
+        Array of red satellite galaxy masses
+
+    sat_halos_red: array
+        Array of red satellite host halo masses
+
+    sat_gals_blue: array
+        Array of blue satellite galaxy masses
+
+    sat_halos_blue: array
+        Array of blue satellite host halo masses
+
+    f_red_sat_red: array
+        Array of red fractions for red satellite galaxies
+
+    f_red_sat_blue: array
+        Array of red fractions for blue satellite galaxies
 
     cen_gals: array
         Array of central galaxy masses
 
     cen_halos: array
         Array of central halo masses
+
+    red_sigma: array
+        Array of velocity dispersion of galaxies with red group centrals
+
+    grp_red_cen_stellar_mass: array
+        Array of red group central stellar masses
+
+    blue_sigma: array
+        Array of velocity dispersion of galaxies with blue group centrals
+
+    grp_blue_cen_stellar_mass: array
+        Array of blue group central stellar masses
+
     """   
     if best_fit_mocknum:
         cols_to_use = ['halo_hostid', 'halo_id', 'halo_mvir', \
@@ -1501,7 +1733,21 @@ def get_best_fit_model(best_fit_params, best_fit_mocknum=None):
 
 def get_colour_smf_from_fblue(df, frac_arr, bin_centers, volume, h1_bool, 
     randint_logmstar=None):
-    
+    """Reconstruct red and blue SMFs from blue fraction measurement
+
+    Args:
+        df (pandas.DataFrame): Data/Mock
+        frac_arr (array): Array of blue fraction values
+        bin_centers (array): Array of x-axis stellar mass bin center values
+        volume (float): Volume of data/mock
+        h1_bool (boolean): True if masses in h=1.0, False if not in h=1.0
+        randint_logmstar (int, optional): Mock number in the case where many
+        Behroozi mocks were used. Defaults to None.
+
+    Returns:
+        phi_red (array): Array of phi values for red galaxies
+        phi_blue (array): Array of phi values for blue galaxies
+    """
     if h1_bool and randint_logmstar != 1:
         logmstar_arr = df['{0}'.format(randint_logmstar)].values
     elif h1_bool and randint_logmstar == 1:
@@ -1543,39 +1789,42 @@ def get_colour_smf_from_fblue(df, frac_arr, bin_centers, volume, h1_bool,
 
 def get_sigma_per_group_mocks_qmcolour(survey, mock_df):
     """
-    Calculate spread in velocity dispersion from survey mocks (logmstar converted
+    Calculate velocity dispersion from survey mocks (logmstar converted
     to h=1 units before analysis)
 
     Parameters
     ----------
     survey: string
         Name of survey
-    path: string
-        Path to mock catalogs
+
+    mock_df: string
+        Mock catalogue
 
     Returns
     ---------
-    std_red_arr: numpy array
-        Spread in velocity dispersion of red galaxies
-    centers_red_arr: numpy array
-        Bin centers of central stellar mass for red galaxies
-    std_blue_arr: numpy array
-        Spread in velocity dispersion of blue galaxies
-    centers_blue_arr: numpy array
-        Bin centers of central stellar mass for blue galaxies
+    mean_stats_red: numpy array
+        Average red group central stellar mass in bins of velocity dispersion
+
+    centers_red: numpy array
+        Bin centers of velocity dispersion of galaxies around red centrals
+
+    mean_stats_blue: numpy array
+        Average blue group central stellar mass in bins of velocity dispersion
+
+    centers_blue: numpy array
+        Bin centers of velocity dispersion of galaxies around blue centrals
     """
-    mock_pd = mock_df.copy()
-    mock_pd.logmstar = np.log10((10**mock_pd.logmstar) / 2.041)
-    red_subset_grpids = np.unique(mock_pd.groupid.loc[(mock_pd.\
-        colour_label == 'R') & (mock_pd.g_galtype == 1)].values)  
-    blue_subset_grpids = np.unique(mock_pd.groupid.loc[(mock_pd.\
-        colour_label == 'B') & (mock_pd.g_galtype == 1)].values)
+    mock_df.logmstar = np.log10((10**mock_df.logmstar) / 2.041)
+    red_subset_grpids = np.unique(mock_df.groupid.loc[(mock_df.\
+        colour_label == 'R') & (mock_df.g_galtype == 1)].values)  
+    blue_subset_grpids = np.unique(mock_df.groupid.loc[(mock_df.\
+        colour_label == 'B') & (mock_df.g_galtype == 1)].values)
 
     red_singleton_counter = 0
     red_sigma_arr = []
     red_cen_stellar_mass_arr = []
     for key in red_subset_grpids: 
-        group = mock_pd.loc[mock_pd.groupid == key]
+        group = mock_df.loc[mock_df.groupid == key]
         if len(group) == 1:
             red_singleton_counter += 1
         else:
@@ -1599,7 +1848,7 @@ def get_sigma_per_group_mocks_qmcolour(survey, mock_df):
     blue_sigma_arr = []
     blue_cen_stellar_mass_arr = []
     for key in blue_subset_grpids: 
-        group = mock_pd.loc[mock_pd.groupid == key]
+        group = mock_df.loc[mock_df.groupid == key]
         if len(group) == 1:
             blue_singleton_counter += 1
         else:
@@ -1638,25 +1887,26 @@ def get_sigma_per_group_vishnu_qmcolour(gals_df, randint=None):
 
     Parameters
     ----------
-    survey: string
-        Name of survey
-    path: string
-        Path to mock catalogs
+    gals_df: pandas.DataFrame
+        Mock catalogue
+
+    randint (optional): int
+        Mock number in case many Behroozi mocks were used. Defaults to None.
 
     Returns
     ---------
-    std_red_arr: numpy array
-        Spread in velocity dispersion of red galaxies
-    centers_red_arr: numpy array
-        Bin centers of central stellar mass for red galaxies
-    std_blue_arr: numpy array
-        Spread in velocity dispersion of blue galaxies
-    centers_blue_arr: numpy array
-        Bin centers of central stellar mass for blue galaxies
+    red_sigma_arr: numpy array
+        Velocity dispersion of galaxies around red centrals
+
+    red_cen_stellar_mass_arr: numpy array
+        Array of central stellar mass of red galaxies
+
+    blue_sigma_arr: numpy array
+        Velocity dispersion of galaxies around blue centrals
+
+    blue_cen_stellar_mass_arr: numpy array
+        Array of central stellar mass of blue galaxies
     """
-
-    mock_pd = gals_df.copy()
-
     if survey == 'eco':
         mock_name = 'ECO'
         num_mocks = 8
@@ -1688,9 +1938,9 @@ def get_sigma_per_group_vishnu_qmcolour(gals_df, randint=None):
         groupid_col = 'groupid_{0}'.format(randint)
         # Using the same survey definition as in mcmc smf i.e excluding the 
         # buffer except no M_r cut since vishnu mock has no M_r info
-        mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & \
-            (mock_pd.cz.values <= max_cz) & \
-            (mock_pd[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
+        gals_df = gals_df.loc[(gals_df.cz.values >= min_cz) & \
+            (gals_df.cz.values <= max_cz) & \
+            (gals_df[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
 
     elif randint == 1:
         logmstar_col = 'behroozi_bf'
@@ -1698,9 +1948,9 @@ def get_sigma_per_group_vishnu_qmcolour(gals_df, randint=None):
         groupid_col = 'groupid_{0}'.format(randint)
         # Using the same survey definition as in mcmc smf i.e excluding the 
         # buffer except no M_r cut since vishnu mock has no M_r info
-        mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & \
-            (mock_pd.cz.values <= max_cz) & \
-            (mock_pd[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
+        gals_df = gals_df.loc[(gals_df.cz.values >= min_cz) & \
+            (gals_df.cz.values <= max_cz) & \
+            (gals_df[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
 
     else:
         logmstar_col = 'stellar_mass'
@@ -1708,21 +1958,21 @@ def get_sigma_per_group_vishnu_qmcolour(gals_df, randint=None):
         groupid_col = 'groupid'
         # Using the same survey definition as in mcmc smf i.e excluding the 
         # buffer except no M_r cut since vishnu mock has no M_r info
-        mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & \
-            (mock_pd.cz.values <= max_cz) & \
-            (mock_pd[logmstar_col].values >= (10**mstar_limit)/2.041)]
-        mock_pd[logmstar_col] = np.log10(mock_pd[logmstar_col])
+        gals_df = gals_df.loc[(gals_df.cz.values >= min_cz) & \
+            (gals_df.cz.values <= max_cz) & \
+            (gals_df[logmstar_col].values >= (10**mstar_limit)/2.041)]
+        gals_df[logmstar_col] = np.log10(gals_df[logmstar_col])
 
-    red_subset_grpids = np.unique(mock_pd[groupid_col].loc[(mock_pd.\
-        colour_label == 'R') & (mock_pd[g_galtype_col] == 1)].values)  
-    blue_subset_grpids = np.unique(mock_pd[groupid_col].loc[(mock_pd.\
-        colour_label == 'B') & (mock_pd[g_galtype_col] == 1)].values)
+    red_subset_grpids = np.unique(gals_df[groupid_col].loc[(gals_df.\
+        colour_label == 'R') & (gals_df[g_galtype_col] == 1)].values)  
+    blue_subset_grpids = np.unique(gals_df[groupid_col].loc[(gals_df.\
+        colour_label == 'B') & (gals_df[g_galtype_col] == 1)].values)
 
     red_singleton_counter = 0
     red_sigma_arr = []
     red_cen_stellar_mass_arr = []
     for key in red_subset_grpids: 
-        group = mock_pd.loc[mock_pd[groupid_col] == key]
+        group = gals_df.loc[gals_df[groupid_col] == key]
         if len(group) == 1:
             red_singleton_counter += 1
         else:
@@ -1745,7 +1995,7 @@ def get_sigma_per_group_vishnu_qmcolour(gals_df, randint=None):
     blue_sigma_arr = []
     blue_cen_stellar_mass_arr = []
     for key in blue_subset_grpids: 
-        group = mock_pd.loc[mock_pd[groupid_col] == key]
+        group = gals_df.loc[gals_df[groupid_col] == key]
         if len(group) == 1:
             blue_singleton_counter += 1
         else:
@@ -1771,34 +2021,31 @@ def plot_total_mf(result, total_data, maxis_bf_total, phi_bf_total,
     bf_chi2, err_colour):
     """
     Plot SMF from data, best fit param values and param values corresponding to 
-    68th percentile 1000 lowest chi^2 values
+    68th percentile 100 lowest chi^2 values
 
     Parameters
     ----------
     result: multidimensional array
-        Array of SMF and SMHM information
+        Array of SMF, blue fraction and SMHM information
     
-    max_model_bf: array
-        Array of x-axis mass values for best fit SMF
+    total_data: multidimensional array
+        Array of total SMF information
 
-    phi_model_bf: array
-        Array of y-axis values for best fit SMF
-    
-    err_tot_model_bf: array
-        Array of error values per bin of best fit SMF
+    maxis_bf_total: array
+        Array of x-axis mass values for best-fit SMF
 
-    maxis_data: array
-        Array of x-axis mass values for data SMF
+    phi_bf_total: array
+        Array of y-axis values for best-fit SMF
 
-    phi_data: array
-        Array of y-axis values for data SMF
+    bf_chi2: float
+        Chi-squared value associated with best-fit model
 
-    err_data: array
-        Array of error values per bin of data SMF
+    err_colour: array
+        Array of error values from matrix
 
     Returns
     ---------
-    Nothing; SMF plot is saved in figures repository
+    Plot displayed on screen.
     """
     class AnyObjectHandler(HandlerBase): 
         # https://stackoverflow.com/questions/31478077/how-to-make-two-markers
@@ -1897,35 +2144,38 @@ def plot_total_mf(result, total_data, maxis_bf_total, phi_bf_total,
 def plot_colour_mf(result, phi_red_data, phi_blue_data, phi_bf_red, phi_bf_blue,
     std_red, std_blue, bf_chi2):
     """
-    Plot SMF from data, best fit param values and param values corresponding to 
-    68th percentile 1000 lowest chi^2 values
+    Plot red and blue SMF from data, best fit param values and param values 
+    corresponding to 68th percentile 100 lowest chi^2 values
 
     Parameters
     ----------
     result: multidimensional array
-        Array of SMF and SMHM information
+        Array of SMF, blue fraction and SMHM information
+
+    phi_red_data: array
+        Array of y-axis values for red SMF from data
+
+    phi_blue_data: array
+        Array of y-axis values for blue SMF from data
     
-    max_model_bf: array
-        Array of x-axis mass values for best fit SMF
+    phi_bf_red: array
+        Array of y-axis values for red SMF from best-fit model
 
-    phi_model_bf: array
-        Array of y-axis values for best fit SMF
-    
-    err_tot_model_bf: array
-        Array of error values per bin of best fit SMF
+    phi_bf_blue: array
+        Array of y-axis values for blue SMF from best-fit model
 
-    maxis_data: array
-        Array of x-axis mass values for data SMF
+    std_red: array
+        Array of std values per bin of red SMF from mocks
 
-    phi_data: array
-        Array of y-axis values for data SMF
+    std_blue: array
+        Array of std values per bin of blue SMF from mocks
 
-    err_data: array
-        Array of error values per bin of data SMF
+    bf_chi2: float
+        Chi-squared value associated with the best-fit model
 
     Returns
     ---------
-    Nothing; SMF plot is saved in figures repository
+    Plot displayed on screen.
     """
     class AnyObjectHandler(HandlerBase): 
         # https://stackoverflow.com/questions/31478077/how-to-make-two-markers
@@ -2048,35 +2298,32 @@ def plot_colour_mf(result, phi_red_data, phi_blue_data, phi_bf_red, phi_bf_blue,
 def plot_fblue(result, fblue_data, maxis_bf_fblue, bf_fblue,
     bf_chi2, err_colour):
     """
-    Plot SMF from data, best fit param values and param values corresponding to 
-    68th percentile 1000 lowest chi^2 values
+    Plot blue fraction from data, best fit param values and param values 
+    corresponding to 68th percentile 100 lowest chi^2 values
 
     Parameters
     ----------
     result: multidimensional array
-        Array of SMF and SMHM information
+        Array of SMF, blue fraction and SMHM information
     
-    max_model_bf: array
-        Array of x-axis mass values for best fit SMF
+    fblue_data: array
+        Array of y-axis blue fraction values for data
 
-    phi_model_bf: array
-        Array of y-axis values for best fit SMF
-    
-    err_tot_model_bf: array
-        Array of error values per bin of best fit SMF
+    maxis_bf_fblue: array
+        Array of x-axis mass values for best-fit model
 
-    maxis_data: array
-        Array of x-axis mass values for data SMF
+    bf_fblue: array
+        Array of y-axis blue fraction values for best-fit model
 
-    phi_data: array
-        Array of y-axis values for data SMF
+    bf_chi2: float
+        Chi-squared value associated with the best-fit model
 
-    err_data: array
-        Array of error values per bin of data SMF
+    err_colour: array
+        Array of error values from matrix
 
     Returns
     ---------
-    Nothing; SMF plot is saved in figures repository
+    Plot displayed on screen.
     """
     class AnyObjectHandler(HandlerBase): 
         # https://stackoverflow.com/questions/31478077/how-to-make-two-markers
@@ -2174,12 +2421,12 @@ def plot_fblue(result, fblue_data, maxis_bf_fblue, bf_fblue,
 def plot_xmhm(result, gals_bf, halos_bf, bf_chi2):
     """
     Plot SMHM from data, best fit param values, param values corresponding to 
-    68th percentile 1000 lowest chi^2 values and behroozi 2010 param values
+    68th percentile 100 lowest chi^2 values.
 
     Parameters
     ----------
     result: multidimensional array
-        Array of central galaxy and halo masses
+        Array of SMF, blue fraction and SMHM information
     
     gals_bf: array
         Array of y-axis stellar mass values for best fit SMHM
@@ -2187,21 +2434,12 @@ def plot_xmhm(result, gals_bf, halos_bf, bf_chi2):
     halos_bf: array
         Array of x-axis halo mass values for best fit SMHM
     
-    gals_data: array
-        Array of y-axis stellar mass values for data SMF
-
-    halos_data: array
-        Array of x-axis halo mass values for data SMF
-
-    gals_b10: array
-        Array of y-axis stellar mass values for behroozi 2010 SMHM
-
-    halos_b10: array
-        Array of x-axis halo mass values for behroozi 2010 SMHM
+    bf_chi2: float
+        Chi-squared value associated with the best-fit model
 
     Returns
     ---------
-    Nothing; SMHM plot is saved in figures repository
+    Plot displayed on screen.
     """
     if survey == 'resolvea':
         line_label = 'RESOLVE-A'
@@ -2283,31 +2521,32 @@ def plot_xmhm(result, gals_bf, halos_bf, bf_chi2):
 def plot_colour_xmhm(result, gals_bf_red, halos_bf_red, gals_bf_blue, 
     halos_bf_blue, bf_chi2):
     """
-    Plot SMHM from data, best fit param values, param values corresponding to 
-    68th percentile 1000 lowest chi^2 values and behroozi 2010 param values
+    Plot red and blue SMHM from data, best fit param values, param values 
+    corresponding to 68th percentile 100 lowest chi^2 values.
 
     Parameters
     ----------
     result: multidimensional array
-        Array of central galaxy and halo masses
+        Array of SMF, blue fraction and SMHM information
     
     gals_bf_red: array
-        Array of y-axis stellar mass values for red SMHM
+        Array of y-axis stellar mass values for red SMHM for best-fit model
 
     halos_bf_red: array
-        Array of x-axis halo mass values for red SMHM
+        Array of x-axis halo mass values for red SMHM for best-fit model
     
     gals_bf_blue: array
-        Array of y-axis stellar mass values for blue SMHM
+        Array of y-axis stellar mass values for blue SMHM for best-fit model
 
     halos_bf_blue: array
-        Array of x-axis halo mass values for blue SMHM
+        Array of x-axis halo mass values for blue SMHM for best-fit model
 
     bf_chi2: float
-        Chi-squared value of best fit model
+        Chi-squared value associated with the best-fit model
+
     Returns
     ---------
-    Nothing; plot is shown on the screen
+    Plot displayed on screen.
     """   
     class AnyObjectHandler(HandlerBase): 
         def create_artists(self, legend, orig_handle, x0, y0, width, height, 
@@ -2424,8 +2663,37 @@ def plot_colour_xmhm(result, gals_bf_red, halos_bf_red, gals_bf_blue,
 def plot_red_fraction_cen(result, cen_gals_red, \
     cen_halos_red, cen_gals_blue, cen_halos_blue, f_red_cen_red, \
     f_red_cen_blue):
+    """
+    Plot red fraction of centrals from best fit param values and param values 
+    corresponding to 68th percentile 100 lowest chi^2 values.
 
+    Parameters
+    ----------
+    result: multidimensional array
+        Array of SMF, blue fraction and SMHM information
+    
+    cen_gals_red: array
+        Array of red central stellar mass values for best-fit model
 
+    cen_halos_red: array
+        Array of red central halo mass values for best-fit model
+
+    cen_gals_blue: array
+        Array of blue central stellar mass values for best-fit model
+
+    cen_halos_blue: array
+        Array of blue central halo mass values for best-fit model
+
+    f_red_cen_red: array
+        Array of red fractions for red centrals for best-fit model
+
+    f_red_cen_blue: array
+        Array of red fractions for blue centrals for best-fit model
+        
+    Returns
+    ---------
+    Plot displayed on screen.
+    """   
     cen_gals_arr = []
     cen_halos_arr = []
     fred_arr = []
@@ -2493,7 +2761,37 @@ def plot_red_fraction_cen(result, cen_gals_red, \
 
 def plot_red_fraction_sat(result, sat_gals_red, sat_halos_red, \
     sat_gals_blue, sat_halos_blue, f_red_sat_red, f_red_sat_blue):
+    """
+    Plot red fraction of satellites from best fit param values and param values 
+    corresponding to 68th percentile 100 lowest chi^2 values.
 
+    Parameters
+    ----------
+    result: multidimensional array
+        Array of SMF, blue fraction and SMHM information
+    
+    sat_gals_red: array
+        Array of red satellite stellar mass values for best-fit model
+
+    sat_halos_red: array
+        Array of red satellite host halo mass values for best-fit model
+
+    sat_gals_blue: array
+        Array of blue satellite stellar mass values for best-fit model
+
+    sat_halos_blue: array
+        Array of blue satellite host halo mass values for best-fit model
+
+    f_red_sat_red: array
+        Array of red fractions for red satellites for best-fit model
+
+    f_red_sat_blue: array
+        Array of red fractions for blue satellites for best-fit model
+        
+    Returns
+    ---------
+    Plot displayed on screen.
+    """
     sat_gals_arr = []
     sat_halos_arr = []
     fred_arr = []
@@ -2595,6 +2893,35 @@ def plot_red_fraction_sat(result, sat_gals_red, sat_halos_red, \
 
 def plot_zumand_fig4(result, gals_bf_red, halos_bf_red, gals_bf_blue, 
     halos_bf_blue, bf_chi2):
+    """
+    Plot red and blue SMHM from best fit param values and param values 
+    corresponding to 68th percentile 100 lowest chi^2 values like Fig 4 from 
+    Zu and Mandelbaum paper
+
+    Parameters
+    ----------
+    result: multidimensional array
+        Array of SMF, blue fraction and SMHM information
+    
+    gals_bf_red: array
+        Array of y-axis stellar mass values for red SMHM for best-fit model
+
+    halos_bf_red: array
+        Array of x-axis halo mass values for red SMHM for best-fit model
+    
+    gals_bf_blue: array
+        Array of y-axis stellar mass values for blue SMHM for best-fit model
+
+    halos_bf_blue: array
+        Array of x-axis halo mass values for blue SMHM for best-fit model
+
+    bf_chi2: float
+        Chi-squared value associated with the best-fit model
+
+    Returns
+    ---------
+    Plot displayed on screen.
+    """   
 
     # if model == 'halo':
     #     sat_halomod_df = gals_df.loc[gals_df.C_S.values == 0] 
@@ -2677,6 +3004,57 @@ def plot_mean_grpcen_vs_sigma(result, red_sigma_bf, \
     grp_red_cen_stellar_mass_bf, blue_sigma_bf, grp_blue_cen_stellar_mass_bf, \
     red_sigma_data, grp_red_cen_stellar_mass_data, blue_sigma_data, \
     grp_blue_cen_stellar_mass_data, err_red, err_blue, bf_chi2):
+    """
+    Plot average group central stellar mass vs. velocity dispersion from data, 
+    best fit param values and param values corresponding to 68th percentile 100 
+    lowest chi^2 values.
+
+    Parameters
+    ----------
+    result: multidimensional array
+        Array of SMF, blue fraction and SMHM information
+
+    red_sigma_bf: array
+        Array of velocity dispersion around red group centrals for best-fit 
+        model
+
+    grp_red_cen_stellar_mass_bf: array
+        Array of red group central stellar masses for best-fit model
+
+    blue_sigma_bf: array
+        Array of velocity dispersion around blue group centrals for best-fit 
+        model
+
+    grp_blue_cen_stellar_mass_bf: array
+        Array of blue group central stellar masses for best-fit model
+
+    red_sigma_data: array
+        Array of velocity dispersion around red group centrals for data
+
+    grp_red_cen_stellar_mass_data: array
+        Array of red group central stellar masses for data
+
+    blue_sigma_data: array
+        Array of velocity dispersion around blue group centrals for data
+
+    grp_blue_cen_stellar_mass_data: array
+        Array of blue group central stellar masses for data
+
+    err_red: array
+        Array of std values per bin of red group central stellar mass vs. 
+        velocity dispersion from mocks
+
+    err_blue: array
+        Array of std values per bin of blue group central stellar mass vs. 
+        velocity dispersion from mocks
+
+    bf_chi2: float
+        Chi-squared value associated with the best-fit model
+
+    Returns
+    ---------
+    Plot displayed on screen.
+    """   
     
     # grp_red_cen_gals_arr = []
     # grp_blue_cen_gals_arr = []
