@@ -944,8 +944,8 @@ def get_err_data(survey, path):
     mean_cen_arr_red = np.array(mean_cen_arr_red)
     mean_cen_arr_blue = np.array(mean_cen_arr_blue)
 
-    std_mean_cen_arr_red = np.std(mean_cen_arr_red, axis=0)
-    std_mean_cen_arr_blue = np.std(mean_cen_arr_blue, axis=0)
+    std_mean_cen_arr_red = np.nanstd(mean_cen_arr_red, axis=0)
+    std_mean_cen_arr_blue = np.nanstd(mean_cen_arr_blue, axis=0)
 
     # Covariance matrix for total phi (all galaxies)
     cov_mat = np.cov(phi_arr_total, rowvar=False) # default norm is N-1
@@ -1585,7 +1585,7 @@ def get_sigma_per_group_mocks_qmcolour(survey, mock_df):
             # Different velocity definitions
             mean_cz_grp = np.round(np.mean(group.cz.values),2)
             cen_cz_grp = group.cz.loc[group.g_galtype == 1].values[0]
-            # cz_grp = np.unique(group.grpcz.values)[0]
+            cz_grp = np.unique(group.grpcz.values)[0]
 
             # Velocity difference
             deltav = group.cz.values - len(group)*[mean_cz_grp]
@@ -1609,7 +1609,7 @@ def get_sigma_per_group_mocks_qmcolour(survey, mock_df):
             # Different velocity definitions
             mean_cz_grp = np.round(np.mean(group.cz.values),2)
             cen_cz_grp = group.cz.loc[group.g_galtype == 1].values[0]
-            # cz_grp = np.unique(group.grpcz.values)[0]
+            cz_grp = np.unique(group.grpcz.values)[0]
 
             # Velocity difference
             deltav = group.cz.values - len(group)*[mean_cz_grp]
