@@ -29,6 +29,20 @@ quenching = 'hybrid'
 mf_type = 'smf'
 
 def get_samples(chain_file, chi2_file, nsteps, nwalkers, ndim, burnin):
+    """Gets subset of samples after accounting for burnin
+
+    Args:
+        chain_file (string): Path to file that contains parameter values
+        chi2_file (string): Path to file that contains chi2 values
+        nsteps (int): Number of steps chain was run for
+        nwalkers (int): Number of walkers 
+        ndim (int): Number of dimensions i.e. parameters
+        burnin (int): Burn in of chain
+
+    Returns:
+        pandas.DataFrame: Subset of chain which includes parameters values and 
+        chi2
+    """
     if quenching == 'hybrid':
         emcee_table = pd.read_csv(chain_file,  comment='#',
             names=['Mstar_q','Mhalo_q','mu','nu'], header=None,  
