@@ -394,11 +394,11 @@ def blue_frac(catl, h1_bool, data_bool):
         Array of y-axis blue fraction values
     """
     if data_bool:
-        mstar_arr = catl.logmstar.loc[catl.cs_flag == 1].values
+        mstar_arr = catl.logmstar.values
     else:
         mstar_arr = catl.stellar_mass.values
 
-    colour_label_arr = catl.colour_label.loc[catl.cs_flag == 1].values
+    colour_label_arr = catl.colour_label.values
 
     if not h1_bool:
         # changing from h=0.7 to h=1 assuming h^-2 dependence
@@ -551,6 +551,37 @@ def hybrid_quenching_model(theta, gals_df, mock, randint=None):
     g_Mstar = np.exp(-((sat_stellar_mass_arr/(10**Mstar_q))**mu))
     h_Mh = np.exp(-((sat_hosthalo_mass_arr/(10**Mh_q))**nu))
     f_red_sat = 1 - (g_Mstar * h_Mh)
+
+    return f_red_cen, f_red_sat
+
+def halo_quenching_model(theta, gals_df, mock):
+    """
+    Apply halo quenching model from Zu and Mandelbaum 2015
+
+    Parameters
+    ----------
+    gals_df: pandas dataframe
+        Mock catalog
+
+    Returns
+    ---------
+    f_red_cen: array
+        Array of central red fractions
+    f_red_sat: array
+        Array of satellite red fractions
+    """
+
+    # parameter values from Table 1 of Zu and Mandelbaum 2015 "prior case"
+    Mh_qc = theta[0] # Msun/h 
+    Mh_qs = theta[1] # Msun/h
+    mu_c = theta[2]
+    mu_s = theta[3]
+
+    cen_hosthalo_mass_arr, sat_hosthalo_mass_arr = get_host_halo_mock(gals_df, \
+        mock)
+
+    f_red_cen = 1 - np.exp(-((cen_hosthalo_mass_arr/(10**Mh_qc))**mu_c))
+    f_red_sat = 1 - np.exp(-((sat_hosthalo_mass_arr/(10**Mh_qs))**mu_s))
 
     return f_red_cen, f_red_sat
 
@@ -770,15 +801,27 @@ def get_err_data(survey, path):
             mu = 0.69
             nu = 0.148
 
-            theta = [Mstar_q, Mh_q, mu, nu]
-            f_red_c, f_red_s = hybrid_quenching_model(theta, mock_pd, 'nonvishnu')
+            ## Using best-fit found for new ECO data using optimize_qm_eco.py 
+            ## for halo quenching model
+            Mh_qc = 12.61 # Msun/h
+            Mh_qs = 13.5 # Msun/h
+            mu_c = 0.40
+            mu_s = 0.148
+
+            if quenching == 'hybrid':
+                theta = [Mstar_q, Mh_q, mu, nu]
+                f_red_c, f_red_s = hybrid_quenching_model(theta, mock_pd, 
+                    'nonvishnu')
+            elif quenching == 'halo':
+                theta = [Mh_qc, Mh_qs, mu_c, mu_s]
+                f_red_c, f_red_s = halo_quenching_model(theta, mock_pd, 
+                    'nonvishnu')
             mock_pd = assign_colour_label_mock(f_red_c, f_red_s, mock_pd)
             # logmstar_red_max = mock_pd.logmstar.loc[mock_pd.colour_label == 'R'].max() 
             # logmstar_red_max_arr.append(logmstar_red_max)
             # logmstar_blue_max = mock_pd.logmstar.loc[mock_pd.colour_label == 'B'].max() 
             # logmstar_blue_max_arr.append(logmstar_blue_max)
-            #! change back to using all galaxies for diff_smf() and blue_frac()
-            logmstar_arr = mock_pd.logmstar.loc[mock_pd.cs_flag == 1].values
+            logmstar_arr = mock_pd.logmstar.values
 
             #Measure SMF of mock using diff_smf function
             max_total, phi_total, err_total, bins_total, counts_total = \
@@ -1099,8 +1142,12 @@ def lnprob(theta, phi_total_data, f_blue_data, err, corr_mat_inv):
 
         gals_df.stellar_mass = np.log10(gals_df.stellar_mass)
 
-        f_red_cen, f_red_sat = hybrid_quenching_model(theta[5:], gals_df, \
-            'vishnu')
+        if quenching == 'hybrid':
+            f_red_cen, f_red_sat = hybrid_quenching_model(theta[5:], gals_df, \
+                'vishnu')
+        elif quenching == 'halo':
+            f_red_cen, f_red_sat = halo_quenching_model(theta[5:], gals_df, \
+                'vishnu')
         gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, \
             gals_df)
         v_sim = 130**3
@@ -1186,6 +1233,8 @@ def args_parser():
         help='Options: eco/resolvea/resolveb')
     parser.add_argument('mf_type', type=str, \
         help='Options: smf/bmf')
+    parser.add_argument('quenching', type=str, \
+        help='Options: hybrid/halo')
     parser.add_argument('nproc', type=int, nargs='?', 
         help='Number of processes')
     parser.add_argument('nwalkers', type=int, nargs='?', 
@@ -1207,6 +1256,7 @@ def main(args):
     global model_init
     global survey
     global mf_type
+    global quenching
 
     rseed = 12
     np.random.seed(rseed)
@@ -1216,6 +1266,7 @@ def main(args):
     nwalkers = args.nwalkers
     nsteps = args.nsteps
     mf_type = args.mf_type
+    quenching = args.quenching
     
     dict_of_paths = cwpaths.cookiecutter_paths()
     path_to_raw = dict_of_paths['raw_dir']
