@@ -975,6 +975,11 @@ def mcmc(nproc, nwalkers, nsteps, phi_total_data, f_blue_data, err, corr_mat_inv
     mu = 0.69
     nu = 0.148
 
+    Mh_qc = 12.61 # Msun/h
+    Mh_qs = 13.5 # Msun/h
+    mu_c = 0.40
+    mu_s = 0.148
+
     Mhalo_c = 12.35
     Mstar_c = 10.72
     mlow_slope = 0.44
@@ -982,9 +987,15 @@ def mcmc(nproc, nwalkers, nsteps, phi_total_data, f_blue_data, err, corr_mat_inv
     scatter = 0.15
 
     behroozi10_param_vals = [Mhalo_c, Mstar_c, mlow_slope, mhigh_slope, scatter]
-    hybrid_param_vals = [Mstar_q, Mh_q, mu, nu]
 
-    all_param_vals = behroozi10_param_vals + hybrid_param_vals
+    if quenching == 'hybrid':
+        hybrid_param_vals = [Mstar_q, Mh_q, mu, nu]
+        all_param_vals = behroozi10_param_vals + hybrid_param_vals
+
+    elif quenching == 'halo':
+        halo_param_vals = [Mh_qc, Mh_qs, mu_c, mu_s]
+        all_param_vals = behroozi10_param_vals + halo_param_vals
+
     ndim = len(all_param_vals)
 
     p0 = all_param_vals + 0.1*np.random.rand(ndim*nwalkers).\
