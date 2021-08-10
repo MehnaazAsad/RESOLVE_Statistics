@@ -26,13 +26,13 @@ rc('xtick.major', width=2, size=7)
 rc('ytick.major', width=2, size=7)
 
 survey = 'eco'
-quenching = 'hybrid'
+quenching = 'halo'
 mf_type = 'smf'
 nwalkers = 100
 nsteps = 1000
-burnin = 200
+burnin = 300
 ndim = 9
-run = 32
+run = 33
 
 
 def get_samples(chain_file, nsteps, nwalkers, ndim, burnin):
@@ -124,20 +124,29 @@ zumandelbaum_param_vals_halo = [12.20, 0.38, 12.17, 0.15] # For halo model
 optimizer_best_fit_eco_smf_halo = [12.61, 13.5, 0.40, 0.148] # For halo model
 
 c = ChainConsumer()
-c.add_chain(samples,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
-    r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
-    r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
-    r"$\mathbf{log_{10}\ M^{q}_{*}}$", r"$\mathbf{log_{10}\ M^{q}_{h}}$", 
-    r"$\boldsymbol{\mu}$", r"$\boldsymbol{\nu}$"],
-    name=r"ECO: $\mathbf{\Phi}$  + $\mathbf{f_{blue}}$", color='#1f77b4', 
-    zorder=13)
+if quenching == 'hybrid':
+    c.add_chain(samples,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
+        r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
+        r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
+        r"$\mathbf{log_{10}\ M^{q}_{*}}$", r"$\mathbf{log_{10}\ M^{q}_{h}}$", 
+        r"$\boldsymbol{\mu}$", r"$\boldsymbol{\nu}$"],
+        name=r"ECO: $\mathbf{\Phi}$  + $\mathbf{f_{blue}}$", color='#1f77b4', 
+        zorder=13)
+elif quenching == 'halo':
+    c.add_chain(samples,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
+        r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
+        r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
+        r"$\mathbf{log_{10}\ M^{qc}_{h}}$", r"$\mathbf{log_{10}\ M^{qs}_{h}}$", 
+        r"$\boldsymbol{{\mu}_c}$", r"$\boldsymbol{{\mu}_s}$"],
+        name=r"Halo quenching model", color='#1f77b4', 
+        zorder=13)
 
 # c.configure(shade_gradient=[0.1, 3.0], colors=['r', 'b'], \
 #      sigmas=[1,2], shade_alpha=0.4)
 
 # sigma levels for 1D gaussian showing 68%,95% conf intervals
-c.configure(kde=2.0, label_font_size=20, tick_font_size=10, summary=True, 
-    sigma2d=False, legend_kwargs={"fontsize": 30}) 
+c.configure(kde=2.0, label_font_size=15, tick_font_size=10, summary=True, 
+    sigma2d=False, legend_kwargs={"fontsize": 15}) 
 if quenching == 'hybrid':
     fig1 = c.plotter.plot(display=True, 
         truth=behroozi10_param_vals+optimizer_best_fit_eco_smf_hybrid)
