@@ -174,7 +174,7 @@ def read_mock_catl(filename, catl_format='.hdf5'):
 
     return mock_pd
 
-def mock_add_grpcz(mock_df):
+def mock_add_grpcz(mock_df, data_bool=None):
     """Adds column of group cz values to mock catalogues
 
     Args:
@@ -184,9 +184,13 @@ def mock_add_grpcz(mock_df):
         pandas.DataFrame: Mock catalogue with new column called grpcz added
     """
     grpcz = mock_df.groupby('groupid').cz.mean().values
-    grpn = mock_df.groupby('groupid').cz.size().values
-    full_grpcz_arr = np.repeat(grpcz, grpn)
-    mock_df['grpcz'] = full_grpcz_arr
+    grp = np.unique(mock_df.groupid.values)
+    mydict = dict(zip(grp, grpcz))
+    full_grpcz_arr = [np.round(mydict[val],2) for val in mock_df.groupid.values]
+    if data_bool:
+        mock_df['grpcz_new'] = full_grpcz_arr
+    else:
+        mock_df['grpcz'] = full_grpcz_arr
     return mock_df
 
 def read_data_catl(path_to_file, survey):
@@ -222,6 +226,7 @@ def read_data_catl(path_to_file, survey):
     #         usecols=columns)
 
         eco_buff = read_mock_catl(path_to_file)
+        eco_buff = mock_add_grpcz(eco_buff, True)
 
         if mf_type == 'smf':
             # 6456 galaxies                       
@@ -2020,9 +2025,11 @@ def get_sigma_per_group_vishnu_qmcolour(gals_df, randint=None):
         g_galtype_col = 'g_galtype_{0}'.format(randint)
         groupid_col = 'groupid_{0}'.format(randint)
         # Using the same survey definition as in mcmc smf i.e excluding the 
-        # buffer except no M_r cut since vishnu mock has no M_r info
-        gals_df = gals_df.loc[(gals_df.cz.values >= min_cz) & \
-            (gals_df.cz.values <= max_cz) & \
+        # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
+        # and M* star cuts to mimic mocks and data.
+        gals_df = mock_add_grpcz(gals_df)
+        gals_df = gals_df.loc[(gals_df.grpcz.values >= min_cz) & \
+            (gals_df.grpcz.values <= max_cz) & \
             (gals_df[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
 
     elif randint == 1:
@@ -2030,9 +2037,11 @@ def get_sigma_per_group_vishnu_qmcolour(gals_df, randint=None):
         g_galtype_col = 'g_galtype_{0}'.format(randint)
         groupid_col = 'groupid_{0}'.format(randint)
         # Using the same survey definition as in mcmc smf i.e excluding the 
-        # buffer except no M_r cut since vishnu mock has no M_r info
-        gals_df = gals_df.loc[(gals_df.cz.values >= min_cz) & \
-            (gals_df.cz.values <= max_cz) & \
+        # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
+        # and M* star cuts to mimic mocks and data.
+        gals_df = mock_add_grpcz(gals_df)
+        gals_df = gals_df.loc[(gals_df.grpcz.values >= min_cz) & \
+            (gals_df.grpcz.values <= max_cz) & \
             (gals_df[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
 
     else:
@@ -2040,9 +2049,11 @@ def get_sigma_per_group_vishnu_qmcolour(gals_df, randint=None):
         g_galtype_col = 'g_galtype'
         groupid_col = 'groupid'
         # Using the same survey definition as in mcmc smf i.e excluding the 
-        # buffer except no M_r cut since vishnu mock has no M_r info
-        gals_df = gals_df.loc[(gals_df.cz.values >= min_cz) & \
-            (gals_df.cz.values <= max_cz) & \
+        # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
+        # and M* star cuts to mimic mocks and data.
+        gals_df = mock_add_grpcz(gals_df)
+        gals_df = gals_df.loc[(gals_df.grpcz.values >= min_cz) & \
+            (gals_df.grpcz.values <= max_cz) & \
             (gals_df[logmstar_col].values >= (10**mstar_limit)/2.041)]
         gals_df[logmstar_col] = np.log10(gals_df[logmstar_col])
 
@@ -2165,6 +2176,7 @@ def get_deltav_sigma_data(catl):
         catl = catl.loc[catl.logmstar >= 8.9]
     elif survey == 'resolveb':
         catl = catl.loc[catl.logmstar >= 8.7]
+        
     catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
    
     red_subset_grpids = np.unique(catl.groupid.loc[(catl.\
@@ -2175,18 +2187,21 @@ def get_deltav_sigma_data(catl):
 
     # Calculating spread in velocity dispersion for galaxies in groups with a 
     # red central
-
+    red_singleton_counter = 0
     red_deltav_arr = []
     red_cen_stellar_mass_arr = []
     for key in red_subset_grpids: 
         group = catl.loc[catl.groupid == key]
-        cen_stellar_mass = group.logmstar.loc[group.g_galtype.\
-            values == 1].values[0]
-        mean_cz_grp = np.round(np.mean(group.cz.values),2)
-        deltav = group.cz.values - len(group)*[mean_cz_grp]
-        for val in deltav:
-            red_deltav_arr.append(val)
-            red_cen_stellar_mass_arr.append(cen_stellar_mass)
+        if len(group) == 1:
+            red_singleton_counter += 1
+        else:
+            cen_stellar_mass = group.logmstar.loc[group.g_galtype.\
+                values == 1].values[0]
+            mean_cz_grp = np.round(np.mean(group.cz.values),2)
+            deltav = group.cz.values - len(group)*[mean_cz_grp]
+            for val in deltav:
+                red_deltav_arr.append(val)
+                red_cen_stellar_mass_arr.append(cen_stellar_mass)
 
     if survey == 'eco' or survey == 'resolvea':
         # TODO : check if this is actually correct for resolve a
@@ -2199,18 +2214,21 @@ def get_deltav_sigma_data(catl):
 
     # Calculating spread in velocity dispersion for galaxies in groups with a 
     # blue central
-
+    blue_singleton_counter = 0
     blue_deltav_arr = []
     blue_cen_stellar_mass_arr = []
     for key in blue_subset_grpids: 
         group = catl.loc[catl.groupid == key]
-        cen_stellar_mass = group.logmstar.loc[group.g_galtype\
-            .values == 1].values[0]
-        mean_cz_grp = np.round(np.mean(group.cz.values),2)
-        deltav = group.cz.values - len(group)*[mean_cz_grp]
-        for val in deltav:
-            blue_deltav_arr.append(val)
-            blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+        if len(group) == 1:
+            blue_singleton_counter += 1
+        else:
+            cen_stellar_mass = group.logmstar.loc[group.g_galtype\
+                .values == 1].values[0]
+            mean_cz_grp = np.round(np.mean(group.cz.values),2)
+            deltav = group.cz.values - len(group)*[mean_cz_grp]
+            for val in deltav:
+                blue_deltav_arr.append(val)
+                blue_cen_stellar_mass_arr.append(cen_stellar_mass)
 
     if survey == 'eco' or survey == 'resolvea':
         # TODO : check if this is actually correct for resolve a
@@ -2259,18 +2277,21 @@ def get_deltav_sigma_mocks_qmcolour(survey, mock_df):
 
     # Calculating spread in velocity dispersion for galaxies in groups
     # with a red central
-
+    red_singleton_counter = 0
     red_deltav_arr = []
     red_cen_stellar_mass_arr = []
     for key in red_subset_grpids: 
         group = mock_df.loc[mock_df.groupid == key]
-        cen_stellar_mass = group.logmstar.loc[group.g_galtype.\
-            values == 1].values[0]
-        mean_cz_grp = np.round(np.mean(group.cz.values),2)
-        deltav = group.cz.values - len(group)*[mean_cz_grp]
-        for val in deltav:
-            red_deltav_arr.append(val)
-            red_cen_stellar_mass_arr.append(cen_stellar_mass)
+        if len(group) == 1:
+            red_singleton_counter += 1
+        else:
+            cen_stellar_mass = group.logmstar.loc[group.g_galtype.\
+                values == 1].values[0]
+            mean_cz_grp = np.round(np.mean(group.cz.values),2)
+            deltav = group.cz.values - len(group)*[mean_cz_grp]
+            for val in deltav:
+                red_deltav_arr.append(val)
+                red_cen_stellar_mass_arr.append(cen_stellar_mass)
     # print(max(red_cen_stellar_mass_arr))
 
     if survey == 'eco' or survey == 'resolvea':
@@ -2284,18 +2305,21 @@ def get_deltav_sigma_mocks_qmcolour(survey, mock_df):
 
     # Calculating spread in velocity dispersion for galaxies in groups 
     # with a blue central
-
+    blue_singleton_counter = 0
     blue_deltav_arr = []
     blue_cen_stellar_mass_arr = []
     for key in blue_subset_grpids: 
         group = mock_df.loc[mock_df.groupid == key]
-        cen_stellar_mass = group.logmstar.loc[group.g_galtype\
-            .values == 1].values[0]
-        mean_cz_grp = np.round(np.mean(group.cz.values),2)
-        deltav = group.cz.values - len(group)*[mean_cz_grp]
-        for val in deltav:
-            blue_deltav_arr.append(val)
-            blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+        if len(group) == 1:
+            blue_singleton_counter += 1
+        else:
+            cen_stellar_mass = group.logmstar.loc[group.g_galtype\
+                .values == 1].values[0]
+            mean_cz_grp = np.round(np.mean(group.cz.values),2)
+            deltav = group.cz.values - len(group)*[mean_cz_grp]
+            for val in deltav:
+                blue_deltav_arr.append(val)
+                blue_cen_stellar_mass_arr.append(cen_stellar_mass)
     # print(max(blue_cen_stellar_mass_arr))
 
     if survey == 'eco' or survey == 'resolvea':
@@ -2370,9 +2394,11 @@ def get_deltav_sigma_vishnu_qmcolour(mock_df, randint=None):
         g_galtype_col = 'g_galtype_{0}'.format(randint)
         groupid_col = 'groupid_{0}'.format(randint)
         # Using the same survey definition as in mcmc smf i.e excluding the 
-        # buffer except no M_r cut since vishnu mock has no M_r info
-        mock_df = mock_df.loc[(mock_df.cz.values >= min_cz) & \
-            (mock_df.cz.values <= max_cz) & \
+        # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
+        # and M* star cuts to mimic mocks and data.
+        mock_df = mock_add_grpcz(mock_df)
+        mock_df = mock_df.loc[(mock_df.grpcz.values >= min_cz) & \
+            (mock_df.grpcz.values <= max_cz) & \
             (mock_df[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
 
     elif randint == 1:
@@ -2380,9 +2406,11 @@ def get_deltav_sigma_vishnu_qmcolour(mock_df, randint=None):
         g_galtype_col = 'g_galtype_{0}'.format(randint)
         groupid_col = 'groupid_{0}'.format(randint)
         # Using the same survey definition as in mcmc smf i.e excluding the 
-        # buffer except no M_r cut since vishnu mock has no M_r info
-        mock_df = mock_df.loc[(mock_df.cz.values >= min_cz) & \
-            (mock_df.cz.values <= max_cz) & \
+        # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
+        # and M* star cuts to mimic mocks and data.
+        mock_df = mock_add_grpcz(mock_df)
+        mock_df = mock_df.loc[(mock_df.grpcz.values >= min_cz) & \
+            (mock_df.grpcz.values <= max_cz) & \
             (mock_df[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
 
     else:
@@ -2390,9 +2418,11 @@ def get_deltav_sigma_vishnu_qmcolour(mock_df, randint=None):
         g_galtype_col = 'g_galtype'
         groupid_col = 'groupid'
         # Using the same survey definition as in mcmc smf i.e excluding the 
-        # buffer except no M_r cut since vishnu mock has no M_r info
-        mock_df = mock_df.loc[(mock_df.cz.values >= min_cz) & \
-            (mock_df.cz.values <= max_cz) & \
+        # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
+        # and M* star cuts to mimic mocks and data.
+        mock_df = mock_add_grpcz(mock_df)
+        mock_df = mock_df.loc[(mock_df.grpcz.values >= min_cz) & \
+            (mock_df.grpcz.values <= max_cz) & \
             (mock_df[logmstar_col].values >= (10**mstar_limit)/2.041)]
         mock_df[logmstar_col] = np.log10(mock_df[logmstar_col])
 
@@ -2403,25 +2433,28 @@ def get_deltav_sigma_vishnu_qmcolour(mock_df, randint=None):
 
     # Calculating spread in velocity dispersion for galaxies in groups
     # with a red central
-
+    red_singleton_counter = 0
     red_deltav_arr = []
     red_cen_stellar_mass_arr = []
     for key in red_subset_grpids: 
         group = mock_df.loc[mock_df[groupid_col] == key]
-        if randint != 1:
-            cen_stellar_mass = group['{0}'.format(randint)].loc[group[g_galtype_col].\
-                values == 1].values[0]
-        elif randint == 1:
-            cen_stellar_mass = group['behroozi_bf'].loc[group[g_galtype_col].\
-                values == 1].values[0]
+        if len(group) == 1:
+            red_singleton_counter += 1
         else:
-            cen_stellar_mass = group['stellar_mass'].loc[group[g_galtype_col].\
-                values == 1].values[0]
-        mean_cz_grp = np.round(np.mean(group.cz.values),2)
-        deltav = group.cz.values - len(group)*[mean_cz_grp]
-        for val in deltav:
-            red_deltav_arr.append(val)
-            red_cen_stellar_mass_arr.append(cen_stellar_mass)
+            if randint != 1:
+                cen_stellar_mass = group['{0}'.format(randint)].loc[group[g_galtype_col].\
+                    values == 1].values[0]
+            elif randint == 1:
+                cen_stellar_mass = group['behroozi_bf'].loc[group[g_galtype_col].\
+                    values == 1].values[0]
+            else:
+                cen_stellar_mass = group['stellar_mass'].loc[group[g_galtype_col].\
+                    values == 1].values[0]
+            mean_cz_grp = np.round(np.mean(group.cz.values),2)
+            deltav = group.cz.values - len(group)*[mean_cz_grp]
+            for val in deltav:
+                red_deltav_arr.append(val)
+                red_cen_stellar_mass_arr.append(cen_stellar_mass)
     # print(max(red_cen_stellar_mass_arr))
 
     if survey == 'eco' or survey == 'resolvea':
@@ -2435,25 +2468,28 @@ def get_deltav_sigma_vishnu_qmcolour(mock_df, randint=None):
 
     # Calculating spread in velocity dispersion for galaxies in groups 
     # with a blue central
-
+    blue_singleton_counter = 0
     blue_deltav_arr = []
     blue_cen_stellar_mass_arr = []
     for key in blue_subset_grpids: 
         group = mock_df.loc[mock_df[groupid_col] == key]
-        if randint != 1:
-            cen_stellar_mass = group['{0}'.format(randint)].loc[group[g_galtype_col].\
-                values == 1].values[0]
-        elif randint == 1:
-            cen_stellar_mass = group['behroozi_bf'].loc[group[g_galtype_col].\
-                values == 1].values[0]
+        if len(group) == 1:
+            blue_singleton_counter += 1
         else:
-            cen_stellar_mass = group['stellar_mass'].loc[group[g_galtype_col].\
-                values == 1].values[0]
-        mean_cz_grp = np.round(np.mean(group.cz.values),2)
-        deltav = group.cz.values - len(group)*[mean_cz_grp]
-        for val in deltav:
-            blue_deltav_arr.append(val)
-            blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+            if randint != 1:
+                cen_stellar_mass = group['{0}'.format(randint)].loc[group[g_galtype_col].\
+                    values == 1].values[0]
+            elif randint == 1:
+                cen_stellar_mass = group['behroozi_bf'].loc[group[g_galtype_col].\
+                    values == 1].values[0]
+            else:
+                cen_stellar_mass = group['stellar_mass'].loc[group[g_galtype_col].\
+                    values == 1].values[0]
+            mean_cz_grp = np.round(np.mean(group.cz.values),2)
+            deltav = group.cz.values - len(group)*[mean_cz_grp]
+            for val in deltav:
+                blue_deltav_arr.append(val)
+                blue_cen_stellar_mass_arr.append(cen_stellar_mass)
     # print(max(blue_cen_stellar_mass_arr))
 
     if survey == 'eco' or survey == 'resolvea':
@@ -2584,16 +2620,18 @@ def plot_total_mf(result, total_data, maxis_bf_total, phi_bf_total,
         plt.xlabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
     plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=30)
 
-    plt.legend([(dt), (mt), (bft)], ['Data','Models','Best-fit'],
-        handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)})
-
     plt.annotate(r'$\boldsymbol\chi ^2 / dof \approx$ {0}'.
         format(np.round(bf_chi2/dof,2)), 
-        xy=(0.55, 0.9), xycoords='axes fraction', bbox=dict(boxstyle="square", 
+        xy=(0.875, 0.78), xycoords='axes fraction', bbox=dict(boxstyle="square", 
         ec='k', fc='lightgray', alpha=0.5), size=25)
 
-    if survey == 'eco':
-        plt.title('ECO')
+    plt.legend([(dt), (mt), (bft)], ['Data','Models','Best-fit'],
+        handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, loc='best')
+
+    if quenching == 'hybrid':
+        plt.title('Hybrid quenching model | ECO')
+    elif quenching == 'halo':
+        plt.title('Halo quenching model | ECO')
     plt.show()
 
 def plot_colour_mf(result, phi_red_data, phi_blue_data, phi_bf_red, phi_bf_blue,
@@ -2743,11 +2781,16 @@ def plot_colour_mf(result, phi_red_data, phi_blue_data, phi_bf_red, phi_bf_blue,
 
     plt.annotate(r'$\boldsymbol\chi ^2 / dof \approx$ {0}'.
         format(np.round(bf_chi2/dof,2)), 
-        xy=(0.875, 0.80), xycoords='axes fraction', bbox=dict(boxstyle="square", 
+        xy=(0.875, 0.78), xycoords='axes fraction', bbox=dict(boxstyle="square", 
         ec='k', fc='lightgray', alpha=0.5), size=25)
 
-    if survey == 'eco':
-        plt.title('ECO')
+    if quenching == 'hybrid':
+        plt.title('Hybrid quenching model | ECO')
+    elif quenching == 'halo':
+        plt.title('Halo quenching model | ECO')
+
+    # if survey == 'eco':
+    #     plt.title('ECO')
     plt.show()
 
 def plot_fblue(result, fblue_data, maxis_bf_fblue, bf_fblue,
@@ -2866,11 +2909,16 @@ def plot_fblue(result, fblue_data, maxis_bf_fblue, bf_fblue,
 
     plt.annotate(r'$\boldsymbol\chi ^2 / dof \approx$ {0}'.
         format(np.round(bf_chi2/dof,2)), 
-        xy=(0.875, 0.75), xycoords='axes fraction', bbox=dict(boxstyle="square", 
+        xy=(0.875, 0.78), xycoords='axes fraction', bbox=dict(boxstyle="square", 
         ec='k', fc='lightgray', alpha=0.5), size=25)
 
-    if survey == 'eco':
-        plt.title('ECO')
+    if quenching == 'hybrid':
+        plt.title('Hybrid quenching model | ECO')
+    elif quenching == 'halo':
+        plt.title('Halo quenching model | ECO')
+
+    # if survey == 'eco':
+    #     plt.title('ECO')
     plt.show()
 
 def plot_xmhm(result, gals_bf, halos_bf, bf_chi2):
@@ -3009,8 +3057,10 @@ def plot_xmhm(result, gals_bf, halos_bf, bf_chi2):
         plt.xlim(10,14.5)
     plt.xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
     if mf_type == 'smf':
-        if survey == 'eco':
+        if survey == 'eco' and quenching == 'hybrid':
             plt.ylim(np.log10((10**8.9)/2.041),11.9)
+        elif survey == 'eco' and quenching == 'halo':
+            plt.ylim(np.log10((10**8.9)/2.041),11.56)
         elif survey == 'resolvea':
             plt.ylim(np.log10((10**8.9)/2.041),13)
         elif survey == 'resolveb':
@@ -3029,6 +3079,12 @@ def plot_xmhm(result, gals_bf, halos_bf, bf_chi2):
         format(np.round(bf_chi2/dof,2)), 
         xy=(0.02, 0.8), xycoords='axes fraction', bbox=dict(boxstyle="square", 
         ec='k', fc='lightgray', alpha=0.5), size=25)
+
+    if quenching == 'hybrid':
+        plt.title('Hybrid quenching model | ECO')
+    elif quenching == 'halo':
+        plt.title('Halo quenching model | ECO')
+
     plt.show()
 
 def plot_colour_xmhm(result, gals_bf_red, halos_bf_red, gals_bf_blue, 
@@ -3244,9 +3300,11 @@ def plot_colour_xmhm(result, gals_bf_red, halos_bf_red, gals_bf_blue,
         plt.xlim(10,14.5)
     plt.xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
     if mf_type == 'smf':
-        if survey == 'eco':
+        if survey == 'eco' and quenching == 'hybrid':
             plt.ylim(np.log10((10**8.9)/2.041),11.9)
-            plt.title('ECO')
+            # plt.title('ECO')
+        elif survey == 'eco' and quenching == 'halo':
+            plt.ylim(np.log10((10**8.9)/2.041),11.56)
         elif survey == 'resolvea':
             plt.ylim(np.log10((10**8.9)/2.041),13)
         elif survey == 'resolveb':
@@ -3267,12 +3325,19 @@ def plot_colour_xmhm(result, gals_bf_red, halos_bf_red, gals_bf_blue,
     #     ["Best-fit", "Models"], handler_map={tuple: AnyObjectHandler()},\
     #     loc='best', prop={'size': 30})
     plt.legend([(mr, mb), (bfr, bfb)], ['Models','Best-fit'],
-        handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)})
+        handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, 
+        loc='best',prop={'size': 30})
 
     plt.annotate(r'$\boldsymbol\chi ^2 / dof \approx$ {0}'.
         format(np.round(bf_chi2/dof,2)), 
         xy=(0.02, 0.8), xycoords='axes fraction', bbox=dict(boxstyle="square", 
         ec='k', fc='lightgray', alpha=0.5), size=25)
+
+    if quenching == 'hybrid':
+        plt.title('Hybrid quenching model | ECO')
+    elif quenching == 'halo':
+        plt.title('Halo quenching model | ECO')
+
     plt.show()
 
 def plot_red_fraction_cen(result, cen_gals_red, \
@@ -3376,6 +3441,12 @@ def plot_red_fraction_cen(result, cen_gals_red, \
 
     plt.ylabel(r'\boldmath$f_{red, cen}$', fontsize=30)
     plt.legend(loc='best', prop={'size':30})
+
+    if quenching == 'hybrid':
+        plt.title('Hybrid quenching model | ECO')
+    elif quenching == 'halo':
+        plt.title('Halo quenching model | ECO')
+
     plt.show()
 
 def plot_red_fraction_sat(result, sat_gals_red, sat_halos_red, \
@@ -3516,6 +3587,12 @@ def plot_red_fraction_sat(result, sat_gals_red, sat_halos_red, \
 
     plt.ylabel(r'\boldmath$f_{red, sat}$', fontsize=30)
     plt.legend(loc='best', prop={'size':30})
+
+    if quenching == 'hybrid':
+        plt.title('Hybrid quenching model | ECO')
+    elif quenching == 'halo':
+        plt.title('Halo quenching model | ECO')
+
     plt.show()
 
 def plot_zumand_fig4(result, gals_bf_red, halos_bf_red, gals_bf_blue, 
@@ -3622,8 +3699,13 @@ def plot_zumand_fig4(result, gals_bf_red, halos_bf_red, gals_bf_blue,
         handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='best', 
         prop={'size': 30})
 
-    if survey == 'eco':
-        plt.title('ECO')
+    if quenching == 'hybrid':
+        plt.title('Hybrid quenching model | ECO')
+    elif quenching == 'halo':
+        plt.title('Halo quenching model | ECO')
+
+    # if survey == 'eco':
+    #     plt.title('ECO')
     
     plt.show()
 
@@ -3771,17 +3853,17 @@ def plot_mean_grpcen_vs_sigma(result, red_sigma_bf, \
 
     fig1,ax1 = plt.subplots(figsize=(10,8))
 
-    dr = plt.errorbar(mean_centers_red,mean_stats_red_data[0],yerr=err_red,
-            color='darkred',fmt='^',ecolor='darkred',markersize=13,capsize=10,
-            capthick=1.0,zorder=10)
-    db = plt.errorbar(mean_centers_blue,mean_stats_blue_data[0],yerr=err_blue,
-            color='darkblue',fmt='^',ecolor='darkblue',markersize=13,capsize=10,
-            capthick=1.0,zorder=10)
+    # dr = plt.errorbar(mean_centers_red,mean_stats_red_data[0],yerr=err_red,
+    #         color='darkred',fmt='^',ecolor='darkred',markersize=12,capsize=10,
+    #         capthick=1.0,zorder=10)
+    # db = plt.errorbar(mean_centers_blue,mean_stats_blue_data[0],yerr=err_blue,
+    #         color='darkblue',fmt='^',ecolor='darkblue',markersize=12,capsize=10,
+    #         capthick=1.0,zorder=10)
 
-    # dr = plt.scatter(mean_centers_red, mean_stats_red_data[0], marker='o', \
-    #     c='darkred', s=200, zorder=10)
-    # db = plt.scatter(mean_centers_blue, mean_stats_blue_data[0], marker='o', \
-    #     c='darkblue', s=200, zorder=10)
+    dr = plt.scatter(mean_centers_red, mean_stats_red_data[0], marker='o', \
+        c='darkred', s=200, zorder=10)
+    db = plt.scatter(mean_centers_blue, mean_stats_blue_data[0], marker='o', \
+        c='darkblue', s=200, zorder=10)
 
     
     mr = plt.fill_between(x=mean_centers_red, y1=red_models_max, 
@@ -3796,17 +3878,18 @@ def plot_mean_grpcen_vs_sigma(result, red_sigma_bf, \
         ['Data','Models','Best-fit'],
         handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, markerscale=1.5, loc='upper left')
 
-    chi_squared_red = np.sum((mean_stats_red_data[0] - 
-        mean_stats_red_bf[0])**2 / (err_red**2))
-    chi_squared_blue = np.sum((mean_stats_blue_data[0] - 
-        mean_stats_blue_bf[0])**2 / (err_blue**2))
+    # chi_squared_red = np.sum((mean_stats_red_data[0] - 
+    #     mean_stats_red_bf[0])**2 / (err_red**2))
+    # chi_squared_blue = np.sum((mean_stats_blue_data[0] - 
+    #     mean_stats_blue_bf[0])**2 / (err_blue**2))
 
-    plt.annotate(r'$\boldsymbol\chi ^2_{{red}}/ dof \approx$ {0}''\n'\
-        r'$\boldsymbol\chi ^2_{{blue}}/ dof \approx$ {1}'.format(np.round(\
-        chi_squared_red/dof,2),np.round(chi_squared_blue/dof,2)), 
-        xy=(0.02, 0.75), xycoords='axes fraction', bbox=dict(boxstyle="square", 
-        ec='k', fc='lightgray', alpha=0.5), size=25)
+    # plt.annotate(r'$\boldsymbol\chi ^2_{{red}}/ dof \approx$ {0}''\n'\
+    #     r'$\boldsymbol\chi ^2_{{blue}}/ dof \approx$ {1}'.format(np.round(\
+    #     chi_squared_red/dof,2),np.round(chi_squared_blue/dof,2)), 
+    #     xy=(0.015, 0.73), xycoords='axes fraction', bbox=dict(boxstyle="square", 
+    #     ec='k', fc='lightgray', alpha=0.5), size=25)
 
+    plt.ylim(8.9, 11.1)
     # plt.annotate(r'$\boldsymbol\chi ^2 \approx$ {0}'.format(np.round(chi_squared_blue/dof,2)), 
     # xy=(0.02, 0.75), xycoords='axes fraction', bbox=dict(boxstyle="square", 
     # ec='k', fc='lightgray', alpha=0.5), size=25)
@@ -3831,8 +3914,8 @@ def plot_mean_grpcen_vs_sigma(result, red_sigma_bf, \
         l2.remove()
 
 
-    if survey == 'eco':
-        plt.title('ECO')
+    # if survey == 'eco':
+    #     plt.title('ECO')
    
     plt.xlabel(r'\boldmath$\sigma \left[\mathrm{km/s} \right]$', fontsize=30)
     plt.ylabel(r'\boldmath$\overline{\log_{10}\ M_{*, cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
@@ -3847,6 +3930,11 @@ def plot_mean_grpcen_vs_sigma(result, red_sigma_bf, \
     # berrors.on_clicked(errors)
     # bnoerrors = Button(axnoerrors, 'Remove errors', color='pink', hovercolor='tomato')
     # bnoerrors.on_clicked(remove_errors)
+
+    if quenching == 'hybrid':
+        plt.title('Hybrid quenching model | ECO')
+    elif quenching == 'halo':
+        plt.title('Halo quenching model | ECO')
 
     plt.show()
 
@@ -3919,16 +4007,16 @@ def plot_sigma_vdiff_mod(result, std_red_data, cen_red_data, std_blue_data,
         y2=blue_std_max, color='cornflowerblue',alpha=0.4)
 
     dr = plt.errorbar(cen_red_data,std_red_data,yerr=err_red,
-        color='darkred',fmt='^',ecolor='darkred',markersize=10,capsize=10,
+        color='darkred',fmt='^',ecolor='darkred',markersize=12,capsize=10,
         capthick=1.0,zorder=10)
     db = plt.errorbar(cen_blue_data,std_blue_data,yerr=err_blue,
-        color='darkblue',fmt='^',ecolor='darkblue',markersize=10,capsize=10,
+        color='darkblue',fmt='^',ecolor='darkblue',markersize=12,capsize=10,
         capthick=1.0,zorder=10)
 
     bfr, = plt.plot(std_cen_bf_red,std_bf_red,
-        color='maroon',ls='--',lw=3,zorder=10)
+        color='maroon',ls='-',lw=3,zorder=10)
     bfb, = plt.plot(std_cen_bf_blue,std_bf_blue,
-        color='mediumblue',ls='--',lw=3,zorder=10)
+        color='mediumblue',ls='-',lw=3,zorder=10)
 
     plt.xlabel(r'\boldmath$\log_{10}\ M_{\star , cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=25)
     plt.ylabel(r'\boldmath$\sigma \left[\mathrm{km/s} \right]$', fontsize=30)
@@ -3945,11 +4033,16 @@ def plot_sigma_vdiff_mod(result, std_red_data, cen_red_data, std_blue_data,
     plt.annotate(r'$\boldsymbol\chi ^2_{{red}}/ dof \approx$ {0}''\n'\
         r'$\boldsymbol\chi ^2_{{blue}}/ dof \approx$ {1}'.format(np.round(\
         chi_squared_red/dof,2),np.round(chi_squared_blue/dof,2)), 
-        xy=(0.02, 0.6), xycoords='axes fraction', bbox=dict(boxstyle="square", 
+        xy=(0.015, 0.73), xycoords='axes fraction', bbox=dict(boxstyle="square", 
         ec='k', fc='lightgray', alpha=0.5), size=25)
 
-    if survey == 'eco':
-        plt.title('ECO')
+    if quenching == 'hybrid':
+        plt.title('Hybrid quenching model | ECO')
+    elif quenching == 'halo':
+        plt.title('Halo quenching model | ECO')
+
+    # if survey == 'eco':
+    #     plt.title('ECO')
     plt.show()
 
 global survey
@@ -3968,7 +4061,7 @@ path_to_external = dict_of_paths['ext_dir']
 path_to_data = dict_of_paths['data_dir']
 
 many_behroozi_mocks = False
-quenching = 'hybrid'
+quenching = 'halo'
 machine = 'mac'
 mf_type = 'smf'
 survey = 'eco'
@@ -3980,9 +4073,9 @@ if machine == 'bender':
 elif machine == 'mac':
     halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
 
-chi2_file = path_to_proc + 'smhm_colour_run32/{0}_colour_chi2.txt'.\
+chi2_file = path_to_proc + 'smhm_colour_run33/{0}_colour_chi2.txt'.\
     format(survey)
-chain_file = path_to_proc + 'smhm_colour_run32/mcmc_{0}_colour_raw.txt'.\
+chain_file = path_to_proc + 'smhm_colour_run33/mcmc_{0}_colour_raw.txt'.\
     format(survey)
 
 if survey == 'eco':
@@ -3997,7 +4090,8 @@ print('Reading files')
 chi2 = read_chi2(chi2_file)
 mcmc_table = read_mcmc(chain_file)
 catl, volume, z_median = read_data_catl(catl_file, survey)
-gal_group_run32 = read_mock_catl(path_to_proc + "gal_group_run32.hdf5") 
+## Group finder run on subset after applying M* cut 8.6 and cz cut 3000-12000
+gal_group_run32 = read_mock_catl(path_to_proc + "gal_group_run33.hdf5") 
 
 idx_arr = np.insert(np.linspace(0,20,21), len(np.linspace(0,20,21)), (22, 123, 
     124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134)).astype(int)
@@ -4025,7 +4119,7 @@ mcmc_table_pctl, bf_params, bf_chi2 = \
     get_paramvals_percentile(mcmc_table, 68, chi2)
 colnames = ['mhalo_c', 'mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter', \
     'mstar_q', 'mh_q', 'mu', 'nu']
-mcmc_table_pctl_subset = pd.read_csv('~/Desktop/run32_params_subset.txt', 
+mcmc_table_pctl_subset = pd.read_csv(path_to_proc + 'run33_params_subset.txt', 
     delim_whitespace=True, names=colnames).iloc[1:,:].reset_index(drop=True)
 
 print('Assigning colour to data')
