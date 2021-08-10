@@ -44,9 +44,9 @@ path_to_figures = dict_of_paths['plot_dir']
 
 survey = 'eco'
 mf_type = 'smf'
-quenching = 'hybrid'
+quenching = 'halo'
 nwalkers = 100
-run = 32
+run = 33
 
 if mf_type == 'smf':
     path_to_proc = path_to_proc + 'smhm_colour_run{0}/'.format(run)
@@ -92,7 +92,7 @@ if quenching == 'hybrid':
 elif quenching == 'halo':
     emcee_table = pd.read_csv(chain_fname, header=None, comment='#', 
         names=['Mhalo_c', 'Mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter',
-        'Mhalo_qc','Mhalo_qs','mu_c','mu_s'], sep='\s+')
+        'Mh_qc','Mh_qs','mu_c','mu_s'], sep='\s+')
 
     for idx,row in enumerate(emcee_table.values):
 
@@ -370,49 +370,103 @@ elif quenching == 'halo':
         chi2[1][idx] = chi2_std
 
     #TODO modify plot making to add behroozi params
-    zumandelbaum_param_vals = [12.2, 12.17, 0.38, 0.15]
+    Mhalo_c_fid = 12.35
+    Mstar_c_fid = 10.72
+    mlow_slope_fid = 0.44
+    mhigh_slope_fid = 0.57
+    scatter_fid = 0.15
+    behroozi10_param_vals = [Mhalo_c_fid, Mstar_c_fid, mlow_slope_fid, \
+        mhigh_slope_fid, scatter_fid]
+
+    Mh_qc_fid = 12.2 # Msun/h
+    Mh_qs_fid = 12.17 # Msun/h
+    mu_c_fid = 0.38
+    mu_s_fid = 0.15
+    zumandelbaum_param_vals = [Mh_qc_fid, Mh_qs_fid, mu_c_fid, mu_s_fid]
     grp_keys = list(grp_keys)
 
-    fig1, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(5, 1, sharex=True, \
-        figsize=(10,10))
-    ax1.plot(grp_keys, Mh_qc[0],c='#941266',ls='--', marker='o')
-    ax1.axhline(zumandelbaum_param_vals[0],color='lightgray')
-    ax2.plot(grp_keys, Mh_qs[0], c='#941266',ls='--', marker='o')
-    ax2.axhline(zumandelbaum_param_vals[1],color='lightgray')
-    ax3.plot(grp_keys, mu_c[0], c='#941266',ls='--', marker='o')
-    ax3.axhline(zumandelbaum_param_vals[2],color='lightgray')
-    ax4.plot(grp_keys, mu_s[0], c='#941266',ls='--', marker='o')
-    ax4.axhline(zumandelbaum_param_vals[3],color='lightgray')
-    ax5.plot(grp_keys, chi2[0], c='#941266',ls='--', marker='o')
+    fig1, (ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8, ax9, ax10) = plt.subplots(10, 1, 
+        sharex=True, figsize=(10,10))
+    ax1.plot(grp_keys, Mhalo_c[0],c='#941266',ls='--', marker='o')
+    ax1.axhline(behroozi10_param_vals[0],color='lightgray')
+    ax2.plot(grp_keys, Mstar_c[0], c='#941266',ls='--', marker='o')
+    ax2.axhline(behroozi10_param_vals[1],color='lightgray')
+    ax3.plot(grp_keys, mlow_slope[0], c='#941266',ls='--', marker='o')
+    ax3.axhline(behroozi10_param_vals[2],color='lightgray')
+    ax4.plot(grp_keys, mhigh_slope[0], c='#941266',ls='--', marker='o')
+    ax4.axhline(behroozi10_param_vals[3],color='lightgray')
+    ax5.plot(grp_keys, scatter[0], c='#941266',ls='--', marker='o')
+    ax5.axhline(behroozi10_param_vals[4],color='lightgray')
 
-    ax1.fill_between(grp_keys, Mh_qc[0]-Mh_qc[1], Mh_qc[0]+Mh_qc[1], 
+    ax6.plot(grp_keys, Mh_qc[0],c='#941266',ls='--', marker='o')
+    ax6.axhline(zumandelbaum_param_vals[0],color='lightgray')
+    ax7.plot(grp_keys, Mh_qs[0], c='#941266',ls='--', marker='o')
+    ax7.axhline(zumandelbaum_param_vals[1],color='lightgray')
+    ax8.plot(grp_keys, mu_c[0], c='#941266',ls='--', marker='o')
+    ax8.axhline(zumandelbaum_param_vals[2],color='lightgray')
+    ax9.plot(grp_keys, mu_s[0], c='#941266',ls='--', marker='o')
+    ax9.axhline(zumandelbaum_param_vals[3],color='lightgray')
+    ax10.plot(grp_keys, chi2[0], c='#941266',ls='--', marker='o')
+
+    ax1.fill_between(grp_keys, Mhalo_c[0]-Mhalo_c[1], Mhalo_c[0]+Mhalo_c[1], 
         alpha=0.3, color='#941266')
-    ax2.fill_between(grp_keys, Mh_qs[0]-Mh_qs[1], Mh_qs[0]+Mh_qs[1], \
+    ax2.fill_between(grp_keys, Mstar_c[0]-Mstar_c[1], Mstar_c[0]+Mstar_c[1], \
         alpha=0.3, color='#941266')
-    ax3.fill_between(grp_keys, mu_c[0]-mu_c[1], mu_c[0]+mu_c[1], \
-        alpha=0.3, color='#941266')
-    ax4.fill_between(grp_keys, mu_s[0]-mu_s[1], mu_s[0]+mu_s[1], \
-        alpha=0.3, color='#941266')
-    ax5.fill_between(grp_keys, chi2[0]-chi2[1], chi2[0]+chi2[1], \
+    ax3.fill_between(grp_keys, mlow_slope[0]-mlow_slope[1], \
+        mlow_slope[0]+mlow_slope[1], alpha=0.3, color='#941266')
+    ax4.fill_between(grp_keys, mhigh_slope[0]-mhigh_slope[1], \
+        mhigh_slope[0]+mhigh_slope[1], alpha=0.3, color='#941266')
+    ax5.fill_between(grp_keys, scatter[0]-scatter[1], scatter[0]+scatter[1], \
         alpha=0.3, color='#941266')
 
-    ax1.set_ylabel(r"$\mathbf{log_{10}\ Mh_{qc}}$")
-    ax2.set_ylabel(r"$\mathbf{log_{10}\ Mh_{qs}}$")
-    ax3.set_ylabel(r"$\boldsymbol{\ mu_{c}}$")
+
+    ax6.fill_between(grp_keys, Mh_qc[0]-Mh_qc[1], Mh_qc[0]+Mh_qc[1], 
+        alpha=0.3, color='#941266')
+    ax7.fill_between(grp_keys, Mh_qs[0]-Mh_qs[1], Mh_qs[0]+Mh_qs[1], \
+        alpha=0.3, color='#941266')
+    ax8.fill_between(grp_keys, mu_c[0]-mu_c[1], mu_c[0]+mu_c[1], \
+        alpha=0.3, color='#941266')
+    ax9.fill_between(grp_keys, mu_s[0]-mu_s[1], mu_s[0]+mu_s[1], \
+        alpha=0.3, color='#941266')
+    ax10.fill_between(grp_keys, chi2[0]-chi2[1], chi2[0]+chi2[1], \
+        alpha=0.3, color='#941266')
+
+    ax1.set_ylabel(r"$\mathbf{log_{10}\ M_{1}}$")
+    ax2.set_ylabel(r"$\mathbf{log_{10}\ M_{*}}$")
+    ax3.set_ylabel(r"$\boldsymbol{\beta}$")
     # ax4.set_ylabel(r"$\mathbf{log_{10}} \boldsymbol{\ \nu}$")
-    ax4.set_ylabel(r"$\boldsymbol{\ mu_{s}}$")
-    ax5.set_ylabel(r"$\mathbf{log_{10}} \boldsymbol{{\ \chi}^2}$")
+    ax4.set_ylabel(r"$\boldsymbol{\delta}$")
+    # ax10.set_ylabel(r"$\mathbf{log_{10}} \boldsymbol{{\ \chi}^2}$")
+    ax5.set_ylabel(r"$\boldsymbol{\xi}$")
+
+    ax6.set_ylabel(r"$\mathbf{log_{10}\ Mh_{qc}}$")
+    ax7.set_ylabel(r"$\mathbf{log_{10}\ Mh_{qs}}$")
+    ax8.set_ylabel(r"$\boldsymbol{{\mu}_{c}}$")
+    # ax4.set_ylabel(r"$\mathbf{log_{10}} \boldsymbol{\ \nu}$")
+    ax9.set_ylabel(r"$\boldsymbol{{\mu}_{s}}$")
+    ax10.set_ylabel(r"$\mathbf{log_{10}} \boldsymbol{{\ \chi}^2}$")
     # ax5.set_ylabel(r"$\boldsymbol{{\chi}^2}$")
     # ax1.set_yscale('log')
     # ax2.set_yscale('log')
 
-    ax1.annotate(zumandelbaum_param_vals[0], (0.95,0.85), xycoords='axes fraction', 
+    ax1.annotate(behroozi10_param_vals[0], (0.95,0.85), xycoords='axes fraction', 
         bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
-    ax2.annotate(zumandelbaum_param_vals[1], (0.95,0.85), xycoords='axes fraction', 
+    ax2.annotate(behroozi10_param_vals[1], (0.95,0.85), xycoords='axes fraction', 
         bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
-    ax3.annotate(zumandelbaum_param_vals[2], (0.95,0.85), xycoords='axes fraction', 
+    ax3.annotate(behroozi10_param_vals[2], (0.95,0.85), xycoords='axes fraction', 
         bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
-    ax4.annotate(0.15, (0.95,0.85), xycoords='axes fraction', 
+    ax4.annotate(behroozi10_param_vals[3], (0.95,0.85), xycoords='axes fraction', 
+        bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
+    ax5.annotate(behroozi10_param_vals[4], (0.95,0.85), xycoords='axes fraction', 
+        bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
+
+    ax6.annotate(zumandelbaum_param_vals[0], (0.95,0.85), xycoords='axes fraction', 
+        bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
+    ax7.annotate(zumandelbaum_param_vals[1], (0.95,0.85), xycoords='axes fraction', 
+        bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
+    ax8.annotate(zumandelbaum_param_vals[2], (0.95,0.85), xycoords='axes fraction', 
+        bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
+    ax9.annotate(0.15, (0.95,0.85), xycoords='axes fraction', 
         bbox=dict(boxstyle="square", ec='k', fc='lightgray', alpha=0.5), size=10)
     plt.xlabel(r"$\mathbf{iteration\ number}$", fontsize=20)
     plt.show()
