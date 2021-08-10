@@ -42,7 +42,7 @@ mass_func_tinker_337 = hmf.mass_function.hmf.MassFunction(Mmin=10, Mmax=15,
     cosmo_model=cosmo_model, hmf_model=hmf_choice_fit_tinker_default, 
     mdef_model='SOMean', mdef_params={"overdensity":337})
 
-mass_func_tinker_337_calc = pd.read_csv('~/Desktop/haloMF.txt', sep='\s+', 
+mass_func_tinker_300 = pd.read_csv('~/Desktop/haloMF.txt', sep='\s+', 
     usecols=[0,1,2], names=['logM', 'dndlogM', 'n'])
 
 fig1 = plt.figure(figsize=(10,10))
@@ -50,8 +50,8 @@ plt.plot(np.log10(mass_func_tinker_337.m),
     np.log10(mass_func_tinker_337.ngtm), color='teal', 
     label='Tinker (SO Mean - 337)', solid_capstyle='round')
 
-plt.plot(mass_func_tinker_337_calc.logM, 
-    np.log10(mass_func_tinker_337_calc.n), color='mediumvioletred', 
+plt.plot(mass_func_tinker_300.logM, 
+    np.log10(mass_func_tinker_300.n), color='mediumvioletred', 
     label='Tinker (SO Mean - 300)', solid_capstyle='round')
 
 plt.xlabel(r"Halo Mass [$M_\odot/h$]", fontsize=30)
@@ -86,8 +86,8 @@ if hmf_type == 'cumulative':
         np.log10(mass_func_tinker_337.ngtm/ngtm_fid), lw=5, color='teal', 
         label='Tinker (SO Mean - 337)', solid_capstyle='round')
 
-    plt.plot(mass_func_tinker_337_calc.logM, 
-        np.log10(mass_func_tinker_337_calc.n/ngtm_fid), lw=5, 
+    plt.plot(mass_func_tinker_300.logM, 
+        np.log10(mass_func_tinker_300.n/ngtm_fid), lw=5, 
         color='mediumvioletred', label='Tinker (SO Mean - 300)', 
         solid_capstyle='round')
 
@@ -122,8 +122,8 @@ elif hmf_type == 'differential':
         np.log10(mass_func_tinker_337.dndlog10m/dndlog10m_fid), lw=5, 
         color='teal', label='Tinker (SO Mean - 337)', solid_capstyle='round')
 
-    plt.plot(mass_func_tinker_337_calc.logM, 
-        np.log10(mass_func_tinker_337_calc.dndlogM/dndlog10m_fid), lw=5, 
+    plt.plot(mass_func_tinker_300.logM, 
+        np.log10(mass_func_tinker_300.dndlogM/dndlog10m_fid), lw=5, 
         color='mediumvioletred', label='Tinker (SO Mean - 300)', 
         solid_capstyle='round')
 
