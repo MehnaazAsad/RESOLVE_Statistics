@@ -229,13 +229,13 @@ def read_data_catl(path_to_file, survey):
         Median redshift of survey
     """
     if survey == 'eco':
-    #     columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
-    #                 'logmstar', 'logmgas', 'grp', 'grpn', 'logmh', 'logmh_s', 
-    #                 'fc', 'grpmb', 'grpms','modelu_rcorr']
+        # columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
+        #             'logmstar', 'logmgas', 'grp', 'grpn', 'logmh', 'logmh_s', 
+        #             'fc', 'grpmb', 'grpms','modelu_rcorr', 'grpsig', 'grpsig_stack']
 
-    #     # 13878 galaxies
-    #     eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0, \
-    #         usecols=columns)
+        # # 13878 galaxies
+        # eco_buff = pd.read_csv(path_to_file, delimiter=",", header=0, \
+        #     usecols=columns)
 
         eco_buff = read_mock_catl(path_to_file)
         eco_buff = mock_add_grpcz(eco_buff, True)
@@ -2043,61 +2043,198 @@ def get_sigma_per_group_data(catl):
         catl = catl.loc[catl.logmstar >= 8.7]
     catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
 
-    red_subset_grpids = np.unique(catl.groupid.loc[(catl.\
-        colour_label == 'R') & (catl.g_galtype == 1)].values)  
-    blue_subset_grpids = np.unique(catl.groupid.loc[(catl.\
-        colour_label == 'B') & (catl.g_galtype == 1)].values)
+    red_subset_grpids = np.unique(catl.grp.loc[(catl.\
+        colour_label == 'R') & (catl.fc == 1)].values)  
+    blue_subset_grpids = np.unique(catl.grp.loc[(catl.\
+        colour_label == 'B') & (catl.fc == 1)].values)
 
     red_singleton_counter = 0
     red_sigma_arr = []
     red_cen_stellar_mass_arr = []
+    red_sigmagapper_arr = []
+    red_sigmagapperstacked_arr = []
     for key in red_subset_grpids: 
-        group = catl.loc[catl.groupid == key]
+        group = catl.loc[catl.grp == key]
         if len(group) == 1:
             red_singleton_counter += 1
         else:
-            cen_stellar_mass = group.logmstar.loc[group.g_galtype\
+            cen_stellar_mass = group.logmstar.loc[group.fc\
                 .values == 1].values[0]
             
             # Different velocity definitions
             mean_cz_grp = np.round(np.mean(group.cz.values),2)
-            cen_cz_grp = group.cz.loc[group.g_galtype == 1].values[0]
+            cen_cz_grp = group.cz.loc[group.fc == 1].values[0]
             # cz_grp = np.unique(group.grpcz.values)[0]
 
             # Velocity difference
-            deltav = group.cz.values - len(group)*[mean_cz_grp]
+            deltav = group.cz.values - len(group)*[cen_cz_grp]
+            # sigma = deltav[deltav!=0].std()
+            sigma = deltav.std()
+            red_sigmagapper = np.unique(group.grpsig.values)[0]
+            red_sigmagapperstacked = np.unique(group.grpsig_stack.values)[0]
+            
+            red_sigma_arr.append(sigma)
+            red_cen_stellar_mass_arr.append(cen_stellar_mass)
+            red_sigmagapper_arr.append(red_sigmagapper)
+            red_sigmagapperstacked_arr.append(red_sigmagapperstacked)
+
+    blue_singleton_counter = 0
+    blue_sigma_arr = []
+    blue_cen_stellar_mass_arr = []
+    blue_sigmagapper_arr = []
+    blue_sigmagapperstacked_arr = []
+    for key in blue_subset_grpids: 
+        group = catl.loc[catl.grp == key]
+        if len(group) == 1:
+            blue_singleton_counter += 1
+        else:
+            cen_stellar_mass = group.logmstar.loc[group.fc\
+                .values == 1].values[0]
+            
+            # Different velocity definitions
+            mean_cz_grp = np.round(np.mean(group.cz.values),2)
+            cen_cz_grp = group.cz.loc[group.fc == 1].values[0]
+            # cz_grp = np.unique(group.grpcz.values)[0]
+
+            # Velocity difference
+            deltav = group.cz.values - len(group)*[cen_cz_grp]
+            # sigma = deltav[deltav!=0].std()
+            sigma = deltav.std()
+            blue_sigmagapper = np.unique(group.grpsig.values)[0]
+            blue_sigmagapperstacked = np.unique(group.grpsig_stack.values)[0]
+            
+            blue_sigma_arr.append(sigma)
+            blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+            blue_sigmagapper_arr.append(blue_sigmagapper)
+            blue_sigmagapperstacked_arr.append(blue_sigmagapperstacked)
+
+    return red_sigma_arr, red_cen_stellar_mass_arr, blue_sigma_arr, \
+        blue_cen_stellar_mass_arr
+
+def gapper_method_vishnu(gals_df, randint=None):
+
+    if survey == 'eco':
+        mock_name = 'ECO'
+        num_mocks = 8
+        min_cz = 3000
+        max_cz = 7000
+        mag_limit = -17.33
+        mstar_limit = 8.9
+        volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
+    elif survey == 'resolvea':
+        mock_name = 'A'
+        num_mocks = 59
+        min_cz = 4500
+        max_cz = 7000
+        mag_limit = -17.33
+        mstar_limit = 8.9
+        volume = 13172.384  # Survey volume without buffer [Mpc/h]^3 
+    elif survey == 'resolveb':
+        mock_name = 'B'
+        num_mocks = 104
+        min_cz = 4500
+        max_cz = 7000
+        mag_limit = -17
+        mstar_limit = 8.7
+        volume = 4709.8373  # Survey volume without buffer [Mpc/h]^3
+
+    if randint != 1:
+        logmstar_col = '{0}'.format(randint)
+        g_galtype_col = 'g_galtype_{0}'.format(randint)
+        groupid_col = 'groupid_{0}'.format(randint)
+        # Using the same survey definition as in mcmc smf i.e excluding the 
+        # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
+        # and M* star cuts to mimic mocks and data.
+        gals_df = mock_add_grpcz(gals_df, False, groupid_col)
+        gals_df = gals_df.loc[(gals_df.grpcz.values >= min_cz) & \
+            (gals_df.grpcz.values <= max_cz) & \
+            (gals_df[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
+
+    elif randint == 1:
+        logmstar_col = 'behroozi_bf'
+        g_galtype_col = 'g_galtype_{0}'.format(randint)
+        groupid_col = 'groupid_{0}'.format(randint)
+        # Using the same survey definition as in mcmc smf i.e excluding the 
+        # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
+        # and M* star cuts to mimic mocks and data.
+        gals_df = mock_add_grpcz(gals_df, False, groupid_col)
+        gals_df = gals_df.loc[(gals_df.grpcz.values >= min_cz) & \
+            (gals_df.grpcz.values <= max_cz) & \
+            (gals_df[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
+
+    else:
+        logmstar_col = 'stellar_mass'
+        g_galtype_col = 'g_galtype'
+        groupid_col = 'groupid'
+        # Using the same survey definition as in mcmc smf i.e excluding the 
+        # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
+        # and M* star cuts to mimic mocks and data.
+        gals_df = mock_add_grpcz(gals_df, False, groupid_col)
+        gals_df = gals_df.loc[(gals_df.grpcz.values >= min_cz) & \
+            (gals_df.grpcz.values <= max_cz) & \
+            (gals_df[logmstar_col].values >= (10**mstar_limit)/2.041)]
+        gals_df[logmstar_col] = np.log10(gals_df[logmstar_col])
+
+    red_subset_grpids = np.unique(gals_df[groupid_col].loc[(gals_df.\
+        colour_label == 'R') & (gals_df[g_galtype_col] == 1)].values)  
+    blue_subset_grpids = np.unique(gals_df[groupid_col].loc[(gals_df.\
+        colour_label == 'B') & (gals_df[g_galtype_col] == 1)].values)
+
+
+    red_singleton_counter = 0
+    red_sigma_arr = []
+    red_cen_stellar_mass_arr = []
+    red_nsat_arr = []
+    for key in red_subset_grpids: 
+        group = gals_df.loc[gals_df[groupid_col] == key]
+        if len(group) == 1:
+            red_singleton_counter += 1
+        else:
+            cen_stellar_mass = group[logmstar_col].loc[group[g_galtype_col].\
+                values == 1].values[0]
+            nsat = len(group.loc[group[g_galtype_col].values == 0])
+            # Different velocity definitions
+            mean_cz_grp = np.round(np.mean(group.cz.values),2)
+            cen_cz_grp = group.cz.loc[group[g_galtype_col].values == 1].values[0]
+            # cz_grp = np.unique(group.grpcz.values)[0]
+
+            # Velocity difference
+            deltav = group.cz.values - len(group)*[cen_cz_grp]
             # sigma = deltav[deltav!=0].std()
             sigma = deltav.std()
             
             red_sigma_arr.append(sigma)
             red_cen_stellar_mass_arr.append(cen_stellar_mass)
+            red_nsat_arr.append(nsat)
 
     blue_singleton_counter = 0
     blue_sigma_arr = []
     blue_cen_stellar_mass_arr = []
+    blue_nsat_arr = []
     for key in blue_subset_grpids: 
-        group = catl.loc[catl.groupid == key]
+        group = gals_df.loc[gals_df[groupid_col] == key]
         if len(group) == 1:
             blue_singleton_counter += 1
         else:
-            cen_stellar_mass = group.logmstar.loc[group.g_galtype\
-                .values == 1].values[0]
-            
+            cen_stellar_mass = group[logmstar_col].loc[group[g_galtype_col].\
+                values == 1].values[0]
+            nsat = len(group.loc[group[g_galtype_col].values == 0])
             # Different velocity definitions
             mean_cz_grp = np.round(np.mean(group.cz.values),2)
-            cen_cz_grp = group.cz.loc[group.g_galtype == 1].values[0]
+            cen_cz_grp = group.cz.loc[group[g_galtype_col].values == 1].values[0]
             # cz_grp = np.unique(group.grpcz.values)[0]
 
             # Velocity difference
-            deltav = group.cz.values - len(group)*[mean_cz_grp]
+            deltav = group.cz.values - len(group)*[cen_cz_grp]
             # sigma = deltav[deltav!=0].std()
             sigma = deltav.std()
             
             blue_sigma_arr.append(sigma)
             blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+            blue_nsat_arr.append(nsat)            
 
     return red_sigma_arr, red_cen_stellar_mass_arr, blue_sigma_arr, \
-        blue_cen_stellar_mass_arr
+        blue_cen_stellar_mass_arr, red_nsat_arr, blue_nsat_arr
 
 def get_sigma_per_group_mocks_qmcolour(survey, mock_df):
     """
@@ -2776,9 +2913,9 @@ def get_satellite_weighted_sigma_group_vishnu(gals_df, randint=None):
         # Using the same survey definition as in mcmc smf i.e excluding the 
         # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
         # and M* star cuts to mimic mocks and data.
-        # gals_df = mock_add_grpcz(gals_df, False, groupid_col)
-        gals_df = gals_df.loc[(gals_df.cz.values >= min_cz) & \
-            (gals_df.cz.values <= max_cz) & \
+        gals_df = mock_add_grpcz(gals_df, False, groupid_col)
+        gals_df = gals_df.loc[(gals_df.grpcz.values >= min_cz) & \
+            (gals_df.grpcz.values <= max_cz) & \
             (gals_df[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
 
     elif randint == 1:
@@ -2788,9 +2925,9 @@ def get_satellite_weighted_sigma_group_vishnu(gals_df, randint=None):
         # Using the same survey definition as in mcmc smf i.e excluding the 
         # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
         # and M* star cuts to mimic mocks and data.
-        # gals_df = mock_add_grpcz(gals_df, False, groupid_col)
-        gals_df = gals_df.loc[(gals_df.cz.values >= min_cz) & \
-            (gals_df.cz.values <= max_cz) & \
+        gals_df = mock_add_grpcz(gals_df, False, groupid_col)
+        gals_df = gals_df.loc[(gals_df.grpcz.values >= min_cz) & \
+            (gals_df.grpcz.values <= max_cz) & \
             (gals_df[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
 
     else:
@@ -6809,6 +6946,21 @@ def plot_satellite_weighted_sigma(result, vdisp_red_bf, vdisp_blue_bf, \
         result = np.sum(arr)/len(arr)
         return result
 
+    if level == 'group':
+        vdisp_red_idx = 32
+        vdisp_blue_idx = 34
+        cen_red_idx = 33
+        cen_blue_idx = 35
+        nsat_red_idx = 36
+        nsat_blue_idx = 37
+    elif level == 'halo':
+        vdisp_red_idx = 38
+        vdisp_blue_idx = 40
+        cen_red_idx = 39
+        cen_blue_idx = 41
+        nsat_red_idx = 42
+        nsat_blue_idx = 43
+       
     i_outer = 0
     vdisp_red_mod_arr = []
     vdisp_blue_mod_arr = []
@@ -6818,87 +6970,87 @@ def plot_satellite_weighted_sigma(result, vdisp_red_bf, vdisp_blue_bf, \
     nsat_blue_mod_arr = []
     while i_outer < 5:
         for idx in range(len(result[i_outer][0])):
-            red_mod_ii = result[i_outer][32][idx]
+            red_mod_ii = result[i_outer][vdisp_red_idx][idx]
             vdisp_red_mod_arr.append(red_mod_ii)
-            blue_mod_ii = result[i_outer][34][idx]
+            blue_mod_ii = result[i_outer][vdisp_blue_idx][idx]
             vdisp_blue_mod_arr.append(blue_mod_ii)
 
-            red_mod_ii = result[i_outer][33][idx]
+            red_mod_ii = result[i_outer][cen_red_idx][idx]
             cen_mstar_red_mod_arr.append(red_mod_ii)
-            blue_mod_ii = result[i_outer][35][idx]
+            blue_mod_ii = result[i_outer][cen_blue_idx][idx]
             cen_mstar_blue_mod_arr.append(blue_mod_ii)
 
-            red_mod_ii = result[i_outer][36][idx]
+            red_mod_ii = result[i_outer][nsat_red_idx][idx]
             nsat_red_mod_arr.append(red_mod_ii)
-            blue_mod_ii = result[i_outer][37][idx]
+            blue_mod_ii = result[i_outer][nsat_blue_idx][idx]
             nsat_blue_mod_arr.append(blue_mod_ii)
         i_outer += 1
 
         for idx in range(len(result[i_outer][0])):
-            red_mod_ii = result[i_outer][32][idx]
+            red_mod_ii = result[i_outer][vdisp_red_idx][idx]
             vdisp_red_mod_arr.append(red_mod_ii)
-            blue_mod_ii = result[i_outer][34][idx]
+            blue_mod_ii = result[i_outer][vdisp_blue_idx][idx]
             vdisp_blue_mod_arr.append(blue_mod_ii)
 
-            red_mod_ii = result[i_outer][33][idx]
+            red_mod_ii = result[i_outer][cen_red_idx][idx]
             cen_mstar_red_mod_arr.append(red_mod_ii)
-            blue_mod_ii = result[i_outer][35][idx]
+            blue_mod_ii = result[i_outer][cen_blue_idx][idx]
             cen_mstar_blue_mod_arr.append(blue_mod_ii)
 
-            red_mod_ii = result[i_outer][36][idx]
+            red_mod_ii = result[i_outer][nsat_red_idx][idx]
             nsat_red_mod_arr.append(red_mod_ii)
-            blue_mod_ii = result[i_outer][37][idx]
+            blue_mod_ii = result[i_outer][nsat_blue_idx][idx]
             nsat_blue_mod_arr.append(blue_mod_ii)
         i_outer += 1
 
         for idx in range(len(result[i_outer][0])):
-            red_mod_ii = result[i_outer][32][idx]
+            red_mod_ii = result[i_outer][vdisp_red_idx][idx]
             vdisp_red_mod_arr.append(red_mod_ii)
-            blue_mod_ii = result[i_outer][34][idx]
+            blue_mod_ii = result[i_outer][vdisp_blue_idx][idx]
             vdisp_blue_mod_arr.append(blue_mod_ii)
 
-            red_mod_ii = result[i_outer][33][idx]
+            red_mod_ii = result[i_outer][cen_red_idx][idx]
             cen_mstar_red_mod_arr.append(red_mod_ii)
-            blue_mod_ii = result[i_outer][35][idx]
+            blue_mod_ii = result[i_outer][cen_blue_idx][idx]
             cen_mstar_blue_mod_arr.append(blue_mod_ii)
 
-            red_mod_ii = result[i_outer][36][idx]
+            red_mod_ii = result[i_outer][nsat_red_idx][idx]
             nsat_red_mod_arr.append(red_mod_ii)
-            blue_mod_ii = result[i_outer][37][idx]
+            blue_mod_ii = result[i_outer][nsat_blue_idx][idx]
             nsat_blue_mod_arr.append(blue_mod_ii)
         i_outer += 1
 
         for idx in range(len(result[i_outer][0])):
-            red_mod_ii = result[i_outer][32][idx]
+            red_mod_ii = result[i_outer][vdisp_red_idx][idx]
             vdisp_red_mod_arr.append(red_mod_ii)
-            blue_mod_ii = result[i_outer][34][idx]
+            blue_mod_ii = result[i_outer][vdisp_blue_idx][idx]
             vdisp_blue_mod_arr.append(blue_mod_ii)
 
-            red_mod_ii = result[i_outer][33][idx]
+            red_mod_ii = result[i_outer][cen_red_idx][idx]
             cen_mstar_red_mod_arr.append(red_mod_ii)
-            blue_mod_ii = result[i_outer][35][idx]
+            blue_mod_ii = result[i_outer][cen_blue_idx][idx]
             cen_mstar_blue_mod_arr.append(blue_mod_ii)
 
-            red_mod_ii = result[i_outer][36][idx]
+            red_mod_ii = result[i_outer][nsat_red_idx][idx]
             nsat_red_mod_arr.append(red_mod_ii)
-            blue_mod_ii = result[i_outer][37][idx]
+            blue_mod_ii = result[i_outer][nsat_blue_idx][idx]
             nsat_blue_mod_arr.append(blue_mod_ii)
         i_outer += 1
 
         for idx in range(len(result[i_outer][0])):
-            red_mod_ii = result[i_outer][32][idx]
+            red_mod_ii = result[i_outer][vdisp_red_idx][idx]
             vdisp_red_mod_arr.append(red_mod_ii)
-            blue_mod_ii = result[i_outer][34][idx]
+            blue_mod_ii = result[i_outer][vdisp_blue_idx][idx]
             vdisp_blue_mod_arr.append(blue_mod_ii)
 
-            red_mod_ii = result[i_outer][33][idx]
+            red_mod_ii = result[i_outer][cen_red_idx][idx]
             cen_mstar_red_mod_arr.append(red_mod_ii)
-            blue_mod_ii = result[i_outer][35][idx]
+            blue_mod_ii = result[i_outer][cen_blue_idx][idx]
             cen_mstar_blue_mod_arr.append(blue_mod_ii)
 
-            red_mod_ii = result[i_outer][36][idx]
+            red_mod_ii = result[i_outer][nsat_red_idx][idx]
             nsat_red_mod_arr.append(red_mod_ii)
-            blue_mod_ii = result[i_outer][37][idx]
+            blue_mod_ii = result[i_outer][nsat_blue_idx][idx]
             nsat_blue_mod_arr.append(blue_mod_ii)
         i_outer += 1
 
@@ -6950,8 +7102,8 @@ def plot_satellite_weighted_sigma(result, vdisp_red_bf, vdisp_blue_bf, \
             np.array(vdisp_blue_mod_arr[idx])**2, statistic=hw_func_blue, 
             bins=blue_stellar_mass_bins)
         
-        ratio_red_mod = np.log10(sw_mean_stats_red_mod_ii/hw_mean_stats_red_mod[0])
-        ratio_blue_mod = np.log10(sw_mean_stats_blue_mod_ii/hw_mean_stats_blue_mod[0])
+        ratio_red_mod = np.log10(hw_mean_stats_red_mod[0])
+        ratio_blue_mod = np.log10(hw_mean_stats_blue_mod[0])
 
         ratio_red_mod_arr.append(ratio_red_mod)
         ratio_blue_mod_arr.append(ratio_blue_mod)
@@ -7027,18 +7179,50 @@ def plot_satellite_weighted_sigma(result, vdisp_red_bf, vdisp_blue_bf, \
     # bfb, = plt.plot(centers_blue, const*np.log10(sw_mean_stats_blue[0]/hw_mean_stats_blue[0]), c='darkblue', lw=3, zorder=10)
 
     ## Ratio of satellite/host weighted
-    bfr, = plt.plot(centers_red, 
-        np.log10(sw_mean_stats_red_bf/hw_mean_stats_red[0]), c='maroon', lw=3, 
-        zorder = 10)
-    bfb, = plt.plot(centers_blue, 
-        np.log10(sw_mean_stats_blue_bf/hw_mean_stats_blue[0]), c='darkblue', 
-        lw=3, zorder=10)
+    # bfr, = plt.plot(centers_red, 
+    #     np.log10(sw_mean_stats_red_bf/hw_mean_stats_red[0]), c='maroon', lw=3, 
+    #     zorder = 10)
+    # bfb, = plt.plot(centers_blue, 
+    #     np.log10(sw_mean_stats_blue_bf/hw_mean_stats_blue[0]), c='darkblue', 
+    #     lw=3, zorder=10)
+
+    # dr = plt.scatter(centers_red, 
+    #     np.log10(sw_mean_stats_red_data/hw_mean_stats_red_data[0]), 
+    #     c='indianred', s=300, marker='p', zorder = 20)
+    # db = plt.scatter(centers_blue, 
+    #     np.log10(sw_mean_stats_blue_data/hw_mean_stats_blue_data[0]), 
+    #     c='royalblue', s=300, marker='p', zorder=20)
+
+    # mr = plt.fill_between(x=centers_red, y1=ratio_red_mod_max, 
+    #     y2=ratio_red_mod_min, color='lightcoral',alpha=0.4)
+    # mb = plt.fill_between(x=centers_blue, y1=ratio_blue_mod_max, 
+    #     y2=ratio_blue_mod_min, color='cornflowerblue',alpha=0.4)
+
+    # ## Satellite weighted
+    # bfr, = plt.plot(centers_red, np.log10(sw_mean_stats_red_bf), c='maroon', lw=3, zorder = 10)
+    # bfb, = plt.plot(centers_blue, np.log10(sw_mean_stats_blue_bf), c='darkblue', lw=3, zorder=10)
+
+    # dr = plt.scatter(centers_red, 
+    #     np.log10(sw_mean_stats_red_data), 
+    #     c='indianred', s=300, marker='p', zorder = 20)
+    # db = plt.scatter(centers_blue, 
+    #     np.log10(sw_mean_stats_blue_data), 
+    #     c='royalblue', s=300, marker='p', zorder=20)
+
+    # mr = plt.fill_between(x=centers_red, y1=ratio_red_mod_max, 
+    #     y2=ratio_red_mod_min, color='lightcoral',alpha=0.4)
+    # mb = plt.fill_between(x=centers_blue, y1=ratio_blue_mod_max, 
+    #     y2=ratio_blue_mod_min, color='cornflowerblue',alpha=0.4)
+
+    ## Host weighted
+    bfr, = plt.plot(centers_red, np.log10(hw_mean_stats_red[0]), c='maroon', lw=3, zorder = 10)
+    bfb, = plt.plot(centers_blue, np.log10(hw_mean_stats_blue[0]), c='darkblue', lw=3, zorder=10)
 
     dr = plt.scatter(centers_red, 
-        np.log10(sw_mean_stats_red_data/hw_mean_stats_red_data[0]), 
+        np.log10(hw_mean_stats_red_data[0]), 
         c='indianred', s=300, marker='p', zorder = 20)
     db = plt.scatter(centers_blue, 
-        np.log10(sw_mean_stats_blue_data/hw_mean_stats_blue_data[0]), 
+        np.log10(hw_mean_stats_blue_data[0]), 
         c='royalblue', s=300, marker='p', zorder=20)
 
     mr = plt.fill_between(x=centers_red, y1=ratio_red_mod_max, 
@@ -7046,43 +7230,11 @@ def plot_satellite_weighted_sigma(result, vdisp_red_bf, vdisp_blue_bf, \
     mb = plt.fill_between(x=centers_blue, y1=ratio_blue_mod_max, 
         y2=ratio_blue_mod_min, color='cornflowerblue',alpha=0.4)
 
-    # ## Satellite weighted
-    # bfr, = plt.plot(centers_red, np.log10(sw_mean_stats_red[0]), c='maroon', lw=3, zorder = 10)
-    # bfb, = plt.plot(centers_blue, np.log10(sw_mean_stats_blue[0]), c='darkblue', lw=3, zorder=10)
 
-    # dr = plt.scatter(centers_red, 
-    #     np.log10(sw_mean_stats_red_data[0]), 
-    #     c='indianred', s=300, marker='p', zorder = 20)
-    # db = plt.scatter(centers_blue, 
-    #     np.log10(sw_mean_stats_blue_data[0]), 
-    #     c='royalblue', s=300, marker='p', zorder=20)
-
-    # mr = plt.fill_between(x=centers_red, y1=ratio_red_mod_max, 
-    #     y2=ratio_red_mod_min, color='lightcoral',alpha=0.4)
-    # mb = plt.fill_between(x=centers_blue, y1=ratio_blue_mod_max, 
-    #     y2=ratio_blue_mod_min, color='cornflowerblue',alpha=0.4)
-
-    ## Host wrighted
-    # bfr, = plt.plot(centers_red, np.log10(hw_mean_stats_red[0]), c='maroon', lw=3, zorder = 10)
-    # bfb, = plt.plot(centers_blue, np.log10(hw_mean_stats_blue[0]), c='darkblue', lw=3, zorder=10)
-
-    # dr = plt.scatter(centers_red, 
-    #     np.log10(hw_mean_stats_red_data[0]), 
-    #     c='indianred', s=300, marker='p', zorder = 20)
-    # db = plt.scatter(centers_blue, 
-    #     np.log10(hw_mean_stats_blue_data[0]), 
-    #     c='royalblue', s=300, marker='p', zorder=20)
-
-    # mr = plt.fill_between(x=centers_red, y1=ratio_red_mod_max, 
-    #     y2=ratio_red_mod_min, color='lightcoral',alpha=0.4)
-    # mb = plt.fill_between(x=centers_blue, y1=ratio_blue_mod_max, 
-    #     y2=ratio_blue_mod_min, color='cornflowerblue',alpha=0.4)
-
-
-    # mr = plt.fill_between(x=centers_red, y1=red_models_max, 
-    #     y2=red_models_min, color='lightcoral',alpha=0.4)
-    # mb = plt.fill_between(x=centers_blue, y1=blue_models_max, 
-    #     y2=blue_models_min, color='cornflowerblue',alpha=0.4)
+    mr = plt.fill_between(x=centers_red, y1=ratio_red_mod_max, 
+        y2=ratio_red_mod_min, color='lightcoral',alpha=0.4)
+    mb = plt.fill_between(x=centers_blue, y1=ratio_blue_mod_max, 
+        y2=ratio_blue_mod_min, color='cornflowerblue',alpha=0.4)
     
     plt.legend([(bfr, bfb), (dr, db), (mr, mb)], 
         ['Best-fit', 'Data', 'Models'],
@@ -7090,19 +7242,19 @@ def plot_satellite_weighted_sigma(result, vdisp_red_bf, vdisp_blue_bf, \
         loc='best')
 
     plt.xlabel(r'\boldmath$\log_{10}\ M_{\star , cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
-    plt.ylabel(r'\boldmath$\log_{10}\ (\sigma_{sw}^2 / \sigma_{hw}^2) \left[\mathrm{km/s} \right]$', fontsize=30)
+    # plt.ylabel(r'\boldmath$\log_{10}\ (\sigma_{sw}^2 / \sigma_{hw}^2) \left[\mathrm{km/s} \right]$', fontsize=30)
     # plt.ylabel(r'\boldmath$\log_{10}\ (\sigma_{sw}^2) \left[\mathrm{km/s} \right]$', fontsize=30)
-    # plt.ylabel(r'\boldmath$\log_{10}\ (\sigma_{hw}^2) \left[\mathrm{km/s} \right]$', fontsize=30)
+    plt.ylabel(r'\boldmath$\log_{10}\ (\sigma_{hw}^2) \left[\mathrm{km/s} \right]$', fontsize=30)
 
 
     if quenching == 'halo':
-        # plt.title('Host weighted velocity dispersion in halo quenching model (excluding singletons)', fontsize=25)
+        plt.title('Host weighted velocity dispersion in halo quenching model (excluding singletons)', fontsize=25)
         # plt.title('Satellite weighted velocity dispersion in halo quenching model (excluding singletons)', fontsize=25)
-        plt.title('Ratio of satellite-host weighted velocity dispersion in halo quenching model (excluding singletons)', fontsize=25)
+        # plt.title('Ratio of satellite-host weighted velocity dispersion in halo quenching model (excluding singletons)', fontsize=25)
     elif quenching == 'hybrid':
-        # plt.title('Host weighted velocity dispersion in hybrid quenching model (excluding singletons)', fontsize=25)
+        plt.title('Host weighted velocity dispersion in hybrid quenching model (excluding singletons)', fontsize=25)
         # plt.title('Satellite weighted velocity dispersion in hybrid quenching model (excluding singletons)', fontsize=25)
-        plt.title('Ratio of satellite-host weighted velocity dispersion in hybrid quenching model (excluding singletons)', fontsize=25)
+        # plt.title('Ratio of satellite-host weighted velocity dispersion in hybrid quenching model (excluding singletons)', fontsize=25)
     plt.show()
 
 
@@ -7125,7 +7277,7 @@ path_to_data = dict_of_paths['data_dir']
 
 many_behroozi_mocks = False
 quenching = 'hybrid'
-level = 'group'
+level = 'halo'
 machine = 'mac'
 mf_type = 'smf'
 survey = 'eco'
