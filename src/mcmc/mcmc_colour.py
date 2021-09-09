@@ -29,6 +29,13 @@ import os
 
 __author__ = '[Mehnaaz Asad]'
 
+def mock_add_grpcz(mock_df):
+    grpcz = mock_df.groupby('groupid').cz.mean().values
+    grpn = mock_df.groupby('groupid').cz.size().values
+    full_grpcz_arr = np.repeat(grpcz, grpn)
+    mock_df['grpcz'] = full_grpcz_arr
+    return mock_df
+
 def reading_catls(filename, catl_format='.hdf5'):
     """
     Function to read ECO/RESOLVE catalogues.
@@ -455,7 +462,7 @@ def halocat_init(halo_catalog, z_median):
     return model
 
 def mcmc(nproc, nwalkers, nsteps, phi_red_data, phi_blue_data, std_red_data, 
-    std_blue_data, av_grpcen_red_data, av_grpcen_blue_data, err, eigenvectors):
+    std_blue_data, av_grpcen_red_data, av_grpcen_blue_data, err, corr_mat_inv):
     """
     MCMC analysis
 
@@ -502,38 +509,45 @@ def mcmc(nproc, nwalkers, nsteps, phi_red_data, phi_blue_data, std_red_data,
     p0 = param_vals + 0.1*np.random.rand(ndim*nwalkers).\
         reshape((nwalkers, ndim))
 
-    chain_fname = open("mcmc_{0}_colour_raw.txt".format(survey), "a")
-    chi2_fname = open("{0}_colour_chi2.txt".format(survey), "a")
-    mocknum_fname = open("{0}_colour_mocknum.txt".format(survey), "a")
+    # chain_fname = open("mcmc_{0}_colour_raw.txt".format(survey), "a")
+    # chi2_fname = open("{0}_colour_chi2.txt".format(survey), "a")
+    # mocknum_fname = open("{0}_colour_mocknum.txt".format(survey), "a")
+
+    filename = "tutorial.h5"
+    backend = emcee.backends.HDFBackend(filename)
+    backend.reset(nwalkers, ndim)
 
     with Pool(processes=nproc) as pool:
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, 
             args=(phi_red_data, phi_blue_data, std_red_data, std_blue_data, 
-                av_grpcen_red_data, av_grpcen_blue_data, err, eigenvectors), pool=pool)
+                av_grpcen_red_data, av_grpcen_blue_data, err, corr_mat_inv), 
+                pool=pool,backend=backend)
         start = time.time()
         for i,result in enumerate(sampler.sample(p0, iterations=nsteps, 
-            storechain=False)):
-            position = result[0]
-            chi2 = np.array(result[3])[:,0]
-            mock_num = np.array(result[3])[:,1].astype(int)
-            print("Iteration number {0} of {1}".format(i+1,nsteps))
-            for k in range(position.shape[0]):
-                chain_fname.write(str(position[k]).strip("[]"))
-                chain_fname.write("\n")
-            chain_fname.write("# New slice\n")
-            for k in range(chi2.shape[0]):
-                chi2_fname.write(str(chi2[k]).strip("[]"))
-                chi2_fname.write("\n")
-            for k in range(mock_num.shape[0]):
-                mocknum_fname.write(str(mock_num[k]).strip("[]"))
-                mocknum_fname.write("\n")
+            progress=True)):
+            # position = result[0]
+            # chi2 = np.array(result[3])[:,0]
+            # mock_num = np.array(result[3])[:,1].astype(int)
+            # print("Iteration number {0} of {1}".format(i+1,nsteps))
+            if sampler.iteration % 100:
+                continue
+            # for k in range(position.shape[0]):
+            #     chain_fname.write(str(position[k]).strip("[]"))
+            #     chain_fname.write("\n")
+            # chain_fname.write("# New slice\n")
+            # for k in range(chi2.shape[0]):
+            #     chi2_fname.write(str(chi2[k]).strip("[]"))
+            #     chi2_fname.write("\n")
+            # for k in range(mock_num.shape[0]):
+            #     mocknum_fname.write(str(mock_num[k]).strip("[]"))
+            #     mocknum_fname.write("\n")
         end = time.time()
         multi_time = end - start
         print("Multiprocessing took {0:.1f} seconds".format(multi_time))
 
-    chain_fname.close()
-    chi2_fname.close()
-    mocknum_fname.close()
+    # chain_fname.close()
+    # chi2_fname.close()
+    # mocknum_fname.close()
 
     return sampler
 
@@ -582,7 +596,7 @@ def populate_mock(theta, model):
 
     return gals_df
 
-def get_host_halo_mock(gals_df, mock):
+def get_host_halo_mock(df, mock):
     """
     Get host halo mass from mock catalog
 
@@ -598,8 +612,6 @@ def get_host_halo_mock(gals_df, mock):
     sat_halos: array
         Array of satellite host halo masses
     """
-
-    df = gals_df.copy()
 
     # groups = df.groupby('halo_id')
     # keys = groups.groups.keys()
@@ -619,7 +631,7 @@ def get_host_halo_mock(gals_df, mock):
             if value == 1:
                 cen_halos.append(df.halo_mvir.values[index])
             else:
-                sat_halos.append(df.halo_mvir.values[index])
+                sat_halos.append(df.halo_mvir_host_halo.values[index])
     else:
         cen_halos = []
         sat_halos = []
@@ -635,7 +647,7 @@ def get_host_halo_mock(gals_df, mock):
 
     return cen_halos, sat_halos
 
-def get_stellar_mock(gals_df, mock, randint=None):
+def get_stellar_mock(df, mock, randint=None):
     """
     Get stellar mass from mock catalog
 
@@ -652,7 +664,6 @@ def get_stellar_mock(gals_df, mock, randint=None):
         Array of satellite stellar masses
     """
 
-    df = gals_df.copy()
     if mock == 'vishnu':
         cen_gals = []
         sat_gals = []
@@ -676,7 +687,7 @@ def get_stellar_mock(gals_df, mock, randint=None):
 
     return cen_gals, sat_gals
 
-def chi_squared(data, model, err_data, eigenvectors):
+def chi_squared(data, model, err_data, phi_inv_corr_mat):
     """
     Calculates chi squared
 
@@ -710,18 +721,18 @@ def chi_squared(data, model, err_data, eigenvectors):
 
     # return chi_squared[0][0]
     ####
-    
-    ### Using matrix only for phi 
 
-    data = data.flatten() # from (6,5) to (1,30)
-    model = model.flatten() # same as above
+    ### SVD
+    # data = data.flatten() # from (6,5) to (1,30)
+    # model = model.flatten() # same as above
 
-    data_new_space = np.array(np.matrix(data) @ eigenvectors)[0]
-    model_new_space = np.array(np.matrix(model) @ eigenvectors)[0]
+    # data_new_space = np.array(np.matrix(data) @ eigenvectors)[0]
+    # model_new_space = np.array(np.matrix(model) @ eigenvectors)[0]
 
-    chi_squared_indiv = np.power(((data_new_space - model_new_space)/err_data),2)
+    # chi_squared_indiv = np.power(((data_new_space - model_new_space)/err_data),2)
 
-    total_chi_squared = np.sum(chi_squared_indiv)
+    # total_chi_squared = np.sum(chi_squared_indiv)
+    ###
 
     # print('data: \n', data_new_space)
     # print('model: \n', model_new_space)
@@ -733,23 +744,23 @@ def chi_squared(data, model, err_data, eigenvectors):
     ## measurements but calculating individual chi-squared values for 
     ## rest of the measurements
 
-    # phi_data = data[0:10]
-    # phi_model = model[0:10]
-    # phi_error = err_data[0:10]
+    phi_data = data[0:10]
+    phi_model = model[0:10]
+    phi_error = err_data[0:10]
 
-    # first_term = ((phi_data - phi_model) / (phi_error)).reshape(1,phi_data.size)
-    # third_term = np.transpose(first_term)
+    first_term = ((phi_data - phi_model) / (phi_error)).reshape(1,phi_data.size)
+    third_term = np.transpose(first_term)
 
-    # # chi_squared is saved as [[value]]
-    # phi_chi_squared = np.dot(np.dot(first_term,inv_corr_mat),third_term)[0][0]
+    # chi_squared is saved as [[value]]
+    phi_chi_squared = np.dot(np.dot(first_term, phi_inv_corr_mat),third_term)[0][0]
 
-    # other_data = data[10:]
-    # other_model = model[10:]
-    # other_error = err_data[10:]
+    other_data = data[10:]
+    other_model = model[10:]
+    other_error = err_data[10:]
 
-    # other_chi_squared = np.power(((other_data - other_model)/other_error),2)
+    other_chi_squared = np.power(((other_data - other_model)/other_error),2)
 
-    # total_chi_sqared = phi_chi_squared + np.sum(other_chi_squared)
+    total_chi_squared = phi_chi_squared + np.sum(other_chi_squared)
 
     # print('phi data: \n', phi_data)
     # print('phi model: \n', phi_model)
@@ -763,7 +774,7 @@ def chi_squared(data, model, err_data, eigenvectors):
     return total_chi_squared
 
 def lnprob(theta, phi_red_data, phi_blue_data, std_red_data, std_blue_data, 
-    av_grpcen_red_data, av_grpcen_blue_data, err, eigenvectors):
+    av_grpcen_red_data, av_grpcen_blue_data, err, corr_mat_inv):
     """
     Calculates log probability for emcee
 
@@ -795,82 +806,78 @@ def lnprob(theta, phi_red_data, phi_blue_data, std_red_data, std_blue_data,
     randint_logmstar = random.randint(1,101)
     chi2 = random.uniform(0.1,0.9)
     lnp = -chi2/2
-    # if theta[0] < 0:
-    #     chi2 = -np.inf
-    #     return -np.inf, [chi2, randint_logmstar]
-    # if theta[1] < 0:
-    #     chi2 = -np.inf
-    #     return -np.inf, [chi2, randint_logmstar]
-    # if theta[2] < 0:
-    #     chi2 = -np.inf
-    #     return -np.inf, [chi2, randint_logmstar]
-    # if theta[3] < 0 or theta[3] > 5:
-    #     chi2 = -np.inf
-    #     return -np.inf, [chi2, randint_logmstar]       
+    if theta[0] < 0:
+        chi2 = -np.inf
+        return -np.inf, [chi2, randint_logmstar]
+    if theta[1] < 0:
+        chi2 = -np.inf
+        return -np.inf, [chi2, randint_logmstar]
+    if theta[2] < 0:
+        chi2 = -np.inf
+        return -np.inf, [chi2, randint_logmstar]
+    if theta[3] < 0 or theta[3] > 5:
+        chi2 = -np.inf
+        return -np.inf, [chi2, randint_logmstar]       
 
-    # warnings.simplefilter("error", (UserWarning, RuntimeWarning))
-    # try: 
-    #     cols_to_use = ['halo_mvir', 'cs_flag', 'cz', \
-    #         '{0}_y'.format(randint_logmstar), \
-    #         'g_galtype_{0}'.format(randint_logmstar), \
-    #         'groupid_{0}'.format(randint_logmstar)]
+    warnings.simplefilter("error", (UserWarning, RuntimeWarning))
+    try: 
+        cols_to_use = ['halo_mvir', 'cs_flag', 'cz', \
+            '{0}'.format(randint_logmstar), \
+            'g_galtype_{0}'.format(randint_logmstar), \
+            'groupid_{0}'.format(randint_logmstar)]
         
-    #     if randint_logmstar < 51:
-    #         gals_df_mock = gal_group_df_one.loc[gal_group_df_one['{0}_y'.\
-    #             format(randint_logmstar)] >= 8.6][cols_to_use]
-    #     else:
-    #         gals_df_mock = gal_group_df_two.loc[gal_group_df_two['{0}_y'.\
-    #             format(randint_logmstar)] >= 8.6][cols_to_use]
+        if randint_logmstar < 51:
+            gals_df_mock = gal_group_df_one[cols_to_use]
+        else:
+            gals_df_mock = gal_group_df_two[cols_to_use]
 
-    #     gals_df_mock = gals_df_mock.rename(columns=\
-    #         {'{0}_y'.format(randint_logmstar):'{0}'.format(randint_logmstar)})
 
-    #     # Masses in h=1.0
-    #     if quenching == 'hybrid':
-    #         f_red_cen, f_red_sat = hybrid_quenching_model(theta, gals_df_mock, \
-    #             'vishnu', randint_logmstar)
-    #     elif quenching == 'halo':
-    #         f_red_cen, f_red_sat = halo_quenching_model(theta, gals_df_mock, \
-    #             'vishnu')
-    #     gals_df_mock = assign_colour_label_mock(f_red_cen, f_red_sat, \
-    #         gals_df_mock)
-    #     # v_sim = 130**3
-    #     v_sim = 890641.5172927063 #survey volume used in group_finder.py
-    #     total_model, red_model, blue_model = measure_all_smf(gals_df_mock, v_sim 
-    #     ,data_bool=False, randint_logmstar=randint_logmstar)     
-    #     std_red_model, std_blue_model, centers_red_model, centers_blue_model = \
-    #         get_deltav_sigma_vishnu_qmcolour(gals_df_mock, randint_logmstar)
-    #     av_grpcen_red_model, centers_red_model, av_grpcen_blue_model, centers_blue_model = \
-    #         get_sigma_per_group_vishnu_qmcolour(gals_df_mock, randint_logmstar)
+        # Masses in h=1.0
+        if quenching == 'hybrid':
+            f_red_cen, f_red_sat = hybrid_quenching_model(theta, gals_df_mock, \
+                'vishnu', randint_logmstar)
+        elif quenching == 'halo':
+            f_red_cen, f_red_sat = halo_quenching_model(theta, gals_df_mock, \
+                'vishnu')
+        gals_df_mock = assign_colour_label_mock(f_red_cen, f_red_sat, \
+            gals_df_mock)
+        # v_sim = 130**3
+        v_sim = 890641.5172927063 #survey volume used in group_finder.py
+        total_model, red_model, blue_model = measure_all_smf(gals_df_mock, v_sim 
+        ,data_bool=False, randint_logmstar=randint_logmstar)     
+        # std_red_model, std_blue_model, centers_red_model, centers_blue_model = \
+        #     get_deltav_sigma_vishnu_qmcolour(gals_df_mock, randint_logmstar)
+        # av_grpcen_red_model, centers_red_model, av_grpcen_blue_model, centers_blue_model = \
+        #     get_sigma_per_group_vishnu_qmcolour(gals_df_mock, randint_logmstar)
         
-    #     data_arr = []
-    #     data_arr.append(phi_red_data)
-    #     data_arr.append(phi_blue_data)
-    #     data_arr.append(std_red_data)
-    #     data_arr.append(std_blue_data)
-    #     ## Full binned_statistic output which is why indexing is needed
-    #     data_arr.append(av_grpcen_red_data[0]) 
-    #     data_arr.append(av_grpcen_blue_data[0])
-    #     model_arr = []
-    #     model_arr.append(red_model[1])
-    #     model_arr.append(blue_model[1])   
-    #     model_arr.append(std_red_model)
-    #     model_arr.append(std_blue_model)
-    #     model_arr.append(av_grpcen_red_model[0])
-    #     model_arr.append(av_grpcen_blue_model[0])
-    #     err_arr = err
+        # data_arr = []
+        # data_arr.append(phi_red_data)
+        # data_arr.append(phi_blue_data)
+        # data_arr.append(std_red_data)
+        # data_arr.append(std_blue_data)
+        # ## Full binned_statistic output which is why indexing is needed
+        # data_arr.append(av_grpcen_red_data[0]) 
+        # data_arr.append(av_grpcen_blue_data[0])
+        # model_arr = []
+        # model_arr.append(red_model[1])
+        # model_arr.append(blue_model[1])   
+        # model_arr.append(std_red_model)
+        # model_arr.append(std_blue_model)
+        # model_arr.append(av_grpcen_red_model[0])
+        # model_arr.append(av_grpcen_blue_model[0])
+        # err_arr = err
 
-    #     data_arr, model_arr = np.array(data_arr), np.array(model_arr)
-    #     # print('data: \n', data_arr)
+        # data_arr, model_arr = np.array(data_arr), np.array(model_arr)
+        # # print('data: \n', data_arr)
 
-    #     chi2 = chi_squared(data_arr, model_arr, err_arr, eigenvectors)
-    #     lnp = -chi2 / 2
+        # chi2 = chi_squared(data_arr, model_arr, err_arr, corr_mat_inv)
+        # lnp = -chi2 / 2
 
-    #     if math.isnan(lnp):
-    #         raise ValueError
-    # except (ValueError, RuntimeWarning, UserWarning):
-    #     lnp = -np.inf
-    #     chi2 = np.inf
+        if math.isnan(lnp):
+            raise ValueError
+    except (ValueError):
+        lnp = -np.inf
+        chi2 = np.inf
 
     return lnp, [chi2, randint_logmstar]
 
@@ -941,7 +948,7 @@ def halo_quenching_model(theta, gals_df, mock):
 
     return f_red_cen, f_red_sat
 
-def assign_colour_label_mock(f_red_cen, f_red_sat, gals_df, drop_fred=False):
+def assign_colour_label_mock(f_red_cen, f_red_sat, df, drop_fred=False):
     """
     Assign colour label to mock catalog
 
@@ -964,8 +971,6 @@ def assign_colour_label_mock(f_red_cen, f_red_sat, gals_df, drop_fred=False):
         new columns
     """
 
-    # Copy of dataframe
-    df = gals_df.copy()
     # Saving labels
     color_label_arr = [[] for x in range(len(df))]
     rng_arr = [[] for x in range(len(df))]
@@ -1110,12 +1115,13 @@ def get_err_data(survey, path):
             filename = temp_path + '{0}_cat_{1}_Planck_memb_cat.hdf5'.format(
                 mock_name, num)
             mock_pd = reading_catls(filename) 
+            mock_pd = mock_add_grpcz(mock_pd)
 
             # Using the same survey definition as in mcmc smf i.e excluding the 
             # buffer
             mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & \
                 (mock_pd.cz.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
-                (mock_pd.logmstar.values >= mstar_limit)]
+                (mock_pd.logmstar.values >= mstar_limit)].reset_index(drop=True)
 
             # ## Using best-fit found for old ECO data using optimize_hybridqm_eco,py
             # Mstar_q = 10.39 # Msun/h
@@ -1142,7 +1148,7 @@ def get_err_data(survey, path):
                 f_red_c, f_red_s = hybrid_quenching_model(theta, mock_pd, 'nonvishnu')
             elif quenching == 'halo':
                 theta = [Mh_qc, Mh_qs, mu_c, mu_s]
-                f_red_c, f_red_s = hybrid_quenching_model(theta, mock_pd, 'nonvishnu')               
+                f_red_c, f_red_s = halo_quenching_model(theta, mock_pd, 'nonvishnu')               
             mock_pd = assign_colour_label_mock(f_red_c, f_red_s, mock_pd)
             # logmstar_red_max = mock_pd.logmstar.loc[mock_pd.colour_label == 'R'].max() 
             # logmstar_red_max_arr.append(logmstar_red_max)
@@ -1249,7 +1255,7 @@ def get_err_data(survey, path):
 
 
 
-    combined_df = pd.DataFrame({'phi_red_0':phi_red_0, 'phi_red_1':phi_red_1,\
+    mock_data_df = pd.DataFrame({'phi_red_0':phi_red_0, 'phi_red_1':phi_red_1,\
         'phi_red_2':phi_red_2, 'phi_red_3':phi_red_3, 'phi_red_4':phi_red_4, \
         'phi_blue_0':phi_blue_0, 'phi_blue_1':phi_blue_1, 
         'phi_blue_2':phi_blue_2, 'phi_blue_3':phi_blue_3, 
@@ -1264,35 +1270,35 @@ def get_err_data(survey, path):
         'av_grpcen_blue_1':av_grpcen_blue_1, 'av_grpcen_blue_2':av_grpcen_blue_2, \
         'av_grpcen_blue_3':av_grpcen_blue_3, 'av_grpcen_blue_4':av_grpcen_blue_4 })
 
-    corr_mat_colour = combined_df.corr()
-    U, s, Vh = linalg.svd(corr_mat_colour) # columns of U are the eigenvectors
-    eigenvalue_threshold = np.sqrt(np.sqrt(2/num_mocks))
+    # corr_mat_colour = mock_data_df.corr()
+    # U, s, Vh = linalg.svd(corr_mat_colour) # columns of U are the eigenvectors
+    # eigenvalue_threshold = np.sqrt(np.sqrt(2/num_mocks))
 
-    idxs_cut = []
-    for idx,eigenval in enumerate(s):
-        if eigenval < eigenvalue_threshold:
-            idxs_cut.append(idx)
+    # idxs_cut = []
+    # for idx,eigenval in enumerate(s):
+    #     if eigenval < eigenvalue_threshold:
+    #         idxs_cut.append(idx)
 
-    last_idx_to_keep = min(idxs_cut)-1
+    # last_idx_to_keep = min(idxs_cut)-1
 
-    eigenvector_subset = np.matrix(U[:, :last_idx_to_keep]) 
+    # eigenvector_subset = np.matrix(U[:, :last_idx_to_keep]) 
 
-    mock_data_df_new_space = pd.DataFrame(combined_df @ eigenvector_subset)
+    # mock_data_df_new_space = pd.DataFrame(mock_data_df @ eigenvector_subset)
 
-    err_colour = np.sqrt(np.diag(mock_data_df_new_space.cov()))
+    # err_colour = np.sqrt(np.diag(mock_data_df_new_space.cov()))
 
 
     ## Using matrix only for the phi measurements and using individual chi2
     ## values for other measurements
-    # phi_df = combined_df[combined_df.columns[0:10]]
-    # phi_corr_mat_colour = phi_df.corr()
-    # phi_corr_mat_inv_colour = np.linalg.inv(phi_corr_mat_colour.values)  
-    # phi_err_colour = np.sqrt(np.diag(phi_df.cov()))
+    phi_df = mock_data_df[mock_data_df.columns[0:10]]
+    phi_corr_mat_colour = phi_df.corr()
+    phi_corr_mat_inv_colour = np.linalg.inv(phi_corr_mat_colour.values)  
+    phi_err_colour = np.sqrt(np.diag(phi_df.cov()))
 
-    # other_df = combined_df[combined_df.columns[10:]]
-    # other_error = other_df.std(axis=0).values
+    other_df = mock_data_df[mock_data_df.columns[10:]]
+    other_error = other_df.std(axis=0).values
 
-    # err_colour = np.insert(phi_err_colour, len(phi_err_colour), other_error)
+    err_colour = np.insert(phi_err_colour, len(phi_err_colour), other_error)
 
 
 
@@ -1317,7 +1323,7 @@ def get_err_data(survey, path):
     # plt.title(r'Mass function and old and new sigma observable')
     # plt.show()
 
-    return err_colour, eigenvector_subset
+    return err_colour, phi_corr_mat_inv_colour
 
 def std_func(bins, mass_arr, vel_arr):
     """
@@ -2187,7 +2193,7 @@ def main():
             get_sigma_per_group_data(catl)
 
         print('Measuring error in data from mocks')
-        sigma, eigenvectors = get_err_data(survey, path_to_mocks)
+        sigma, corr_mat_inv = get_err_data(survey, path_to_mocks)
 
         print('Reading vishnu group catalog')
         gal_group_df = reading_catls(path_to_proc + "gal_group.hdf5") 
@@ -2218,10 +2224,21 @@ def main():
         cols_to_keep_set_two.append('cs_flag')
 
         gal_group_df_one = gal_group_df[cols_to_keep_set_one]
+        for idx in range(0,51):
+            gal_group_df_one = gal_group_df_one.rename(columns={'{0}_y'.\
+                format(idx):'{0}'.format(idx)})
+
         gal_group_df_two = gal_group_df[cols_to_keep_set_two]
+        for idx in range(51,102):
+            gal_group_df_two = gal_group_df_two.rename(columns={'{0}_y'.\
+                format(idx):'{0}'.format(idx)})
 
 
     else:
+        # Example of pickling:
+        # with open('galgroupdftwo.pickle', 'wb') as handle:
+        #     pickle.dump(gal_group_df_two, handle, 
+        #     protocol=pickle.HIGHEST_PROTOCOL)
         print('Unpickling')
         file = open("redsmf.pickle",'rb')
         red_data = pickle.load(file)   
@@ -2256,9 +2273,9 @@ def main():
 
     print('Running MCMC')
     # sampler = mcmc(nproc, nwalkers, nsteps, red_data[1], blue_data[1], std_red,
-    #     std_blue, mean_grp_cen_red, mean_grp_cen_blue, sigma, eigenvectors)
+    #     std_blue, mean_grp_cen_red, mean_grp_cen_blue, sigma, corr_mat_inv)
     sampler = mcmc(nproc, nwalkers, nsteps, red_data, blue_data, std_red,
-        std_blue, mean_grp_cen_red, mean_grp_cen_blue, sigma, eigenvectors)
+        std_blue, mean_grp_cen_red, mean_grp_cen_blue, sigma, corr_mat_inv)
 
 # Main function
 if __name__ == '__main__':
