@@ -7270,9 +7270,6 @@ global level
 dict_of_paths = cwpaths.cookiecutter_paths()
 path_to_raw = dict_of_paths['raw_dir']
 path_to_proc = dict_of_paths['proc_dir']
-path_to_interim = dict_of_paths['int_dir']
-path_to_figures = dict_of_paths['plot_dir']
-path_to_external = dict_of_paths['ext_dir']
 path_to_data = dict_of_paths['data_dir']
 
 many_behroozi_mocks = False
@@ -7476,7 +7473,6 @@ plot_mean_N_vs_grpcen(result, red_num_bf, \
     red_num_data, red_cen_stellar_mass_data_N, blue_num_data, \
     blue_cen_stellar_mass_data_N, red_cen_stellar_mass_mocks, red_num_mocks, \
     blue_cen_stellar_mass_mocks, blue_num_mocks)
-
 
 plot_satellite_weighted_sigma(result, wtd_red_sigma_bf, \
     wtd_blue_sigma_bf, wtd_red_cen_stellar_mass_bf, \
