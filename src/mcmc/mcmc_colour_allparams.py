@@ -15,6 +15,7 @@ from halotools.empirical_models import PrebuiltSubhaloModelFactory
 from halotools.sim_manager import CachedHaloCatalog
 from cosmo_utils.utils import work_paths as cwpaths
 from matplotlib.pyplot import sca
+from numpy.core.fromnumeric import diagonal
 from scipy.stats import binned_statistic as bs
 from multiprocessing import Pool
 import pandas as pd
@@ -785,8 +786,8 @@ def get_err_data(survey, path):
             mock_pd = mock_add_grpcz(mock_pd)
             # Using the same survey definition as in mcmc smf i.e excluding the 
             # buffer
-            mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & \
-                (mock_pd.cz.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
+            mock_pd = mock_pd.loc[(mock_pd.grpcz.values >= min_cz) & \
+                (mock_pd.grpcz.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
                 (mock_pd.logmstar.values >= mstar_limit)].reset_index(drop=True)
 
             # ## Using best-fit found for old ECO data using optimize_hybridqm_eco,py
@@ -795,18 +796,33 @@ def get_err_data(survey, path):
             # mu = 0.65
             # nu = 0.16
 
-            ## Using best-fit found for new ECO data using optimize_hybridqm_eco,py
-            Mstar_q = 10.49 # Msun/h
-            Mh_q = 14.03 # Msun/h
-            mu = 0.69
-            nu = 0.148
+            # ## Using best-fit found for new ECO data using optimize_qm_eco.py 
+            # ## for hybrid quenching model
+            # Mstar_q = 10.49 # Msun/h
+            # Mh_q = 14.03 # Msun/h
+            # mu = 0.69
+            # nu = 0.148
 
-            ## Using best-fit found for new ECO data using optimize_qm_eco.py 
-            ## for halo quenching model
-            Mh_qc = 12.61 # Msun/h
-            Mh_qs = 13.5 # Msun/h
-            mu_c = 0.40
-            mu_s = 0.148
+            ## Using best-fit found for new ECO data using result from chain 32
+            ## i.e. hybrid quenching model
+            Mstar_q = 10.06 # Msun/h
+            Mh_q = 14.05 # Msun/h
+            mu = 0.56
+            nu = 0.48
+
+            # ## Using best-fit found for new ECO data using optimize_qm_eco.py 
+            # ## for halo quenching model
+            # Mh_qc = 12.61 # Msun/h
+            # Mh_qs = 13.5 # Msun/h
+            # mu_c = 0.40
+            # mu_s = 0.148
+
+            ## Using best-fit found for new ECO data using result from chain 33
+            ## i.e. halo quenching model
+            Mh_qc = 11.78 # Msun/h
+            Mh_qs = 13.14 # Msun/h
+            mu_c = 1.09
+            mu_s = 1.99
 
             if quenching == 'hybrid':
                 theta = [Mstar_q, Mh_q, mu, nu]
@@ -887,30 +903,75 @@ def get_err_data(survey, path):
     #     'phi_blue_2':phi_blue_2, 'phi_blue_3':phi_blue_3, 
     #     'phi_blue_4':phi_blue_4})
 
-    # import matplotlib.pyplot as plt
-    # from matplotlib import rc
-    # from matplotlib import cm
+    import matplotlib.pyplot as plt
+    from matplotlib import rc
+    from matplotlib import cm
 
-    # rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=25)
-    # rc('text', usetex=False)
-    # rc('axes', linewidth=2)
-    # rc('xtick.major', width=4, size=7)
-    # rc('ytick.major', width=4, size=7)
-    # rc('xtick.minor', width=2, size=7)
-    # rc('ytick.minor', width=2, size=7)
+    rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=25)
+    rc('text', usetex=False)
+    rc('axes', linewidth=2)
+    rc('xtick.major', width=4, size=7)
+    rc('ytick.major', width=4, size=7)
+    rc('xtick.minor', width=2, size=7)
+    rc('ytick.minor', width=2, size=7)
 
-    # fig1 = plt.figure()
-    # ax1 = fig1.add_subplot(111)
-    # cmap = cm.get_cmap('Spectral')
-    # cax = ax1.matshow(combined_df.corr(), cmap=cmap)
-    # tick_marks = [i for i in range(len(corr_mat_colour.columns))]
-    # plt.xticks(tick_marks, corr_mat_colour.columns, rotation='vertical')
-    # plt.yticks(tick_marks, corr_mat_colour.columns)    
-    # plt.gca().invert_yaxis() 
-    # plt.gca().xaxis.tick_bottom()
-    # fig1.colorbar(cax)
-    # plt.title(r'Total mass function and blue fraction (centrals only)')
-    # plt.show()
+    fig1 = plt.figure()
+    ax1 = fig1.add_subplot(111)
+    cmap = cm.get_cmap('Spectral')
+    cax = ax1.matshow(combined_df.corr(), cmap=cmap, vmin=-1, vmax=1)
+    tick_marks = [i for i in range(len(combined_df.columns))]
+    plt.xticks(tick_marks, combined_df.columns, rotation='vertical')
+    plt.yticks(tick_marks, combined_df.columns)    
+    plt.gca().invert_yaxis() 
+    plt.gca().xaxis.tick_bottom()
+    plt.colorbar(cax)
+    plt.title(r'Total mass function and blue fraction')
+    plt.show()
+
+    fig1 = plt.figure()
+    ax1 = fig1.add_subplot(111)
+    cmap = cm.get_cmap('Spectral')
+    cax = ax1.matshow(combined_df.corr(), cmap=cmap, vmin=-1, vmax=1)
+    plt.colorbar(cax)
+    plt.gca().invert_yaxis() 
+    # # put a blue dot at (10, 20)
+    # plt.scatter([10], [20])
+
+    # # put a red dot, size 40, at 2 locations:
+    # plt.scatter(x=[30, 40], y=[50, 60], c='r', s=40)
+    plt.show()
+
+    fig1, axes = plt.subplots(12,12, sharex=True, sharey=True, figsize=(10,10))
+    for i, ax_i in enumerate(axes.flatten()):
+        if i == 12:
+            break
+        for j, ax_j in enumerate(axes.flatten()):
+            if j == 12:
+                break
+            elif i == j:
+                axes[i,j].hist(combined_df[combined_df.columns.values[i]], 
+                    density=True, color='k')
+            # else:
+            #     axes[i,j].scatter(combined_df[combined_df.columns.values[i]], 
+            #         combined_df[combined_df.columns.values[j]], c='k')
+            axes[i,j].set_xticks([])
+            axes[i,j].set_yticks([])
+            axes[i,j].set_aspect('equal')
+
+    fig1.subplots_adjust(wspace=0, hspace=0)
+    plt.show()
+
+    fig1, ax_main = plt.subplots(1,1)
+    axes = pd.plotting.scatter_matrix(combined_df, alpha=0.8, diagonal='kde', 
+        c='k', range_padding=0.1)
+
+    for i, ax in enumerate(axes.flatten()):
+        c = plt.cm.Spectral(combined_df.corr().values.flatten()[i])
+        ax.set_facecolor(c)
+    # ax_main.invert_yaxis()
+    plt.title(r'Total mass function and blue fraction')
+    plt.show()
+
 
     # rc('text', usetex=True)
     # rc('text.latex', preamble=r"\usepackage{amsmath}")
@@ -1306,7 +1367,7 @@ def main(args):
     print('Reading catalog') #No Mstar cut needed as catl_file already has it
     catl, volume, z_median = read_data_catl(catl_file, survey)
 
-    print('Assigning colour to data')
+    print('Assigning colour to data using u-r colours')
     catl = assign_colour_label_data(catl)
 
     print('Measuring SMF for data')
