@@ -2111,131 +2111,6 @@ def get_sigma_per_group_data(catl):
     return red_sigma_arr, red_cen_stellar_mass_arr, blue_sigma_arr, \
         blue_cen_stellar_mass_arr
 
-def gapper_method_vishnu(gals_df, randint=None):
-
-    if survey == 'eco':
-        mock_name = 'ECO'
-        num_mocks = 8
-        min_cz = 3000
-        max_cz = 7000
-        mag_limit = -17.33
-        mstar_limit = 8.9
-        volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
-    elif survey == 'resolvea':
-        mock_name = 'A'
-        num_mocks = 59
-        min_cz = 4500
-        max_cz = 7000
-        mag_limit = -17.33
-        mstar_limit = 8.9
-        volume = 13172.384  # Survey volume without buffer [Mpc/h]^3 
-    elif survey == 'resolveb':
-        mock_name = 'B'
-        num_mocks = 104
-        min_cz = 4500
-        max_cz = 7000
-        mag_limit = -17
-        mstar_limit = 8.7
-        volume = 4709.8373  # Survey volume without buffer [Mpc/h]^3
-
-    if randint != 1:
-        logmstar_col = '{0}'.format(randint)
-        g_galtype_col = 'g_galtype_{0}'.format(randint)
-        groupid_col = 'groupid_{0}'.format(randint)
-        # Using the same survey definition as in mcmc smf i.e excluding the 
-        # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
-        # and M* star cuts to mimic mocks and data.
-        gals_df = mock_add_grpcz(gals_df, False, groupid_col)
-        gals_df = gals_df.loc[(gals_df.grpcz.values >= min_cz) & \
-            (gals_df.grpcz.values <= max_cz) & \
-            (gals_df[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
-
-    elif randint == 1:
-        logmstar_col = 'behroozi_bf'
-        g_galtype_col = 'g_galtype_{0}'.format(randint)
-        groupid_col = 'groupid_{0}'.format(randint)
-        # Using the same survey definition as in mcmc smf i.e excluding the 
-        # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
-        # and M* star cuts to mimic mocks and data.
-        gals_df = mock_add_grpcz(gals_df, False, groupid_col)
-        gals_df = gals_df.loc[(gals_df.grpcz.values >= min_cz) & \
-            (gals_df.grpcz.values <= max_cz) & \
-            (gals_df[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
-
-    else:
-        logmstar_col = 'stellar_mass'
-        g_galtype_col = 'g_galtype'
-        groupid_col = 'groupid'
-        # Using the same survey definition as in mcmc smf i.e excluding the 
-        # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
-        # and M* star cuts to mimic mocks and data.
-        gals_df = mock_add_grpcz(gals_df, False, groupid_col)
-        gals_df = gals_df.loc[(gals_df.grpcz.values >= min_cz) & \
-            (gals_df.grpcz.values <= max_cz) & \
-            (gals_df[logmstar_col].values >= (10**mstar_limit)/2.041)]
-        gals_df[logmstar_col] = np.log10(gals_df[logmstar_col])
-
-    red_subset_grpids = np.unique(gals_df[groupid_col].loc[(gals_df.\
-        colour_label == 'R') & (gals_df[g_galtype_col] == 1)].values)  
-    blue_subset_grpids = np.unique(gals_df[groupid_col].loc[(gals_df.\
-        colour_label == 'B') & (gals_df[g_galtype_col] == 1)].values)
-
-
-    red_singleton_counter = 0
-    red_sigma_arr = []
-    red_cen_stellar_mass_arr = []
-    red_nsat_arr = []
-    for key in red_subset_grpids: 
-        group = gals_df.loc[gals_df[groupid_col] == key]
-        if len(group) == 1:
-            red_singleton_counter += 1
-        else:
-            cen_stellar_mass = group[logmstar_col].loc[group[g_galtype_col].\
-                values == 1].values[0]
-            nsat = len(group.loc[group[g_galtype_col].values == 0])
-            # Different velocity definitions
-            mean_cz_grp = np.round(np.mean(group.cz.values),2)
-            cen_cz_grp = group.cz.loc[group[g_galtype_col].values == 1].values[0]
-            # cz_grp = np.unique(group.grpcz.values)[0]
-
-            # Velocity difference
-            deltav = group.cz.values - len(group)*[cen_cz_grp]
-            # sigma = deltav[deltav!=0].std()
-            sigma = deltav.std()
-            
-            red_sigma_arr.append(sigma)
-            red_cen_stellar_mass_arr.append(cen_stellar_mass)
-            red_nsat_arr.append(nsat)
-
-    blue_singleton_counter = 0
-    blue_sigma_arr = []
-    blue_cen_stellar_mass_arr = []
-    blue_nsat_arr = []
-    for key in blue_subset_grpids: 
-        group = gals_df.loc[gals_df[groupid_col] == key]
-        if len(group) == 1:
-            blue_singleton_counter += 1
-        else:
-            cen_stellar_mass = group[logmstar_col].loc[group[g_galtype_col].\
-                values == 1].values[0]
-            nsat = len(group.loc[group[g_galtype_col].values == 0])
-            # Different velocity definitions
-            mean_cz_grp = np.round(np.mean(group.cz.values),2)
-            cen_cz_grp = group.cz.loc[group[g_galtype_col].values == 1].values[0]
-            # cz_grp = np.unique(group.grpcz.values)[0]
-
-            # Velocity difference
-            deltav = group.cz.values - len(group)*[cen_cz_grp]
-            # sigma = deltav[deltav!=0].std()
-            sigma = deltav.std()
-            
-            blue_sigma_arr.append(sigma)
-            blue_cen_stellar_mass_arr.append(cen_stellar_mass)
-            blue_nsat_arr.append(nsat)            
-
-    return red_sigma_arr, red_cen_stellar_mass_arr, blue_sigma_arr, \
-        blue_cen_stellar_mass_arr, red_nsat_arr, blue_nsat_arr
-
 def get_sigma_per_group_mocks_qmcolour(survey, mock_df):
     """
     Calculate velocity dispersion from survey mocks 
@@ -7480,3 +7355,45 @@ plot_satellite_weighted_sigma(result, wtd_red_sigma_bf, \
     wtd_blue_nsat_bf,\
     wtd_red_sigma_data, wtd_blue_sigma_data, red_cen_stellar_mass_data, \
     blue_cen_stellar_mass_data, red_nsat_data, blue_nsat_data)
+
+### Move to plotting function sigma_vdiff_mod from get_deltav functions
+if Settings.survey == 'eco' or Settings.survey == 'resolvea':
+    # TODO : check if this is actually correct for resolve a
+    red_stellar_mass_bins = np.linspace(8.6,11.2,6)
+elif Settings.survey == 'resolveb':
+    red_stellar_mass_bins = np.linspace(8.4,11.0,6)
+
+mean_stats_red = bs(red_cen_stellar_mass_arr, red_sigma_arr,
+    statistic='mean', bins=red_stellar_mass_bins)
+std_red = mean_stats_red[0]
+
+if survey == 'eco' or survey == 'resolvea':
+    # TODO : check if this is actually correct for resolve a
+    blue_stellar_mass_bins = np.linspace(8.6,10.7,6)
+elif survey == 'resolveb':
+    blue_stellar_mass_bins = np.linspace(8.4,10.4,6)
+
+mean_stats_blue = bs(blue_cen_stellar_mass_arr, blue_sigma_arr,
+    statistic='mean', bins=blue_stellar_mass_bins)
+std_blue = mean_stats_blue[0]
+
+centers_red = 0.5 * (mean_stats_red[1][1:] + \
+    mean_stats_red[1][:-1])
+centers_blue = 0.5 * (mean_stats_blue[1][1:] + \
+    mean_stats_blue[1][:-1])
+
+
+### Move to plotting function mean_grpccen_vs_sigma from sigma_per_group_mocks
+
+if catl_type == 'mock':
+    mean_stats_red = bs(red_sigma_arr, red_cen_stellar_mass_arr, 
+        statistic='mean', bins=np.linspace(0,250,6))
+    mean_stats_blue = bs(blue_sigma_arr, blue_cen_stellar_mass_arr, 
+        statistic='mean', bins=np.linspace(0,250,6))
+
+    centers_red = 0.5 * (mean_stats_red[1][1:] + \
+        mean_stats_red[1][:-1])
+    centers_blue = 0.5 * (mean_stats_blue[1][1:] + \
+        mean_stats_blue[1][:-1])
+    
+    return mean_stats_red, centers_red, mean_stats_blue, centers_blue
