@@ -3,10 +3,17 @@
 """
 __author__ = '{Mehnaaz Asad}'
 
+from os import error
 from preprocess import Preprocess
 from settings import Settings
 import numpy as np
+import pandas as pd
 from scipy.stats import binned_statistic as bs
+from halotools.empirical_models import PrebuiltSubhaloModelFactory
+from halotools.sim_manager import CachedHaloCatalog
+from experiments import Experiments
+from multiprocessing import Pool
+import time
 
 
 class Analysis():
@@ -16,6 +23,15 @@ class Analysis():
     f_blue = []
     phi_red_data = None
     phi_blue_data = None
+    model_init = None
+    best_fit_core = None
+    best_fit_experimentals = None
+    dof = None
+    mp_models = None
+    mp_experimentals = None
+    error_data = None
+    mocks_stddevs = None
+    result = None
 
     @staticmethod
     def assign_colour_label_data(catl):
@@ -340,6 +356,1034 @@ class Analysis():
         return phi_red, phi_blue
 
     @staticmethod
+    def halocat_init(halo_catalog, z_median):
+        """
+        Initial population of halo catalog using populate_mock function
+
+        Parameters
+        ----------
+        halo_catalog: string
+            Path to halo catalog
+        
+        z_median: float
+            Median redshift of survey
+
+        Returns
+        ---------
+        model: halotools model instance
+            Model based on behroozi 2010 SMHM
+        """
+        halocat = CachedHaloCatalog(fname=halo_catalog, update_cached_fname=True)
+        model = PrebuiltSubhaloModelFactory('behroozi10', redshift=z_median, \
+            prim_haloprop_key='halo_macc')
+        model.populate_mock(halocat,seed=5)
+
+        return model
+
+    @staticmethod
+    def hybrid_quenching_model(theta, gals_df, mock, randint=None):
+        """
+        Apply hybrid quenching model from Zu and Mandelbaum 2015
+
+        Parameters
+        ----------
+        theta: numpy array
+            Array of quenching model parameter values
+        gals_df: pandas dataframe
+            Mock catalog
+        mock: string
+            'vishnu' or 'nonvishnu' depending on what mock it is
+        randint (optional): int
+            Mock number in the case where many Behroozi mocks were used.
+            Defaults to None.
+
+        Returns
+        ---------
+        f_red_cen: array
+            Array of central red fractions
+        f_red_sat: array
+            Array of satellite red fractions
+        """
+
+        # parameter values from Table 1 of Zu and Mandelbaum 2015 "prior case"
+        Mstar_q = theta[0] # Msun/h
+        Mh_q = theta[1] # Msun/h
+        mu = theta[2]
+        nu = theta[3]
+
+        cen_hosthalo_mass_arr, sat_hosthalo_mass_arr = Analysis.get_host_halo_mock(gals_df, \
+            mock)
+        cen_stellar_mass_arr, sat_stellar_mass_arr = Analysis.get_stellar_mock(gals_df, mock, \
+            randint)
+
+        f_red_cen = 1 - np.exp(-((cen_stellar_mass_arr/(10**Mstar_q))**mu))
+
+        g_Mstar = np.exp(-((sat_stellar_mass_arr/(10**Mstar_q))**mu))
+        h_Mh = np.exp(-((sat_hosthalo_mass_arr/(10**Mh_q))**nu))
+        f_red_sat = 1 - (g_Mstar * h_Mh)
+
+        return f_red_cen, f_red_sat
+
+    @staticmethod
+    def halo_quenching_model(theta, gals_df, mock):
+        """
+        Apply halo quenching model from Zu and Mandelbaum 2015
+
+        Parameters
+        ----------
+        gals_df: pandas dataframe
+            Mock catalog
+
+        Returns
+        ---------
+        f_red_cen: array
+            Array of central red fractions
+        f_red_sat: array
+            Array of satellite red fractions
+        """
+
+        # parameter values from Table 1 of Zu and Mandelbaum 2015 "prior case"
+        Mh_qc = theta[0] # Msun/h 
+        Mh_qs = theta[1] # Msun/h
+        mu_c = theta[2]
+        mu_s = theta[3]
+
+        cen_hosthalo_mass_arr, sat_hosthalo_mass_arr = Analysis.get_host_halo_mock(gals_df, \
+            mock)
+
+        f_red_cen = 1 - np.exp(-((cen_hosthalo_mass_arr/(10**Mh_qc))**mu_c))
+        f_red_sat = 1 - np.exp(-((sat_hosthalo_mass_arr/(10**Mh_qs))**mu_s))
+
+        return f_red_cen, f_red_sat
+
+    @staticmethod
+    def get_host_halo_mock(df, mock):
+        """
+        Get host halo mass from mock catalog
+
+        Parameters
+        ----------
+        df: pandas dataframe
+            Mock catalog
+        mock: string
+            'vishnu' or 'nonvishnu' depending on what mock it is
+
+        Returns
+        ---------
+        cen_halos: array
+            Array of central host halo masses
+        sat_halos: array
+            Array of satellite host halo masses
+        """
+        if mock == 'vishnu':
+            cen_halos = df.halo_mvir[df.cs_flag == 1].reset_index(drop=True)
+            sat_halos = df.halo_mvir_host_halo[df.cs_flag == 0].reset_index(drop=True)
+        else:
+            # Loghalom in the mock catalogs is actually host halo mass i.e. 
+            # For satellites, the loghalom value will be the value of the central's
+            # loghalom in that halo group and the haloids for the satellites are the 
+            # haloid of the central 
+            cen_halos = 10**(df.loghalom[df.cs_flag == 1]).reset_index(drop=True)
+            sat_halos = 10**(df.loghalom[df.cs_flag == 0]).reset_index(drop=True)
+
+        cen_halos = np.array(cen_halos)
+        sat_halos = np.array(sat_halos)
+
+        return cen_halos, sat_halos
+
+    @staticmethod
+    def get_stellar_mock(df, mock, randint=None):
+        """
+        Get stellar mass from mock catalog
+
+        Parameters
+        ----------
+        df: pandas dataframe
+            Mock catalog
+        mock: string
+            'Vishnu' or 'nonVishnu' depending on what mock it is
+        randint (optional): int
+            Mock number in the case where many Behroozi mocks were used.
+            Defaults to None.
+
+        Returns
+        ---------
+        cen_gals: array
+            Array of central stellar masses
+        sat_gals: array
+            Array of satellite stellar masses
+        """
+
+        if mock == 'vishnu' and randint != 1:
+            cen_gals = 10**(df['{0}'.format(randint)][df.cs_flag == 1]).\
+                reset_index(drop=True)
+            sat_gals = 10**(df['{0}'.format(randint)][df.cs_flag == 0]).\
+                reset_index(drop=True)
+
+        elif mock == 'vishnu' and randint == 1:
+            cen_gals = 10**(df['behroozi_bf'][df.cs_flag == 1]).\
+                reset_index(drop=True)
+            sat_gals = 10**(df['behroozi_bf'][df.cs_flag == 0]).\
+                reset_index(drop=True)
+
+        # elif mock == 'vishnu':
+        #     cen_gals = 10**(df.stellar_mass[df.cs_flag == 1]).reset_index(drop=True)
+        #     sat_gals = 10**(df.stellar_mass[df.cs_flag == 0]).reset_index(drop=True)
+        
+        else:
+            cen_gals = []
+            sat_gals = []
+            for idx,value in enumerate(df.cs_flag):
+                if value == 1:
+                    cen_gals.append((10**(df.logmstar.values[idx]))/2.041)
+                elif value == 0:
+                    sat_gals.append((10**(df.logmstar.values[idx]))/2.041)
+
+        cen_gals = np.array(cen_gals)
+        sat_gals = np.array(sat_gals)
+
+        return cen_gals, sat_gals
+
+    @staticmethod
+    def assign_colour_label_mock(f_red_cen, f_red_sat, df, drop_fred=False):
+        """
+        Assign colour label to mock catalog
+
+        Parameters
+        ----------
+        f_red_cen: array
+            Array of central red fractions
+        f_red_sat: array
+            Array of satellite red fractions
+        df: pandas Dataframe
+            Mock catalog
+        drop_fred (optional): boolean
+            Whether or not to keep red fraction column after colour has been
+            assigned. Defaults to False.
+
+        Returns
+        ---------
+        df: pandas Dataframe
+            Dataframe with colour label and random number assigned as 
+            new columns
+        """
+
+        # Saving labels
+        color_label_arr = [[] for x in range(len(df))]
+        rng_arr = [[] for x in range(len(df))]
+        # Adding columns for f_red to df
+        df.loc[:, 'f_red'] = np.zeros(len(df))
+        df.loc[df['cs_flag'] == 1, 'f_red'] = f_red_cen
+        df.loc[df['cs_flag'] == 0, 'f_red'] = f_red_sat
+        # Converting to array
+        f_red_arr = df['f_red'].values
+        # Looping over galaxies
+        for ii, cs_ii in enumerate(df['cs_flag']):
+            # Draw a random number
+            rng = np.random.uniform()
+            # Comparing against f_red
+            if (rng >= f_red_arr[ii]):
+                color_label = 'B'
+            else:
+                color_label = 'R'
+            # Saving to list
+            color_label_arr[ii] = color_label
+            rng_arr[ii] = rng
+        
+        ## Assigning to DataFrame
+        df.loc[:, 'colour_label'] = color_label_arr
+        df.loc[:, 'rng'] = rng_arr
+        # Dropping 'f_red` column
+        if drop_fred:
+            df.drop('f_red', axis=1, inplace=True)
+
+        return df
+
+    @staticmethod
+    def get_centrals_mock(gals_df, randint=None):
+        """
+        Get centrals from mock catalog
+
+        Parameters
+        ----------
+        gals_df: pandas dataframe
+            Mock catalog
+
+        randint (optional): int
+            Mock number in the case where many Behroozi mocks were used.
+            Defaults to None.
+
+        Returns
+        ---------
+        cen_gals: array
+            Array of central galaxy masses
+
+        cen_halos: array
+            Array of central halo masses
+
+        cen_gals_red: array
+            Array of red central galaxy masses
+
+        cen_halos_red: array
+            Array of red central halo masses
+
+        cen_gals_blue: array
+            Array of blue central galaxy masses
+
+        cen_halos_blue: array
+            Array of blue central halo masses
+
+        f_red_cen_gals_red: array
+            Array of red fractions for red central galaxies
+
+        f_red_cen_gals_blue: array
+            Array of red fractions for blue central galaxies
+        """
+        cen_gals = []
+        cen_halos = []
+        cen_gals_red = []
+        cen_halos_red = []
+        cen_gals_blue = []
+        cen_halos_blue = []
+        f_red_cen_gals_red = []
+        f_red_cen_gals_blue = []
+
+        if randint != 1:
+            for idx,value in enumerate(gals_df['cs_flag']):
+                if value == 1:
+                    cen_gals.append(gals_df['{0}'.format(randint)][idx])
+                    cen_halos.append(gals_df['halo_mvir'][idx])
+                    if gals_df['colour_label'][idx] == 'R':
+                        cen_gals_red.append(gals_df['{0}'.format(randint)][idx])
+                        cen_halos_red.append(gals_df['halo_mvir'][idx])
+                        f_red_cen_gals_red.append(gals_df['f_red'][idx])
+                    elif gals_df['colour_label'][idx] == 'B':
+                        cen_gals_blue.append(gals_df['{0}'.format(randint)][idx])
+                        cen_halos_blue.append(gals_df['halo_mvir'][idx])
+                        f_red_cen_gals_blue.append(gals_df['f_red'][idx])
+        elif randint == 1:
+            for idx,value in enumerate(gals_df['cs_flag']):
+                if value == 1:
+                    cen_gals.append(gals_df['behroozi_bf'][idx])
+                    cen_halos.append(gals_df['halo_mvir'][idx])
+                    if gals_df['colour_label'][idx] == 'R':
+                        cen_gals_red.append(gals_df['behroozi_bf'][idx])
+                        cen_halos_red.append(gals_df['halo_mvir'][idx])
+                        f_red_cen_gals_red.append(gals_df['f_red'][idx])
+                    elif gals_df['colour_label'][idx] == 'B':
+                        cen_gals_blue.append(gals_df['behroozi_bf'][idx])
+                        cen_halos_blue.append(gals_df['halo_mvir'][idx])
+                        f_red_cen_gals_blue.append(gals_df['f_red'][idx])
+
+        else:
+            for idx,value in enumerate(gals_df['cs_flag']):
+                if value == 1:
+                    cen_gals.append(gals_df['stellar_mass'][idx])
+                    cen_halos.append(gals_df['halo_mvir'][idx])
+                    if gals_df['colour_label'][idx] == 'R':
+                        cen_gals_red.append(gals_df['stellar_mass'][idx])
+                        cen_halos_red.append(gals_df['halo_mvir'][idx])
+                        f_red_cen_gals_red.append(gals_df['f_red'][idx])
+                    elif gals_df['colour_label'][idx] == 'B':
+                        cen_gals_blue.append(gals_df['stellar_mass'][idx])
+                        cen_halos_blue.append(gals_df['halo_mvir'][idx])
+                        f_red_cen_gals_blue.append(gals_df['f_red'][idx])
+
+        cen_gals = np.array(cen_gals)
+        cen_halos = np.log10(np.array(cen_halos))
+        cen_gals_red = np.array(cen_gals_red)
+        cen_halos_red = np.log10(np.array(cen_halos_red))
+        cen_gals_blue = np.array(cen_gals_blue)
+        cen_halos_blue = np.log10(np.array(cen_halos_blue))
+
+        return cen_gals, cen_halos, cen_gals_red, cen_halos_red, cen_gals_blue, \
+            cen_halos_blue, f_red_cen_gals_red, f_red_cen_gals_blue
+
+    @staticmethod
+    def get_satellites_mock(gals_df, randint=None):
+        """
+        Get satellites and their host halos from mock catalog
+
+        Parameters
+        ----------
+        gals_df: pandas dataframe
+            Mock catalog
+            
+        randint (optional): int
+            Mock number in the case where many Behroozi mocks were used. 
+            Defaults to None.
+
+        Returns
+        ---------
+        sat_gals_red: array
+            Array of red satellite galaxy masses
+
+        sat_halos_red: array
+            Array of red satellite host halo masses
+
+        sat_gals_blue: array
+            Array of blue satellite galaxy masses
+
+        sat_halos_blue: array
+            Array of blue satellite host halo masses
+
+        f_red_sat_gals_red: array
+            Array of red fractions for red satellite galaxies
+
+        f_red_sat_gals_blue: array
+            Array of red fractions for blue satellite galaxies
+
+        """
+        sat_gals_red = []
+        sat_halos_red = []
+        sat_gals_blue = []
+        sat_halos_blue = []
+        f_red_sat_gals_red = []
+        f_red_sat_gals_blue = []
+
+        if randint != 1:
+            for idx,value in enumerate(gals_df['cs_flag']):
+                if value == 0:
+                    if gals_df['colour_label'][idx] == 'R':
+                        sat_gals_red.append(gals_df['{0}'.format(randint)][idx])
+                        sat_halos_red.append(gals_df['halo_mvir_host_halo'][idx])
+                        f_red_sat_gals_red.append(gals_df['f_red'][idx])
+                    elif gals_df['colour_label'][idx] == 'B':
+                        sat_gals_blue.append(gals_df['{0}'.format(randint)][idx])
+                        sat_halos_blue.append(gals_df['halo_mvir_host_halo'][idx])
+                        f_red_sat_gals_blue.append(gals_df['f_red'][idx])
+        elif randint == 1:
+            for idx,value in enumerate(gals_df['cs_flag']):
+                if value == 0:
+                    if gals_df['colour_label'][idx] == 'R':
+                        sat_gals_red.append(gals_df['behroozi_bf'][idx])
+                        sat_halos_red.append(gals_df['halo_mvir_host_halo'][idx])
+                        f_red_sat_gals_red.append(gals_df['f_red'][idx])
+                    elif gals_df['colour_label'][idx] == 'B':
+                        sat_gals_blue.append(gals_df['behroozi_bf'][idx])
+                        sat_halos_blue.append(gals_df['halo_mvir_host_halo'][idx])
+                        f_red_sat_gals_blue.append(gals_df['f_red'][idx])
+
+        else:
+            for idx,value in enumerate(gals_df['cs_flag']):
+                if value == 0:
+                    if gals_df['colour_label'][idx] == 'R':
+                        sat_gals_red.append(gals_df['stellar_mass'][idx])
+                        sat_halos_red.append(gals_df['halo_mvir_host_halo'][idx])
+                        f_red_sat_gals_red.append(gals_df['f_red'][idx])
+                    elif gals_df['colour_label'][idx] == 'B':
+                        sat_gals_blue.append(gals_df['stellar_mass'][idx])
+                        sat_halos_blue.append(gals_df['halo_mvir_host_halo'][idx])
+                        f_red_sat_gals_blue.append(gals_df['f_red'][idx])
+
+
+        sat_gals_red = np.array(sat_gals_red)
+        sat_halos_red = np.log10(np.array(sat_halos_red))
+        sat_gals_blue = np.array(sat_gals_blue)
+        sat_halos_blue = np.log10(np.array(sat_halos_blue))
+
+        return sat_gals_red, sat_halos_red, sat_gals_blue, sat_halos_blue, \
+            f_red_sat_gals_red, f_red_sat_gals_blue
+
+    @staticmethod
+    def get_best_fit_model(bf_params, best_fit_mocknum=None):
+
+        best_fit_results = {}
+        best_fit_experimentals = {}
+
+        if best_fit_mocknum:
+            cols_to_use = ['halo_hostid', 'halo_id', 'halo_mvir', \
+                'halo_mvir_host_halo', 'cz', \
+                '{0}'.format(best_fit_mocknum), \
+                'g_galtype_{0}'.format(best_fit_mocknum), \
+                'groupid_{0}'.format(best_fit_mocknum)]
+
+            gals_df = Preprocess.gal_group_df_subset[cols_to_use]
+
+            gals_df = gals_df.dropna(subset=['g_galtype_{0}'.\
+                format(best_fit_mocknum),'groupid_{0}'.format(best_fit_mocknum)]).\
+                reset_index(drop=True)
+
+            gals_df[['g_galtype_{0}'.format(best_fit_mocknum), \
+                'groupid_{0}'.format(best_fit_mocknum)]] = \
+                gals_df[['g_galtype_{0}'.format(best_fit_mocknum),\
+                'groupid_{0}'.format(best_fit_mocknum)]].astype(int)
+        else:
+            # gals_df = populate_mock(best_fit_params[:5], model_init)
+            # gals_df = gals_df.loc[gals_df['stellar_mass'] >= 10**8.6].\
+            #     reset_index(drop=True)
+            # gals_df['cs_flag'] = np.where(gals_df['halo_hostid'] == \
+            #     gals_df['halo_id'], 1, 0)
+
+            # cols_to_use = ['halo_mvir', 'halo_mvir_host_halo', 'cs_flag', 
+            #     'stellar_mass']
+            # gals_df = gals_df[cols_to_use]
+            # gals_df.stellar_mass = np.log10(gals_df.stellar_mass)
+
+            randint_logmstar = 1
+            cols_to_use = ['halo_hostid', 'halo_id', 'halo_mvir', \
+            'halo_mvir_host_halo', 'cz', 'cs_flag', \
+            'behroozi_bf', \
+            'g_galtype_{0}'.format(randint_logmstar), \
+            'groupid_{0}'.format(randint_logmstar)]
+
+            gals_df = Preprocess.gal_group_df_subset[cols_to_use]
+
+            gals_df = gals_df.dropna(subset=['g_galtype_{0}'.\
+            format(randint_logmstar),'groupid_{0}'.format(randint_logmstar)]).\
+            reset_index(drop=True)
+
+            gals_df[['g_galtype_{0}'.format(randint_logmstar), \
+                'groupid_{0}'.format(randint_logmstar)]] = \
+                gals_df[['g_galtype_{0}'.format(randint_logmstar),\
+                'groupid_{0}'.format(randint_logmstar)]].astype(int)
+
+        if Settings.quenching == 'hybrid':
+            f_red_cen, f_red_sat = Analysis.hybrid_quenching_model(bf_params[5:], gals_df, 
+                'vishnu', randint_logmstar)
+        elif Settings.quenching == 'halo':
+            f_red_cen, f_red_sat = Analysis.halo_quenching_model(bf_params[5:], gals_df, 
+                'vishnu')      
+        gals_df = Analysis.assign_colour_label_mock(f_red_cen, f_red_sat, gals_df)
+        # v_sim = 130**3 
+        v_sim = 890641.5172927063 
+
+        ## Observable #1 - Total SMF
+        total_model = Analysis.measure_all_smf(gals_df, v_sim , False, randint_logmstar)    
+        ## Observable #2 - Blue fraction
+        f_blue = Analysis.blue_frac(gals_df, True, False, randint_logmstar)
+
+        cen_gals, cen_halos, cen_gals_red, cen_halos_red, cen_gals_blue, \
+            cen_halos_blue, f_red_cen_red, f_red_cen_blue = \
+                Analysis.get_centrals_mock(gals_df, randint_logmstar)
+        sat_gals_red, sat_halos_red, sat_gals_blue, sat_halos_blue, \
+            f_red_sat_red, f_red_sat_blue = \
+                Analysis.get_satellites_mock(gals_df, randint_logmstar)
+
+        phi_red_model, phi_blue_model = \
+            Analysis.get_colour_smf_from_fblue(gals_df, f_blue[1], f_blue[0], v_sim, 
+            True, randint_logmstar)
+
+        red_sigma, red_cen_mstar_sigma, blue_sigma, \
+            blue_cen_mstar_sigma, red_nsat, blue_nsat = \
+            Experiments.get_velocity_dispersion(gals_df, 'model', randint_logmstar)
+
+        red_num, red_cen_mstar_richness, blue_num, \
+            blue_cen_mstar_richness, red_host_halo_mass, \
+            blue_host_halo_mass = \
+            Experiments.get_richness(gals_df, 'model', randint_logmstar)
+
+        best_fit_results["smf_total"] = {'max_total':total_model[0],
+                                        'phi_total':total_model[1]}
+        
+        best_fit_results["f_blue"] = {'max_fblue':f_blue[0],
+                                      'fblue':f_blue[1]}
+        
+        best_fit_results["phi_colour"] = {'phi_red':phi_red_model,
+                                          'phi_blue':phi_blue_model}
+
+        best_fit_results["centrals"] = {'gals':cen_gals, 'halos':cen_halos,
+                                        'gals_red':cen_gals_red, 
+                                        'halos_red':cen_halos_red,
+                                        'gals_blue':cen_gals_blue,
+                                        'halos_blue':cen_halos_blue}
+        
+        best_fit_results["satellites"] = {'gals_red':sat_gals_red, 
+                                        'halos_red':sat_halos_red,
+                                        'gals_blue':sat_gals_blue,
+                                        'halos_blue':sat_halos_blue}
+        
+        best_fit_results["f_red"] = {'cen_red':f_red_cen_red,
+                                    'cen_blue':f_red_cen_blue,
+                                    'sat_red':f_red_sat_red,
+                                    'sat_blue':f_red_sat_blue}
+        
+        best_fit_experimentals["vel_disp"] = {'red_sigma':red_sigma,
+            'red_cen_mstar':red_cen_mstar_sigma,
+            'blue_sigma':blue_sigma, 'blue_cen_mstar':blue_cen_mstar_sigma,
+            'red_nsat':red_nsat, 'blue_nsat':blue_nsat}
+        
+        best_fit_experimentals["richness"] = {'red_num':red_num,
+            'red_cen_mstar':red_cen_mstar_richness, 'blue_num':blue_num,
+            'blue_cen_mstar':blue_cen_mstar_richness, 
+            'red_hosthalo':red_host_halo_mass, 'blue_hosthalo':blue_host_halo_mass}
+            
+        return best_fit_results, best_fit_experimentals
+
+    @staticmethod
+    def get_err_data(survey, path):
+        """
+        Calculate error in data SMF from mocks
+
+        Parameters
+        ----------
+        survey: string
+            Name of survey
+        path: string
+            Path to mock catalogs
+
+        Returns
+        ---------
+        err_colour: array
+            Standard deviation from matrix of phi values and blue fractions values
+            between all mocks and for all galaxies
+        std_phi_red: array
+            Standard deviation of phi values between all mocks for red galaxies
+        std_phi_blue: array
+            Standard deviation of phi values between all mocks for blue galaxies
+        std_mean_cen_arr_red: array
+            Standard deviation of observable number 3 (mean grp central stellar mass
+            in bins of velocity dispersion) for red galaxies
+        std_mean_cen_arr_blue: array
+            Standard deviation of observable number 3 (mean grp central stellar mass
+            in bins of velocity dispersion) for blue galaxies
+        """
+
+        mocks_experimentals = {}
+
+        if Settings.survey == 'eco':
+            mock_name = 'ECO'
+            num_mocks = 8
+            min_cz = 3000
+            max_cz = 7000
+            mag_limit = -17.33
+            mstar_limit = 8.9
+            volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
+        elif Settings.survey == 'resolvea':
+            mock_name = 'A'
+            num_mocks = 59
+            min_cz = 4500
+            max_cz = 7000
+            mag_limit = -17.33
+            mstar_limit = 8.9
+            volume = 13172.384  # Survey volume without buffer [Mpc/h]^3 
+        elif Settings.survey == 'resolveb':
+            mock_name = 'B'
+            num_mocks = 104
+            min_cz = 4500
+            max_cz = 7000
+            mag_limit = -17
+            mstar_limit = 8.7
+            volume = 4709.8373  # Survey volume without buffer [Mpc/h]^3
+
+        phi_total_arr = []
+        phi_red_arr = []
+
+        phi_blue_arr = []
+        f_blue_arr = []
+
+        mean_mstar_red_arr = []
+        mean_mstar_blue_arr = []
+
+        mean_sigma_red_arr = []
+        mean_sigma_blue_arr = []
+
+        red_cen_mstar_richness_arr = []
+        red_num_arr = []
+        blue_cen_mstar_richness_arr = []
+        blue_num_arr = []
+
+        box_id_arr = np.linspace(5001,5008,8)
+        for box in box_id_arr:
+            box = int(box)
+            temp_path = path + '{0}/{1}_m200b_catls/'.format(box, 
+                mock_name) 
+            for num in range(num_mocks):
+                print('Box {0} : Mock {1}'.format(box, num))
+                filename = temp_path + '{0}_cat_{1}_Planck_memb_cat.hdf5'.format(
+                    mock_name, num)
+                mock_pd = Preprocess.read_mock_catl(filename) 
+                mock_pd = Preprocess.mock_add_grpcz(mock_pd)
+                # Using the same survey definition as in mcmc smf i.e excluding the 
+                # buffer
+                mock_pd = mock_pd.loc[(mock_pd.grpcz.values >= min_cz) & \
+                    (mock_pd.grpcz.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
+                    (mock_pd.logmstar.values >= mstar_limit)].reset_index(drop=True)
+
+                ## Using best-fit found for new ECO data using result from chain 32
+                ## i.e. hybrid quenching model
+                Mstar_q = 10.06 # Msun/h
+                Mh_q = 14.05 # Msun/h
+                mu = 0.56
+                nu = 0.48
+
+                ## Using best-fit found for new ECO data using result from chain 33
+                ## i.e. halo quenching model
+                Mh_qc = 11.78 # Msun/h
+                Mh_qs = 13.14 # Msun/h
+                mu_c = 1.09
+                mu_s = 1.99
+
+                if Settings.quenching == 'hybrid':
+                    theta = [Mstar_q, Mh_q, mu, nu]
+                    f_red_c, f_red_s = Analysis.hybrid_quenching_model(theta, mock_pd, 
+                        'nonvishnu')
+                elif Settings.quenching == 'halo':
+                    theta = [Mh_qc, Mh_qs, mu_c, mu_s]
+                    f_red_c, f_red_s = Analysis.halo_quenching_model(theta, mock_pd, 
+                        'nonvishnu')        
+                mock_pd = Analysis.assign_colour_label_mock(f_red_c, f_red_s, mock_pd)
+
+                logmstar_arr = mock_pd.logmstar.values 
+
+
+                ### Statistics for correlation matrix
+                #Measure SMF of mock using diff_smf function
+                mass_total, phi_total, err_total, bins_total, counts_total = \
+                    Analysis.diff_smf(logmstar_arr, volume, False)
+                phi_total_arr.append(phi_total)
+
+                #Measure blue fraction of galaxies
+                mass, f_blue = Analysis.blue_frac(mock_pd, False, True)
+                f_blue_arr.append(f_blue)
+
+                ### Statistics for measuring std. dev. to plot error bars
+                phi_red, phi_blue = \
+                    Analysis.get_colour_smf_from_fblue(mock_pd, f_blue, mass, volume, 
+                    False)
+                phi_red_arr.append(phi_red)
+                phi_blue_arr.append(phi_blue)
+                
+                red_sigma, red_cen_mstar_sigma, blue_sigma, \
+                    blue_cen_mstar_sigma, red_nsat, blue_nsat = \
+                    Experiments.get_velocity_dispersion(mock_pd, 'mock')
+
+                red_num, red_cen_mstar_richness, blue_num, \
+                    blue_cen_mstar_richness, red_host_halo_mass, \
+                    blue_host_halo_mass = \
+                    Experiments.get_richness(mock_pd, 'mock')
+                
+                mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
+                    statistic='mean', bins=np.linspace(0,250,6))
+                mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
+                    statistic='mean', bins=np.linspace(0,250,6))
+
+                mean_mstar_red_arr.append(mean_mstar_red[0])
+                mean_mstar_blue_arr.append(mean_mstar_blue[0])
+
+                mean_sigma_red = bs(red_cen_mstar_sigma, red_sigma,
+                    statistic='mean', bins=np.linspace(8.6,11,6))
+                mean_sigma_blue = bs( blue_cen_mstar_sigma, blue_sigma,
+                    statistic='mean', bins=np.linspace(8.6,11,6))
+
+                mean_sigma_red_arr.append(mean_sigma_red[0])
+                mean_sigma_blue_arr.append(mean_sigma_blue[0])
+
+                red_cen_mstar_richness_arr.append(red_cen_mstar_richness)
+                red_num_arr.append(red_num)
+                blue_cen_mstar_richness_arr.append(blue_cen_mstar_richness)
+                blue_num_arr.append(blue_num)
+
+        phi_total_arr = np.array(phi_total_arr)
+        f_blue_arr = np.array(f_blue_arr)
+
+        ### For calculating std. dev. for:
+        ## Colour mass functions
+        phi_red_arr = np.array(phi_red_arr)
+        phi_blue_arr = np.array(phi_blue_arr)
+
+        std_phi_red = np.std(phi_red_arr, axis=0)
+        std_phi_blue = np.std(phi_blue_arr, axis=0)
+
+        ## Average group/halo central mstar vs velocity dispersion
+        mean_mstar_red_arr = np.array(mean_mstar_red_arr)
+        mean_mstar_blue_arr = np.array(mean_mstar_blue_arr)
+
+        std_mean_mstar_red_arr = np.nanstd(mean_mstar_red_arr, axis=0)
+        std_mean_mstar_blue_arr = np.nanstd(mean_mstar_blue_arr, axis=0)
+
+        ## Average velocity dispersion vs group/halo central mstar
+        mean_sigma_red_arr = np.array(mean_sigma_red_arr)
+        mean_sigma_blue_arr = np.array(mean_sigma_blue_arr)
+
+        std_mean_sigma_red_arr = np.nanstd(mean_sigma_red_arr, axis=0)
+        std_mean_sigma_blue_arr = np.nanstd(mean_sigma_blue_arr, axis=0)
+
+        mocks_experimentals["std_phi_colour"] = {'std_phi_red':std_phi_red,
+                                                'std_phi_blue':std_phi_blue}
+        
+        mocks_experimentals["vel_disp"] = {'std_mean_mstar_red':std_mean_mstar_red_arr,
+                                            'std_mean_mstar_blue':std_mean_mstar_blue_arr,
+                                            'std_mean_sigma_red':std_mean_sigma_red_arr,
+                                            'std_mean_sigma_blue':std_mean_sigma_blue_arr}
+        
+        mocks_experimentals["richness"] = {'red_num':red_num_arr,
+            'red_cen_mstar':red_cen_mstar_richness_arr, 'blue_num':blue_num_arr,
+            'blue_cen_mstar':blue_cen_mstar_richness_arr}
+
+        phi_total_0 = phi_total_arr[:,0]
+        phi_total_1 = phi_total_arr[:,1]
+        phi_total_2 = phi_total_arr[:,2]
+        phi_total_3 = phi_total_arr[:,3]
+        phi_total_4 = phi_total_arr[:,4]
+        phi_total_5 = phi_total_arr[:,5]
+
+        f_blue_0 = f_blue_arr[:,0]
+        f_blue_1 = f_blue_arr[:,1]
+        f_blue_2 = f_blue_arr[:,2]
+        f_blue_3 = f_blue_arr[:,3]
+        f_blue_4 = f_blue_arr[:,4]
+        f_blue_5 = f_blue_arr[:,5]
+
+        combined_df = pd.DataFrame({'phi_tot_0':phi_total_0, \
+            'phi_tot_1':phi_total_1, 'phi_tot_2':phi_total_2, \
+            'phi_tot_3':phi_total_3, 'phi_tot_4':phi_total_4, \
+            'phi_tot_5':phi_total_5,\
+            'f_blue_0':f_blue_0, 'f_blue_1':f_blue_1, 
+            'f_blue_2':f_blue_2, 'f_blue_3':f_blue_3, 
+            'f_blue_4':f_blue_4, 'f_blue_5':f_blue_5})
+
+        err_colour = np.sqrt(np.diag(combined_df.cov()))
+
+        return err_colour, mocks_experimentals
+
+    @staticmethod
+    def mp_init(mcmc_table_pctl, nproc):
+        """
+        Initializes multiprocessing of mocks and smf and smhm measurements
+
+        Parameters
+        ----------
+        mcmc_table_pctl: pandas dataframe
+            Mcmc chain dataframe of 100 random samples
+
+        nproc: int
+            Number of processes to use in multiprocessing
+
+        Returns
+        ---------
+        result: multidimensional array
+            Arrays of smf and smhm data for all, red and blue galaxies
+        """
+        start = time.time()
+        params_df = mcmc_table_pctl.iloc[:,:9].reset_index(drop=True)
+        if Settings.many_behroozi_mocks:
+            mock_num_df = mcmc_table_pctl.iloc[:,5].reset_index(drop=True)
+            frames = [params_df, mock_num_df]
+            mcmc_table_pctl_new = pd.concat(frames, axis=1)
+            chunks = np.array([mcmc_table_pctl_new.values[i::5] \
+                for i in range(5)])
+        else:
+            # chunks = np.array([params_df.values[i::5] \
+            #     for i in range(5)])
+            # Chunks are just numbers from 1-100 for the case where rsd + grp finder
+            # were run for a selection of 100 random 1sigma models from run 32
+            # and all those mocks are used instead. 
+            chunks = np.arange(1,101,1).reshape(5, 20, 1) # Mimic shape of chunks above 
+        pool = Pool(processes=nproc)
+        result = pool.map(Analysis.mp_func, chunks)
+        end = time.time()
+        multi_time = end - start
+        print("Multiprocessing took {0:.1f} seconds".format(multi_time))
+
+        return result
+
+    @staticmethod
+    def mp_func(a_list):
+        """
+        Apply behroozi and hybrid quenching model based on nine parameter values
+
+        Parameters
+        ----------
+        a_list: multidimensional array
+            Array of nine parameter values
+
+        Returns
+        ---------
+        model_results: dictionary
+
+        model_experimentals: dictionary
+        """
+        # v_sim = 130**3
+        v_sim = 890641.5172927063 
+
+        # model_results = {}
+        # model_experimentals = {}
+
+        print('Reloaded')
+
+        main_keys = ["smf_total","f_blue","phi_colour","centrals","satellites",\
+            "f_red"]
+        sub_keys = [{"max_total":[],"phi_total":[]},{"max_fblue":[],"fblue":[]},\
+            {"phi_red":[],"phi_blue":[]},{"gals":[],"halos":[],"gals_red":[],\
+            "halos_red":[],"gals_blue":[],"halos_blue":[]},{"gals_red":[],\
+            "halos_red":[],"gals_blue":[],"halos_blue":[]},{"cen_red":[],\
+            "cen_blue":[],"sat_red":[],"sat_blue":[]}]
+        model_results = dict(zip(main_keys,sub_keys))
+
+        main_keys = ["vel_disp","richness"]
+        sub_keys = [{"red_sigma":[],"red_cen_mstar":[],"blue_sigma":[],\
+            "blue_cen_mstar":[],"red_nsat":[],"blue_nsat":[]},{"red_num":[],\
+            "red_cen_mstar":[],"blue_num":[],"blue_cen_mstar":[],\
+            "red_hosthalo":[],"blue_hosthalo":[]}]
+
+        model_experimentals = dict(zip(main_keys,sub_keys))
+
+        for theta in a_list:  
+            if Settings.many_behroozi_mocks:
+                randint_logmstar = int(theta[4])
+                cols_to_use = ['halo_hostid', 'halo_id', 'halo_mvir', \
+                'halo_mvir_host_halo', 'cz', \
+                '{0}'.format(randint_logmstar), \
+                'g_galtype_{0}'.format(randint_logmstar), \
+                'groupid_{0}'.format(randint_logmstar)]
+                
+                gals_df = Preprocess.gal_group_df_subset[cols_to_use]
+
+                gals_df = gals_df.dropna(subset=['g_galtype_{0}'.\
+                    format(randint_logmstar),'groupid_{0}'.format(randint_logmstar)]).\
+                    reset_index(drop=True)
+
+                gals_df[['g_galtype_{0}'.format(randint_logmstar), \
+                    'groupid_{0}'.format(randint_logmstar)]] = \
+                    gals_df[['g_galtype_{0}'.format(randint_logmstar),\
+                    'groupid_{0}'.format(randint_logmstar)]].astype(int)
+
+
+            else:
+                randint_logmstar = theta[0]
+                # 1 is the best-fit model which is calculated separately 
+                if randint_logmstar == 1:
+                    continue
+
+                cols_to_use = ['halo_hostid', 'halo_id', 'halo_mvir', \
+                'halo_mvir_host_halo', 'cz', 'cs_flag', \
+                '{0}'.format(randint_logmstar), \
+                'g_galtype_{0}'.format(randint_logmstar), \
+                'groupid_{0}'.format(randint_logmstar)]
+
+                gals_df = Preprocess.gal_group_df_subset[cols_to_use]
+        
+                gals_df = gals_df.dropna(subset=['g_galtype_{0}'.\
+                format(randint_logmstar),'groupid_{0}'.format(randint_logmstar)]).\
+                reset_index(drop=True)
+
+                gals_df[['g_galtype_{0}'.format(randint_logmstar), \
+                    'groupid_{0}'.format(randint_logmstar)]] = \
+                    gals_df[['g_galtype_{0}'.format(randint_logmstar),\
+                    'groupid_{0}'.format(randint_logmstar)]].astype(int)
+
+            #* Stellar masses in log but halo masses not in log
+            # randint_logmstar-2 because the best fit randint is 1 in gal_group_df
+            # and in mcmc_table the best fit set of params have been removed and the
+            # index was reset so now there is an offset of 2 between the indices 
+            # of the two sets of data.
+            quenching_params = Preprocess.mcmc_table_pctl_subset.iloc[randint_logmstar-2].\
+                values[5:]
+            # f_red_cen, f_red_sat = hybrid_quenching_model(theta[5:], gals_df, 
+            #     'vishnu')
+            if Settings.quenching == 'hybrid':
+                f_red_cen, f_red_sat = Analysis.hybrid_quenching_model(quenching_params, gals_df, 
+                    'vishnu', randint_logmstar)
+            elif Settings.quenching == 'halo':
+                f_red_cen, f_red_sat = Analysis.halo_quenching_model(quenching_params, gals_df, 
+                    'vishnu')
+            gals_df = Analysis.assign_colour_label_mock(f_red_cen, f_red_sat, gals_df)
+
+            ## Observable #1 - Total SMF
+            total_model = Analysis.measure_all_smf(gals_df, v_sim , False, randint_logmstar)    
+            ## Observable #2 - Blue fraction
+            f_blue = Analysis.blue_frac(gals_df, True, False, randint_logmstar)
+            
+            cen_gals, cen_halos, cen_gals_red, cen_halos_red, cen_gals_blue, \
+                cen_halos_blue, f_red_cen_red, f_red_cen_blue = \
+                    Analysis.get_centrals_mock(gals_df, randint_logmstar)
+            sat_gals_red, sat_halos_red, sat_gals_blue, sat_halos_blue, \
+                f_red_sat_red, f_red_sat_blue = \
+                    Analysis.get_satellites_mock(gals_df, randint_logmstar)
+
+            phi_red_model, phi_blue_model = \
+                Analysis.get_colour_smf_from_fblue(gals_df, f_blue[1], f_blue[0], v_sim, 
+                True, randint_logmstar)
+
+            red_sigma, red_cen_mstar_sigma, blue_sigma, \
+                blue_cen_mstar_sigma, red_nsat, blue_nsat = \
+                Experiments.get_velocity_dispersion(gals_df, 'model', 
+                    randint_logmstar)
+
+            red_num, red_cen_mstar_richness, blue_num, \
+                blue_cen_mstar_richness, red_host_halo_mass, \
+                blue_host_halo_mass = \
+                Experiments.get_richness(gals_df, 'model', randint_logmstar)
+
+            model_results["smf_total"]["max_total"].append(total_model[0])
+            model_results["smf_total"]["phi_total"].append(total_model[1])
+
+            model_results["f_blue"]["max_fblue"].append(f_blue[0])
+            model_results["f_blue"]["fblue"].append(f_blue[0])
+
+            model_results["phi_colour"]["phi_red"].append(phi_red_model)
+            model_results["phi_colour"]["phi_blue"].append(phi_blue_model)
+
+            model_results["centrals"]["gals"].append(cen_gals)
+            model_results["centrals"]["halos"].append(cen_halos)
+            model_results["centrals"]["gals_red"].append(cen_gals_red)
+            model_results["centrals"]["halos_red"].append(cen_halos_red)
+            model_results["centrals"]["gals_blue"].append(cen_gals_blue)
+            model_results["centrals"]["halos_blue"].append(cen_halos_blue)
+
+            model_results["satellites"]["gals_red"].append(sat_gals_red)
+            model_results["satellites"]["halos_red"].append(sat_halos_red)
+            model_results["satellites"]["gals_blue"].append(sat_gals_blue)
+            model_results["satellites"]["halos_blue"].append(sat_halos_blue)
+
+            model_results["f_red"]["cen_red"].append(f_red_cen_red)
+            model_results["f_red"]["sat_red"].append(f_red_sat_red)
+            model_results["f_red"]["cen_blue"].append(f_red_cen_blue)
+            model_results["f_red"]["sat_blue"].append(f_red_sat_blue)
+
+            model_experimentals["vel_disp"]["red_sigma"].append(red_sigma)
+            model_experimentals["vel_disp"]["red_cen_mstar"].append(red_cen_mstar_sigma)
+            model_experimentals["vel_disp"]["blue_sigma"].append(blue_sigma)
+            model_experimentals["vel_disp"]["blue_cen_mstar"].append(blue_cen_mstar_sigma)
+            model_experimentals["vel_disp"]["red_nsat"].append(red_nsat)
+            model_experimentals["vel_disp"]["blue_nsat"].append(blue_nsat)
+
+            model_experimentals["richness"]["red_num"].append(red_num)
+            model_experimentals["richness"]["red_cen_mstar"].append(red_cen_mstar_richness)
+            model_experimentals["richness"]["blue_num"].append(blue_num)
+            model_experimentals["richness"]["blue_cen_mstar"].append(blue_cen_mstar_richness)
+            model_experimentals["richness"]["red_hosthalo"].append(red_host_halo_mass)
+            model_experimentals["richness"]["blue_hosthalo"].append(blue_host_halo_mass)
+
+            # model_results["smf_total"] = {'max_total':total_model[0],
+            #                                 'phi_total':total_model[1]}
+            
+            # model_results["f_blue"] = {'max_fblue':f_blue[0],
+            #                             'fblue':f_blue[1]}
+            
+            # model_results["phi_colour"] = {'phi_red':phi_red_model,
+            #                                 'phi_blue':phi_blue_model}
+
+            # model_results["centrals"] = {'gals':cen_gals, 'halos':cen_halos,
+            #                                 'gals_red':cen_gals_red, 
+            #                                 'halos_red':cen_halos_red,
+            #                                 'gals_blue':cen_gals_blue,
+            #                                 'halos_blue':cen_halos_blue}
+            
+            # model_results["satellites"] = {'gals_red':sat_gals_red, 
+            #                                 'halos_red':sat_halos_red,
+            #                                 'gals_blue':sat_gals_blue,
+            #                                 'halos_blue':sat_halos_blue}
+            
+            # model_results["f_red"] = {'cen_red':f_red_cen_red,
+            #                             'cen_blue':f_red_cen_blue,
+            #                             'sat_red':f_red_sat_red,
+            #                             'sat_blue':f_red_sat_blue}
+
+            # model_experimentals["vel_disp"] = {'red_sigma':red_sigma,
+            #     'red_cen_mstar':red_cen_mstar_sigma,
+            #     'blue_sigma':blue_sigma, 'blue_cen_mstar':blue_cen_mstar_sigma,
+            #     'red_nsat':red_nsat, 'blue_nsat':blue_nsat}
+            
+            # model_experimentals["richness"] = {'red_num':red_num,
+            #     'red_cen_mstar':red_cen_mstar_richness, 'blue_num':blue_num,
+            #     'blue_cen_mstar':blue_cen_mstar_richness, 
+            #     'red_hosthalo':red_host_halo_mass, 'blue_hosthalo':blue_host_halo_mass}
+
+        return [model_results, model_experimentals]
+
+    @staticmethod
     def Core():
         print('Assigning colour to data')
         Analysis.catl = Analysis.assign_colour_label_data(Preprocess.catl)
@@ -353,5 +1397,28 @@ class Analysis():
         print('Measuring reconstructed red and blue SMF for data')
         Analysis.phi_red_data, Analysis.phi_blue_data = Analysis.get_colour_smf_from_fblue(Analysis.catl, Analysis.f_blue[1], 
             Analysis.f_blue[0], Preprocess.volume, False)
+
+        print('Initial population of halo catalog')
+        Analysis.model_init = Analysis.halocat_init(Settings.halo_catalog, Preprocess.z_median)
+
+        print('Measuring error in data from mocks')
+        Analysis.error_data, Analysis.mocks_stdevs = Analysis.get_err_data(Settings.survey, Settings.path_to_mocks)
+        Analysis.dof = len(Analysis.error_data) - len(Preprocess.bf_params)
+
+    @staticmethod
+    def Mocks_And_Models():
+        Analysis.best_fit_core, Analysis.best_fit_experimentals = Analysis.get_best_fit_model(Preprocess.bf_params)
+
+        print('Multiprocessing') #~18 minutes
+        ## Analysis.result has shape [5,2]: 5 chunks of 2 dictionaries
+        Analysis.result = Analysis.mp_init(Preprocess.mcmc_table_pctl_subset, Settings.nproc)
+
+        # Analysis.mp_models, Analysis.mp_experimentals = Analysis.mp_init(Preprocess.mcmc_table_pctl_subset, Settings.nproc)
+
+    
+
+
+
+
 
 
