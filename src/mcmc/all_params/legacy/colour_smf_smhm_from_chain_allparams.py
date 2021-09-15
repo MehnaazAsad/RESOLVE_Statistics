@@ -1579,8 +1579,6 @@ def mp_func(a_list):
         # of the two sets of data.
         quenching_params = mcmc_table_pctl_subset.iloc[randint_logmstar-2].\
             values[5:]
-        # f_red_cen, f_red_sat = hybrid_quenching_model(theta[5:], gals_df, 
-        #     'vishnu')
         if quenching == 'hybrid':
             f_red_cen, f_red_sat = hybrid_quenching_model(quenching_params, gals_df, 
                 'vishnu', randint_logmstar)
@@ -7133,267 +7131,274 @@ def plot_satellite_weighted_sigma(result, vdisp_red_bf, vdisp_blue_bf, \
     plt.show()
 
 
+def main():
+    global survey
+    global quenching
+    global model_init
+    global many_behroozi_mocks
+    global gal_group_df_subset
+    global dof
+    global level
 
-global survey
-global quenching
-global model_init
-global many_behroozi_mocks
-global gal_group_df_subset
-global dof
-global level
+    dict_of_paths = cwpaths.cookiecutter_paths()
+    path_to_raw = dict_of_paths['raw_dir']
+    path_to_proc = dict_of_paths['proc_dir']
+    path_to_data = dict_of_paths['data_dir']
 
-dict_of_paths = cwpaths.cookiecutter_paths()
-path_to_raw = dict_of_paths['raw_dir']
-path_to_proc = dict_of_paths['proc_dir']
-path_to_data = dict_of_paths['data_dir']
+    many_behroozi_mocks = False
+    quenching = 'hybrid'
+    level = 'group'
+    machine = 'mac'
+    mf_type = 'smf'
+    survey = 'eco'
+    nproc = 2
 
-many_behroozi_mocks = False
-quenching = 'hybrid'
-level = 'halo'
-machine = 'mac'
-mf_type = 'smf'
-survey = 'eco'
-nproc = 2
+    if quenching == 'halo':
+        run = 33
+    elif quenching == 'hybrid':
+        run = 32
 
-if quenching == 'halo':
-    run = 33
-elif quenching == 'hybrid':
-    run = 32
+    if machine == 'bender':
+        halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
+                    'vishnu/rockstar/vishnu_rockstar_test.hdf5'
+    elif machine == 'mac':
+        halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
 
-if machine == 'bender':
-    halo_catalog = '/home/asadm2/.astropy/cache/halotools/halo_catalogs/'\
-                'vishnu/rockstar/vishnu_rockstar_test.hdf5'
-elif machine == 'mac':
-    halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
+    chi2_file = path_to_proc + 'smhm_colour_run{0}/{1}_colour_chi2.txt'.\
+        format(run, survey)
+    chain_file = path_to_proc + 'smhm_colour_run{0}/mcmc_{1}_colour_raw.txt'.\
+        format(run, survey)
 
-chi2_file = path_to_proc + 'smhm_colour_run{0}/{1}_colour_chi2.txt'.\
-    format(run, survey)
-chain_file = path_to_proc + 'smhm_colour_run{0}/mcmc_{1}_colour_raw.txt'.\
-    format(run, survey)
+    if survey == 'eco':
+        # catl_file = path_to_raw + "eco/eco_all.csv"
+        ## New catalog with group finder run on subset after applying M* and cz cuts
+        catl_file = path_to_proc + "gal_group_eco_data_buffer.hdf5"
+        path_to_mocks = path_to_data + 'mocks/m200b/eco/'
+    elif survey == 'resolvea' or survey == 'resolveb':
+        catl_file = path_to_raw + "RESOLVE_liveJune2018.csv"
 
-if survey == 'eco':
-    # catl_file = path_to_raw + "eco/eco_all.csv"
-    ## New catalog with group finder run on subset after applying M* and cz cuts
-    catl_file = path_to_proc + "gal_group_eco_data_buffer.hdf5"
-    path_to_mocks = path_to_data + 'mocks/m200b/eco/'
-elif survey == 'resolvea' or survey == 'resolveb':
-    catl_file = path_to_raw + "RESOLVE_liveJune2018.csv"
+    print('Reading files')
+    chi2 = read_chi2(chi2_file)
+    mcmc_table = read_mcmc(chain_file)
+    catl, volume, z_median = read_data_catl(catl_file, survey)
+    ## Group finder run on subset after applying M* cut 8.6 and cz cut 3000-12000
+    gal_group_run32 = read_mock_catl(path_to_proc + "gal_group_run{0}.hdf5".format(run)) 
 
-print('Reading files')
-chi2 = read_chi2(chi2_file)
-mcmc_table = read_mcmc(chain_file)
-catl, volume, z_median = read_data_catl(catl_file, survey)
-## Group finder run on subset after applying M* cut 8.6 and cz cut 3000-12000
-gal_group_run32 = read_mock_catl(path_to_proc + "gal_group_run{0}.hdf5".format(run)) 
+    idx_arr = np.insert(np.linspace(0,20,21), len(np.linspace(0,20,21)), (22, 123, 
+        124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134)).astype(int)
 
-idx_arr = np.insert(np.linspace(0,20,21), len(np.linspace(0,20,21)), (22, 123, 
-    124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134)).astype(int)
+    names_arr = [x for x in gal_group_run32.columns.values[idx_arr]]
+    for idx in np.arange(2,101,1):
+        names_arr.append('{0}_y'.format(idx))
+        names_arr.append('groupid_{0}'.format(idx))
+        names_arr.append('g_galtype_{0}'.format(idx))
+    names_arr = np.array(names_arr)
 
-names_arr = [x for x in gal_group_run32.columns.values[idx_arr]]
-for idx in np.arange(2,101,1):
-    names_arr.append('{0}_y'.format(idx))
-    names_arr.append('groupid_{0}'.format(idx))
-    names_arr.append('g_galtype_{0}'.format(idx))
-names_arr = np.array(names_arr)
+    gal_group_df_subset = gal_group_run32[names_arr]
 
-gal_group_df_subset = gal_group_run32[names_arr]
+    # Renaming the "1_y" column kept from line 1896 because of case where it was
+    # also in mcmc_table_ptcl.mock_num and was selected twice
+    gal_group_df_subset.columns.values[30] = "behroozi_bf"
 
-# Renaming the "1_y" column kept from line 1896 because of case where it was
-# also in mcmc_table_ptcl.mock_num and was selected twice
-gal_group_df_subset.columns.values[30] = "behroozi_bf"
+    ### Removing "_y" from column names for stellar mass
+    # Have to remove the first element because it is 'halo_y' column name
+    cols_with_y = np.array([[idx, s] for idx, s in enumerate(gal_group_df_subset.columns.values) if '_y' in s][1:])
+    colnames_without_y = [s.replace("_y", "") for s in cols_with_y[:,1]]
+    gal_group_df_subset.columns.values[cols_with_y[:,0].astype(int)] = colnames_without_y
 
-for idx in np.arange(2,101,1):
-    gal_group_df_subset = gal_group_df_subset.rename(columns=\
-        {'{0}_y'.format(idx):'{0}'.format(idx)})
+    print('Getting data in specific percentile')
+    # get_paramvals called to get bf params and chi2 values
+    mcmc_table_pctl, bf_params, bf_chi2 = \
+        get_paramvals_percentile(mcmc_table, 68, chi2)
+    colnames = ['mhalo_c', 'mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter', \
+        'mstar_q', 'mh_q', 'mu', 'nu']
 
-print('Getting data in specific percentile')
-# get_paramvals called to get bf params and chi2 values
-mcmc_table_pctl, bf_params, bf_chi2 = \
-    get_paramvals_percentile(mcmc_table, 68, chi2)
-colnames = ['mhalo_c', 'mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter', \
-    'mstar_q', 'mh_q', 'mu', 'nu']
-mcmc_table_pctl_subset = pd.read_csv(path_to_proc + 'run{0}_params_subset.txt'.format(run), 
-    delim_whitespace=True, names=colnames).iloc[1:,:].reset_index(drop=True)
+    mcmc_table_pctl_subset = pd.read_csv(path_to_proc + 'run{0}_params_subset.txt'.format(run), 
+        delim_whitespace=True, names=colnames).iloc[1:,:].reset_index(drop=True)
 
-print('Assigning colour to data')
-catl = assign_colour_label_data(catl)
+    print('Assigning colour to data')
+    catl = assign_colour_label_data(catl)
 
-print('Measuring SMF for data')
-total_data, red_data, blue_data = measure_all_smf(catl, volume, True)
+    print('Measuring SMF for data')
+    total_data, red_data, blue_data = measure_all_smf(catl, volume, True)
 
-print('Measuring blue fraction for data')
-f_blue = blue_frac(catl, False, True)
+    print('Measuring blue fraction for data')
+    f_blue = blue_frac(catl, False, True)
 
-print('Measuring reconstructed red and blue SMF for data')
-phi_red_data, phi_blue_data = get_colour_smf_from_fblue(catl, f_blue[1], 
-    f_blue[0], volume, False)
+    print('Measuring reconstructed red and blue SMF for data')
+    phi_red_data, phi_blue_data = get_colour_smf_from_fblue(catl, f_blue[1], 
+        f_blue[0], volume, False)
 
-print('Measuring new dynamical metric for data')
-red_sigma_data, red_cen_stellar_mass_data_sigma, blue_sigma_data, \
-    blue_cen_stellar_mass_data_sigma = get_sigma_per_group_data(catl)
+    print('Measuring new dynamical metric for data')
+    red_sigma_data, red_cen_stellar_mass_data_sigma, blue_sigma_data, \
+        blue_cen_stellar_mass_data_sigma = get_sigma_per_group_data(catl)
 
-# Returns masses in h=1.0
-print('Measuring vel disp for data')
-veldisp_red, veldisp_centers_red, veldisp_blue, veldisp_centers_blue = \
-    get_deltav_sigma_data(catl)
+    # Returns masses in h=1.0
+    print('Measuring vel disp for data')
+    veldisp_red, veldisp_centers_red, veldisp_blue, veldisp_centers_blue = \
+        get_deltav_sigma_data(catl)
 
-print('Measuring number of galaxies in groups for data')
-red_num_data, red_cen_stellar_mass_data_N, blue_num_data, \
-    blue_cen_stellar_mass_data_N = get_N_per_group_data(catl, central_bool=True)
+    print('Measuring number of galaxies in groups for data')
+    red_num_data, red_cen_stellar_mass_data_N, blue_num_data, \
+        blue_cen_stellar_mass_data_N = get_N_per_group_data(catl, central_bool=True)
 
-print('Measuring satellite weighted velocity dispersion for data')
-wtd_red_sigma_data, red_cen_stellar_mass_data, wtd_blue_sigma_data, \
-    blue_cen_stellar_mass_data, red_nsat_data, blue_nsat_data = \
-    get_satellite_weighted_sigma_data(catl)
+    print('Measuring satellite weighted velocity dispersion for data')
+    wtd_red_sigma_data, red_cen_stellar_mass_data, wtd_blue_sigma_data, \
+        blue_cen_stellar_mass_data, red_nsat_data, blue_nsat_data = \
+        get_satellite_weighted_sigma_data(catl)
 
-print('Initial population of halo catalog')
-model_init = halocat_init(halo_catalog, z_median)
+    print('Initial population of halo catalog')
+    model_init = halocat_init(halo_catalog, z_median)
 
-print('Measuring error in data from mocks')
-err_data, err_phi_red, err_phi_blue, err_std_red, err_std_blue, err_vdisp_red, \
-    err_vdisp_blue, red_cen_stellar_mass_mocks, red_num_mocks, \
-    blue_cen_stellar_mass_mocks, blue_num_mocks = \
-    get_err_data(survey, path_to_mocks)
+    print('Measuring error in data from mocks')
+    err_data, err_phi_red, err_phi_blue, err_std_red, err_std_blue, err_vdisp_red, \
+        err_vdisp_blue, red_cen_stellar_mass_mocks, red_num_mocks, \
+        blue_cen_stellar_mass_mocks, blue_num_mocks = \
+        get_err_data(survey, path_to_mocks)
 
-dof = len(err_data) - len(bf_params)
+    dof = len(err_data) - len(bf_params)
 
-print('Getting best fit model')
-if level == 'halo':
-    maxis_bf_total, phi_bf_total, maxis_bf_fblue, bf_fblue, phi_bf_red, \
-        phi_bf_blue, cen_gals_red, \
+    print('Getting best fit model')
+    if level == 'halo':
+        maxis_bf_total, phi_bf_total, maxis_bf_fblue, bf_fblue, phi_bf_red, \
+            phi_bf_blue, cen_gals_red, \
+            cen_halos_red, cen_gals_blue, cen_halos_blue, f_red_cen_red, \
+            f_red_cen_blue, sat_gals_red_bf, sat_halos_red_bf, sat_gals_blue_bf, \
+            sat_halos_blue_bf, f_red_sat_red_bf, f_red_sat_blue_bf, cen_gals_bf, \
+            cen_halos_bf, red_sigma_bf, grp_red_cen_stellar_mass_bf, \
+            blue_sigma_bf, grp_blue_cen_stellar_mass_bf, vdisp_red_bf, vdisp_blue_bf, \
+            vdisp_centers_red_bf, vdisp_centers_blue_bf, vdisp_red_points_bf, \
+            vdisp_blue_points_bf, red_host_halo_mass_bf_sigma_mh, \
+            blue_host_halo_mass_bf_sigma_mh, red_cen_stellar_mass_bf, red_num_bf, \
+            blue_cen_stellar_mass_bf, blue_num_bf, red_host_halo_mass_bf_N_mh, \
+            blue_host_halo_mass_bf_N_mh, wtd_red_sigma_bf, \
+            wtd_red_cen_stellar_mass_bf, wtd_blue_sigma_bf, \
+            wtd_blue_cen_stellar_mass_bf, wtd_red_nsat_bf, wtd_blue_nsat_bf = \
+            get_best_fit_model(bf_params)
+
+    elif level == 'group':
+        maxis_bf_total, phi_bf_total, maxis_bf_fblue, bf_fblue, phi_bf_red, \
+            phi_bf_blue, cen_gals_red, \
+            cen_halos_red, cen_gals_blue, cen_halos_blue, f_red_cen_red, \
+            f_red_cen_blue, sat_gals_red_bf, sat_halos_red_bf, sat_gals_blue_bf, \
+            sat_halos_blue_bf, f_red_sat_red_bf, f_red_sat_blue_bf, cen_gals_bf, \
+            cen_halos_bf, red_sigma_bf, grp_red_cen_stellar_mass_bf, \
+            blue_sigma_bf, grp_blue_cen_stellar_mass_bf, vdisp_red_bf, vdisp_blue_bf, \
+            vdisp_centers_red_bf, vdisp_centers_blue_bf, red_cen_stellar_mass_bf, \
+            red_num_bf, blue_cen_stellar_mass_bf, blue_num_bf, wtd_red_sigma_bf, \
+            wtd_red_cen_stellar_mass_bf, wtd_blue_sigma_bf, \
+            wtd_blue_cen_stellar_mass_bf, wtd_red_nsat_bf, wtd_blue_nsat_bf = \
+            get_best_fit_model(bf_params)
+
+    print('Multiprocessing') #~18 minutes
+    result = mp_init(mcmc_table_pctl_subset, nproc)
+
+    print('Plotting')
+    plot_total_mf(result, total_data, maxis_bf_total, phi_bf_total, 
+        bf_chi2, err_data)
+
+    plot_fblue(result, f_blue, maxis_bf_fblue, bf_fblue, bf_chi2, err_data)
+
+    plot_colour_mf(result, phi_red_data, phi_blue_data, phi_bf_red, phi_bf_blue, 
+        err_phi_red, err_phi_blue , bf_chi2)
+
+    plot_xmhm(result, cen_gals_bf, cen_halos_bf, bf_chi2)
+
+    plot_colour_xmhm(result, cen_gals_red, cen_halos_red, cen_gals_blue, 
+        cen_halos_blue, bf_chi2)
+
+    plot_colour_hmxm(result, cen_gals_red, cen_halos_red, cen_gals_blue, 
+        cen_halos_blue, bf_chi2)
+
+    plot_red_fraction_cen(result, cen_gals_red, \
         cen_halos_red, cen_gals_blue, cen_halos_blue, f_red_cen_red, \
-        f_red_cen_blue, sat_gals_red_bf, sat_halos_red_bf, sat_gals_blue_bf, \
-        sat_halos_blue_bf, f_red_sat_red_bf, f_red_sat_blue_bf, cen_gals_bf, \
-        cen_halos_bf, red_sigma_bf, grp_red_cen_stellar_mass_bf, \
-        blue_sigma_bf, grp_blue_cen_stellar_mass_bf, vdisp_red_bf, vdisp_blue_bf, \
-        vdisp_centers_red_bf, vdisp_centers_blue_bf, vdisp_red_points_bf, \
+        f_red_cen_blue)
+
+    plot_red_fraction_sat(result, sat_gals_red_bf, \
+        sat_halos_red_bf, sat_gals_blue_bf, sat_halos_blue_bf, f_red_sat_red_bf, \
+        f_red_sat_blue_bf)
+
+    plot_zumand_fig4(result, cen_gals_red, cen_halos_red, cen_gals_blue, 
+        cen_halos_blue, bf_chi2)
+
+    plot_mean_grpcen_vs_sigma(result, red_sigma_bf, grp_red_cen_stellar_mass_bf, \
+        blue_sigma_bf, grp_blue_cen_stellar_mass_bf, red_sigma_data, \
+        red_cen_stellar_mass_data_sigma, blue_sigma_data, \
+        blue_cen_stellar_mass_data_sigma, err_std_red, err_std_blue, bf_chi2)
+
+    plot_sigma_vdiff_mod(result, veldisp_red, veldisp_centers_red, veldisp_blue, \
+        veldisp_centers_blue, vdisp_red_bf, vdisp_blue_bf, vdisp_centers_red_bf, \
+        vdisp_centers_blue_bf, bf_chi2, err_vdisp_red, err_vdisp_blue)
+
+    plot_sigma_host_halo_mass_vishnu(result, vdisp_red_points_bf, \
         vdisp_blue_points_bf, red_host_halo_mass_bf_sigma_mh, \
-        blue_host_halo_mass_bf_sigma_mh, red_cen_stellar_mass_bf, red_num_bf, \
-        blue_cen_stellar_mass_bf, blue_num_bf, red_host_halo_mass_bf_N_mh, \
-        blue_host_halo_mass_bf_N_mh, wtd_red_sigma_bf, \
-        wtd_red_cen_stellar_mass_bf, wtd_blue_sigma_bf, \
-        wtd_blue_cen_stellar_mass_bf, wtd_red_nsat_bf, wtd_blue_nsat_bf = \
-        get_best_fit_model(bf_params)
+        blue_host_halo_mass_bf_sigma_mh)
 
-elif level == 'group':
-    maxis_bf_total, phi_bf_total, maxis_bf_fblue, bf_fblue, phi_bf_red, \
-        phi_bf_blue, cen_gals_red, \
-        cen_halos_red, cen_gals_blue, cen_halos_blue, f_red_cen_red, \
-        f_red_cen_blue, sat_gals_red_bf, sat_halos_red_bf, sat_gals_blue_bf, \
-        sat_halos_blue_bf, f_red_sat_red_bf, f_red_sat_blue_bf, cen_gals_bf, \
-        cen_halos_bf, red_sigma_bf, grp_red_cen_stellar_mass_bf, \
-        blue_sigma_bf, grp_blue_cen_stellar_mass_bf, vdisp_red_bf, vdisp_blue_bf, \
-        vdisp_centers_red_bf, vdisp_centers_blue_bf, red_cen_stellar_mass_bf, \
-        red_num_bf, blue_cen_stellar_mass_bf, blue_num_bf, wtd_red_sigma_bf, \
-        wtd_red_cen_stellar_mass_bf, wtd_blue_sigma_bf, \
-        wtd_blue_cen_stellar_mass_bf, wtd_red_nsat_bf, wtd_blue_nsat_bf = \
-        get_best_fit_model(bf_params)
+    plot_N_host_halo_mass_vishnu(result, red_num_bf, \
+        blue_num_bf, red_host_halo_mass_bf_N_mh, \
+        blue_host_halo_mass_bf_N_mh)
 
-print('Multiprocessing') #~18 minutes
-result = mp_init(mcmc_table_pctl_subset, nproc)
+    plot_mean_grpcen_vs_N(result, red_num_bf, \
+        red_cen_stellar_mass_bf, blue_num_bf, blue_cen_stellar_mass_bf, \
+        red_num_data, red_cen_stellar_mass_data_N, blue_num_data, \
+        blue_cen_stellar_mass_data_N, red_cen_stellar_mass_mocks, red_num_mocks, \
+        blue_cen_stellar_mass_mocks, blue_num_mocks)
 
-print('Plotting')
-plot_total_mf(result, total_data, maxis_bf_total, phi_bf_total, 
-    bf_chi2, err_data)
+    plot_mean_N_vs_grpcen(result, red_num_bf, \
+        red_cen_stellar_mass_bf, blue_num_bf, blue_cen_stellar_mass_bf, \
+        red_num_data, red_cen_stellar_mass_data_N, blue_num_data, \
+        blue_cen_stellar_mass_data_N, red_cen_stellar_mass_mocks, red_num_mocks, \
+        blue_cen_stellar_mass_mocks, blue_num_mocks)
 
-plot_fblue(result, f_blue, maxis_bf_fblue, bf_fblue, bf_chi2, err_data)
-
-plot_colour_mf(result, phi_red_data, phi_blue_data, phi_bf_red, phi_bf_blue, 
-    err_phi_red, err_phi_blue , bf_chi2)
-
-plot_xmhm(result, cen_gals_bf, cen_halos_bf, bf_chi2)
-
-plot_colour_xmhm(result, cen_gals_red, cen_halos_red, cen_gals_blue, 
-    cen_halos_blue, bf_chi2)
-
-plot_colour_hmxm(result, cen_gals_red, cen_halos_red, cen_gals_blue, 
-    cen_halos_blue, bf_chi2)
-
-plot_red_fraction_cen(result, cen_gals_red, \
-    cen_halos_red, cen_gals_blue, cen_halos_blue, f_red_cen_red, \
-    f_red_cen_blue)
-
-plot_red_fraction_sat(result, sat_gals_red_bf, \
-    sat_halos_red_bf, sat_gals_blue_bf, sat_halos_blue_bf, f_red_sat_red_bf, \
-    f_red_sat_blue_bf)
-
-plot_zumand_fig4(result, cen_gals_red, cen_halos_red, cen_gals_blue, 
-    cen_halos_blue, bf_chi2)
-
-plot_mean_grpcen_vs_sigma(result, red_sigma_bf, grp_red_cen_stellar_mass_bf, \
-    blue_sigma_bf, grp_blue_cen_stellar_mass_bf, red_sigma_data, \
-    red_cen_stellar_mass_data_sigma, blue_sigma_data, \
-    blue_cen_stellar_mass_data_sigma, err_std_red, err_std_blue, bf_chi2)
-
-plot_sigma_vdiff_mod(result, veldisp_red, veldisp_centers_red, veldisp_blue, \
-    veldisp_centers_blue, vdisp_red_bf, vdisp_blue_bf, vdisp_centers_red_bf, \
-    vdisp_centers_blue_bf, bf_chi2, err_vdisp_red, err_vdisp_blue)
-
-plot_sigma_host_halo_mass_vishnu(result, vdisp_red_points_bf, \
-    vdisp_blue_points_bf, red_host_halo_mass_bf_sigma_mh, \
-    blue_host_halo_mass_bf_sigma_mh)
-
-plot_N_host_halo_mass_vishnu(result, red_num_bf, \
-    blue_num_bf, red_host_halo_mass_bf_N_mh, \
-    blue_host_halo_mass_bf_N_mh)
-
-plot_mean_grpcen_vs_N(result, red_num_bf, \
-    red_cen_stellar_mass_bf, blue_num_bf, blue_cen_stellar_mass_bf, \
-    red_num_data, red_cen_stellar_mass_data_N, blue_num_data, \
-    blue_cen_stellar_mass_data_N, red_cen_stellar_mass_mocks, red_num_mocks, \
-    blue_cen_stellar_mass_mocks, blue_num_mocks)
-
-plot_mean_N_vs_grpcen(result, red_num_bf, \
-    red_cen_stellar_mass_bf, blue_num_bf, blue_cen_stellar_mass_bf, \
-    red_num_data, red_cen_stellar_mass_data_N, blue_num_data, \
-    blue_cen_stellar_mass_data_N, red_cen_stellar_mass_mocks, red_num_mocks, \
-    blue_cen_stellar_mass_mocks, blue_num_mocks)
-
-plot_satellite_weighted_sigma(result, wtd_red_sigma_bf, \
-    wtd_blue_sigma_bf, wtd_red_cen_stellar_mass_bf, \
-    wtd_blue_cen_stellar_mass_bf, wtd_red_nsat_bf, \
-    wtd_blue_nsat_bf,\
-    wtd_red_sigma_data, wtd_blue_sigma_data, red_cen_stellar_mass_data, \
-    blue_cen_stellar_mass_data, red_nsat_data, blue_nsat_data)
-
-### Move to plotting function sigma_vdiff_mod from get_deltav functions
-if Settings.survey == 'eco' or Settings.survey == 'resolvea':
-    # TODO : check if this is actually correct for resolve a
-    red_stellar_mass_bins = np.linspace(8.6,11.2,6)
-elif Settings.survey == 'resolveb':
-    red_stellar_mass_bins = np.linspace(8.4,11.0,6)
-
-mean_stats_red = bs(red_cen_stellar_mass_arr, red_sigma_arr,
-    statistic='mean', bins=red_stellar_mass_bins)
-std_red = mean_stats_red[0]
-
-if survey == 'eco' or survey == 'resolvea':
-    # TODO : check if this is actually correct for resolve a
-    blue_stellar_mass_bins = np.linspace(8.6,10.7,6)
-elif survey == 'resolveb':
-    blue_stellar_mass_bins = np.linspace(8.4,10.4,6)
-
-mean_stats_blue = bs(blue_cen_stellar_mass_arr, blue_sigma_arr,
-    statistic='mean', bins=blue_stellar_mass_bins)
-std_blue = mean_stats_blue[0]
-
-centers_red = 0.5 * (mean_stats_red[1][1:] + \
-    mean_stats_red[1][:-1])
-centers_blue = 0.5 * (mean_stats_blue[1][1:] + \
-    mean_stats_blue[1][:-1])
+    plot_satellite_weighted_sigma(result, wtd_red_sigma_bf, \
+        wtd_blue_sigma_bf, wtd_red_cen_stellar_mass_bf, \
+        wtd_blue_cen_stellar_mass_bf, wtd_red_nsat_bf, \
+        wtd_blue_nsat_bf,\
+        wtd_red_sigma_data, wtd_blue_sigma_data, red_cen_stellar_mass_data, \
+        blue_cen_stellar_mass_data, red_nsat_data, blue_nsat_data)
 
 
-### Move to plotting function mean_grpccen_vs_sigma from sigma_per_group_mocks
+if __name__ == 'main':
+    main()
 
-if catl_type == 'mock':
-    mean_stats_red = bs(red_sigma_arr, red_cen_stellar_mass_arr, 
-        statistic='mean', bins=np.linspace(0,250,6))
-    mean_stats_blue = bs(blue_sigma_arr, blue_cen_stellar_mass_arr, 
-        statistic='mean', bins=np.linspace(0,250,6))
+# ### Move to plotting function sigma_vdiff_mod from get_deltav functions
+# if Settings.survey == 'eco' or Settings.survey == 'resolvea':
+#     # TODO : check if this is actually correct for resolve a
+#     red_stellar_mass_bins = np.linspace(8.6,11.2,6)
+# elif Settings.survey == 'resolveb':
+#     red_stellar_mass_bins = np.linspace(8.4,11.0,6)
 
-    centers_red = 0.5 * (mean_stats_red[1][1:] + \
-        mean_stats_red[1][:-1])
-    centers_blue = 0.5 * (mean_stats_blue[1][1:] + \
-        mean_stats_blue[1][:-1])
+# mean_stats_red = bs(red_cen_stellar_mass_arr, red_sigma_arr,
+#     statistic='mean', bins=red_stellar_mass_bins)
+# std_red = mean_stats_red[0]
+
+# if survey == 'eco' or survey == 'resolvea':
+#     # TODO : check if this is actually correct for resolve a
+#     blue_stellar_mass_bins = np.linspace(8.6,10.7,6)
+# elif survey == 'resolveb':
+#     blue_stellar_mass_bins = np.linspace(8.4,10.4,6)
+
+# mean_stats_blue = bs(blue_cen_stellar_mass_arr, blue_sigma_arr,
+#     statistic='mean', bins=blue_stellar_mass_bins)
+# std_blue = mean_stats_blue[0]
+
+# centers_red = 0.5 * (mean_stats_red[1][1:] + \
+#     mean_stats_red[1][:-1])
+# centers_blue = 0.5 * (mean_stats_blue[1][1:] + \
+#     mean_stats_blue[1][:-1])
+
+
+# ### Move to plotting function mean_grpccen_vs_sigma from sigma_per_group_mocks
+
+# if catl_type == 'mock':
+#     mean_stats_red = bs(red_sigma_arr, red_cen_stellar_mass_arr, 
+#         statistic='mean', bins=np.linspace(0,250,6))
+#     mean_stats_blue = bs(blue_sigma_arr, blue_cen_stellar_mass_arr, 
+#         statistic='mean', bins=np.linspace(0,250,6))
+
+#     centers_red = 0.5 * (mean_stats_red[1][1:] + \
+#         mean_stats_red[1][:-1])
+#     centers_blue = 0.5 * (mean_stats_blue[1][1:] + \
+#         mean_stats_blue[1][:-1])
     
-    return mean_stats_red, centers_red, mean_stats_blue, centers_blue
+#     return mean_stats_red, centers_red, mean_stats_blue, centers_blue
