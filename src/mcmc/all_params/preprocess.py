@@ -3,23 +3,23 @@
 """
 __author__ = '{Mehnaaz Asad}'
 
-from settings import Settings
 import pandas as pd
 import numpy as np
+import globals
 import os
 
 class Preprocess():
 
-    catl = None
-    volume = None
-    z_median = None
-    gal_group_df_subset = None
-    bf_params = None
-    bf_chi2 = None
-    mcmc_table_pctl_subset = None
+    def __init__(self, settings) -> None:
+        self.catl = None
+        self.volume = None
+        self.z_median = None
+        self.bf_params = None
+        self.bf_chi2 = None
+        self.mcmc_table_pctl_subset = None
+        self.settings = settings
 
-    @staticmethod
-    def read_mcmc(path_to_file):
+    def read_mcmc(self, path_to_file):
         """
         Reads mcmc chain from file
 
@@ -69,8 +69,7 @@ class Preprocess():
 
         return emcee_table
 
-    @staticmethod
-    def read_mock_catl(filename, catl_format='.hdf5'):
+    def read_mock_catl(self, filename, catl_format='.hdf5'):
         """
         Function to read ECO/RESOLVE catalogues.
 
@@ -139,8 +138,7 @@ class Preprocess():
 
         return mock_pd
 
-    @staticmethod
-    def mock_add_grpcz(mock_df, data_bool=None, grpid_col=None):
+    def mock_add_grpcz(self, mock_df, data_bool=None, grpid_col=None):
         """Adds column of group cz values to mock catalogues
 
         Args:
@@ -171,8 +169,7 @@ class Preprocess():
             mock_df['grpcz'] = full_grpcz_arr
         return mock_df
 
-    @staticmethod
-    def read_data_catl(path_to_file, survey):
+    def read_data_catl(self, path_to_file, survey):
         """
         Reads survey catalog from file
 
@@ -195,6 +192,7 @@ class Preprocess():
         z_median: `float`
             Median redshift of survey
         """
+        settings = self.settings
         if survey == 'eco':
             # columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
             #             'logmstar', 'logmgas', 'grp', 'grpn', 'logmh', 'logmh_s', 
@@ -204,15 +202,15 @@ class Preprocess():
             # eco_buff = pd.read_csv(path_to_file, delimiter=",", header=0, \
             #     usecols=columns)
 
-            eco_buff = Preprocess.read_mock_catl(path_to_file)
-            eco_buff = Preprocess.mock_add_grpcz(eco_buff, True)
+            eco_buff = self.read_mock_catl(path_to_file)
+            eco_buff = self.mock_add_grpcz(eco_buff, True)
 
-            if Settings.mf_type == 'smf':
+            if settings.mf_type == 'smf':
                 # 6456 galaxies                       
                 catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
                     (eco_buff.grpcz.values <= 7000) & 
                     (eco_buff.absrmag.values <= -17.33)]
-            elif Settings.mf_type == 'bmf':
+            elif settings.mf_type == 'bmf':
                 catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
                     (eco_buff.grpcz.values <= 7000) & 
                     (eco_buff.absrmag.values <= -17.33)] 
@@ -230,12 +228,12 @@ class Preprocess():
                 usecols=columns)
 
             if survey == 'resolvea':
-                if Settings.mf_type == 'smf':
+                if settings.mf_type == 'smf':
                     catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
                         (resolve_live18.grpcz.values >= 4500) & 
                         (resolve_live18.grpcz.values <= 7000) & 
                         (resolve_live18.absrmag.values <= -17.33)]
-                elif Settings.mf_type == 'bmf':
+                elif settings.mf_type == 'bmf':
                     catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
                         (resolve_live18.grpcz.values >= 4500) & 
                         (resolve_live18.grpcz.values <= 7000) & 
@@ -246,13 +244,13 @@ class Preprocess():
                 z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
             
             elif survey == 'resolveb':
-                if Settings.mf_type == 'smf':
+                if settings.mf_type == 'smf':
                     # 487 - cz, 369 - grpcz
                     catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
                         (resolve_live18.grpcz.values >= 4500) & 
                         (resolve_live18.grpcz.values <= 7000) & 
                         (resolve_live18.absrmag.values <= -17)]
-                elif Settings.mf_type == 'bmf':
+                elif settings.mf_type == 'bmf':
                     catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
                         (resolve_live18.grpcz.values >= 4500) & 
                         (resolve_live18.grpcz.values <= 7000) & 
@@ -264,8 +262,7 @@ class Preprocess():
 
         return catl, volume, z_median
 
-    @staticmethod
-    def get_paramvals_percentile(mcmc_table, pctl, chi2, randints_df=None):
+    def get_paramvals_percentile(self, mcmc_table, pctl, chi2, randints_df=None):
         """
         Isolates 68th percentile lowest chi^2 values and takes random 100 sample
 
@@ -318,18 +315,23 @@ class Preprocess():
 
         return mcmc_table_pctl, bf_params, bf_chi2
 
-    @staticmethod
-    def Load_Into_Dataframes():
+    def Load_Into_Dataframes(self):
+        settings = self.settings
+
         print('Reading files')
-        chi2 = pd.read_csv(Settings.chi2_file,header=None,names=['chisquared'])['chisquared'].values
+        chi2 = pd.read_csv(settings.chi2_file,header=None,names=['chisquared'])\
+            ['chisquared'].values
 
-        mcmc_table = Preprocess.read_mcmc(Settings.chain_file)
-        Preprocess.catl, Preprocess.volume, Preprocess.z_median = Preprocess.read_data_catl(Settings.catl_file, Settings.survey)
+        mcmc_table = self.read_mcmc(settings.chain_file)
+        self.catl, self.volume, self.z_median = self.\
+            read_data_catl(settings.catl_file, settings.survey)
         ## Group finder run on subset after applying M* cut 8.6 and cz cut 3000-12000
-        gal_group_run32 = Preprocess.read_mock_catl(Settings.path_to_proc + "gal_group_run{0}.hdf5".format(Settings.run)) 
+        gal_group_run32 = self.read_mock_catl(settings.path_to_proc + \
+            "gal_group_run{0}.hdf5".format(settings.run)) 
 
-        idx_arr = np.insert(np.linspace(0,20,21), len(np.linspace(0,20,21)), (22, 123, 
-        124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134)).astype(int)
+        idx_arr = np.insert(np.linspace(0,20,21), len(np.linspace(0,20,21)), \
+            (22, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134)).\
+            astype(int)
 
         names_arr = [x for x in gal_group_run32.columns.values[idx_arr]]
         for idx in np.arange(2,101,1):
@@ -338,29 +340,28 @@ class Preprocess():
             names_arr.append('g_galtype_{0}'.format(idx))
         names_arr = np.array(names_arr)
 
-        Preprocess.gal_group_df_subset = gal_group_run32[names_arr]
+        globals.gal_group_df_subset = gal_group_run32[names_arr]
 
         # Renaming the "1_y" column kept from line 1896 because of case where it was
         # also in mcmc_table_ptcl.mock_num and was selected twice
-        Preprocess.gal_group_df_subset.columns.values[30] = "behroozi_bf"
+        globals.gal_group_df_subset.columns.values[30] = "behroozi_bf"
 
         ### Removing "_y" from column names for stellar mass
         # Have to remove the first element because it is 'halo_y' column name
-        cols_with_y = np.array([[idx, s] for idx, s in enumerate(names_arr) if '_y' in s][1:])
+        cols_with_y = np.array([[idx, s] for idx, s in enumerate(
+            globals.gal_group_df_subset.columns.values) if '_y' in s][1:])
         colnames_without_y = [s.replace("_y", "") for s in cols_with_y[:,1]]
-        names_arr[cols_with_y[:,0].astype(int)] = colnames_without_y
-        Preprocess.gal_group_df_subset.columns = names_arr
+        globals.gal_group_df_subset.columns.values[cols_with_y[:,0].\
+            astype(int)] = colnames_without_y
 
         print('Getting data in specific percentile')
         # get_paramvals called to get bf params and chi2 values
-        mcmc_table_pctl, Preprocess.bf_params, Preprocess.bf_chi2 = \
-            Preprocess.get_paramvals_percentile(mcmc_table, 68, chi2)
+        mcmc_table_pctl, self.bf_params, self.bf_chi2 = \
+            self.get_paramvals_percentile(mcmc_table, 68, chi2)
 
         colnames = ['mhalo_c', 'mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter', \
             'mstar_q', 'mh_q', 'mu', 'nu']
-        Preprocess.mcmc_table_pctl_subset = pd.read_csv(Settings.path_to_proc + 
-            'run{0}_params_subset.txt'.format(Settings.run), 
+        self.mcmc_table_pctl_subset = pd.read_csv(settings.path_to_proc + 
+            'run{0}_params_subset.txt'.format(settings.run), 
             delim_whitespace=True, names=colnames)\
             .iloc[1:,:].reset_index(drop=True)
-        
-        
