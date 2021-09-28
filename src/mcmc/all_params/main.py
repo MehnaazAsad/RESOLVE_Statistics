@@ -19,12 +19,14 @@ def main():
     analysis = Analysis(preprocess)
     experiments = Experiments(analysis)
 
-    analysis.Core(experiments)
-    experiments.Run_Experiments()
+    data = analysis.Core(experiments)
+    data_experimentals = experiments.Run_Experiments()
     
-    models = analysis.Mocks_And_Models(experiments)
-    # Plotting.Plot_Core()
-    # Plotting.Plot_Experiments()
+    models, best_fit = analysis.Mocks_And_Models(experiments)
+
+    plotting = Plotting(preprocess)
+    plotting.Plot_Core(data, models, best_fit)
+    # Plotting.Plot_Experiments(analysis, experiments)
 
 
 if __name__ == '__main__':
