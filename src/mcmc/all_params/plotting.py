@@ -3,6 +3,7 @@
 """
 __author__ = '{Mehnaaz Asad}'
 
+from operator import mod
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.legend_handler import HandlerTuple
@@ -13,11 +14,27 @@ from analysis import Analysis
 from preprocess import Preprocess
 from experiments import Experiments
 
+from matplotlib.legend_handler import HandlerTuple
+import matplotlib.pyplot as plt
+from matplotlib import markers, rc
+
+rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=30)
+rc('text', usetex=True)
+rc('text.latex', preamble=r"\usepackage{amsmath}")
+rc('axes', linewidth=2)
+rc('xtick.major', width=4, size=7)
+rc('ytick.major', width=4, size=7)
+rc('xtick.minor', width=2, size=7)
+rc('ytick.minor', width=2, size=7)
+
 
 class Plotting():
 
-    @staticmethod
-    def plot_total_mf(models, data, best_fit, bf_chi2, error_data):
+    def __init__(self, preprocess) -> None:
+        self.preprocess = preprocess
+        self.settings = preprocess.settings
+
+    def plot_total_mf(self, models, data, best_fit):
         """
         Plot SMF from data, best fit param values and param values corresponding to 
         68th percentile 100 lowest chi^2 values
@@ -46,77 +63,88 @@ class Plotting():
         ---------
         Plot displayed on screen.
         """
-        x_phi_total_data, y_phi_total_data = data[0], data[1]
-        x_phi_total_model = models[0][0]['smf_total']['max_total']
+        settings = self.settings
+        preprocess = self.preprocess
+
+        smf_total = data[0] #x, y, error, counts
+        error = data[4][0:6]
+
+        x_phi_total_data, y_phi_total_data = smf_total[0], smf_total[1]
+        x_phi_total_model = models[0][0]['smf_total']['max_total'][0]
+
+        x_phi_total_bf, y_phi_total_bf = best_fit[0]['smf_total']['max_total'],\
+            best_fit[0]['smf_total']['phi_total']
+
+        dof = data[6]
 
         i_outer = 0
-        total_mod_arr = []
+        mod_arr = []
         while i_outer < 5:
-            for idx in range(len(models[i_outer][0])):
-                tot_mod_ii = models[i_outer][0]['smf_total']['phi_total']
-                total_mod_arr.append(tot_mod_ii)
+            for idx in range(len(models[i_outer][0]['smf_total']['max_total'])):
+                tot_mod_ii = models[i_outer][0]['smf_total']['phi_total'][idx]
+                mod_arr.append(tot_mod_ii)
             i_outer += 1
 
-            for idx in range(len(models[i_outer][0])):
-                tot_mod_ii = models[i_outer][0]['smf_total']['phi_total']
-                total_mod_arr.append(tot_mod_ii)
+            for idx in range(len(models[i_outer][0]['smf_total']['max_total'])):
+                tot_mod_ii = models[i_outer][0]['smf_total']['phi_total'][idx]
+                mod_arr.append(tot_mod_ii)
             i_outer += 1
 
-            for idx in range(len(models[i_outer][0])):
-                tot_mod_ii = models[i_outer][0]['smf_total']['phi_total']
-                total_mod_arr.append(tot_mod_ii)
+            for idx in range(len(models[i_outer][0]['smf_total']['max_total'])):
+                tot_mod_ii = models[i_outer][0]['smf_total']['phi_total'][idx]
+                mod_arr.append(tot_mod_ii)
             i_outer += 1
 
-            for idx in range(len(models[i_outer][0])):
-                tot_mod_ii = models[i_outer][0]['smf_total']['phi_total']
-                total_mod_arr.append(tot_mod_ii)
+            for idx in range(len(models[i_outer][0]['smf_total']['max_total'])):
+                tot_mod_ii = models[i_outer][0]['smf_total']['phi_total'][idx]
+                mod_arr.append(tot_mod_ii)
             i_outer += 1
 
-            for idx in range(len(models[i_outer][0])):
-                tot_mod_ii = models[i_outer][0]['smf_total']['phi_total']
-                total_mod_arr.append(tot_mod_ii)
+            for idx in range(len(models[i_outer][0]['smf_total']['max_total'])):
+                tot_mod_ii = models[i_outer][0]['smf_total']['phi_total'][idx]
+                mod_arr.append(tot_mod_ii)
             i_outer += 1
 
-        tot_phi_max = np.amax(total_mod_arr, axis=0)
-        tot_phi_min = np.amin(total_mod_arr, axis=0)
+        tot_phi_max = np.amax(mod_arr, axis=0)
+        tot_phi_min = np.amin(mod_arr, axis=0)
         
         fig1= plt.figure(figsize=(10,10))
         mt = plt.fill_between(x=x_phi_total_model, y1=tot_phi_max, 
             y2=tot_phi_min, color='silver', alpha=0.4)
 
-        dt = plt.errorbar(x_phi_total_data, y_phi_total_data, yerr=err_colour[0:6],
+        dt = plt.errorbar(x_phi_total_data, y_phi_total_data, yerr=error,
             color='k', fmt='s', ecolor='k', markersize=12, capsize=7,
             capthick=1.5, zorder=10, marker='^')
         # Best-fit
         # Need a comma after 'bfr' and 'bfb' to solve this:
         #   AttributeError: 'NoneType' object has no attribute 'create_artists'
-        bft, = plt.plot(maxis_bf_total, phi_bf_total, color='k', ls='--', lw=4, 
+        bft, = plt.plot(x_phi_total_bf, y_phi_total_bf, color='k', ls='--', lw=4, 
             zorder=10)
 
+        
         plt.ylim(-4,-1)
-        if Settings.mf_type == 'smf':
+        if settings.mf_type == 'smf':
             plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
-        elif Settings.mf_type == 'bmf':
+        elif settings.mf_type == 'bmf':
             plt.xlabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
         plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=30)
 
         plt.annotate(r'$\boldsymbol\chi ^2 / dof \approx$ {0}'.
-            format(np.round(bf_chi2/dof,2)), 
-            xy=(0.875, 0.78), xycoords='axes fraction', bbox=dict(boxstyle="square", 
+            format(np.round(preprocess.bf_chi2/dof,2)), 
+            xy=(0.87, 0.75), xycoords='axes fraction', bbox=dict(boxstyle="square", 
             ec='k', fc='lightgray', alpha=0.5), size=25)
 
         plt.legend([(dt), (mt), (bft)], ['Data','Models','Best-fit'],
             handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, loc='best')
 
-        if Settings.quenching == 'hybrid':
-            plt.title('Hybrid quenching model | ECO')
-        elif Settings.quenching == 'halo':
-            plt.title('Halo quenching model | ECO')
+        if settings.survey == 'eco':
+            if settings.quenching == 'hybrid':
+                plt.title('Hybrid quenching model | ECO')
+            elif settings.quenching == 'halo':
+                plt.title('Halo quenching model | ECO')
         plt.show()
 
-    @staticmethod
-    def plot_colour_mf(models, phi_red_data, phi_blue_data, best_fit, 
-        error_data, bf_chi2):
+    def plot_colour_mf(self, models, data, best_fit):
         """
         Plot red and blue SMF from data, best fit param values and param values 
         corresponding to 68th percentile 100 lowest chi^2 values
@@ -151,46 +179,67 @@ class Plotting():
         ---------
         Plot displayed on screen.
         """
-        ## The same bins were used for fblue that were used for total SMF
-        x_phi_red_model = result[0][2][0]
-        x_phi_blue_model = result[0][2][0]
+        settings = self.settings
+        preprocess = self.preprocess
+
+        # x axis values same as those used in blue fraction for both red and 
+        # blue since colour MFs were reconstructed from blue fraction
+        fblue_data = data[1]
+
+        error_red = data[5]['std_phi_colour']['std_phi_red']
+        error_blue = data[5]['std_phi_colour']['std_phi_blue']
+
+        x_phi_red_model = fblue_data[0]
+        x_phi_red_data, y_phi_red_data = x_phi_red_model, data[2]
+
+        x_phi_blue_model = fblue_data[0]
+        x_phi_blue_data, y_phi_blue_data = x_phi_blue_model, data[3]
+
+        x_phi_red_bf, y_phi_red_bf = fblue_data[0],\
+            best_fit[0]['phi_colour']['phi_red']
+
+        x_phi_blue_bf, y_phi_blue_bf = fblue_data[0],\
+            best_fit[0]['phi_colour']['phi_blue']
+
+        dof = data[6]
 
         i_outer = 0
         red_mod_arr = []
         blue_mod_arr = []
         while i_outer < 5:
-            for idx in range(len(result[i_outer][0])):
-                red_mod_ii = result[i_outer][4][idx]
+            # Length of phi_red is the same as phi_blue
+            for idx in range(len(models[i_outer][0]['phi_colour']['phi_red'])):
+                red_mod_ii = models[i_outer][0]['phi_colour']['phi_red'][idx]
                 red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][5][idx]
+                blue_mod_ii = models[i_outer][0]['phi_colour']['phi_blue'][idx]
                 blue_mod_arr.append(blue_mod_ii)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                red_mod_ii = result[i_outer][4][idx]
+            for idx in range(len(models[i_outer][0]['phi_colour']['phi_red'])):
+                red_mod_ii = models[i_outer][0]['phi_colour']['phi_red'][idx]
                 red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][5][idx]
+                blue_mod_ii = models[i_outer][0]['phi_colour']['phi_blue'][idx]
                 blue_mod_arr.append(blue_mod_ii)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                red_mod_ii = result[i_outer][4][idx]
+            for idx in range(len(models[i_outer][0]['phi_colour']['phi_red'])):
+                red_mod_ii = models[i_outer][0]['phi_colour']['phi_red'][idx]
                 red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][5][idx]
+                blue_mod_ii = models[i_outer][0]['phi_colour']['phi_blue'][idx]
                 blue_mod_arr.append(blue_mod_ii)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                red_mod_ii = result[i_outer][4][idx]
+            for idx in range(len(models[i_outer][0]['phi_colour']['phi_red'])):
+                red_mod_ii = models[i_outer][0]['phi_colour']['phi_red'][idx]
                 red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][5][idx]
+                blue_mod_ii = models[i_outer][0]['phi_colour']['phi_blue'][idx]
                 blue_mod_arr.append(blue_mod_ii)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                red_mod_ii = result[i_outer][4][idx]
+            for idx in range(len(models[i_outer][0]['phi_colour']['phi_red'])):
+                red_mod_ii = models[i_outer][0]['phi_colour']['phi_red'][idx]
                 red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][5][idx]
+                blue_mod_ii = models[i_outer][0]['phi_colour']['phi_blue'][idx]
                 blue_mod_arr.append(blue_mod_ii)
             i_outer += 1
 
@@ -205,24 +254,24 @@ class Plotting():
         mb = plt.fill_between(x=x_phi_blue_model, y1=blue_phi_max, 
             y2=blue_phi_min, color='cornflowerblue',alpha=0.4)
 
-        dr = plt.errorbar(x_phi_red_model, phi_red_data, yerr=std_red,
+        dr = plt.errorbar(x_phi_red_data, y_phi_red_data, yerr=error_red,
             color='darkred', fmt='s', ecolor='darkred',markersize=12, capsize=7,
             capthick=1.5, zorder=10, marker='^')
-        db = plt.errorbar(x_phi_blue_model, phi_blue_data, yerr=std_blue,
+        db = plt.errorbar(x_phi_blue_data, y_phi_blue_data, yerr=error_blue,
             color='darkblue', fmt='s', ecolor='darkblue',markersize=12, capsize=7,
             capthick=1.5, zorder=10, marker='^')
         # Best-fit
         # Need a comma after 'bfr' and 'bfb' to solve this:
         #   AttributeError: 'NoneType' object has no attribute 'create_artists'
-        bfr, = plt.plot(x_phi_red_model, phi_bf_red,
+        bfr, = plt.plot(x_phi_red_bf, y_phi_red_bf,
             color='maroon', ls='--', lw=4, zorder=10)
-        bfb, = plt.plot(x_phi_blue_model, phi_bf_blue,
+        bfb, = plt.plot(x_phi_blue_bf, y_phi_blue_bf,
             color='mediumblue', ls='--', lw=4, zorder=10)
 
         plt.ylim(-4,-1)
-        if Settings.mf_type == 'smf':
+        if settings.mf_type == 'smf':
             plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
-        elif Settings.mf_type == 'bmf':
+        elif settings.mf_type == 'bmf':
             plt.xlabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
         plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=30)
 
@@ -233,21 +282,21 @@ class Plotting():
 
 
         plt.annotate(r'$\boldsymbol\chi ^2 / dof \approx$ {0}'.
-            format(np.round(bf_chi2/dof,2)), 
-            xy=(0.875, 0.78), xycoords='axes fraction', bbox=dict(boxstyle="square", 
+            format(np.round(preprocess.bf_chi2/dof,2)), 
+            xy=(0.87, 0.75), xycoords='axes fraction', bbox=dict(boxstyle="square", 
             ec='k', fc='lightgray', alpha=0.5), size=25)
 
-        if Settings.quenching == 'hybrid':
-            plt.title('Hybrid quenching model | ECO')
-        elif Settings.quenching == 'halo':
-            plt.title('Halo quenching model | ECO')
+        if settings.survey == 'eco':
+            if settings.quenching == 'hybrid':
+                plt.title('Hybrid quenching model | ECO')
+            elif settings.quenching == 'halo':
+                plt.title('Halo quenching model | ECO')
 
         # if survey == 'eco':
         #     plt.title('ECO')
         plt.show()
 
-    @staticmethod
-    def plot_fblue(models, data, best_fit, bf_chi2, error_data):
+    def plot_fblue(self, models, data, best_fit):
         """
         Plot blue fraction from data, best fit param values and param values 
         corresponding to 68th percentile 100 lowest chi^2 values
@@ -276,56 +325,66 @@ class Plotting():
         ---------
         Plot displayed on screen.
         """
+        settings = self.settings
+        preprocess = self.preprocess
+
+        fblue_data = data[1]
+        error = data[4][6:]
+        dof = data[6]
+
         x_fblue_data, y_fblue_data = fblue_data[0], fblue_data[1]
-        x_fblue_model = result[0][2][0]
+        x_fblue_model = models[0][0]['f_blue']['max_fblue'][0]
+
+        x_fblue_bf, y_fblue_bf = best_fit[0]['f_blue']['max_fblue'],\
+            best_fit[0]['f_blue']['fblue']
 
         i_outer = 0
-        fblue_mod_arr = []
+        mod_arr = []
         while i_outer < 5:
-            for idx in range(len(result[i_outer][0])):
-                fblue_mod_ii = result[i_outer][3][idx]
-                fblue_mod_arr.append(fblue_mod_ii)
+            for idx in range(len(models[i_outer][0]['f_blue']['max_fblue'])):
+                tot_mod_ii = models[i_outer][0]['f_blue']['fblue'][idx]
+                mod_arr.append(tot_mod_ii)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                fblue_mod_ii = result[i_outer][3][idx]
-                fblue_mod_arr.append(fblue_mod_ii)
+            for idx in range(len(models[i_outer][0]['f_blue']['max_fblue'])):
+                tot_mod_ii = models[i_outer][0]['f_blue']['fblue'][idx]
+                mod_arr.append(tot_mod_ii)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                fblue_mod_ii = result[i_outer][3][idx]
-                fblue_mod_arr.append(fblue_mod_ii)
+            for idx in range(len(models[i_outer][0]['f_blue']['max_fblue'])):
+                tot_mod_ii = models[i_outer][0]['f_blue']['fblue'][idx]
+                mod_arr.append(tot_mod_ii)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                fblue_mod_ii = result[i_outer][3][idx]
-                fblue_mod_arr.append(fblue_mod_ii)
+            for idx in range(len(models[i_outer][0]['f_blue']['max_fblue'])):
+                tot_mod_ii = models[i_outer][0]['f_blue']['fblue'][idx]
+                mod_arr.append(tot_mod_ii)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                fblue_mod_ii = result[i_outer][3][idx]
-                fblue_mod_arr.append(fblue_mod_ii)
+            for idx in range(len(models[i_outer][0]['f_blue']['max_fblue'])):
+                tot_mod_ii = models[i_outer][0]['f_blue']['fblue'][idx]
+                mod_arr.append(tot_mod_ii)
             i_outer += 1
 
-        fblue_max = np.amax(fblue_mod_arr, axis=0)
-        fblue_min = np.amin(fblue_mod_arr, axis=0)
+        fblue_max = np.amax(mod_arr, axis=0)
+        fblue_min = np.amin(mod_arr, axis=0)
         
         fig1= plt.figure(figsize=(10,10))
         mt = plt.fill_between(x=x_fblue_model, y1=fblue_max, 
             y2=fblue_min, color='silver', alpha=0.4)
 
-        dt = plt.errorbar(x_fblue_data, y_fblue_data, yerr=err_colour[6:],
+        dt = plt.errorbar(x_fblue_data, y_fblue_data, yerr=error,
             color='k', fmt='s', ecolor='k', markersize=12, capsize=7,
             capthick=1.5, zorder=10, marker='^')
         # Best-fit
         # Need a comma after 'bfr' and 'bfb' to solve this:
         #   AttributeError: 'NoneType' object has no attribute 'create_artists'
-        bft, = plt.plot(maxis_bf_fblue, bf_fblue, color='k', ls='--', lw=4, 
+        bft, = plt.plot(x_fblue_bf, y_fblue_bf, color='k', ls='--', lw=4, 
             zorder=10)
 
-        if Settings.mf_type == 'smf':
+        if settings.mf_type == 'smf':
             plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
-        elif Settings.mf_type == 'bmf':
+        elif settings.mf_type == 'bmf':
             plt.xlabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
         plt.ylabel(r'\boldmath$f_{blue}$', fontsize=30)
 
@@ -333,21 +392,19 @@ class Plotting():
             handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)})
 
         plt.annotate(r'$\boldsymbol\chi ^2 / dof \approx$ {0}'.
-            format(np.round(bf_chi2/dof,2)), 
-            xy=(0.875, 0.78), xycoords='axes fraction', bbox=dict(boxstyle="square", 
+            format(np.round(preprocess.bf_chi2/dof,2)), 
+            xy=(0.87, 0.75), xycoords='axes fraction', bbox=dict(boxstyle="square", 
             ec='k', fc='lightgray', alpha=0.5), size=25)
 
-        if Settings.quenching == 'hybrid':
-            plt.title('Hybrid quenching model | ECO')
-        elif Settings.quenching == 'halo':
-            plt.title('Halo quenching model | ECO')
+        if settings.survey == 'eco':
+            if settings.quenching == 'hybrid':
+                plt.title('Hybrid quenching model | ECO')
+            elif settings.quenching == 'halo':
+                plt.title('Halo quenching model | ECO')
 
-        # if survey == 'eco':
-        #     plt.title('ECO')
         plt.show()
 
-    @staticmethod
-    def plot_xmhm(models, best_fit, bf_chi2):
+    def plot_xmhm(self, models, best_fit, bf_chi2):
         """
         Plot SMHM from data, best fit param values, param values corresponding to 
         68th percentile 100 lowest chi^2 values.
@@ -519,8 +576,7 @@ class Plotting():
 
         plt.show()
 
-    @staticmethod
-    def plot_colour_xmhm(models, best_fit, bf_chi2):
+    def plot_colour_xmhm(self, models, best_fit, bf_chi2):
         """
         Plot red and blue SMHM from data, best fit param values, param values 
         corresponding to 68th percentile 100 lowest chi^2 values.
@@ -809,8 +865,7 @@ class Plotting():
 
         plt.show()
 
-    @staticmethod
-    def plot_colour_hmxm(models, best_fit, bf_chi2):
+    def plot_colour_hmxm(self, models, best_fit, bf_chi2):
         """
         Plot SMHM from data, best fit param values, param values corresponding to 
         68th percentile 1000 lowest chi^2 values and behroozi 2010 param values
@@ -1088,8 +1143,7 @@ class Plotting():
         
         plt.show()
 
-    @staticmethod
-    def plot_red_fraction_cen(models, best_fit):
+    def plot_red_fraction_cen(self, models, best_fit):
         """
         Plot red fraction of centrals from best fit param values and param values 
         corresponding to 68th percentile 100 lowest chi^2 values.
@@ -1196,8 +1250,7 @@ class Plotting():
 
         plt.show()
 
-    @staticmethod
-    def plot_red_fraction_sat(models, best_fit):
+    def plot_red_fraction_sat(self, models, best_fit):
         """
         Plot red fraction of satellites from best fit param values and param values 
         corresponding to 68th percentile 100 lowest chi^2 values.
@@ -1351,8 +1404,7 @@ class Plotting():
 
         plt.show()
 
-    @staticmethod
-    def plot_zumand_fig4(models, best_fit, bf_chi2):
+    def plot_zumand_fig4(self, models, best_fit, bf_chi2):
         """
         Plot red and blue SMHM from best fit param values and param values 
         corresponding to 68th percentile 100 lowest chi^2 values like Fig 4 from 
@@ -1465,8 +1517,7 @@ class Plotting():
         
         plt.show()
 
-    @staticmethod
-    def plot_mean_grpcen_vs_sigma(models, best_fit, data, error_data, bf_chi2):
+    def plot_mean_grpcen_vs_sigma(self, models, best_fit, data, error_data, bf_chi2):
         """
         Plot average group central stellar mass vs. velocity dispersion from data, 
         best fit param values and param values corresponding to 68th percentile 100 
@@ -1727,8 +1778,7 @@ class Plotting():
 
         plt.show()
 
-    @staticmethod
-    def plot_sigma_vdiff_mod(models, best_fit, data, error_data, bf_chi2):
+    def plot_sigma_vdiff_mod(self, models, best_fit, data, error_data, bf_chi2):
         """[summary]
 
         Args:
@@ -1834,8 +1884,7 @@ class Plotting():
         #     plt.title('ECO')
         plt.show()
 
-    @staticmethod
-    def plot_sigma_host_halo_mass_vishnu(models, best_fit):
+    def plot_sigma_host_halo_mass_vishnu(self, models, best_fit):
 
         i_outer = 0
         vdisp_red_mod_arr = []
@@ -1933,8 +1982,7 @@ class Plotting():
         plt.title('Host halo mass - velocity dispersion in best-fit model (excluding singletons)')
         plt.show()
 
-    @staticmethod
-    def plot_N_host_halo_mass_vishnu(models, best_fit):
+    def plot_N_host_halo_mass_vishnu(self, models, best_fit):
 
         i_outer = 0
         N_red_mod_arr = []
@@ -2033,8 +2081,7 @@ class Plotting():
         plt.title('Host halo mass - Number of galaxies in halo in best-fit model (excluding singletons)')
         plt.show()
 
-    @staticmethod
-    def plot_mean_grpcen_vs_N(models, best_fit, data, error_data):
+    def plot_mean_grpcen_vs_N(self, models, best_fit, data, error_data):
         """
         Plot average halo/group central stellar mass vs. number of galaxies in 
         halos/groups from data, best fit param values and param values corresponding 
@@ -2224,8 +2271,7 @@ class Plotting():
 
         plt.show()
 
-    @staticmethod
-    def plot_mean_N_vs_grpcen(models, best_fit, data, error_data):
+    def plot_mean_N_vs_grpcen(self, models, best_fit, data, error_data):
         """
         Plot average number of galaxies in halos/groups vs. halo/group central 
         stellar mass from data, best fit param values and param values corresponding 
@@ -2396,8 +2442,7 @@ class Plotting():
 
         plt.show()
 
-    @staticmethod
-    def plot_satellite_weighted_sigma(models, best_fit, data):
+    def plot_satellite_weighted_sigma(self, models, best_fit, data):
 
         def sw_func_red(arr):
             result = np.sum(arr)
@@ -2726,35 +2771,29 @@ class Plotting():
             # plt.title('Ratio of satellite-host weighted velocity dispersion in hybrid quenching model (excluding singletons)', fontsize=25)
         plt.show()
 
-    @staticmethod
-    def Plot_Core():
-        Plotting.plot_total_mf(Analysis.mp_models, Analysis.total_data, 
-            Analysis.best_fit_core, Preprocess.bf_chi2, Analysis.error_data)
+    def Plot_Core(self, data, models, best_fit):
+        self.plot_total_mf(models, data, best_fit)
 
-        Plotting.plot_fblue(Analysis.mp_models, Analysis.f_blue, 
-            Analysis.best_fit_core, Preprocess.bf_chi2, Analysis.error_data)
+        self.plot_fblue(models, data, best_fit)
 
-        Plotting.plot_colour_mf(Analysis.mp_models, Analysis.phi_red_data, 
-            Analysis.phi_blue_data, Analysis.best_fit_core, Analysis.mocks_stddevs, 
-            Preprocess.bf_chi2)
+        self.plot_colour_mf(models, data, best_fit)
 
-        Plotting.plot_xmhm(Analysis.mp_models, Analysis.best_fit_core, 
-            Preprocess.bf_chi2)
+        # Plotting.plot_xmhm(Analysis.mp_models, Analysis.best_fit_core, 
+        #     Preprocess.bf_chi2)
 
-        Plotting.plot_colour_xmhm(Analysis.mp_models, Analysis.best_fit_core, 
-            Preprocess.bf_chi2)
+        # Plotting.plot_colour_xmhm(Analysis.mp_models, Analysis.best_fit_core, 
+        #     Preprocess.bf_chi2)
 
-        Plotting.plot_colour_hmxm(Analysis.mp_models, Analysis.best_fit_core, 
-            Preprocess.bf_chi2)
+        # Plotting.plot_colour_hmxm(Analysis.mp_models, Analysis.best_fit_core, 
+        #     Preprocess.bf_chi2)
 
-        Plotting.plot_red_fraction_cen(Analysis.mp_models, Analysis.best_fit_core)
+        # Plotting.plot_red_fraction_cen(Analysis.mp_models, Analysis.best_fit_core)
 
-        Plotting.plot_red_fraction_sat(Analysis.mp_models, Analysis.best_fit_core)
+        # Plotting.plot_red_fraction_sat(Analysis.mp_models, Analysis.best_fit_core)
 
-        Plotting.plot_zumand_fig4(Analysis.mp_models, Analysis.best_fit_core, 
-            Preprocess.bf_chi2)
+        # Plotting.plot_zumand_fig4(Analysis.mp_models, Analysis.best_fit_core, 
+        #     Preprocess.bf_chi2)
 
-    @staticmethod
     def Plot_Experiments():
         Plotting.plot_mean_grpcen_vs_sigma(Analysis.mp_experimentals, 
             Analysis.best_fit_experimentals, Experiments.data_experimentals, 
@@ -2782,3 +2821,65 @@ class Plotting():
             Analysis.best_fit_experimentals, Experiments.data_experimentals)
 
 
+
+    def test():
+        fig1= plt.figure(figsize=(10,10))
+
+        data_vdf_dict = data_experimentals['vdf']
+        data_vdf_error = data[5]['vdf']
+        dr = plt.errorbar(np.log10(data_vdf_dict['x_vdf']),data_vdf_dict['phi_vdf'][0],
+            yerr=data_vdf_error['std_phi_red'],
+            color='darkred',fmt='^',ecolor='darkred',markersize=12,capsize=10,
+            capthick=1.0,zorder=10)
+        db = plt.errorbar(np.log10(data_vdf_dict['x_vdf']),data_vdf_dict['phi_vdf'][1],
+            yerr=data_vdf_error['std_phi_blue'],
+            color='darkblue',fmt='^',ecolor='darkblue',markersize=12,capsize=10,
+            capthick=1.0,zorder=10)
+
+        bf_vdf_dict = best_fit[1]['vdf']
+        # Best-fit
+        # Need a comma after 'bfr' and 'bfb' to solve this:
+        #   AttributeError: 'NoneType' object has no attribute 'create_artists'
+        bfr, = plt.plot(np.log10(bf_vdf_dict['x_vdf']), bf_vdf_dict['phi_vdf'][0], color='maroon', ls='-', lw=4, 
+            zorder=10)
+        bfb, = plt.plot(np.log10(bf_vdf_dict['x_vdf']), bf_vdf_dict['phi_vdf'][1], color='cornflowerblue', ls='-', lw=4, 
+            zorder=10)
+
+        mod_vdf_red_arr = []
+        mod_vdf_blue_arr = []
+        for idx in range(len(models)):
+            mod_vdf_dict = models[idx][1]['vdf']
+            mod_vdf_red_chunk = mod_vdf_dict['phi_red']
+            for idx in range(len(mod_vdf_red_chunk)):
+                mod_vdf_red_arr.append(mod_vdf_red_chunk[idx])
+            mod_vdf_blue_chunk = mod_vdf_dict['phi_blue']
+            for idx in range(len(mod_vdf_blue_chunk)):
+                ## Converting -inf to nan due to log(counts=0) for some blue bins
+                mod_vdf_blue_chunk[idx][mod_vdf_blue_chunk[idx] == -np.inf] = np.nan
+                mod_vdf_blue_arr.append(mod_vdf_blue_chunk[idx])
+
+        red_std_max = np.nanmax(mod_vdf_red_arr, axis=0)
+        red_std_min = np.nanmin(mod_vdf_red_arr, axis=0)
+        blue_std_max = np.nanmax(mod_vdf_blue_arr, axis=0)
+        blue_std_min = np.nanmin(mod_vdf_blue_arr, axis=0)
+
+        mr = plt.fill_between(x=np.log10(bf_vdf_dict['x_vdf']), y1=red_std_min, 
+            y2=red_std_max, color='lightcoral',alpha=0.4)
+        mb = plt.fill_between(x=np.log10(bf_vdf_dict['x_vdf']), y1=blue_std_min, 
+            y2=blue_std_max, color='cornflowerblue',alpha=0.4)
+
+        # plt.ylim(-4,-1)
+        if settings.level == 'group':
+            plt.xlabel(r'\boldmath$\log_{10}\ \sigma_{group} [kms^{-1}]$', fontsize=30)
+        elif settings.level == 'halo':
+            plt.xlabel(r'\boldmath$\log_{10}\ \sigma_{halo} [kms^{-1}]$', fontsize=30)
+        plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=30)
+
+        plt.legend([(dr, db), (mr, mb), (bfr, bfb)], ['Data', 'Models', 'Best-fit'],
+            handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, loc='best')
+
+        if settings.quenching == 'hybrid':
+            plt.title('Hybrid quenching model | ECO')
+        elif settings.quenching == 'halo':
+            plt.title('Halo quenching model | ECO')
+        plt.show()
