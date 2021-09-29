@@ -1070,7 +1070,7 @@ def main():
 
     H0 = 100 # (km/s)/Mpc
     cz_inner = 3000 # not starting at corner of box
-    cz_outer = 120*H0 # utilizing until 120 Mpc of Vishnu box
+    cz_outer = 7000 #120*H0 # utilizing until 120 Mpc of Vishnu box
 
     dist_inner = kms_to_Mpc(H0,cz_inner) #Mpc/h
     dist_outer = kms_to_Mpc(H0,cz_outer) #Mpc/h
@@ -1114,11 +1114,11 @@ def main():
         # catl_file = path_to_raw + "eco/eco_all.csv"
         catl_file = path_to_processed + "gal_group_eco_data_buffer.hdf5"
 
-    chi2_file = path_to_processed + 'smhm_colour_run33/{0}_colour_chi2.txt'.format(survey)
+    chi2_file = path_to_processed + 'smhm_colour_run32/{0}_colour_chi2.txt'.format(survey)
     if mf_type == 'smf' and survey == 'eco' and ver == 1.0:
         chain_file = path_to_processed + 'mcmc_{0}.dat'.format(survey)
     else:
-        chain_file = path_to_processed + 'smhm_colour_run33/mcmc_{0}_colour_raw.txt'.\
+        chain_file = path_to_processed + 'smhm_colour_run32/mcmc_{0}_colour_raw.txt'.\
             format(survey)
 
     print('Reading chi-squared file')
@@ -1131,7 +1131,7 @@ def main():
     mcmc_table_subset = get_paramvals_percentile(mcmc_table, 68, chi2)
 
     params_df = pd.DataFrame(mcmc_table_subset)
-    params_df.to_csv(path_to_processed + 'run33_params_subset.txt', 
+    params_df.to_csv(path_to_processed + 'run32_params_subset.txt', 
         header=None, index=None, sep=' ', mode='w')
 
     print('Reading survey data')
@@ -1157,7 +1157,7 @@ def main():
         i+=1
     gals_df_.reset_index(inplace=True, drop=True)
 
-    h5File = path_to_processed + "mocks101_run33.h5"
+    h5File = path_to_processed + "mocks101_run32_cz7000.h5"
     gals_df_.to_hdf(h5File, "/gals_df_/d1")
 
     print('Applying RSD')
@@ -1187,7 +1187,7 @@ def main():
 
     print('Writing to output files')
     pandas_df_to_hdf5_file(data=gals_final,
-        hdf5_file=path_to_processed + 'gal_group_run33.hdf5', key='gal_group_df')
+        hdf5_file=path_to_processed + 'gal_group_run32_cz7000.hdf5', key='gal_group_df')
     # pandas_df_to_hdf5_file(data=group_df_new,
     #     hdf5_file=path_to_processed + 'group.hdf5', key='group_df')
 
