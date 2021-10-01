@@ -8,7 +8,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.legend_handler import HandlerTuple
 from scipy.stats import binned_statistic as bs
-from settings import Settings
 from collections import OrderedDict
 from analysis import Analysis
 from preprocess import Preprocess
@@ -485,7 +484,7 @@ class Plotting():
 
         plt.show()
 
-    def plot_xmhm(self, models, best_fit, bf_chi2):
+    def plot_xmhm(self, models, data, best_fit):
         """
         Plot SMHM from data, best fit param values, param values corresponding to 
         68th percentile 100 lowest chi^2 values.
@@ -508,102 +507,76 @@ class Plotting():
         ---------
         Plot displayed on screen.
         """
-        if Settings.survey == 'resolvea':
-            line_label = 'RESOLVE-A'
-        elif Settings.survey == 'resolveb':
-            line_label = 'RESOLVE-B'
-        elif Settings.survey == 'eco':
-            line_label = 'ECO'
-        
-        # x_bf,y_bf,y_std_bf,y_std_err_bf = Stats_one_arr(halos_bf,\
-        # gals_bf,base=0.4,bin_statval='center')
+        settings = self.settings
+        preprocess = self.preprocess
 
-        y_bf,x_bf,binnum = bs(halos_bf,\
-        gals_bf,'mean',bins=np.linspace(10, 15, 7))
+        if settings.survey == 'resolvea':
+            line_label = 'RESOLVE-A'
+        elif settings.survey == 'resolveb':
+            line_label = 'RESOLVE-B'
+        elif settings.survey == 'eco':
+            line_label = 'ECO'
+
+        dof = data[6]
+
+        halos_bf = best_fit[0]['centrals']['halos']
+        gals_bf = best_fit[0]['centrals']['gals']
+
+        y_bf,x_bf,binnum = bs(halos_bf,
+            gals_bf,'mean',bins=np.linspace(10, 15, 15))
 
 
         i_outer = 0
         mod_x_arr = []
         mod_y_arr = []
         while i_outer < 5:
-            for idx in range(len(result[i_outer][0])):
-                mod_x_ii = result[i_outer][19][idx]
-                mod_y_ii = result[i_outer][18][idx]
+            for idx in range(len(models[i_outer][0]['centrals']['halos'])):
+                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx]
+                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx]
                 y,x,binnum = bs(mod_x_ii,mod_y_ii,'mean',
-                    bins=np.linspace(10, 15, 7))
+                    bins=np.linspace(10, 15, 15))
                 mod_x_arr.append(x)
                 mod_y_arr.append(y)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                mod_x_ii = result[i_outer][19][idx]
-                mod_y_ii = result[i_outer][18][idx]
+            for idx in range(len(models[i_outer][0]['centrals']['halos'])):
+                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx]
+                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx]
                 y,x,binnum = bs(mod_x_ii,mod_y_ii,'mean',
-                    bins=np.linspace(10, 15, 7))
+                    bins=np.linspace(10, 15, 15))
                 mod_x_arr.append(x)
                 mod_y_arr.append(y)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                mod_x_ii = result[i_outer][19][idx]
-                mod_y_ii = result[i_outer][18][idx]
+            for idx in range(len(models[i_outer][0]['centrals']['halos'])):
+                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx]
+                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx]
                 y,x,binnum = bs(mod_x_ii,mod_y_ii,'mean',
-                    bins=np.linspace(10, 15, 7))
+                    bins=np.linspace(10, 15, 15))
                 mod_x_arr.append(x)
                 mod_y_arr.append(y)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                mod_x_ii = result[i_outer][19][idx]
-                mod_y_ii = result[i_outer][18][idx]
+            for idx in range(len(models[i_outer][0]['centrals']['halos'])):
+                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx]
+                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx]
                 y,x,binnum = bs(mod_x_ii,mod_y_ii,'mean',
-                    bins=np.linspace(10, 15, 7))
+                    bins=np.linspace(10, 15, 15))
                 mod_x_arr.append(x)
                 mod_y_arr.append(y)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                mod_x_ii = result[i_outer][19][idx]
-                mod_y_ii = result[i_outer][18][idx]
+            for idx in range(len(models[i_outer][0]['centrals']['halos'])):
+                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx]
+                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx]
                 y,x,binnum = bs(mod_x_ii,mod_y_ii,'mean',
-                    bins=np.linspace(10, 15, 7))
+                    bins=np.linspace(10, 15, 15))
                 mod_x_arr.append(x)
                 mod_y_arr.append(y)
             i_outer += 1
 
         y_max = np.nanmax(mod_y_arr, axis=0)
         y_min = np.nanmin(mod_y_arr, axis=0)
-
-        # for idx in range(len(result[0][0])):
-        #     x_model,y_model,y_std_model,y_std_err_model = \
-        #         Stats_one_arr(result[0][19][idx],result[0][18][idx],base=0.4,\
-        #             bin_statval='center')
-        #     plt.plot(x_model,y_model,color='lightgray',linestyle='-',alpha=0.5,\
-        #         zorder=0,label='Models')
-        # for idx in range(len(result[1][0])):
-        #     x_model,y_model,y_std_model,y_std_err_model = \
-        #         Stats_one_arr(result[1][19][idx],result[1][18][idx],base=0.4,\
-        #             bin_statval='center')
-        #     plt.plot(x_model,y_model,color='lightgray',linestyle='-',alpha=0.5,\
-        #         zorder=1)
-        # for idx in range(len(result[2][0])):
-        #     x_model,y_model,y_std_model,y_std_err_model = \
-        #         Stats_one_arr(result[2][19][idx],result[2][18][idx],base=0.4,\
-        #             bin_statval='center')
-        #     plt.plot(x_model,y_model,color='lightgray',linestyle='-',alpha=0.5,\
-        #         zorder=2)
-        # for idx in range(len(result[3][0])):
-        #     x_model,y_model,y_std_model,y_std_err_model = \
-        #         Stats_one_arr(result[3][19][idx],result[3][18][idx],base=0.4,\
-        #             bin_statval='center')
-        #     plt.plot(x_model,y_model,color='lightgray',linestyle='-',alpha=0.5,\
-        #         zorder=3)
-        # for idx in range(len(result[4][0])):
-        #     x_model,y_model,y_std_model,y_std_err_model = \
-        #         Stats_one_arr(result[4][19][idx],result[4][18][idx],base=0.4,\
-        #             bin_statval='center')
-        #     plt.plot(x_model,y_model,color='lightgray',linestyle='-',alpha=0.5,\
-        #         zorder=4)
 
         fig1 = plt.figure(figsize=(10,10))
 
@@ -621,43 +594,43 @@ class Plotting():
             plt.gca().get_ylim()[1], plt.gca().get_ylim()[1]], fill=False, 
             hatch='\\')
 
-        if Settings.survey == 'resolvea' and Settings.mf_type == 'smf':
+        if settings.survey == 'resolvea' and settings.mf_type == 'smf':
             plt.xlim(10,14)
         else:
             plt.xlim(10,14.5)
         plt.xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
-        if Settings.mf_type == 'smf':
-            if Settings.survey == 'eco' and Settings.quenching == 'hybrid':
+        if settings.mf_type == 'smf':
+            if settings.survey == 'eco' and settings.quenching == 'hybrid':
                 plt.ylim(np.log10((10**8.9)/2.041),11.9)
-            elif Settings.survey == 'eco' and Settings.quenching == 'halo':
+            elif settings.survey == 'eco' and settings.quenching == 'halo':
                 plt.ylim(np.log10((10**8.9)/2.041),11.56)
-            elif Settings.survey == 'resolvea':
+            elif settings.survey == 'resolvea':
                 plt.ylim(np.log10((10**8.9)/2.041),13)
-            elif Settings.survey == 'resolveb':
+            elif settings.survey == 'resolveb':
                 plt.ylim(np.log10((10**8.7)/2.041),)
             plt.ylabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
-        elif Settings.mf_type == 'bmf':
-            if Settings.survey == 'eco' or Settings.survey == 'resolvea':
+        elif settings.mf_type == 'bmf':
+            if settings.survey == 'eco' or settings.survey == 'resolvea':
                 plt.ylim(np.log10((10**9.4)/2.041),)
-            elif Settings.survey == 'resolveb':
+            elif settings.survey == 'resolveb':
                 plt.ylim(np.log10((10**9.1)/2.041),)
             plt.ylabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
         handles, labels = plt.gca().get_legend_handles_labels()
         by_label = OrderedDict(zip(labels, handles))
         plt.legend(by_label.values(), by_label.keys(), loc='best',prop={'size': 30})
         plt.annotate(r'$\boldsymbol\chi ^2 / dof \approx$ {0}'.
-            format(np.round(bf_chi2/dof,2)), 
+            format(np.round(preprocess.bf_chi2/dof,2)), 
             xy=(0.02, 0.8), xycoords='axes fraction', bbox=dict(boxstyle="square", 
             ec='k', fc='lightgray', alpha=0.5), size=25)
 
-        if Settings.quenching == 'hybrid':
+        if settings.quenching == 'hybrid':
             plt.title('Hybrid quenching model | ECO')
-        elif Settings.quenching == 'halo':
+        elif settings.quenching == 'halo':
             plt.title('Halo quenching model | ECO')
 
         plt.show()
 
-    def plot_colour_xmhm(self, models, best_fit, bf_chi2):
+    def plot_colour_xmhm(self, models, data, best_fit):
         """
         Plot red and blue SMHM from data, best fit param values, param values 
         corresponding to 68th percentile 100 lowest chi^2 values.
@@ -686,54 +659,21 @@ class Plotting():
         ---------
         Plot displayed on screen.
         """   
+        settings = self.settings
+        preprocess = self.preprocess
 
-        # x_bf_red,y_bf_red,y_std_bf_red,y_std_err_bf_red = Stats_one_arr(halos_bf_red,\
-        # gals_bf_red,base=0.4,bin_statval='center')
-        # x_bf_blue,y_bf_blue,y_std_bf_blue,y_std_err_bf_blue = Stats_one_arr(halos_bf_blue,\
-        # gals_bf_blue,base=0.4,bin_statval='center')
+        dof = data[6]
+
+        halos_bf_red = best_fit[0]['centrals']['halos_red']
+        gals_bf_red = best_fit[0]['centrals']['gals_red']
+
+        halos_bf_blue = best_fit[0]['centrals']['halos_blue']
+        gals_bf_blue = best_fit[0]['centrals']['gals_blue']
 
         y_bf_red,x_bf_red,binnum_red = bs(halos_bf_red,\
         gals_bf_red,'mean',bins=np.linspace(10, 15, 15))
         y_bf_blue,x_bf_blue,binnum_blue = bs(halos_bf_blue,\
         gals_bf_blue,'mean',bins=np.linspace(10, 15, 15))
-
-        # for idx in range(5,20,1):
-        #     fig1 = plt.figure(figsize=(16,9))
-
-        #     y_bf_red,x_bf_red,binnum_red = bs(halos_bf_red,\
-        #     gals_bf_red,'mean',bins=np.linspace(10, 15, idx))
-        #     y_bf_blue,x_bf_blue,binnum_blue = bs(halos_bf_blue,\
-        #     gals_bf_blue,'mean',bins=np.linspace(10, 15, idx))
-
-        #     red_x_cen =  0.5 * (x_bf_red[1:] + x_bf_red[:-1])
-        #     blue_x_cen = 0.5 * (x_bf_blue[1:] + x_bf_blue[:-1])
-
-        #     # REMOVED ERROR BAR ON BEST FIT
-        #     bfr, = plt.plot(red_x_cen,y_bf_red,color='darkred',lw=4,label='Best-fit',zorder=10)
-        #     bfb, = plt.plot(blue_x_cen,y_bf_blue,color='darkblue',lw=4,
-        #         label='Best-fit',zorder=10)
-
-        #     plt.vlines(x_bf_red, ymin=9, ymax=12, colors='r')
-        #     plt.vlines(x_bf_blue, ymin=9, ymax=12, colors='b')
-                
-        #     plt.scatter(halos_bf_red, gals_bf_red, c='r', alpha=0.4)
-        #     plt.scatter(halos_bf_blue, gals_bf_blue, c='b', alpha=0.4)
-
-        #     plt.annotate(r'$Number of bins: ${0}'.
-        #         format(int(idx)-1), 
-        #         xy=(0.02, 0.9), xycoords='axes fraction', bbox=dict(boxstyle="square", 
-        #         ec='k', fc='lightgray', alpha=0.5), size=25)
-
-        #     # plt.xlim(10,14.5)
-        #     plt.ylim(np.log10((10**8.9)/2.041),11.56)
-        #     if quenching == 'halo':
-        #         plt.title('Halo quenching model')
-        #     elif quenching == 'hybrid':
-        #         plt.title('Hybrid quenching model')
-        #     plt.xlabel('Halo Mass')
-        #     plt.ylabel('Stellar Mass')
-        #     plt.show()
-        #     plt.savefig('/Users/asadm2/Desktop/shmr_binning/{0}.png'.format(idx))
 
         i_outer = 0
         red_mod_x_arr = []
@@ -741,75 +681,75 @@ class Plotting():
         blue_mod_x_arr = []
         blue_mod_y_arr = []
         while i_outer < 5:
-            for idx in range(len(result[i_outer][0])):
-                red_mod_x_ii = result[i_outer][7][idx]
-                red_mod_y_ii = result[i_outer][6][idx]
+            for idx in range(len(models[i_outer][0]['centrals']['halos_red'])):
+                red_mod_x_ii = models[i_outer][0]['centrals']['halos_red'][idx]
+                red_mod_y_ii = models[i_outer][0]['centrals']['gals_red'][idx]
                 red_y,red_x,binnum = bs(red_mod_x_ii,red_mod_y_ii,'mean',
                     bins=np.linspace(10, 15, 15))
                 red_mod_x_arr.append(red_x)
                 red_mod_y_arr.append(red_y)
-                blue_mod_x_ii = result[i_outer][9][idx]
-                blue_mod_y_ii = result[i_outer][8][idx]
+                blue_mod_x_ii = models[i_outer][0]['centrals']['halos_blue'][idx]
+                blue_mod_y_ii = models[i_outer][0]['centrals']['gals_blue'][idx]
                 blue_y,blue_x,binnum = bs(blue_mod_x_ii,blue_mod_y_ii,'mean',
                     bins=np.linspace(10, 15, 15))
                 blue_mod_x_arr.append(blue_x)
                 blue_mod_y_arr.append(blue_y)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                red_mod_x_ii = result[i_outer][7][idx]
-                red_mod_y_ii = result[i_outer][6][idx]
+            for idx in range(len(models[i_outer][0]['centrals']['halos_red'])):
+                red_mod_x_ii = models[i_outer][0]['centrals']['halos_red'][idx]
+                red_mod_y_ii = models[i_outer][0]['centrals']['gals_red'][idx]
                 red_y,red_x,binnum = bs(red_mod_x_ii,red_mod_y_ii,'mean',
                     bins=np.linspace(10, 15, 15))
                 red_mod_x_arr.append(red_x)
                 red_mod_y_arr.append(red_y)
-                blue_mod_x_ii = result[i_outer][9][idx]
-                blue_mod_y_ii = result[i_outer][8][idx]
+                blue_mod_x_ii = models[i_outer][0]['centrals']['halos_blue'][idx]
+                blue_mod_y_ii = models[i_outer][0]['centrals']['gals_blue'][idx]
                 blue_y,blue_x,binnum = bs(blue_mod_x_ii,blue_mod_y_ii,'mean',
                     bins=np.linspace(10, 15, 15))
                 blue_mod_x_arr.append(blue_x)
                 blue_mod_y_arr.append(blue_y)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                red_mod_x_ii = result[i_outer][7][idx]
-                red_mod_y_ii = result[i_outer][6][idx]
+            for idx in range(len(models[i_outer][0]['centrals']['halos_red'])):
+                red_mod_x_ii = models[i_outer][0]['centrals']['halos_red'][idx]
+                red_mod_y_ii = models[i_outer][0]['centrals']['gals_red'][idx]
                 red_y,red_x,binnum = bs(red_mod_x_ii,red_mod_y_ii,'mean',
                     bins=np.linspace(10, 15, 15))
                 red_mod_x_arr.append(red_x)
                 red_mod_y_arr.append(red_y)
-                blue_mod_x_ii = result[i_outer][9][idx]
-                blue_mod_y_ii = result[i_outer][8][idx]
+                blue_mod_x_ii = models[i_outer][0]['centrals']['halos_blue'][idx]
+                blue_mod_y_ii = models[i_outer][0]['centrals']['gals_blue'][idx]
                 blue_y,blue_x,binnum = bs(blue_mod_x_ii,blue_mod_y_ii,'mean',
                     bins=np.linspace(10, 15, 15))
                 blue_mod_x_arr.append(blue_x)
                 blue_mod_y_arr.append(blue_y)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                red_mod_x_ii = result[i_outer][7][idx]
-                red_mod_y_ii = result[i_outer][6][idx]
+            for idx in range(len(models[i_outer][0]['centrals']['halos_red'])):
+                red_mod_x_ii = models[i_outer][0]['centrals']['halos_red'][idx]
+                red_mod_y_ii = models[i_outer][0]['centrals']['gals_red'][idx]
                 red_y,red_x,binnum = bs(red_mod_x_ii,red_mod_y_ii,'mean',
                     bins=np.linspace(10, 15, 15))
                 red_mod_x_arr.append(red_x)
                 red_mod_y_arr.append(red_y)
-                blue_mod_x_ii = result[i_outer][9][idx]
-                blue_mod_y_ii = result[i_outer][8][idx]
+                blue_mod_x_ii = models[i_outer][0]['centrals']['halos_blue'][idx]
+                blue_mod_y_ii = models[i_outer][0]['centrals']['gals_blue'][idx]
                 blue_y,blue_x,binnum = bs(blue_mod_x_ii,blue_mod_y_ii,'mean',
                     bins=np.linspace(10, 15, 15))
                 blue_mod_x_arr.append(blue_x)
                 blue_mod_y_arr.append(blue_y)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                red_mod_x_ii = result[i_outer][7][idx]
-                red_mod_y_ii = result[i_outer][6][idx]
+            for idx in range(len(models[i_outer][0]['centrals']['halos_red'])):
+                red_mod_x_ii = models[i_outer][0]['centrals']['halos_red'][idx]
+                red_mod_y_ii = models[i_outer][0]['centrals']['gals_red'][idx]
                 red_y,red_x,binnum = bs(red_mod_x_ii,red_mod_y_ii,'mean',
                     bins=np.linspace(10, 15, 15))
                 red_mod_x_arr.append(red_x)
                 red_mod_y_arr.append(red_y)
-                blue_mod_x_ii = result[i_outer][9][idx]
-                blue_mod_y_ii = result[i_outer][8][idx]
+                blue_mod_x_ii = models[i_outer][0]['centrals']['halos_blue'][idx]
+                blue_mod_y_ii = models[i_outer][0]['centrals']['gals_blue'][idx]
                 blue_y,blue_x,binnum = bs(blue_mod_x_ii,blue_mod_y_ii,'mean',
                     bins=np.linspace(10, 15, 15))
                 blue_mod_x_arr.append(blue_x)
@@ -820,62 +760,6 @@ class Plotting():
         red_y_min = np.nanmin(red_mod_y_arr, axis=0)
         blue_y_max = np.nanmax(blue_mod_y_arr, axis=0)
         blue_y_min = np.nanmin(blue_mod_y_arr, axis=0)
-
-        # for idx in range(len(result[0][0])):
-        #     x_model_red,y_model_red,y_std_model_red,y_std_err_model_red = \
-        #         Stats_one_arr(result[0][7][idx],result[0][6][idx],base=0.4,\
-        #             bin_statval='center')
-        #     plt.plot(x_model_red,y_model_red,color='indianred',linestyle='-', \
-        #         alpha=0.5, zorder=0,label='model')
-        #     x_model_blue,y_model_blue,y_std_model_blue,y_std_err_model_blue = \
-        #         Stats_one_arr(result[0][9][idx],result[0][8][idx],base=0.4,\
-        #             bin_statval='center')
-        #     plt.plot(x_model_blue,y_model_blue,color='cornflowerblue',linestyle='-',alpha=0.5,\
-        #         zorder=0,label='model')
-        # for idx in range(len(result[1][0])):
-        #     x_model_red,y_model_red,y_std_model_red,y_std_err_model_red = \
-        #         Stats_one_arr(result[1][7][idx],result[1][6][idx],base=0.4,\
-        #             bin_statval='center')
-        #     plt.plot(x_model_red,y_model_red,color='indianred',linestyle='-',alpha=0.5,\
-        #         zorder=0,label='model')
-        #     x_model_blue,y_model_blue,y_std_model_blue,y_std_err_model_blue = \
-        #         Stats_one_arr(result[1][9][idx],result[1][8][idx],base=0.4,\
-        #             bin_statval='center')
-        #     plt.plot(x_model_blue,y_model_blue,color='cornflowerblue',linestyle='-',alpha=0.5,\
-        #         zorder=0,label='model')
-        # for idx in range(len(result[2][0])):
-        #     x_model_red,y_model_red,y_std_model_red,y_std_err_model_red = \
-        #         Stats_one_arr(result[2][7][idx],result[2][6][idx],base=0.4,\
-        #             bin_statval='center')
-        #     plt.plot(x_model_red,y_model_red,color='indianred',linestyle='-',alpha=0.5,\
-        #         zorder=0,label='model')
-        #     x_model_blue,y_model_blue,y_std_model_blue,y_std_err_model_blue = \
-        #         Stats_one_arr(result[2][9][idx],result[2][8][idx],base=0.4,\
-        #             bin_statval='center')
-        #     plt.plot(x_model_blue,y_model_blue,color='cornflowerblue',linestyle='-',alpha=0.5,\
-        #         zorder=0,label='model')
-        # for idx in range(len(result[3][0])):
-        #     x_model_red,y_model_red,y_std_model_red,y_std_err_model_red = \
-        #         Stats_one_arr(result[3][7][idx],result[3][6][idx],base=0.4,\
-        #             bin_statval='center')
-        #     plt.plot(x_model_red,y_model_red,color='indianred',linestyle='-',alpha=0.5,\
-        #         zorder=0,label='model')
-        #     x_model_blue,y_model_blue,y_std_model_blue,y_std_err_model_blue = \
-        #         Stats_one_arr(result[3][9][idx],result[3][8][idx],base=0.4,\
-        #             bin_statval='center')
-        #     plt.plot(x_model_blue,y_model_blue,color='cornflowerblue',linestyle='-',alpha=0.5,\
-        #         zorder=0,label='model')
-        # for idx in range(len(result[4][0])):
-        #     x_model_red,y_model_red,y_std_model_red,y_std_err_model_red = \
-        #         Stats_one_arr(result[4][7][idx],result[4][6][idx],base=0.4,\
-        #             bin_statval='center')
-        #     plt.plot(x_model_red,y_model_red,color='indianred',linestyle='-',alpha=0.5,\
-        #         zorder=0,label='model')
-        #     x_model_blue,y_model_blue,y_std_model_blue,y_std_err_model_blue = \
-        #         Stats_one_arr(result[4][9][idx],result[4][8][idx],base=0.4,\
-        #             bin_statval='center')
-        #     plt.plot(x_model_blue,y_model_blue,color='cornflowerblue',linestyle='-',alpha=0.5,\
-        #         zorder=0,label='model')
 
         fig1 = plt.figure(figsize=(10,10))
 
@@ -900,53 +784,46 @@ class Plotting():
             plt.gca().get_ylim()[1], plt.gca().get_ylim()[1]], fill=False, 
             hatch='\\')
 
-        if Settings.survey == 'resolvea' and Settings.mf_type == 'smf':
+        if settings.survey == 'resolvea' and settings.mf_type == 'smf':
             plt.xlim(10,14)
         else:
             plt.xlim(10,14.5)
         plt.xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
-        if Settings.mf_type == 'smf':
-            if Settings.survey == 'eco' and Settings.quenching == 'hybrid':
+        if settings.mf_type == 'smf':
+            if settings.survey == 'eco' and settings.quenching == 'hybrid':
                 plt.ylim(np.log10((10**8.9)/2.041),11.9)
                 # plt.title('ECO')
-            elif Settings.survey == 'eco' and Settings.quenching == 'halo':
+            elif settings.survey == 'eco' and settings.quenching == 'halo':
                 plt.ylim(np.log10((10**8.9)/2.041),11.56)
-            elif Settings.survey == 'resolvea':
+            elif settings.survey == 'resolvea':
                 plt.ylim(np.log10((10**8.9)/2.041),13)
-            elif Settings.survey == 'resolveb':
+            elif settings.survey == 'resolveb':
                 plt.ylim(np.log10((10**8.7)/2.041),)
             plt.ylabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
-        elif Settings.mf_type == 'bmf':
-            if Settings.survey == 'eco' or Settings.survey == 'resolvea':
+        elif settings.mf_type == 'bmf':
+            if settings.survey == 'eco' or settings.survey == 'resolvea':
                 plt.ylim(np.log10((10**9.4)/2.041),)
                 plt.title('ECO')
-            elif Settings.survey == 'resolveb':
+            elif settings.survey == 'resolveb':
                 plt.ylim(np.log10((10**9.1)/2.041),)
             plt.ylabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
-        # handles, labels = plt.gca().get_legend_handles_labels()
-        # by_label = OrderedDict(zip(labels, handles))
-        # plt.legend(by_label.values(), by_label.keys(), loc='best',prop={'size': 20})
-        # plt.legend([("darkred", "darkblue", "-"), \
-        #     ("indianred","cornflowerblue", "-")],\
-        #     ["Best-fit", "Models"], handler_map={tuple: AnyObjectHandler()},\
-        #     loc='best', prop={'size': 30})
         plt.legend([(mr, mb), (bfr, bfb)], ['Models','Best-fit'],
             handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, 
             loc='best',prop={'size': 30})
 
         plt.annotate(r'$\boldsymbol\chi ^2 / dof \approx$ {0}'.
-            format(np.round(bf_chi2/dof,2)), 
+            format(np.round(preprocess.bf_chi2/dof,2)), 
             xy=(0.02, 0.8), xycoords='axes fraction', bbox=dict(boxstyle="square", 
             ec='k', fc='lightgray', alpha=0.5), size=25)
 
-        if Settings.quenching == 'hybrid':
+        if settings.quenching == 'hybrid':
             plt.title('Hybrid quenching model | ECO')
-        elif Settings.quenching == 'halo':
+        elif settings.quenching == 'halo':
             plt.title('Halo quenching model | ECO')
 
         plt.show()
 
-    def plot_colour_hmxm(self, models, best_fit, bf_chi2):
+    def plot_colour_hmxm(self, models, data, best_fit):
         """
         Plot SMHM from data, best fit param values, param values corresponding to 
         68th percentile 1000 lowest chi^2 values and behroozi 2010 param values
@@ -978,46 +855,21 @@ class Plotting():
         ---------
         Nothing; SMHM plot is saved in figures repository
         """   
-        # x_bf_red,y_bf_red,y_std_bf_red,y_std_err_bf_red = Stats_one_arr(gals_bf_red,\
-        # halos_bf_red,base=0.2,bin_statval='center')
-        # x_bf_blue,y_bf_blue,y_std_bf_blue,y_std_err_bf_blue = Stats_one_arr(gals_bf_blue,\
-        # halos_bf_blue,base=0.2,bin_statval='center')
+        settings = self.settings
+        preprocess = self.preprocess
+
+        dof = data[6]
+
+        halos_bf_red = best_fit[0]['centrals']['halos_red']
+        gals_bf_red = best_fit[0]['centrals']['gals_red']
+
+        halos_bf_blue = best_fit[0]['centrals']['halos_blue']
+        gals_bf_blue = best_fit[0]['centrals']['gals_blue']
 
         y_bf_red,x_bf_red,binnum_red = bs(gals_bf_red,\
-        halos_bf_red,'mean',bins=np.linspace(8.6, 11.5, 7))
+        halos_bf_red,'mean',bins=np.linspace(8.6, 12, 15))
         y_bf_blue,x_bf_blue,binnum_blue = bs(gals_bf_blue,\
-        halos_bf_blue,'mean',bins=np.linspace(8.6, 11.5, 7))
-
-        for idx in range(5,20,1):
-            fig1 = plt.figure(figsize=(16,9))
-
-            y_bf_red,x_bf_red,binnum_red = bs(gals_bf_red,\
-            halos_bf_red,'mean',bins=np.linspace(8.6, 11.5, idx))
-            y_bf_blue,x_bf_blue,binnum_blue = bs(gals_bf_blue,\
-            halos_bf_blue,'mean',bins=np.linspace(8.6, 11.5, idx))
-
-            red_x_cen =  0.5 * (x_bf_red[1:] + x_bf_red[:-1])
-            blue_x_cen = 0.5 * (x_bf_blue[1:] + x_bf_blue[:-1])
-
-            # REMOVED ERROR BAR ON BEST FIT
-            bfr, = plt.plot(red_x_cen,y_bf_red,color='darkred',lw=4,label='Best-fit',zorder=10)
-            bfb, = plt.plot(blue_x_cen,y_bf_blue,color='darkblue',lw=4,
-                label='Best-fit',zorder=10)
-
-            plt.annotate(r'$Number of bins: ${0}'.
-                format(int(idx)), 
-                xy=(0.02, 0.9), xycoords='axes fraction', bbox=dict(boxstyle="square", 
-                ec='k', fc='lightgray', alpha=0.5), size=25)
-
-            plt.xlim(np.log10((10**8.9)/2.041),12)
-            plt.ylim(10,13.5)
-            if Settings.quenching == 'halo':
-                plt.title('Halo quenching model')
-            elif Settings.quenching == 'hybrid':
-                plt.title('Hybrid quenching model')
-            plt.xlabel('Stellar Mass')
-            plt.ylabel('Halo Mass')
-            plt.savefig('/Users/asadm2/Desktop/hsmr_binning/{0}.png'.format(idx))
+        halos_bf_blue,'mean',bins=np.linspace(8.6, 12, 15))
 
         i_outer = 0
         red_mod_x_arr = []
@@ -1025,77 +877,77 @@ class Plotting():
         blue_mod_x_arr = []
         blue_mod_y_arr = []
         while i_outer < 5:
-            for idx in range(len(result[i_outer][0])):
-                red_mod_y_ii = result[i_outer][7][idx] #halos
-                red_mod_x_ii = result[i_outer][6][idx] #galaxies
+            for idx in range(len(models[i_outer][0]['centrals']['halos_red'])):
+                red_mod_y_ii = models[i_outer][0]['centrals']['halos_red'][idx]
+                red_mod_x_ii = models[i_outer][0]['centrals']['gals_red'][idx]
                 red_y,red_x,binnum = bs(red_mod_x_ii,red_mod_y_ii,'mean',
-                    bins=np.linspace(8.6, 11.5, 7))
+                    bins=np.linspace(8.6, 12, 15))
                 red_mod_x_arr.append(red_x)
                 red_mod_y_arr.append(red_y)
-                blue_mod_y_ii = result[i_outer][9][idx] #halos
-                blue_mod_x_ii = result[i_outer][8][idx] #galaxies
+                blue_mod_y_ii = models[i_outer][0]['centrals']['halos_blue'][idx]
+                blue_mod_x_ii = models[i_outer][0]['centrals']['gals_blue'][idx]
                 blue_y,blue_x,binnum = bs(blue_mod_x_ii,blue_mod_y_ii,'mean',
-                    bins=np.linspace(8.6, 11.5, 7))
+                    bins=np.linspace(8.6, 12, 15))
                 blue_mod_x_arr.append(blue_x)
                 blue_mod_y_arr.append(blue_y)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                red_mod_y_ii = result[i_outer][7][idx]
-                red_mod_x_ii = result[i_outer][6][idx]
+            for idx in range(len(models[i_outer][0]['centrals']['halos_red'])):
+                red_mod_y_ii = models[i_outer][0]['centrals']['halos_red'][idx]
+                red_mod_x_ii = models[i_outer][0]['centrals']['gals_red'][idx]
                 red_y,red_x,binnum = bs(red_mod_x_ii,red_mod_y_ii,'mean',
-                    bins=np.linspace(8.6, 11.5, 7))
+                    bins=np.linspace(8.6, 12, 15))
                 red_mod_x_arr.append(red_x)
                 red_mod_y_arr.append(red_y)
-                blue_mod_y_ii = result[i_outer][9][idx]
-                blue_mod_x_ii = result[i_outer][8][idx]
+                blue_mod_y_ii = models[i_outer][0]['centrals']['halos_blue'][idx]
+                blue_mod_x_ii = models[i_outer][0]['centrals']['gals_blue'][idx]
                 blue_y,blue_x,binnum = bs(blue_mod_x_ii,blue_mod_y_ii,'mean',
-                    bins=np.linspace(8.6, 11.5, 7))
+                    bins=np.linspace(8.6, 12, 15))
                 blue_mod_x_arr.append(blue_x)
                 blue_mod_y_arr.append(blue_y)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                red_mod_y_ii = result[i_outer][7][idx]
-                red_mod_x_ii = result[i_outer][6][idx]
+            for idx in range(len(models[i_outer][0]['centrals']['halos_red'])):
+                red_mod_y_ii = models[i_outer][0]['centrals']['halos_red'][idx]
+                red_mod_x_ii = models[i_outer][0]['centrals']['gals_red'][idx]
                 red_y,red_x,binnum = bs(red_mod_x_ii,red_mod_y_ii,'mean',
-                    bins=np.linspace(8.6, 11.5, 7))
+                    bins=np.linspace(8.6, 12, 15))
                 red_mod_x_arr.append(red_x)
                 red_mod_y_arr.append(red_y)
-                blue_mod_y_ii = result[i_outer][9][idx]
-                blue_mod_x_ii = result[i_outer][8][idx]
+                blue_mod_y_ii = models[i_outer][0]['centrals']['halos_blue'][idx]
+                blue_mod_x_ii = models[i_outer][0]['centrals']['gals_blue'][idx]
                 blue_y,blue_x,binnum = bs(blue_mod_x_ii,blue_mod_y_ii,'mean',
-                    bins=np.linspace(8.6, 11.5, 7))
+                    bins=np.linspace(8.6, 12, 15))
                 blue_mod_x_arr.append(blue_x)
                 blue_mod_y_arr.append(blue_y)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                red_mod_y_ii = result[i_outer][7][idx]
-                red_mod_x_ii = result[i_outer][6][idx]
+            for idx in range(len(models[i_outer][0]['centrals']['halos_red'])):
+                red_mod_y_ii = models[i_outer][0]['centrals']['halos_red'][idx]
+                red_mod_x_ii = models[i_outer][0]['centrals']['gals_red'][idx]
                 red_y,red_x,binnum = bs(red_mod_x_ii,red_mod_y_ii,'mean',
-                    bins=np.linspace(8.6, 11.5, 7))
+                    bins=np.linspace(8.6, 12, 15))
                 red_mod_x_arr.append(red_x)
                 red_mod_y_arr.append(red_y)
-                blue_mod_y_ii = result[i_outer][9][idx]
-                blue_mod_x_ii = result[i_outer][8][idx]
+                blue_mod_y_ii = models[i_outer][0]['centrals']['halos_blue'][idx]
+                blue_mod_x_ii = models[i_outer][0]['centrals']['gals_blue'][idx]
                 blue_y,blue_x,binnum = bs(blue_mod_x_ii,blue_mod_y_ii,'mean',
-                    bins=np.linspace(8.6, 11.5, 7))
+                    bins=np.linspace(8.6, 11.5, 15))
                 blue_mod_x_arr.append(blue_x)
                 blue_mod_y_arr.append(blue_y)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                red_mod_y_ii = result[i_outer][7][idx]
-                red_mod_x_ii = result[i_outer][6][idx]
+            for idx in range(len(models[i_outer][0]['centrals']['halos_red'])):
+                red_mod_y_ii = models[i_outer][0]['centrals']['halos_red'][idx]
+                red_mod_x_ii = models[i_outer][0]['centrals']['gals_red'][idx]
                 red_y,red_x,binnum = bs(red_mod_x_ii,red_mod_y_ii,'mean',
-                    bins=np.linspace(8.6, 11.5, 7))
+                    bins=np.linspace(8.6, 12, 15))
                 red_mod_x_arr.append(red_x)
                 red_mod_y_arr.append(red_y)
-                blue_mod_y_ii = result[i_outer][9][idx]
-                blue_mod_x_ii = result[i_outer][8][idx]
+                blue_mod_y_ii = models[i_outer][0]['centrals']['halos_blue'][idx]
+                blue_mod_x_ii = models[i_outer][0]['centrals']['gals_blue'][idx]
                 blue_y,blue_x,binnum = bs(blue_mod_x_ii,blue_mod_y_ii,'mean',
-                    bins=np.linspace(8.6, 11.5, 7))
+                    bins=np.linspace(8.6, 12, 15))
                 blue_mod_x_arr.append(blue_x)
                 blue_mod_y_arr.append(blue_y)
             i_outer += 1
@@ -1104,62 +956,6 @@ class Plotting():
         red_y_min = np.nanmin(red_mod_y_arr, axis=0)
         blue_y_max = np.nanmax(blue_mod_y_arr, axis=0)
         blue_y_min = np.nanmin(blue_mod_y_arr, axis=0)
-
-        # for idx in range(len(result[0][0])):
-        #     x_model_red,y_model_red,y_std_model_red,y_std_err_model_red = \
-        #         Stats_one_arr(result[0][4][idx],result[0][5][idx],base=0.4,\
-        #             bin_statval='center')
-        #     plt.plot(x_model_red,y_model_red,color='indianred',linestyle='-', \
-        #         alpha=0.5, zorder=0,label='model')
-        #     x_model_blue,y_model_blue,y_std_model_blue,y_std_err_model_blue = \
-        #         Stats_one_arr(result[0][6][idx],result[0][7][idx],base=0.4,\
-        #             bin_statval='center')
-        #     plt.plot(x_model_blue,y_model_blue,color='cornflowerblue',linestyle='-',alpha=0.5,\
-        #         zorder=0,label='model')
-        # for idx in range(len(result[1][0])):
-        #     x_model_red,y_model_red,y_std_model_red,y_std_err_model_red = \
-        #         Stats_one_arr(result[1][4][idx],result[1][5][idx],base=0.4,\
-        #             bin_statval='center')
-        #     plt.plot(x_model_red,y_model_red,color='indianred',linestyle='-',alpha=0.5,\
-        #         zorder=0,label='model')
-        #     x_model_blue,y_model_blue,y_std_model_blue,y_std_err_model_blue = \
-        #         Stats_one_arr(result[1][6][idx],result[1][7][idx],base=0.4,\
-        #             bin_statval='center')
-        #     plt.plot(x_model_blue,y_model_blue,color='cornflowerblue',linestyle='-',alpha=0.5,\
-        #         zorder=0,label='model')
-        # for idx in range(len(result[2][0])):
-        #     x_model_red,y_model_red,y_std_model_red,y_std_err_model_red = \
-        #         Stats_one_arr(result[2][4][idx],result[2][5][idx],base=0.4,\
-        #             bin_statval='center')
-        #     plt.plot(x_model_red,y_model_red,color='indianred',linestyle='-',alpha=0.5,\
-        #         zorder=0,label='model')
-        #     x_model_blue,y_model_blue,y_std_model_blue,y_std_err_model_blue = \
-        #         Stats_one_arr(result[2][6][idx],result[2][7][idx],base=0.4,\
-        #             bin_statval='center')
-        #     plt.plot(x_model_blue,y_model_blue,color='cornflowerblue',linestyle='-',alpha=0.5,\
-        #         zorder=0,label='center')
-        # for idx in range(len(result[3][0])):
-        #     x_model_red,y_model_red,y_std_model_red,y_std_err_model_red = \
-        #         Stats_one_arr(result[3][4][idx],result[3][5][idx],base=0.4,\
-        #             bin_statval='center')
-        #     plt.plot(x_model_red,y_model_red,color='indianred',linestyle='-',alpha=0.5,\
-        #         zorder=0,label='model')
-        #     x_model_blue,y_model_blue,y_std_model_blue,y_std_err_model_blue = \
-        #         Stats_one_arr(result[3][6][idx],result[3][7][idx],base=0.4,\
-        #             bin_statval='center')
-        #     plt.plot(x_model_blue,y_model_blue,color='cornflowerblue',linestyle='-',alpha=0.5,\
-        #         zorder=0,label='model')
-        # for idx in range(len(result[4][0])):
-        #     x_model_red,y_model_red,y_std_model_red,y_std_err_model_red = \
-        #         Stats_one_arr(result[4][4][idx],result[4][5][idx],base=0.4,\
-        #             bin_statval='center')
-        #     plt.plot(x_model_red,y_model_red,color='indianred',linestyle='-',alpha=0.5,\
-        #         zorder=0,label='model')
-        #     x_model_blue,y_model_blue,y_std_model_blue,y_std_err_model_blue = \
-        #         Stats_one_arr(result[4][6][idx],result[4][7][idx],base=0.4,\
-        #             bin_statval='center')
-        #     plt.plot(x_model_blue,y_model_blue,color='cornflowerblue',linestyle='-',alpha=0.5,\
-        #         zorder=0,label='model')
 
         fig1 = plt.figure(figsize=(10,10))
 
@@ -1180,31 +976,25 @@ class Plotting():
         bfb, = plt.plot(blue_x_cen,y_bf_blue,color='darkblue',lw=3,
             label='Best-fit',zorder=10)
 
-        # plt.fill([13.5, plt.gca().get_xlim()[1], plt.gca().get_xlim()[1], 13.5], 
-        #     [plt.gca().get_ylim()[0], plt.gca().get_ylim()[0], 
-        #     plt.gca().get_ylim()[1], plt.gca().get_ylim()[1]], fill=False, 
-        #     hatch='\\')
-
-
-        if Settings.survey == 'resolvea' and Settings.mf_type == 'smf':
+        if settings.survey == 'resolvea' and settings.mf_type == 'smf':
             plt.ylim(10,14)
         else:
             plt.ylim(10,)
         plt.ylabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
-        if Settings.mf_type == 'smf':
-            if Settings.survey == 'eco':
+        if settings.mf_type == 'smf':
+            if settings.survey == 'eco':
                 plt.xlim(np.log10((10**8.9)/2.041),)
                 plt.title('ECO')
-            elif Settings.survey == 'resolvea':
+            elif settings.survey == 'resolvea':
                 plt.xlim(np.log10((10**8.9)/2.041),13)
-            elif Settings.survey == 'resolveb':
+            elif settings.survey == 'resolveb':
                 plt.xlim(np.log10((10**8.7)/2.041),)
             plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
-        elif Settings.mf_type == 'bmf':
-            if Settings.survey == 'eco' or Settings.survey == 'resolvea':
+        elif settings.mf_type == 'bmf':
+            if settings.survey == 'eco' or settings.survey == 'resolvea':
                 plt.xlim(np.log10((10**9.4)/2.041),)
                 plt.title('ECO')
-            elif Settings.survey == 'resolveb':
+            elif settings.survey == 'resolveb':
                 plt.xlim(np.log10((10**9.1)/2.041),)
             plt.xlabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
 
@@ -1213,13 +1003,13 @@ class Plotting():
             loc='upper left',prop={'size': 30})
 
         plt.annotate(r'$\boldsymbol\chi ^2 / dof \approx$ {0}'.
-            format(np.round(bf_chi2/dof,2)), 
+            format(np.round(preprocess.bf_chi2/dof,2)), 
             xy=(0.02, 0.8), xycoords='axes fraction', bbox=dict(boxstyle="square", 
             ec='k', fc='lightgray', alpha=0.5), size=25)
 
-        if Settings.quenching == 'hybrid':
+        if settings.quenching == 'hybrid':
             plt.title('Hybrid quenching model | ECO')
-        elif Settings.quenching == 'halo':
+        elif settings.quenching == 'halo':
             plt.title('Halo quenching model | ECO')
         
         plt.show()
@@ -1256,21 +1046,33 @@ class Plotting():
         ---------
         Plot displayed on screen.
         """   
+        settings = self.settings
+        preprocess = self.preprocess
+
+        halos_bf_red = best_fit[0]['centrals']['halos_red']
+        gals_bf_red = best_fit[0]['centrals']['gals_red']
+
+        halos_bf_blue = best_fit[0]['centrals']['halos_blue']
+        gals_bf_blue = best_fit[0]['centrals']['gals_blue']
+
+        fred_bf_red = best_fit[0]['f_red']['cen_red']
+        fred_bf_blue = best_fit[0]['f_red']['cen_blue']
+
         cen_gals_arr = []
         cen_halos_arr = []
         fred_arr = []
-        chunk_counter = 0 # There are 5 chunks of all 16 statistics each with len 20
-        while chunk_counter < 5:
+        i_outer = 0 # There are 5 chunks of all statistics each with len 20
+        while i_outer < 5:
             cen_gals_idx_arr = []
             cen_halos_idx_arr = []
             fred_idx_arr = []
-            for idx in range(len(result[chunk_counter][0])):
-                red_cen_gals_idx = result[chunk_counter][6][idx]
-                red_cen_halos_idx = result[chunk_counter][7][idx]
-                blue_cen_gals_idx = result[chunk_counter][8][idx]
-                blue_cen_halos_idx = result[chunk_counter][9][idx]
-                fred_red_cen_idx = result[chunk_counter][10][idx]
-                fred_blue_cen_idx = result[chunk_counter][11][idx]  
+            for idx in range(len(models[i_outer][0]['centrals']['halos_red'])):
+                red_cen_gals_idx = models[i_outer][0]['centrals']['gals_red'][idx]
+                red_cen_halos_idx = models[i_outer][0]['centrals']['halos_red'][idx]
+                blue_cen_gals_idx = models[i_outer][0]['centrals']['gals_blue'][idx]
+                blue_cen_halos_idx = models[i_outer][0]['centrals']['halos_blue'][idx]
+                fred_red_cen_idx = models[i_outer][0]['f_red']['cen_red'][idx]
+                fred_blue_cen_idx = models[i_outer][0]['f_red']['cen_blue'][idx]
 
                 cen_gals_idx_arr = list(red_cen_gals_idx) + list(blue_cen_gals_idx)
                 cen_gals_arr.append(cen_gals_idx_arr)
@@ -1285,19 +1087,18 @@ class Plotting():
                 cen_halos_idx_arr = []
                 fred_idx_arr = []
 
-            chunk_counter+=1
+            i_outer+=1
         
         cen_gals_bf = []
         cen_halos_bf = []
         fred_bf = []
 
-        cen_gals_bf = list(cen_gals_red) + list(cen_gals_blue)
-        cen_halos_bf = list(cen_halos_red) + list(cen_halos_blue)
-        fred_bf = list(f_red_cen_red) + list(f_red_cen_blue)
-
+        cen_gals_bf = list(gals_bf_red) + list(gals_bf_blue)
+        cen_halos_bf = list(halos_bf_red) + list(halos_bf_blue)
+        fred_bf = list(fred_bf_red) + list(fred_bf_blue)
 
         fig1 = plt.figure(figsize=(10,8))
-        if Settings.quenching == 'hybrid':
+        if settings.quenching == 'hybrid':
             for idx in range(len(cen_gals_arr)):
                 x, y = zip(*sorted(zip(cen_gals_arr[idx],fred_arr[idx])))
                 plt.plot(x, y, alpha=0.4, c='cornflowerblue', lw=10, solid_capstyle='round')
@@ -1309,7 +1110,7 @@ class Plotting():
             plt.plot(x, y, alpha=0.4, c='cornflowerblue', label='Models', lw=10, solid_capstyle='round')
             plt.plot(x_bf, y_bf, c='mediumorchid', label='Best-fit', lw=10, solid_capstyle='round')
 
-        elif Settings.quenching == 'halo':
+        elif settings.quenching == 'halo':
             for idx in range(len(cen_halos_arr)):
                 x, y = zip(*sorted(zip(cen_halos_arr[idx],fred_arr[idx])))
                 plt.plot(x, y, alpha=0.4, c='cornflowerblue', lw=10, solid_capstyle='round')
@@ -1324,9 +1125,9 @@ class Plotting():
         plt.ylabel(r'\boldmath$f_{red, cen}$', fontsize=30)
         plt.legend(loc='best', prop={'size':30})
 
-        if Settings.quenching == 'hybrid':
+        if settings.quenching == 'hybrid':
             plt.title('Hybrid quenching model | ECO')
-        elif Settings.quenching == 'halo':
+        elif settings.quenching == 'halo':
             plt.title('Halo quenching model | ECO')
 
         plt.show()
@@ -1363,21 +1164,33 @@ class Plotting():
         ---------
         Plot displayed on screen.
         """
+        settings = self.settings
+        preprocess = self.preprocess
+
+        halos_bf_red = best_fit[0]['satellites']['halos_red']
+        gals_bf_red = best_fit[0]['satellites']['gals_red']
+
+        halos_bf_blue = best_fit[0]['satellites']['halos_blue']
+        gals_bf_blue = best_fit[0]['satellites']['gals_blue']
+
+        fred_bf_red = best_fit[0]['f_red']['sat_red']
+        fred_bf_blue = best_fit[0]['f_red']['sat_blue']
+
         sat_gals_arr = []
         sat_halos_arr = []
         fred_arr = []
-        chunk_counter = 0 # There are 5 chunks of all 16 statistics each with len 20
-        while chunk_counter < 5:
+        i_outer = 0 # There are 5 chunks of all 16 statistics each with len 20
+        while i_outer < 5:
             sat_gals_idx_arr = []
             sat_halos_idx_arr = []
             fred_idx_arr = []
-            for idx in range(len(result[chunk_counter][0])):
-                red_sat_gals_idx = result[chunk_counter][12][idx]
-                red_sat_halos_idx = result[chunk_counter][13][idx]
-                blue_sat_gals_idx = result[chunk_counter][14][idx]
-                blue_sat_halos_idx = result[chunk_counter][15][idx]
-                fred_red_sat_idx = result[chunk_counter][16][idx]
-                fred_blue_sat_idx = result[chunk_counter][17][idx]  
+            for idx in range(len(models[i_outer][0]['satellites']['halos_red'])):
+                red_sat_gals_idx = models[i_outer][0]['satellites']['gals_red'][idx]
+                red_sat_halos_idx = models[i_outer][0]['satellites']['halos_red'][idx]
+                blue_sat_gals_idx = models[i_outer][0]['satellites']['gals_blue'][idx]
+                blue_sat_halos_idx = models[i_outer][0]['satellites']['halos_blue'][idx]
+                fred_red_sat_idx = models[i_outer][0]['f_red']['sat_red'][idx]
+                fred_blue_sat_idx = models[i_outer][0]['f_red']['sat_blue'][idx]
 
                 sat_gals_idx_arr = list(red_sat_gals_idx) + list(blue_sat_gals_idx)
                 sat_gals_arr.append(sat_gals_idx_arr)
@@ -1392,19 +1205,19 @@ class Plotting():
                 sat_halos_idx_arr = []
                 fred_idx_arr = []
 
-            chunk_counter+=1
+            i_outer+=1
         
         sat_gals_arr = np.array(sat_gals_arr)
         sat_halos_arr = np.array(sat_halos_arr)
         fred_arr = np.array(fred_arr)
 
-        if Settings.quenching == 'hybrid':
+        if settings.quenching == 'hybrid':
             sat_mean_stats = bs(np.hstack(sat_gals_arr), np.hstack(fred_arr), bins=10)
             sat_std_stats = bs(np.hstack(sat_gals_arr), np.hstack(fred_arr), 
                 statistic='std', bins=10)
             sat_stats_bincens = 0.5 * (sat_mean_stats[1][1:] + sat_mean_stats[1][:-1])
 
-        elif Settings.quenching == 'halo':
+        elif settings.quenching == 'halo':
             sat_mean_stats = bs(np.hstack(sat_halos_arr), np.hstack(fred_arr), bins=10)
             sat_std_stats = bs(np.hstack(sat_halos_arr), np.hstack(fred_arr), 
                 statistic='std', bins=10)
@@ -1413,50 +1226,25 @@ class Plotting():
         sat_gals_bf = []
         sat_halos_bf = []
         fred_bf = []
-        sat_gals_bf = list(sat_gals_red) + list(sat_gals_blue)
-        sat_halos_bf = list(sat_halos_red) + list(sat_halos_blue)
-        fred_bf = list(f_red_sat_red) + list(f_red_sat_blue)
+        sat_gals_bf = list(gals_bf_red) + list(gals_bf_blue)
+        sat_halos_bf = list(halos_bf_red) + list(halos_bf_blue)
+        fred_bf = list(fred_bf_red) + list(fred_bf_blue)
 
 
         fig1 = plt.figure(figsize=(10,8))
-        if Settings.quenching == 'hybrid':
-            # plt.plot(sat_stats_bincens, sat_mean_stats[0], lw=3, ls='--', 
-            #     c='cornflowerblue', marker='p', ms=20)
-            # plt.fill_between(sat_stats_bincens, sat_mean_stats[0]+sat_std_stats[0], 
-            #     sat_mean_stats[0]-sat_std_stats[0], color='cornflowerblue', 
-            #     alpha=0.5)
+        if settings.quenching == 'hybrid':
             plt.errorbar(sat_stats_bincens, sat_mean_stats[0], 
                 yerr=sat_std_stats[0], color='navy', fmt='s', 
                 ecolor='navy',markersize=12, capsize=7, capthick=1.5, 
                 zorder=10, marker='p', label='Model average')
-            # for idx in range(len(sat_halos_arr)):
-            #     plt.scatter(sat_halos_arr[idx], fred_arr[idx], alpha=0.4, s=150, c='cornflowerblue')
-                # x, y = zip(*sorted(zip(sat_halos_arr[idx],fred_arr[idx])))
-                # plt.plot(x, y, alpha=0.4, c='cornflowerblue', lw=10, 
-                #     solid_capstyle='round')
-
-            # plt.xlabel(r'\boldmath$\log_{10}\ M_{h, host} \left[\mathrm{M_\odot}\,'\
-            #     r' \mathrm{h}^{-1} \right]$',fontsize=30)
             plt.xlabel(r'\boldmath$\log_{10}\ M_{*, sat} \left[\mathrm{M_\odot}\,'\
                         r' \mathrm{h}^{-1} \right]$',fontsize=30)
 
-            # plotting again just for label
-            # plt.scatter(sat_halos_arr[0], fred_arr[0], alpha=0.4, s=150, c='cornflowerblue', label='Models')
-            # plt.scatter(sat_halos_bf, fred_bf, alpha=0.4, s=150, c='mediumorchid', 
-            #     label='Best-fit')
             plt.scatter(sat_gals_bf, fred_bf, alpha=0.4, s=150, c=sat_halos_bf, 
                 cmap='viridis' ,label='Best-fit')
             plt.colorbar(label=r'\boldmath$\log_{10}\ M_{h, host}$')
 
-            # x, y = zip(*sorted(zip(sat_halos_arr[0],fred_arr[0])))
-            # x_bf, y_bf = zip(*sorted(zip(sat_halos_bf,fred_bf)))
-            # # Plotting again just so that adding label to legend is easier
-            # plt.plot(x, y, alpha=0.4, c='cornflowerblue', label='Models', lw=10, 
-            #     solid_capstyle='round')
-            # plt.plot(x_bf, y_bf, c='mediumorchid', label='Best-fit', lw=10, 
-            #     solid_capstyle='round')
-
-        elif Settings.quenching == 'halo':
+        elif settings.quenching == 'halo':
             plt.errorbar(sat_stats_bincens, sat_mean_stats[0], 
                 yerr=sat_std_stats[0], color='navy', fmt='s', 
                 ecolor='navy',markersize=12, capsize=7, capthick=1.5, 
@@ -1465,27 +1253,18 @@ class Plotting():
                         r' \mathrm{h}^{-1} \right]$',fontsize=30)
             plt.scatter(sat_halos_bf, fred_bf, alpha=0.4, s=150, c='mediumorchid',\
                 label='Best-fit', zorder=10)
-            # for idx in range(len(sat_halos_arr)):
-            #     # plt.scatter(sat_halos_arr[idx], fred_arr[idx], alpha=0.4, s=150, 
-            #     #     c='cornflowerblue')
-            #     x, y = zip(*sorted(zip(sat_halos_arr[idx],fred_arr[idx])))
-            #     plt.plot(x, y, alpha=0.4, c='cornflowerblue', lw=10, 
-            #         solid_capstyle='round')
-            # ## Plotting again just for legend label
-            # plt.scatter(sat_halos_arr[0], fred_arr[0], alpha=0.4, s=150, 
-            #     c='cornflowerblue', label='Models')
 
         plt.ylabel(r'\boldmath$f_{red, sat}$', fontsize=30)
         plt.legend(loc='best', prop={'size':30})
 
-        if Settings.quenching == 'hybrid':
+        if settings.quenching == 'hybrid':
             plt.title('Hybrid quenching model | ECO')
-        elif Settings.quenching == 'halo':
+        elif settings.quenching == 'halo':
             plt.title('Halo quenching model | ECO')
 
         plt.show()
 
-    def plot_zumand_fig4(self, models, best_fit, bf_chi2):
+    def plot_zumand_fig4(self, models, data, best_fit):
         """
         Plot red and blue SMHM from best fit param values and param values 
         corresponding to 68th percentile 100 lowest chi^2 values like Fig 4 from 
@@ -1515,63 +1294,73 @@ class Plotting():
         ---------
         Plot displayed on screen.
         """   
+        settings = self.settings
+        preprocess = self.preprocess
 
-        # if model == 'halo':
-        #     sat_halomod_df = gals_df.loc[gals_df.C_S.values == 0] 
-        #     cen_halomod_df = gals_df.loc[gals_df.C_S.values == 1]
-        # elif model == 'hybrid':
-        #     sat_hybmod_df = gals_df.loc[gals_df.C_S.values == 0]
-        #     cen_hybmod_df = gals_df.loc[gals_df.C_S.values == 1]
+        dof = data[6]
 
-        logmhalo_mod_arr = result[0][7]
+        logmhalo_mod_arr = models[0][0]['centrals']['halos_red']
         for idx in range(5):
             idx+=1
             if idx == 5:
                 break
-            logmhalo_mod_arr = np.insert(logmhalo_mod_arr, -1, result[idx][7])
+            logmhalo_mod_arr = np.insert(logmhalo_mod_arr, -1, models[idx][0]['centrals']['halos_red'])
         for idx in range(5):
-            logmhalo_mod_arr = np.insert(logmhalo_mod_arr, -1, result[idx][9])
+            logmhalo_mod_arr = np.insert(logmhalo_mod_arr, -1, models[idx][0]['centrals']['halos_blue'])
         logmhalo_mod_arr_flat = np.hstack(logmhalo_mod_arr)
 
-        logmstar_mod_arr = result[0][6]
+        logmstar_mod_arr = models[0][0]['centrals']['gals_red']
         for idx in range(5):
             idx+=1
             if idx == 5:
                 break
-            logmstar_mod_arr = np.insert(logmstar_mod_arr, -1, result[idx][6])
+            logmstar_mod_arr = np.insert(logmstar_mod_arr, -1, models[idx][0]['centrals']['gals_red'])
         for idx in range(5):
-            logmstar_mod_arr = np.insert(logmstar_mod_arr, -1, result[idx][8])
+            logmstar_mod_arr = np.insert(logmstar_mod_arr, -1, models[idx][0]['centrals']['gals_blue'])
         logmstar_mod_arr_flat = np.hstack(logmstar_mod_arr)
 
-        fred_mod_arr = result[0][10]
+        fred_mod_arr = models[0][0]['f_red']['cen_red']
         for idx in range(5):
             idx+=1
             if idx == 5:
                 break
-            fred_mod_arr = np.insert(fred_mod_arr, -1, result[idx][10])
+            fred_mod_arr = np.insert(fred_mod_arr, -1, models[idx][0]['f_red']['cen_red'])
         for idx in range(5):
-            fred_mod_arr = np.insert(fred_mod_arr, -1, result[idx][11])
+            fred_mod_arr = np.insert(fred_mod_arr, -1, models[idx][0]['f_red']['cen_blue'])
         fred_mod_arr_flat = np.hstack(fred_mod_arr)
 
+        halos_bf_red = best_fit[0]['centrals']['halos_red']
+        gals_bf_red = best_fit[0]['centrals']['gals_red']
+
+        halos_bf_blue = best_fit[0]['centrals']['halos_blue']
+        gals_bf_blue = best_fit[0]['centrals']['gals_blue']
+
+        y_bf_red,x_bf_red,binnum_red = bs(halos_bf_red,\
+        gals_bf_red,'mean',bins=np.linspace(10, 15, 15))
+
+        y_bf_blue,x_bf_blue,binnum_blue = bs(halos_bf_blue,\
+        gals_bf_blue,'mean',bins=np.linspace(10, 15, 15))
+        
         fig1 = plt.figure()
         plt.hexbin(logmhalo_mod_arr_flat, logmstar_mod_arr_flat, 
             C=fred_mod_arr_flat, cmap='rainbow')
         cb = plt.colorbar()
         cb.set_label(r'\boldmath\ $f_{red}$')
 
+        red_x_cen =  0.5 * (x_bf_red[1:] + x_bf_red[:-1])
+        blue_x_cen = 0.5 * (x_bf_blue[1:] + x_bf_blue[:-1])
 
-        x_bf_red,y_bf_red,y_std_bf_red,y_std_err_bf_red = Stats_one_arr(halos_bf_red,\
-        gals_bf_red,base=0.4,bin_statval='center')
-        x_bf_blue,y_bf_blue,y_std_bf_blue,y_std_err_bf_blue = Stats_one_arr(halos_bf_blue,\
-        gals_bf_blue,base=0.4,bin_statval='center')
-
-        bfr, = plt.plot(x_bf_red,y_bf_red,color='darkred',lw=5,zorder=10)
-        bfb, = plt.plot(x_bf_blue,y_bf_blue,color='darkblue',lw=5,zorder=10)
+        # REMOVED ERROR BAR ON BEST FIT
+        bfr, = plt.plot(red_x_cen,y_bf_red,color='darkred',lw=5,zorder=10)
+        bfb, = plt.plot(blue_x_cen,y_bf_blue,color='darkblue',lw=5, zorder=10)
 
         plt.annotate(r'$\boldsymbol\chi ^2 / dof \approx$ {0}'.
-            format(np.round(bf_chi2/dof,2)), 
+            format(np.round(preprocess.bf_chi2/dof,2)), 
             xy=(0.02, 0.85), xycoords='axes fraction', bbox=dict(boxstyle="square", 
             ec='k', fc='lightgray', alpha=0.5), size=25)
+
+        plt.ylim(8.45, 12.3)
+        plt.xlim(10, 14.5)
 
         plt.fill([13.5, plt.gca().get_xlim()[1], plt.gca().get_xlim()[1], 13.5], 
             [plt.gca().get_ylim()[0], plt.gca().get_ylim()[0], 
@@ -1581,16 +1370,14 @@ class Plotting():
         plt.xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$')
         plt.ylabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$')
 
-        plt.ylim(8.45, 12.3)
-        plt.xlim(10, 14.5)
 
         plt.legend([(bfr, bfb)], ['Best-fit'], 
             handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='best', 
             prop={'size': 30})
 
-        if Settings.quenching == 'hybrid':
+        if settings.quenching == 'hybrid':
             plt.title('Hybrid quenching model | ECO')
-        elif Settings.quenching == 'halo':
+        elif settings.quenching == 'halo':
             plt.title('Halo quenching model | ECO')
 
         # if survey == 'eco':
@@ -1852,9 +1639,9 @@ class Plotting():
         # bnoerrors = Button(axnoerrors, 'Remove errors', color='pink', hovercolor='tomato')
         # bnoerrors.on_clicked(remove_errors)
 
-        if Settings.quenching == 'hybrid':
+        if settings.quenching == 'hybrid':
             plt.title('Hybrid quenching model | ECO')
-        elif Settings.quenching == 'halo':
+        elif settings.quenching == 'halo':
             plt.title('Halo quenching model | ECO')
 
         plt.show()
@@ -1956,9 +1743,9 @@ class Plotting():
             xy=(0.015, 0.73), xycoords='axes fraction', bbox=dict(boxstyle="square", 
             ec='k', fc='lightgray', alpha=0.5), size=25)
 
-        if Settings.quenching == 'hybrid':
+        if settings.quenching == 'hybrid':
             plt.title('Hybrid quenching model | ECO')
-        elif Settings.quenching == 'halo':
+        elif settings.quenching == 'halo':
             plt.title('Halo quenching model | ECO')
 
         # if survey == 'eco':
@@ -2222,12 +2009,12 @@ class Plotting():
         chunk_counter = 0 # There are 5 chunks of all 16 statistics each with len 20
         while chunk_counter < 5:
             for idx in range(len(result[chunk_counter][0])):
-                if Settings.level == 'halo':
+                if settings.level == 'halo':
                     grp_red_cen_gals_idx = result[chunk_counter][32][idx]
                     grp_blue_cen_gals_idx = result[chunk_counter][34][idx]
                     red_num_idx = np.log10(result[chunk_counter][33][idx])
                     blue_num_idx = np.log10(result[chunk_counter][35][idx])
-                elif Settings.level == 'group':
+                elif settings.level == 'group':
                     grp_red_cen_gals_idx = result[chunk_counter][28][idx]
                     grp_blue_cen_gals_idx = result[chunk_counter][30][idx]
                     red_num_idx = np.log10(result[chunk_counter][29][idx])
@@ -2345,9 +2132,9 @@ class Plotting():
         plt.xlabel(r'\boldmath$ \log_{10}\ {N} $', fontsize=30)
         plt.ylabel(r'\boldmath$\overline{\log_{10}\ M_{*, cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
         
-        if Settings.quenching == 'hybrid':
+        if settings.quenching == 'hybrid':
             plt.title('Hybrid quenching model | ECO')
-        elif Settings.quenching == 'halo':
+        elif settings.quenching == 'halo':
             plt.title('Halo quenching model | ECO')
 
         plt.show()
@@ -2417,12 +2204,12 @@ class Plotting():
         chunk_counter = 0 # There are 5 chunks of all 16 statistics each with len 20
         while chunk_counter < 5:
             for idx in range(len(result[chunk_counter][0])):
-                if Settings.level == 'halo':
+                if settings.level == 'halo':
                     grp_red_cen_gals_idx = result[chunk_counter][32][idx]
                     grp_blue_cen_gals_idx = result[chunk_counter][34][idx]
                     red_num_idx = result[chunk_counter][33][idx]
                     blue_num_idx = result[chunk_counter][35][idx]
-                elif Settings.level == 'group':
+                elif settings.level == 'group':
                     grp_red_cen_gals_idx = result[chunk_counter][28][idx]
                     grp_blue_cen_gals_idx = result[chunk_counter][30][idx]
                     red_num_idx = result[chunk_counter][29][idx]
@@ -2516,9 +2303,9 @@ class Plotting():
         plt.xlabel(r'\boldmath$\log_{10}\ M_{*, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
 
     
-        if Settings.quenching == 'hybrid':
+        if settings.quenching == 'hybrid':
             plt.title('Hybrid quenching model | ECO')
-        elif Settings.quenching == 'halo':
+        elif settings.quenching == 'halo':
             plt.title('Halo quenching model | ECO')
 
         plt.show()
@@ -2541,14 +2328,14 @@ class Plotting():
             result = np.sum(arr)/len(arr)
             return result
 
-        if Settings.level == 'group':
+        if settings.level == 'group':
             vdisp_red_idx = 32
             vdisp_blue_idx = 34
             cen_red_idx = 33
             cen_blue_idx = 35
             nsat_red_idx = 36
             nsat_blue_idx = 37
-        elif Settings.level == 'halo':
+        elif settings.level == 'halo':
             vdisp_red_idx = 38
             vdisp_blue_idx = 40
             cen_red_idx = 39
@@ -2842,68 +2629,17 @@ class Plotting():
         plt.ylabel(r'\boldmath$\log_{10}\ (\sigma_{hw}^2) \left[\mathrm{km/s} \right]$', fontsize=30)
 
 
-        if Settings.quenching == 'halo':
+        if settings.quenching == 'halo':
             plt.title('Host weighted velocity dispersion in halo quenching model (excluding singletons)', fontsize=25)
             # plt.title('Satellite weighted velocity dispersion in halo quenching model (excluding singletons)', fontsize=25)
             # plt.title('Ratio of satellite-host weighted velocity dispersion in halo quenching model (excluding singletons)', fontsize=25)
-        elif Settings.quenching == 'hybrid':
+        elif settings.quenching == 'hybrid':
             plt.title('Host weighted velocity dispersion in hybrid quenching model (excluding singletons)', fontsize=25)
             # plt.title('Satellite weighted velocity dispersion in hybrid quenching model (excluding singletons)', fontsize=25)
             # plt.title('Ratio of satellite-host weighted velocity dispersion in hybrid quenching model (excluding singletons)', fontsize=25)
         plt.show()
 
-    def Plot_Core(self, data, models, best_fit):
-        self.plot_total_mf(models, data, best_fit)
-
-        self.plot_fblue(models, data, best_fit)
-
-        self.plot_colour_mf(models, data, best_fit)
-
-        # Plotting.plot_xmhm(Analysis.mp_models, Analysis.best_fit_core, 
-        #     Preprocess.bf_chi2)
-
-        # Plotting.plot_colour_xmhm(Analysis.mp_models, Analysis.best_fit_core, 
-        #     Preprocess.bf_chi2)
-
-        # Plotting.plot_colour_hmxm(Analysis.mp_models, Analysis.best_fit_core, 
-        #     Preprocess.bf_chi2)
-
-        # Plotting.plot_red_fraction_cen(Analysis.mp_models, Analysis.best_fit_core)
-
-        # Plotting.plot_red_fraction_sat(Analysis.mp_models, Analysis.best_fit_core)
-
-        # Plotting.plot_zumand_fig4(Analysis.mp_models, Analysis.best_fit_core, 
-        #     Preprocess.bf_chi2)
-
-    def Plot_Experiments():
-        Plotting.plot_mean_grpcen_vs_sigma(Analysis.mp_experimentals, 
-            Analysis.best_fit_experimentals, Experiments.data_experimentals, 
-            Analysis.mocks_stddevs, Preprocess.bf_chi2)
-
-        Plotting.plot_sigma_vdiff_mod(Analysis.mp_experimentals, 
-            Analysis.best_fit_experimentals, Experiments.data_experimentals, 
-            Analysis.mocks_stddevs, Preprocess.bf_chi2)
-
-        Plotting.plot_sigma_host_halo_mass_vishnu(Analysis.mp_experimentals, 
-            Analysis.best_fit_experimentals)
-
-        Plotting.plot_N_host_halo_mass_vishnu(Analysis.mp_experimentals, 
-            Analysis.best_fit_experimentals)
-
-        Plotting.plot_mean_grpcen_vs_N(Analysis.mp_experimentals, 
-            Analysis.best_fit_experimentals, Experiments.data_experimentals,
-            Analysis.mocks_stddevs)
-
-        Plotting.plot_mean_N_vs_grpcen(Analysis.mp_experimentals, 
-            Analysis.best_fit_experimentals, Experiments.data_experimentals,
-            Analysis.mocks_stddevs)
-
-        Plotting.plot_satellite_weighted_sigma(Analysis.mp_experimentals, 
-            Analysis.best_fit_experimentals, Experiments.data_experimentals)
-
-
-
-    def test():
+    def plot_vdf():
         fig1= plt.figure(figsize=(10,10))
 
         data_vdf_dict = data_experimentals['vdf']
@@ -2964,3 +2700,48 @@ class Plotting():
         elif settings.quenching == 'halo':
             plt.title('Halo quenching model | ECO')
         plt.show()
+
+    def Plot_Core(self, data, models, best_fit):
+        self.plot_total_mf(models, data, best_fit)
+
+        self.plot_fblue(models, data, best_fit)
+
+        self.plot_colour_mf(models, data, best_fit)
+
+        self.plot_xmhm(models, data, best_fit)
+
+        self.plot_colour_xmhm(models, data, best_fit)
+
+        self.plot_colour_hmxm(models, data, best_fit)
+
+        self.plot_red_fraction_cen(models, best_fit)
+
+        self.plot_red_fraction_sat(models, best_fit)
+
+        self.plot_zumand_fig4(models, data, best_fit)
+
+    def Plot_Experiments():
+        Plotting.plot_mean_grpcen_vs_sigma(Analysis.mp_experimentals, 
+            Analysis.best_fit_experimentals, Experiments.data_experimentals, 
+            Analysis.mocks_stddevs, Preprocess.bf_chi2)
+
+        Plotting.plot_sigma_vdiff_mod(Analysis.mp_experimentals, 
+            Analysis.best_fit_experimentals, Experiments.data_experimentals, 
+            Analysis.mocks_stddevs, Preprocess.bf_chi2)
+
+        Plotting.plot_sigma_host_halo_mass_vishnu(Analysis.mp_experimentals, 
+            Analysis.best_fit_experimentals)
+
+        Plotting.plot_N_host_halo_mass_vishnu(Analysis.mp_experimentals, 
+            Analysis.best_fit_experimentals)
+
+        Plotting.plot_mean_grpcen_vs_N(Analysis.mp_experimentals, 
+            Analysis.best_fit_experimentals, Experiments.data_experimentals,
+            Analysis.mocks_stddevs)
+
+        Plotting.plot_mean_N_vs_grpcen(Analysis.mp_experimentals, 
+            Analysis.best_fit_experimentals, Experiments.data_experimentals,
+            Analysis.mocks_stddevs)
+
+        Plotting.plot_satellite_weighted_sigma(Analysis.mp_experimentals, 
+            Analysis.best_fit_experimentals, Experiments.data_experimentals)
