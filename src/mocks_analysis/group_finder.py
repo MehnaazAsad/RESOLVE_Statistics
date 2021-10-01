@@ -592,6 +592,7 @@ def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
     grep_g_file     = '{0}.galcatl_grep_g.{1}'.format(mock_zz_file, file_ext)
     mock_coord_path = '{0}.galcatl_radeccz.{1}'.format(mock_zz_file, file_ext)
     ## RA-DEC-CZ file
+    #! Add stellar mass column from mock_pd
     mock_coord_pd = mock_pd[['ra','dec','cz']].to_csv(mock_coord_path,
                         sep=' ', header=None, index=False)
     # cu.File_Exists(mock_coord_path)
@@ -627,6 +628,7 @@ def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
     ##
     ## Extracting galaxy and group information
     # Column names
+    #! Add censat to gal_names array
     gal_names   = ['groupid', 'galid', 'ra', 'dec', 'z']
     group_names = [ 'G', 'groupid', 'cen_ra', 'cen_dec', 'cen_z', 'ngals',\
                     'sigma_v', 'rproj']
@@ -1114,11 +1116,11 @@ def main():
         # catl_file = path_to_raw + "eco/eco_all.csv"
         catl_file = path_to_processed + "gal_group_eco_data_buffer.hdf5"
 
-    chi2_file = path_to_processed + 'smhm_colour_run32/{0}_colour_chi2.txt'.format(survey)
+    chi2_file = path_to_processed + 'smhm_colour_run33/{0}_colour_chi2.txt'.format(survey)
     if mf_type == 'smf' and survey == 'eco' and ver == 1.0:
         chain_file = path_to_processed + 'mcmc_{0}.dat'.format(survey)
     else:
-        chain_file = path_to_processed + 'smhm_colour_run32/mcmc_{0}_colour_raw.txt'.\
+        chain_file = path_to_processed + 'smhm_colour_run33/mcmc_{0}_colour_raw.txt'.\
             format(survey)
 
     print('Reading chi-squared file')
@@ -1131,7 +1133,7 @@ def main():
     mcmc_table_subset = get_paramvals_percentile(mcmc_table, 68, chi2)
 
     params_df = pd.DataFrame(mcmc_table_subset)
-    params_df.to_csv(path_to_processed + 'run32_params_subset.txt', 
+    params_df.to_csv(path_to_processed + 'run33_params_subset.txt', 
         header=None, index=None, sep=' ', mode='w')
 
     print('Reading survey data')
@@ -1157,7 +1159,7 @@ def main():
         i+=1
     gals_df_.reset_index(inplace=True, drop=True)
 
-    h5File = path_to_processed + "mocks101_run32_cz7000.h5"
+    h5File = path_to_processed + "mocks101_run33_cz7000.h5"
     gals_df_.to_hdf(h5File, "/gals_df_/d1")
 
     print('Applying RSD')
@@ -1187,7 +1189,7 @@ def main():
 
     print('Writing to output files')
     pandas_df_to_hdf5_file(data=gals_final,
-        hdf5_file=path_to_processed + 'gal_group_run32_cz7000.hdf5', key='gal_group_df')
+        hdf5_file=path_to_processed + 'gal_group_run33_cz7000.hdf5', key='gal_group_df')
     # pandas_df_to_hdf5_file(data=group_df_new,
     #     hdf5_file=path_to_processed + 'group.hdf5', key='group_df')
 
