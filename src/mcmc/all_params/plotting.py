@@ -329,57 +329,91 @@ class Plotting():
         preprocess = self.preprocess
 
         fblue_data = data[1]
-        error = data[4][6:]
+        error_total = data[4][6:]
+        error_cen = data[5]['std_fblue']['std_fblue_cen']
+        error_sat = data[5]['std_fblue']['std_fblue_sat']
         dof = data[6]
 
-        x_fblue_data, y_fblue_data = fblue_data[0], fblue_data[1]
+        x_fblue_total_data, y_fblue_total_data = fblue_data[0], fblue_data[1]
+        y_fblue_cen_data = fblue_data[2]
+        y_fblue_sat_data = fblue_data[3]
+
         x_fblue_model = models[0][0]['f_blue']['max_fblue'][0]
 
-        x_fblue_bf, y_fblue_bf = best_fit[0]['f_blue']['max_fblue'],\
-            best_fit[0]['f_blue']['fblue']
+        x_fblue_total_bf, y_fblue_total_bf = best_fit[0]['f_blue']['max_fblue'],\
+            best_fit[0]['f_blue']['fblue_total']
+        y_fblue_cen_bf = best_fit[0]['f_blue']['fblue_cen']
+        y_fblue_sat_bf = best_fit[0]['f_blue']['fblue_sat']
 
         i_outer = 0
-        mod_arr = []
+        total_mod_arr = []
+        cen_mod_arr = []
+        sat_mod_arr = []
         while i_outer < 5:
             for idx in range(len(models[i_outer][0]['f_blue']['max_fblue'])):
-                tot_mod_ii = models[i_outer][0]['f_blue']['fblue'][idx]
-                mod_arr.append(tot_mod_ii)
+                tot_mod_ii = models[i_outer][0]['f_blue']['fblue_total'][idx]
+                cen_mod_ii = models[i_outer][0]['f_blue']['fblue_cen'][idx]
+                sat_mod_ii = models[i_outer][0]['f_blue']['fblue_sat'][idx]
+                total_mod_arr.append(tot_mod_ii)
+                cen_mod_arr.append(cen_mod_ii)
+                sat_mod_arr.append(sat_mod_ii)
             i_outer += 1
 
             for idx in range(len(models[i_outer][0]['f_blue']['max_fblue'])):
-                tot_mod_ii = models[i_outer][0]['f_blue']['fblue'][idx]
-                mod_arr.append(tot_mod_ii)
+                tot_mod_ii = models[i_outer][0]['f_blue']['fblue_total'][idx]
+                cen_mod_ii = models[i_outer][0]['f_blue']['fblue_cen'][idx]
+                sat_mod_ii = models[i_outer][0]['f_blue']['fblue_sat'][idx]
+                total_mod_arr.append(tot_mod_ii)
+                cen_mod_arr.append(cen_mod_ii)
+                sat_mod_arr.append(sat_mod_ii)
             i_outer += 1
 
             for idx in range(len(models[i_outer][0]['f_blue']['max_fblue'])):
-                tot_mod_ii = models[i_outer][0]['f_blue']['fblue'][idx]
-                mod_arr.append(tot_mod_ii)
+                tot_mod_ii = models[i_outer][0]['f_blue']['fblue_total'][idx]
+                cen_mod_ii = models[i_outer][0]['f_blue']['fblue_cen'][idx]
+                sat_mod_ii = models[i_outer][0]['f_blue']['fblue_sat'][idx]
+                total_mod_arr.append(tot_mod_ii)
+                cen_mod_arr.append(cen_mod_ii)
+                sat_mod_arr.append(sat_mod_ii)
             i_outer += 1
 
             for idx in range(len(models[i_outer][0]['f_blue']['max_fblue'])):
-                tot_mod_ii = models[i_outer][0]['f_blue']['fblue'][idx]
-                mod_arr.append(tot_mod_ii)
+                tot_mod_ii = models[i_outer][0]['f_blue']['fblue_total'][idx]
+                cen_mod_ii = models[i_outer][0]['f_blue']['fblue_cen'][idx]
+                sat_mod_ii = models[i_outer][0]['f_blue']['fblue_sat'][idx]
+                total_mod_arr.append(tot_mod_ii)
+                cen_mod_arr.append(cen_mod_ii)
+                sat_mod_arr.append(sat_mod_ii)
             i_outer += 1
 
             for idx in range(len(models[i_outer][0]['f_blue']['max_fblue'])):
-                tot_mod_ii = models[i_outer][0]['f_blue']['fblue'][idx]
-                mod_arr.append(tot_mod_ii)
+                tot_mod_ii = models[i_outer][0]['f_blue']['fblue_total'][idx]
+                cen_mod_ii = models[i_outer][0]['f_blue']['fblue_cen'][idx]
+                sat_mod_ii = models[i_outer][0]['f_blue']['fblue_sat'][idx]
+                total_mod_arr.append(tot_mod_ii)
+                cen_mod_arr.append(cen_mod_ii)
+                sat_mod_arr.append(sat_mod_ii)
             i_outer += 1
 
-        fblue_max = np.amax(mod_arr, axis=0)
-        fblue_min = np.amin(mod_arr, axis=0)
+        fblue_total_max = np.amax(total_mod_arr, axis=0)
+        fblue_total_min = np.amin(total_mod_arr, axis=0)
+        fblue_cen_max = np.amax(cen_mod_arr, axis=0)
+        fblue_cen_min = np.amin(cen_mod_arr, axis=0)
+        fblue_sat_max = np.amax(sat_mod_arr, axis=0)
+        fblue_sat_min = np.amin(sat_mod_arr, axis=0)
+
         
         fig1= plt.figure(figsize=(10,10))
-        mt = plt.fill_between(x=x_fblue_model, y1=fblue_max, 
-            y2=fblue_min, color='silver', alpha=0.4)
+        mt = plt.fill_between(x=x_fblue_model, y1=fblue_total_max, 
+            y2=fblue_total_min, color='silver', alpha=0.4)
 
-        dt = plt.errorbar(x_fblue_data, y_fblue_data, yerr=error,
+        dt = plt.errorbar(x_fblue_total_data, y_fblue_total_data, yerr=error_total,
             color='k', fmt='s', ecolor='k', markersize=12, capsize=7,
             capthick=1.5, zorder=10, marker='^')
         # Best-fit
         # Need a comma after 'bfr' and 'bfb' to solve this:
         #   AttributeError: 'NoneType' object has no attribute 'create_artists'
-        bft, = plt.plot(x_fblue_bf, y_fblue_bf, color='k', ls='--', lw=4, 
+        bft, = plt.plot(x_fblue_total_bf, y_fblue_total_bf, color='k', ls='--', lw=4, 
             zorder=10)
 
         if settings.mf_type == 'smf':
@@ -394,6 +428,53 @@ class Plotting():
         plt.annotate(r'$\boldsymbol\chi ^2 / dof \approx$ {0}'.
             format(np.round(preprocess.bf_chi2/dof,2)), 
             xy=(0.87, 0.75), xycoords='axes fraction', bbox=dict(boxstyle="square", 
+            ec='k', fc='lightgray', alpha=0.5), size=25)
+
+        if settings.survey == 'eco':
+            if settings.quenching == 'hybrid':
+                plt.title('Hybrid quenching model | ECO')
+            elif settings.quenching == 'halo':
+                plt.title('Halo quenching model | ECO')
+
+        plt.show()
+
+        fig2= plt.figure(figsize=(10,10))
+        mc = plt.fill_between(x=x_fblue_model, y1=fblue_cen_max, 
+            y2=fblue_cen_min, color='thistle', alpha=0.5)
+        ms = plt.fill_between(x=x_fblue_model, y1=fblue_sat_max, 
+            y2=fblue_sat_min, color='khaki', alpha=0.5)
+
+
+        dc = plt.errorbar(x_fblue_total_data, y_fblue_cen_data, yerr=error_cen,
+            color='rebeccapurple', fmt='s', ecolor='rebeccapurple', markersize=12, capsize=7,
+            capthick=1.5, zorder=10, marker='^')
+        ds = plt.errorbar(x_fblue_total_data, y_fblue_sat_data, yerr=error_sat,
+            color='goldenrod', fmt='s', ecolor='goldenrod', markersize=12, capsize=7,
+            capthick=1.5, zorder=10, marker='^')
+
+        # Best-fit
+        # Need a comma after 'bfr' and 'bfb' to solve this:
+        #   AttributeError: 'NoneType' object has no attribute 'create_artists'
+        bfc, = plt.plot(x_fblue_total_bf, y_fblue_cen_bf, color='rebeccapurple', ls='--', lw=4, 
+            zorder=10)
+        bfs, = plt.plot(x_fblue_total_bf, y_fblue_sat_bf, color='goldenrod', ls='--', lw=4, 
+            zorder=10)
+
+
+        if settings.mf_type == 'smf':
+            plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
+        elif settings.mf_type == 'bmf':
+            plt.xlabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
+        plt.ylabel(r'\boldmath$f_{blue}$', fontsize=30)
+
+        plt.legend([(dc), (mc), (bfc), (ds), (ms), (bfs)], 
+            ['Data - cen','Models - cen','Best-fit - cen',
+            'Data - sat','Models - sat','Best-fit - sat'],
+            handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)})
+
+        plt.annotate(r'$\boldsymbol\chi ^2 / dof \approx$ {0}'.
+            format(np.round(preprocess.bf_chi2/dof,2)), 
+            xy=(0.87, 0.55), xycoords='axes fraction', bbox=dict(boxstyle="square", 
             ec='k', fc='lightgray', alpha=0.5), size=25)
 
         if settings.survey == 'eco':
