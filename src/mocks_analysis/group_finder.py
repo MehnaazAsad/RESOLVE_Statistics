@@ -1072,7 +1072,7 @@ def main():
 
     H0 = 100 # (km/s)/Mpc
     cz_inner = 3000 # not starting at corner of box
-    cz_outer = 7000 #120*H0 # utilizing until 120 Mpc of Vishnu box
+    cz_outer = 7000 #120*H0 # utilizing 120 Mpc of Vishnu box
 
     dist_inner = kms_to_Mpc(H0,cz_inner) #Mpc/h
     dist_outer = kms_to_Mpc(H0,cz_outer) #Mpc/h
