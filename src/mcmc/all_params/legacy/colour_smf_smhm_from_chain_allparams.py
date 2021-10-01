@@ -234,7 +234,7 @@ def read_data_catl(path_to_file, survey):
         #             'fc', 'grpmb', 'grpms','modelu_rcorr', 'grpsig', 'grpsig_stack']
 
         # # 13878 galaxies
-        # eco_buff = pd.read_csv(path_to_file, delimiter=",", header=0, \
+        # eco_buff = pd.read_csv(path_to_file, delimiter=",", header=0, 
         #     usecols=columns)
 
         eco_buff = read_mock_catl(path_to_file)
