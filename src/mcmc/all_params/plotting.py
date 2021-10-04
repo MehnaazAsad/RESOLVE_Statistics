@@ -1385,7 +1385,7 @@ class Plotting():
         
         plt.show()
 
-    def plot_mean_grpcen_vs_sigma(self, models, best_fit, data, error_data, bf_chi2):
+    def plot_mean_grpcen_vs_sigma(self, models, data, data_experiments, best_fit):
         """
         Plot average group central stellar mass vs. velocity dispersion from data, 
         best fit param values and param values corresponding to 68th percentile 100 
@@ -1437,47 +1437,20 @@ class Plotting():
         ---------
         Plot displayed on screen.
         """   
-        
-        # grp_red_cen_gals_arr = []
-        # grp_blue_cen_gals_arr = []
-        # red_sigma_arr = []
-        # blue_sigma_arr = []
-        # chunk_counter = 0 # There are 5 chunks of all 16 statistics each with len 20
-        # while chunk_counter < 5:
-        #     for idx in range(len(result[chunk_counter][0])):
-        #         grp_red_cen_gals_idx = result[chunk_counter][16][idx]
-        #         grp_blue_cen_gals_idx = result[chunk_counter][17][idx]
-        #         red_sigma_idx = result[chunk_counter][18][idx]
-        #         blue_sigma_idx = result[chunk_counter][19][idx]
+        settings = self.settings
 
-        #         for idx,val in enumerate(grp_red_cen_gals_idx):
-        #             grp_red_cen_gals_arr.append(val)
-        #             red_sigma_arr.append(red_sigma_idx[idx])
-                
-        #         for idx,val in enumerate(grp_blue_cen_gals_idx):
-        #             grp_blue_cen_gals_arr.append(val)
-        #             blue_sigma_arr.append(blue_sigma_idx[idx])
+        error_red = data[5]['vel_disp']['std_mean_mstar_red']
+        error_blue = data[5]['vel_disp']['std_mean_mstar_blue']
 
-        #         # grp_red_cen_gals_arr.append(grp_red_cen_gals_idx)
-        #         # grp_blue_cen_gals_arr.append(grp_blue_cen_gals_idx)
-        #         # red_sigma_arr.append(red_sigma_idx)
-        #         # blue_sigma_arr.append(blue_sigma_idx)
+        x_sigma_red_data, y_sigma_red_data = data_experiments['vel_disp']['red_sigma'],\
+            data_experiments['vel_disp']['red_cen_mstar']
+        x_sigma_blue_data, y_sigma_blue_data = data_experiments['vel_disp']['blue_sigma'],\
+            data_experiments['vel_disp']['blue_cen_mstar']
 
-        #     chunk_counter+=1
-        
-        # mean_stats_red = bs(red_sigma_arr, grp_red_cen_gals_arr, statistic='mean', 
-        #     bins=np.linspace(0,250,6))
-        # mean_stats_blue = bs(blue_sigma_arr, grp_blue_cen_gals_arr, statistic='mean', 
-        #     bins=np.linspace(0,250,6))
-
-        # std_stats_red = bs(red_sigma_arr, grp_red_cen_gals_arr, statistic='std', 
-        #     bins=np.linspace(0,250,6))
-        # std_stats_blue = bs(blue_sigma_arr, grp_blue_cen_gals_arr, statistic='std', 
-        #     bins=np.linspace(0,250,6))
-        global mean_centers_red
-        global mean_stats_red_data
-        global mean_centers_blue
-        global mean_stats_blue_data
+        x_sigma_red_bf, y_sigma_red_bf = best_fit[1]['vel_disp']['red_sigma'],\
+            best_fit[1]['vel_disp']['red_cen_mstar']
+        x_sigma_blue_bf, y_sigma_blue_bf = best_fit[1]['vel_disp']['blue_sigma'],\
+            best_fit[1]['vel_disp']['blue_cen_mstar']
 
         mean_grp_red_cen_gals_arr = []
         mean_grp_blue_cen_gals_arr = []
@@ -1485,11 +1458,11 @@ class Plotting():
         blue_sigma_arr = []
         chunk_counter = 0 # There are 5 chunks of all 16 statistics each with len 20
         while chunk_counter < 5:
-            for idx in range(len(result[chunk_counter][0])):
-                grp_red_cen_gals_idx = result[chunk_counter][20][idx]
-                grp_blue_cen_gals_idx = result[chunk_counter][21][idx]
-                red_sigma_idx = result[chunk_counter][22][idx]
-                blue_sigma_idx = result[chunk_counter][23][idx]
+            for idx in range(len(models[chunk_counter][1]['vel_disp'])):
+                grp_red_cen_gals_idx = models[chunk_counter][1]['vel_disp']['red_cen_mstar'][idx]
+                grp_blue_cen_gals_idx = models[chunk_counter][1]['vel_disp']['blue_cen_mstar'][idx]
+                red_sigma_idx = models[chunk_counter][1]['vel_disp']['red_sigma'][idx]
+                blue_sigma_idx = models[chunk_counter][1]['vel_disp']['blue_sigma'][idx]
 
                 mean_stats_red = bs(red_sigma_idx, grp_red_cen_gals_idx, 
                     statistic='mean', bins=np.linspace(0,250,6))
@@ -1514,65 +1487,24 @@ class Plotting():
         mean_centers_blue = 0.5 * (mean_stats_blue[1][1:] + \
             mean_stats_blue[1][:-1])
 
-        mean_stats_red_bf = bs(red_sigma_bf, grp_red_cen_stellar_mass_bf, 
+        mean_stats_red_bf = bs(x_sigma_red_bf, y_sigma_red_bf, 
             statistic='mean', bins=np.linspace(0,250,6))
-        mean_stats_blue_bf = bs(blue_sigma_bf, grp_blue_cen_stellar_mass_bf, 
-            statistic='mean', bins=np.linspace(0,250,6))
-
-        mean_stats_red_data = bs(red_sigma_data, grp_red_cen_stellar_mass_data, 
-            statistic='mean', bins=np.linspace(0,250,6))
-        mean_stats_blue_data = bs(blue_sigma_data, grp_blue_cen_stellar_mass_data, 
+        mean_stats_blue_bf = bs(x_sigma_blue_bf, y_sigma_blue_bf, 
             statistic='mean', bins=np.linspace(0,250,6))
 
-        # ## Seeing the effects of binning
-        # for idx in range(3,10,1):
-        #     fig1 = plt.figure(figsize=(16,9))
+        mean_stats_red_data = bs(x_sigma_red_data, y_sigma_red_data, 
+            statistic='mean', bins=np.linspace(0,250,6))
+        mean_stats_blue_data = bs(x_sigma_blue_data, y_sigma_blue_data,
+            statistic='mean', bins=np.linspace(0,250,6))
 
-        #     mean_stats_red_bf = bs(red_sigma_bf, grp_red_cen_stellar_mass_bf, 
-        #         statistic='mean', bins=np.linspace(0,250,idx))
-        #     mean_stats_blue_bf = bs(blue_sigma_bf, grp_blue_cen_stellar_mass_bf, 
-        #         statistic='mean', bins=np.linspace(0,250,idx))
+        fig1 = plt.subplots(figsize=(10,8))
 
-        #     mean_centers_red = 0.5 * (mean_stats_red_bf[1][1:] + \
-        #         mean_stats_red_bf[1][:-1])
-        #     mean_centers_blue = 0.5 * (mean_stats_blue_bf[1][1:] + \
-        #         mean_stats_blue_bf[1][:-1])
-
-        #     bfr, = plt.plot(mean_centers_red, mean_stats_red_bf[0], c='indianred', zorder=9)
-        #     bfb, = plt.plot(mean_centers_blue, mean_stats_blue_bf[0], c='cornflowerblue', zorder=9)
-
-        #     plt.scatter(red_sigma_bf, grp_red_cen_stellar_mass_bf, c='r', alpha=0.4)
-        #     plt.scatter(blue_sigma_bf, grp_blue_cen_stellar_mass_bf, c='b', alpha=0.4)
-
-        #     plt.annotate(r'$Number of bins: ${0}'.
-        #         format(int(idx)-1), 
-        #         xy=(0.02, 0.9), xycoords='axes fraction', bbox=dict(boxstyle="square", 
-        #         ec='k', fc='lightgray', alpha=0.5), size=25)
-
-        #     # plt.xlim(10,14.5)
-        #     plt.ylim(np.log10((10**8.9)/2.041),11.56)
-        #     if quenching == 'halo':
-        #         plt.title('Halo quenching model')
-        #     elif quenching == 'hybrid':
-        #         plt.title('Hybrid quenching model')
-        #     plt.xlabel('Sigma')
-        #     plt.ylabel('Stellar Mass')
-        #     plt.show()
-
-        fig1,ax1 = plt.subplots(figsize=(10,8))
-
-        dr = plt.errorbar(mean_centers_red,mean_stats_red_data[0],yerr=err_red,
+        dr = plt.errorbar(mean_centers_red,mean_stats_red_data[0],yerr=error_red,
                 color='darkred',fmt='^',ecolor='darkred',markersize=12,capsize=10,
                 capthick=1.0,zorder=10)
-        db = plt.errorbar(mean_centers_blue,mean_stats_blue_data[0],yerr=err_blue,
+        db = plt.errorbar(mean_centers_blue,mean_stats_blue_data[0],yerr=error_blue,
                 color='darkblue',fmt='^',ecolor='darkblue',markersize=12,capsize=10,
                 capthick=1.0,zorder=10)
-
-        # dr = plt.scatter(mean_centers_red, mean_stats_red_data[0], marker='o', \
-        #     c='darkred', s=200, zorder=10)
-        # db = plt.scatter(mean_centers_blue, mean_stats_blue_data[0], marker='o', \
-        #     c='darkblue', s=200, zorder=10)
-
         
         mr = plt.fill_between(x=mean_centers_red, y1=red_models_max, 
             y2=red_models_min, color='lightcoral',alpha=0.4)
@@ -1587,58 +1519,21 @@ class Plotting():
             handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, markerscale=1.5, loc='upper left')
 
         chi_squared_red = np.nansum((mean_stats_red_data[0] - 
-            mean_stats_red_bf[0])**2 / (err_red**2))
+            mean_stats_red_bf[0])**2 / (error_red**2))
         chi_squared_blue = np.nansum((mean_stats_blue_data[0] - 
-            mean_stats_blue_bf[0])**2 / (err_blue**2))
+            mean_stats_blue_bf[0])**2 / (error_blue**2))
 
         plt.annotate(r'$\boldsymbol\chi ^2_{{red}} \approx$ {0}''\n'\
             r'$\boldsymbol\chi ^2_{{blue}} \approx$ {1}'.format(np.round(\
             chi_squared_red,2),np.round(chi_squared_blue,2)), 
-            xy=(0.015, 0.73), xycoords='axes fraction', bbox=dict(boxstyle="square", 
+            xy=(0.015, 0.6), xycoords='axes fraction', bbox=dict(boxstyle="square", 
             ec='k', fc='lightgray', alpha=0.5), size=25)
 
         plt.ylim(8.9, 11.1)
-        # plt.annotate(r'$\boldsymbol\chi ^2 \approx$ {0}'.format(np.round(chi_squared_blue/dof,2)), 
-        # xy=(0.02, 0.75), xycoords='axes fraction', bbox=dict(boxstyle="square", 
-        # ec='k', fc='lightgray', alpha=0.5), size=25)
 
-        from mpl_toolkits.axes_grid1.inset_locator import InsetPosition
-        from matplotlib.widgets import Button
-
-
-        def errors(event):
-            global l1
-            global l2
-            l1 = ax1.errorbar(mean_centers_red,mean_stats_red_data[0],yerr=err_red,
-                color='darkred',fmt='o',ecolor='darkred',markersize=13,capsize=10,
-                capthick=1.0,zorder=10)
-            l2 = ax1.errorbar(mean_centers_blue,mean_stats_blue_data[0],yerr=err_blue,
-                color='darkblue',fmt='o',ecolor='darkblue',markersize=13,capsize=10,
-                capthick=1.0,zorder=10)
-            ax1.draw()
-
-        def remove_errors(event):
-            l1.remove()
-            l2.remove()
-
-
-        # if survey == 'eco':
-        #     plt.title('ECO')
-    
         plt.xlabel(r'\boldmath$\sigma \left[\mathrm{km/s} \right]$', fontsize=30)
         plt.ylabel(r'\boldmath$\overline{\log_{10}\ M_{*, cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
         
-        # axerrors = plt.axes([0, 0, 1, 1])
-        # axnoerrors = plt.axes([0.2, 0.05, 1, 1])
-        # iperrors = InsetPosition(ax1, [0.05, 0.05, 0.1, 0.08]) #posx, posy, width, height
-        # ipnoerrors = InsetPosition(ax1, [0.2, 0.05, 0.12, 0.08]) #posx, posy, width, height
-        # axerrors.set_axes_locator(iperrors)
-        # axnoerrors.set_axes_locator(ipnoerrors)
-        # berrors = Button(axerrors, 'Add errors', color='pink', hovercolor='tomato')
-        # berrors.on_clicked(errors)
-        # bnoerrors = Button(axnoerrors, 'Remove errors', color='pink', hovercolor='tomato')
-        # bnoerrors.on_clicked(remove_errors)
-
         if settings.quenching == 'hybrid':
             plt.title('Hybrid quenching model | ECO')
         elif settings.quenching == 'halo':
@@ -1646,7 +1541,7 @@ class Plotting():
 
         plt.show()
 
-    def plot_sigma_vdiff_mod(self, models, best_fit, data, error_data, bf_chi2):
+    def plot_mean_sigma_vs_grpcen(self, models, data, data_experiments, best_fit):
         """[summary]
 
         Args:
@@ -1661,67 +1556,96 @@ class Plotting():
             std_cen_bf_blue ([type]): [description]
             bf_chi2 ([type]): [description]
         """
-        i_outer = 0
-        red_mod_arr = []
-        blue_mod_arr = []
-        while i_outer < 5:
-            for idx in range(len(result[i_outer][0])):
-                red_mod_ii = result[i_outer][24][idx]
-                red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][25][idx]
-                blue_mod_arr.append(blue_mod_ii)
-            i_outer += 1
+        settings = self.settings
 
-            for idx in range(len(result[i_outer][0])):
-                red_mod_ii = result[i_outer][24][idx]
-                red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][25][idx]
-                blue_mod_arr.append(blue_mod_ii)
-            i_outer += 1
+        error_red = data[5]['vel_disp']['std_mean_sigma_red']
+        error_blue = data[5]['vel_disp']['std_mean_sigma_blue']
 
-            for idx in range(len(result[i_outer][0])):
-                red_mod_ii = result[i_outer][24][idx]
-                red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][25][idx]
-                blue_mod_arr.append(blue_mod_ii)
-            i_outer += 1
+        x_sigma_red_data, y_sigma_red_data = data_experiments['vel_disp']['red_cen_mstar'],\
+            data_experiments['vel_disp']['red_sigma']
+        x_sigma_blue_data, y_sigma_blue_data = data_experiments['vel_disp']['blue_cen_mstar'],\
+            data_experiments['vel_disp']['blue_sigma']
 
-            for idx in range(len(result[i_outer][0])):
-                red_mod_ii = result[i_outer][24][idx]
-                red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][25][idx]
-                blue_mod_arr.append(blue_mod_ii)
-            i_outer += 1
+        x_sigma_red_bf, y_sigma_red_bf = best_fit[1]['vel_disp']['red_cen_mstar'],\
+            best_fit[1]['vel_disp']['red_sigma']
+        x_sigma_blue_bf, y_sigma_blue_bf = best_fit[1]['vel_disp']['blue_cen_mstar'],\
+            best_fit[1]['vel_disp']['blue_sigma']
 
-            for idx in range(len(result[i_outer][0])):
-                red_mod_ii = result[i_outer][24][idx]
-                red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][25][idx]
-                blue_mod_arr.append(blue_mod_ii)
-            i_outer += 1
+        if settings.survey == 'eco' or settings.survey == 'resolvea':
+            # TODO : check if this is actually correct for resolve a
+            red_stellar_mass_bins = np.linspace(8.6,11.2,6)
+        elif settings.survey == 'resolveb':
+            red_stellar_mass_bins = np.linspace(8.4,11.0,6)
 
-        red_std_max = np.nanmax(red_mod_arr, axis=0)
-        red_std_min = np.nanmin(red_mod_arr, axis=0)
-        blue_std_max = np.nanmax(blue_mod_arr, axis=0)
-        blue_std_min = np.nanmin(blue_mod_arr, axis=0)
+        if settings.survey == 'eco' or settings.survey == 'resolvea':
+            # TODO : check if this is actually correct for resolve a
+            blue_stellar_mass_bins = np.linspace(8.6,10.7,6)
+        elif settings.survey == 'resolveb':
+            blue_stellar_mass_bins = np.linspace(8.4,10.4,6)
+
+
+        grp_red_cen_gals_arr = []
+        grp_blue_cen_gals_arr = []
+        mean_red_sigma_arr = []
+        mean_blue_sigma_arr = []
+        chunk_counter = 0 # There are 5 chunks of all 16 statistics each with len 20
+        while chunk_counter < 5:
+            for idx in range(len(models[chunk_counter][1]['vel_disp'])):
+                grp_red_cen_gals_idx = models[chunk_counter][1]['vel_disp']['red_cen_mstar'][idx]
+                grp_blue_cen_gals_idx = models[chunk_counter][1]['vel_disp']['blue_cen_mstar'][idx]
+                red_sigma_idx = models[chunk_counter][1]['vel_disp']['red_sigma'][idx]
+                blue_sigma_idx = models[chunk_counter][1]['vel_disp']['blue_sigma'][idx]
+
+                mean_stats_red = bs(grp_red_cen_gals_idx, red_sigma_idx,
+                    statistic='mean', bins=red_stellar_mass_bins)
+                mean_stats_blue = bs(grp_blue_cen_gals_idx, blue_sigma_idx,
+                    statistic='mean', bins=blue_stellar_mass_bins)
+                mean_red_sigma_arr.append(mean_stats_red[0])
+                mean_blue_sigma_arr.append(mean_stats_blue[0])
+                grp_red_cen_gals_arr.append(mean_stats_red[1])
+                grp_blue_cen_gals_arr.append(mean_stats_blue[1])
+
+            chunk_counter+=1
+
+        red_models_max = np.nanmax(mean_red_sigma_arr, axis=0)
+        red_models_min = np.nanmin(mean_red_sigma_arr, axis=0)
+        blue_models_max = np.nanmax(mean_blue_sigma_arr, axis=0)
+        blue_models_min = np.nanmin(mean_blue_sigma_arr, axis=0)
+
+        ## Same centers used for all sets of lines since binning is the same for 
+        ## models, bf and data
+        mean_centers_red = 0.5 * (mean_stats_red[1][1:] + \
+            mean_stats_red[1][:-1])
+        mean_centers_blue = 0.5 * (mean_stats_blue[1][1:] + \
+            mean_stats_blue[1][:-1])
+
+        mean_stats_red_bf = bs(x_sigma_red_bf, y_sigma_red_bf, 
+            statistic='mean', bins=red_stellar_mass_bins)
+        mean_stats_blue_bf = bs(x_sigma_blue_bf, y_sigma_blue_bf, 
+            statistic='mean', bins=blue_stellar_mass_bins)
+
+        mean_stats_red_data = bs(x_sigma_red_data, y_sigma_red_data, 
+            statistic='mean', bins=red_stellar_mass_bins)
+        mean_stats_blue_data = bs(x_sigma_blue_data, y_sigma_blue_data,
+            statistic='mean', bins=blue_stellar_mass_bins)
 
         fig1= plt.figure(figsize=(10,10))
 
-        mr = plt.fill_between(x=cen_red_data, y1=red_std_min, 
-            y2=red_std_max, color='lightcoral',alpha=0.4)
-        mb = plt.fill_between(x=cen_blue_data, y1=blue_std_min, 
-            y2=blue_std_max, color='cornflowerblue',alpha=0.4)
+        mr = plt.fill_between(x=mean_centers_red, y1=red_models_min, 
+            y2=red_models_max, color='lightcoral',alpha=0.4)
+        mb = plt.fill_between(x=mean_centers_blue, y1=blue_models_min, 
+            y2=blue_models_max, color='cornflowerblue',alpha=0.4)
 
-        dr = plt.errorbar(cen_red_data,std_red_data,yerr=err_red,
-            color='darkred',fmt='^',ecolor='darkred',markersize=12,capsize=10,
-            capthick=1.0,zorder=10)
-        db = plt.errorbar(cen_blue_data,std_blue_data,yerr=err_blue,
-            color='darkblue',fmt='^',ecolor='darkblue',markersize=12,capsize=10,
-            capthick=1.0,zorder=10)
+        dr = plt.errorbar(mean_centers_red,mean_stats_red_data[0],
+            yerr=error_red, color='darkred',fmt='^',ecolor='darkred', 
+            markersize=12,capsize=10,capthick=1.0,zorder=10)
+        db = plt.errorbar(mean_centers_blue,mean_stats_blue_data[0],
+            yerr=error_blue, color='darkblue',fmt='^',ecolor='darkblue',
+            markersize=12,capsize=10,capthick=1.0,zorder=10)
 
-        bfr, = plt.plot(std_cen_bf_red,std_bf_red,
+        bfr, = plt.plot(mean_centers_red,mean_stats_red_bf[0],
             color='maroon',ls='-',lw=3,zorder=10)
-        bfb, = plt.plot(std_cen_bf_blue,std_bf_blue,
+        bfb, = plt.plot(mean_centers_blue,mean_stats_blue_bf[0],
             color='mediumblue',ls='-',lw=3,zorder=10)
 
         plt.xlabel(r'\boldmath$\log_{10}\ M_{\star , cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=25)
@@ -1732,10 +1656,10 @@ class Plotting():
             handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, markerscale=1.5, 
             loc='upper left')
 
-        chi_squared_red = np.nansum((std_red_data - 
-            std_bf_red)**2 / (err_red**2))
-        chi_squared_blue = np.nansum((std_blue_data - 
-            std_bf_blue)**2 / (err_blue**2))
+        chi_squared_red = np.nansum((mean_stats_red_data[0] - 
+            mean_stats_red_bf[0])**2 / (error_red**2))
+        chi_squared_blue = np.nansum((mean_stats_blue_data[0] - 
+            mean_stats_blue_bf[0])**2 / (error_blue**2))
 
         plt.annotate(r'$\boldsymbol\chi ^2_{{red}} \approx$ {0}''\n'\
             r'$\boldsymbol\chi ^2_{{blue}} \approx$ {1}'.format(np.round(\
@@ -1949,7 +1873,7 @@ class Plotting():
         plt.title('Host halo mass - Number of galaxies in halo in best-fit model (excluding singletons)')
         plt.show()
 
-    def plot_mean_grpcen_vs_N(self, models, best_fit, data, error_data):
+    def plot_mean_grpcen_vs_N(self, models, data, data_experiments, best_fit):
         """
         Plot average halo/group central stellar mass vs. number of galaxies in 
         halos/groups from data, best fit param values and param values corresponding 
@@ -2001,14 +1925,27 @@ class Plotting():
         ---------
         Plot displayed on screen.
         """   
-        
+        settings = self.settings
+        preprocess = self.preprocess
+
+        smf_total = data[0] #x, y, error, counts
+        error = data[4][0:6]
+
+        x_phi_total_data, y_phi_total_data = smf_total[0], smf_total[1]
+        x_phi_total_model = models[0][0]['smf_total']['max_total'][0]
+
+        x_phi_total_bf, y_phi_total_bf = best_fit[0]['smf_total']['max_total'],\
+            best_fit[0]['smf_total']['phi_total']
+
+        dof = data[6]
+    
         mean_grp_red_cen_gals_arr = []
         mean_grp_blue_cen_gals_arr = []
         red_num_arr = []
         blue_num_arr = []
         chunk_counter = 0 # There are 5 chunks of all 16 statistics each with len 20
         while chunk_counter < 5:
-            for idx in range(len(result[chunk_counter][0])):
+            for idx in range(len(models[chunk_counter][1]['vel_disp'])):
                 if settings.level == 'halo':
                     grp_red_cen_gals_idx = result[chunk_counter][32][idx]
                     grp_blue_cen_gals_idx = result[chunk_counter][34][idx]
@@ -2069,28 +2006,6 @@ class Plotting():
             mean_stats_blue_mocks = bs(np.log10(blue_num_mocks[idx]), blue_cen_stellar_mass_mocks[idx], 
                 statistic='mean', bins=np.arange(0,0.8,0.2))
             mean_stats_blue_mocks_arr.append(mean_stats_blue_mocks[0])
-
-        # fig1 = plt.figure(figsize=(11,9))
-        # plt.hist(np.log10(red_num_bf), histtype='step', lw=3, label='Best-fit', 
-        #     color='k', ls='--', zorder=10)
-        # plt.hist(np.log10(red_num_data), histtype='step', lw=3, label='Data', 
-        #     color='k', ls='-.', zorder=10)
-        # for idx in range(len(red_cen_stellar_mass_mocks)):
-        #     plt.hist(np.log10(red_num_mocks[idx]), histtype='step', lw=3)
-        # plt.title('Histogram of log(number of galaxies in halo with red central)')
-        # plt.legend()
-        # plt.show()
-
-        # fig2 = plt.figure(figsize=(11,9))
-        # plt.hist(np.log10(blue_num_bf), histtype='step', lw=3, label='Best-fit', 
-        #     color='k', ls='--', zorder=10)
-        # plt.hist(np.log10(blue_num_data), histtype='step', lw=3, label='Data', 
-        #     color='k', ls='-.', zorder=10)
-        # for idx in range(len(blue_cen_stellar_mass_mocks)):
-        #     plt.hist(np.log10(blue_num_mocks[idx]), histtype='step', lw=3)
-        # plt.title('Histogram of log(number of galaxies in halo with blue central)')
-        # plt.legend()
-        # plt.show()
 
         ## Error bars on data points 
         std_mean_cen_arr_red = np.nanstd(mean_stats_red_mocks_arr, axis=0)
@@ -2720,28 +2635,24 @@ class Plotting():
 
         self.plot_zumand_fig4(models, data, best_fit)
 
-    def Plot_Experiments():
-        Plotting.plot_mean_grpcen_vs_sigma(Analysis.mp_experimentals, 
-            Analysis.best_fit_experimentals, Experiments.data_experimentals, 
-            Analysis.mocks_stddevs, Preprocess.bf_chi2)
+    def Plot_Experiments(self, data, data_experiments, models, best_fit):
+        self.plot_mean_grpcen_vs_sigma(models, data, data_experiments, best_fit)
 
-        Plotting.plot_sigma_vdiff_mod(Analysis.mp_experimentals, 
-            Analysis.best_fit_experimentals, Experiments.data_experimentals, 
-            Analysis.mocks_stddevs, Preprocess.bf_chi2)
+        self.plot_mean_sigma_vs_grpcen(models, data, data_experiments, best_fit)
 
-        Plotting.plot_sigma_host_halo_mass_vishnu(Analysis.mp_experimentals, 
-            Analysis.best_fit_experimentals)
+        # Plotting.plot_sigma_host_halo_mass_vishnu(Analysis.mp_experimentals, 
+        #     Analysis.best_fit_experimentals)
 
-        Plotting.plot_N_host_halo_mass_vishnu(Analysis.mp_experimentals, 
-            Analysis.best_fit_experimentals)
+        # Plotting.plot_N_host_halo_mass_vishnu(Analysis.mp_experimentals, 
+        #     Analysis.best_fit_experimentals)
 
-        Plotting.plot_mean_grpcen_vs_N(Analysis.mp_experimentals, 
-            Analysis.best_fit_experimentals, Experiments.data_experimentals,
-            Analysis.mocks_stddevs)
+        # Plotting.plot_mean_grpcen_vs_N(Analysis.mp_experimentals, 
+        #     Analysis.best_fit_experimentals, Experiments.data_experimentals,
+        #     Analysis.mocks_stddevs)
 
-        Plotting.plot_mean_N_vs_grpcen(Analysis.mp_experimentals, 
-            Analysis.best_fit_experimentals, Experiments.data_experimentals,
-            Analysis.mocks_stddevs)
+        # Plotting.plot_mean_N_vs_grpcen(Analysis.mp_experimentals, 
+        #     Analysis.best_fit_experimentals, Experiments.data_experimentals,
+        #     Analysis.mocks_stddevs)
 
-        Plotting.plot_satellite_weighted_sigma(Analysis.mp_experimentals, 
-            Analysis.best_fit_experimentals, Experiments.data_experimentals)
+        # Plotting.plot_satellite_weighted_sigma(Analysis.mp_experimentals, 
+        #     Analysis.best_fit_experimentals, Experiments.data_experimentals)
