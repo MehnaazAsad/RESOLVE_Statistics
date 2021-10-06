@@ -1165,7 +1165,6 @@ class Plotting():
         Plot displayed on screen.
         """
         settings = self.settings
-        preprocess = self.preprocess
 
         halos_bf_red = best_fit[0]['satellites']['halos_red']
         gals_bf_red = best_fit[0]['satellites']['gals_red']
@@ -1526,7 +1525,7 @@ class Plotting():
         plt.annotate(r'$\boldsymbol\chi ^2_{{red}} \approx$ {0}''\n'\
             r'$\boldsymbol\chi ^2_{{blue}} \approx$ {1}'.format(np.round(\
             chi_squared_red,2),np.round(chi_squared_blue,2)), 
-            xy=(0.015, 0.6), xycoords='axes fraction', bbox=dict(boxstyle="square", 
+            xy=(0.015, 0.65), xycoords='axes fraction', bbox=dict(boxstyle="square", 
             ec='k', fc='lightgray', alpha=0.5), size=25)
 
         plt.ylim(8.9, 11.1)
@@ -1664,7 +1663,7 @@ class Plotting():
         plt.annotate(r'$\boldsymbol\chi ^2_{{red}} \approx$ {0}''\n'\
             r'$\boldsymbol\chi ^2_{{blue}} \approx$ {1}'.format(np.round(\
             chi_squared_red,2),np.round(chi_squared_blue,2)), 
-            xy=(0.015, 0.73), xycoords='axes fraction', bbox=dict(boxstyle="square", 
+            xy=(0.015, 0.65), xycoords='axes fraction', bbox=dict(boxstyle="square", 
             ec='k', fc='lightgray', alpha=0.5), size=25)
 
         if settings.quenching == 'hybrid':
@@ -1684,63 +1683,63 @@ class Plotting():
         hosthalo_red_mod_arr = []
         hosthalo_blue_mod_arr = []
         while i_outer < 5:
-            for idx in range(len(result[i_outer][0])):
-                red_mod_ii = result[i_outer][28][idx]
+            for idx in range(len(models[i_outer][1]['vel_disp']['red_sigma'])):
+                red_mod_ii = models[i_outer][1]['vel_disp']['red_sigma'][idx]
                 vdisp_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][29][idx]
+                blue_mod_ii = models[i_outer][1]['vel_disp']['blue_sigma'][idx]
                 vdisp_blue_mod_arr.append(blue_mod_ii)
 
-                red_mod_ii = result[i_outer][30][idx]
+                red_mod_ii = models[i_outer][1]['vel_disp']['red_hosthalo'][idx]
                 hosthalo_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][31][idx]
+                blue_mod_ii = models[i_outer][1]['vel_disp']['blue_hosthalo'][idx]
                 hosthalo_blue_mod_arr.append(blue_mod_ii)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                red_mod_ii = result[i_outer][28][idx]
+            for idx in range(len(models[i_outer][1]['vel_disp']['red_sigma'])):
+                red_mod_ii = models[i_outer][1]['vel_disp']['red_sigma'][idx]
                 vdisp_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][29][idx]
+                blue_mod_ii = models[i_outer][1]['vel_disp']['blue_sigma'][idx]
                 vdisp_blue_mod_arr.append(blue_mod_ii)
 
-                red_mod_ii = result[i_outer][30][idx]
+                red_mod_ii = models[i_outer][1]['vel_disp']['red_hosthalo'][idx]
                 hosthalo_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][31][idx]
+                blue_mod_ii = models[i_outer][1]['vel_disp']['blue_hosthalo'][idx]
                 hosthalo_blue_mod_arr.append(blue_mod_ii)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                red_mod_ii = result[i_outer][28][idx]
+            for idx in range(len(models[i_outer][1]['vel_disp']['red_sigma'])):
+                red_mod_ii = models[i_outer][1]['vel_disp']['red_sigma'][idx]
                 vdisp_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][29][idx]
+                blue_mod_ii = models[i_outer][1]['vel_disp']['blue_sigma'][idx]
                 vdisp_blue_mod_arr.append(blue_mod_ii)
 
-                red_mod_ii = result[i_outer][30][idx]
+                red_mod_ii = models[i_outer][1]['vel_disp']['red_hosthalo'][idx]
                 hosthalo_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][31][idx]
+                blue_mod_ii = models[i_outer][1]['vel_disp']['blue_hosthalo'][idx]
                 hosthalo_blue_mod_arr.append(blue_mod_ii)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                red_mod_ii = result[i_outer][28][idx]
+            for idx in range(len(models[i_outer][1]['vel_disp']['red_sigma'])):
+                red_mod_ii = models[i_outer][1]['vel_disp']['red_sigma'][idx]
                 vdisp_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][29][idx]
+                blue_mod_ii = models[i_outer][1]['vel_disp']['blue_sigma'][idx]
                 vdisp_blue_mod_arr.append(blue_mod_ii)
 
-                red_mod_ii = result[i_outer][30][idx]
+                red_mod_ii = models[i_outer][1]['vel_disp']['red_hosthalo'][idx]
                 hosthalo_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][31][idx]
+                blue_mod_ii = models[i_outer][1]['vel_disp']['blue_hosthalo'][idx]
                 hosthalo_blue_mod_arr.append(blue_mod_ii)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                red_mod_ii = result[i_outer][28][idx]
+            for idx in range(len(models[i_outer][1]['vel_disp']['red_sigma'])):
+                red_mod_ii = models[i_outer][1]['vel_disp']['red_sigma'][idx]
                 vdisp_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][29][idx]
+                blue_mod_ii = models[i_outer][1]['vel_disp']['blue_sigma'][idx]
                 vdisp_blue_mod_arr.append(blue_mod_ii)
 
-                red_mod_ii = result[i_outer][30][idx]
+                red_mod_ii = models[i_outer][1]['vel_disp']['red_hosthalo'][idx]
                 hosthalo_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][31][idx]
+                blue_mod_ii = models[i_outer][1]['vel_disp']['blue_hosthalo'][idx]
                 hosthalo_blue_mod_arr.append(blue_mod_ii)
             i_outer += 1
 
@@ -1750,10 +1749,15 @@ class Plotting():
         flat_list_blue_vdisp = [item for sublist in vdisp_blue_mod_arr for item in sublist]
         flat_list_blue_host = [item for sublist in hosthalo_blue_mod_arr for item in sublist]
 
+        x_sigma_red_bf, y_hosthalo_red_bf = best_fit[1]['vel_disp']['red_sigma'],\
+            best_fit[1]['vel_disp']['red_hosthalo']
+        x_sigma_blue_bf, y_hosthalo_blue_bf = best_fit[1]['vel_disp']['blue_sigma'],\
+            best_fit[1]['vel_disp']['blue_hosthalo']
+
         import seaborn as sns
         fig1 = plt.figure(figsize=(11, 9))
-        bfr = plt.scatter(vdisp_red_bf, np.log10(red_host_halo_bf), c='maroon', s=120, zorder = 10)
-        bfb = plt.scatter(vdisp_blue_bf, np.log10(blue_host_halo_bf), c='darkblue', s=120, zorder=10)
+        bfr = plt.scatter(x_sigma_red_bf, np.log10(y_hosthalo_red_bf), c='maroon', s=120, zorder = 10)
+        bfb = plt.scatter(x_sigma_blue_bf, np.log10(y_hosthalo_blue_bf), c='darkblue', s=120, zorder=10)
 
         sns.kdeplot(x=flat_list_red_vdisp, y=np.log10(flat_list_red_host), color='indianred', shade=True)
         sns.kdeplot(x=flat_list_blue_vdisp, y=np.log10(flat_list_blue_host), color='cornflowerblue', shade=True)
@@ -1782,63 +1786,63 @@ class Plotting():
         hosthalo_red_mod_arr = []
         hosthalo_blue_mod_arr = []
         while i_outer < 5:
-            for idx in range(len(result[i_outer][0])):
-                red_mod_ii = result[i_outer][33][idx]
+            for idx in range(len(models[i_outer][1]['richness']['red_num'])):
+                red_mod_ii = models[i_outer][1]['richness']['red_num'][idx]
                 N_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][35][idx]
+                blue_mod_ii = models[i_outer][1]['richness']['blue_num'][idx]
                 N_blue_mod_arr.append(blue_mod_ii)
 
-                red_mod_ii = result[i_outer][36][idx]
+                red_mod_ii = models[i_outer][1]['richness']['red_hosthalo'][idx]
                 hosthalo_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][37][idx]
+                blue_mod_ii = models[i_outer][1]['richness']['blue_hosthalo'][idx]
                 hosthalo_blue_mod_arr.append(blue_mod_ii)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                red_mod_ii = result[i_outer][33][idx]
+            for idx in range(len(models[i_outer][1]['richness']['red_num'])):
+                red_mod_ii = models[i_outer][1]['richness']['red_num'][idx]
                 N_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][35][idx]
+                blue_mod_ii = models[i_outer][1]['richness']['blue_num'][idx]
                 N_blue_mod_arr.append(blue_mod_ii)
 
-                red_mod_ii = result[i_outer][36][idx]
+                red_mod_ii = models[i_outer][1]['richness']['red_hosthalo'][idx]
                 hosthalo_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][37][idx]
+                blue_mod_ii = models[i_outer][1]['richness']['blue_hosthalo'][idx]
                 hosthalo_blue_mod_arr.append(blue_mod_ii)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                red_mod_ii = result[i_outer][33][idx]
+            for idx in range(len(models[i_outer][1]['richness']['red_num'])):
+                red_mod_ii = models[i_outer][1]['richness']['red_num'][idx]
                 N_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][35][idx]
+                blue_mod_ii = models[i_outer][1]['richness']['blue_num'][idx]
                 N_blue_mod_arr.append(blue_mod_ii)
 
-                red_mod_ii = result[i_outer][36][idx]
+                red_mod_ii = models[i_outer][1]['richness']['red_hosthalo'][idx]
                 hosthalo_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][37][idx]
+                blue_mod_ii = models[i_outer][1]['richness']['blue_hosthalo'][idx]
                 hosthalo_blue_mod_arr.append(blue_mod_ii)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                red_mod_ii = result[i_outer][33][idx]
+            for idx in range(len(models[i_outer][1]['richness']['red_num'])):
+                red_mod_ii = models[i_outer][1]['richness']['red_num'][idx]
                 N_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][35][idx]
+                blue_mod_ii = models[i_outer][1]['richness']['blue_num'][idx]
                 N_blue_mod_arr.append(blue_mod_ii)
 
-                red_mod_ii = result[i_outer][36][idx]
+                red_mod_ii = models[i_outer][1]['richness']['red_hosthalo'][idx]
                 hosthalo_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][37][idx]
+                blue_mod_ii = models[i_outer][1]['richness']['blue_hosthalo'][idx]
                 hosthalo_blue_mod_arr.append(blue_mod_ii)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                red_mod_ii = result[i_outer][33][idx]
+            for idx in range(len(models[i_outer][1]['richness']['red_num'])):
+                red_mod_ii = models[i_outer][1]['richness']['red_num'][idx]
                 N_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][35][idx]
+                blue_mod_ii = models[i_outer][1]['richness']['blue_num'][idx]
                 N_blue_mod_arr.append(blue_mod_ii)
 
-                red_mod_ii = result[i_outer][36][idx]
+                red_mod_ii = models[i_outer][1]['richness']['red_hosthalo'][idx]
                 hosthalo_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][37][idx]
+                blue_mod_ii = models[i_outer][1]['richness']['blue_hosthalo'][idx]
                 hosthalo_blue_mod_arr.append(blue_mod_ii)
             i_outer += 1
 
@@ -1848,11 +1852,16 @@ class Plotting():
         flat_list_blue_N = [item for sublist in N_blue_mod_arr for item in sublist]
         flat_list_blue_host = [item for sublist in hosthalo_blue_mod_arr for item in sublist]
 
+        x_N_red_bf, y_hosthalo_red_bf = best_fit[1]['richness']['red_num'],\
+            best_fit[1]['richness']['red_hosthalo']
+        x_N_blue_bf, y_hosthalo_blue_bf = best_fit[1]['richness']['blue_num'],\
+            best_fit[1]['richness']['blue_hosthalo']
+
         import seaborn as sns
         fig1 = plt.figure(figsize=(11, 9))
-        bfr = plt.scatter(N_red_bf, np.log10(red_host_halo_bf), c='maroon', s=120, zorder = 10)
-        N_blue_bf_offset = [x+0.05 for x in N_blue_bf] #For plotting purposes
-        bfb = plt.scatter(N_blue_bf_offset, np.log10(blue_host_halo_bf), c='darkblue', s=120, zorder=11, alpha=0.3)
+        bfr = plt.scatter(x_N_red_bf, np.log10(y_hosthalo_red_bf), c='maroon', s=120, zorder = 10)
+        N_blue_bf_offset = [x+0.05 for x in x_N_blue_bf] #For plotting purposes
+        bfb = plt.scatter(N_blue_bf_offset, np.log10(y_hosthalo_blue_bf), c='darkblue', s=120, zorder=11, alpha=0.3)
 
         # sns.kdeplot(x=flat_list_red_N, y=np.log10(flat_list_red_host), color='indianred', shade=True)
         # sns.kdeplot(x=flat_list_blue_N, y=np.log10(flat_list_blue_host), color='cornflowerblue', shade=True)
@@ -1926,36 +1935,18 @@ class Plotting():
         Plot displayed on screen.
         """   
         settings = self.settings
-        preprocess = self.preprocess
 
-        smf_total = data[0] #x, y, error, counts
-        error = data[4][0:6]
-
-        x_phi_total_data, y_phi_total_data = smf_total[0], smf_total[1]
-        x_phi_total_model = models[0][0]['smf_total']['max_total'][0]
-
-        x_phi_total_bf, y_phi_total_bf = best_fit[0]['smf_total']['max_total'],\
-            best_fit[0]['smf_total']['phi_total']
-
-        dof = data[6]
-    
         mean_grp_red_cen_gals_arr = []
         mean_grp_blue_cen_gals_arr = []
         red_num_arr = []
         blue_num_arr = []
         chunk_counter = 0 # There are 5 chunks of all 16 statistics each with len 20
         while chunk_counter < 5:
-            for idx in range(len(models[chunk_counter][1]['vel_disp'])):
-                if settings.level == 'halo':
-                    grp_red_cen_gals_idx = result[chunk_counter][32][idx]
-                    grp_blue_cen_gals_idx = result[chunk_counter][34][idx]
-                    red_num_idx = np.log10(result[chunk_counter][33][idx])
-                    blue_num_idx = np.log10(result[chunk_counter][35][idx])
-                elif settings.level == 'group':
-                    grp_red_cen_gals_idx = result[chunk_counter][28][idx]
-                    grp_blue_cen_gals_idx = result[chunk_counter][30][idx]
-                    red_num_idx = np.log10(result[chunk_counter][29][idx])
-                    blue_num_idx = np.log10(result[chunk_counter][31][idx])
+            for idx in range(len(models[chunk_counter][1]['richness'])):
+                grp_red_cen_gals_idx = models[chunk_counter][1]['richness']['red_cen_mstar'][idx]
+                grp_blue_cen_gals_idx = models[chunk_counter][1]['richness']['blue_cen_mstar'][idx]
+                red_num_idx = np.log10(models[chunk_counter][1]['richness']['red_num'][idx])
+                blue_num_idx = np.log10(models[chunk_counter][1]['richness']['blue_num'][idx])
 
                 mean_stats_red = bs(red_num_idx, grp_red_cen_gals_idx, 
                     statistic='mean', bins=np.arange(0,2.5,0.5))
@@ -1980,6 +1971,11 @@ class Plotting():
         mean_centers_blue = 0.5 * (mean_stats_blue[1][1:] + \
             mean_stats_blue[1][:-1])
 
+        red_num_bf, red_cen_stellar_mass_bf = best_fit[1]['richness']['red_num'],\
+            best_fit[1]['richness']['red_cen_mstar']
+        blue_num_bf, blue_cen_stellar_mass_bf = best_fit[1]['richness']['blue_num'],\
+            best_fit[1]['richness']['blue_cen_mstar']
+
         # Max of red_num_bf = 62, Max of red_num_idx above varies (35-145)
         mean_stats_red_bf = bs(np.log10(red_num_bf), red_cen_stellar_mass_bf, 
             statistic='mean', bins=np.arange(0,2.5,0.5))
@@ -1987,12 +1983,22 @@ class Plotting():
         mean_stats_blue_bf = bs(np.log10(blue_num_bf), blue_cen_stellar_mass_bf, 
             statistic='mean', bins=np.arange(0,0.8,0.2))
 
+        red_num_data, red_cen_stellar_mass_data = data_experiments['richness']['red_num'],\
+            data_experiments['richness']['red_cen_mstar']
+        blue_num_data, blue_cen_stellar_mass_data = data_experiments['richness']['blue_num'],\
+            data_experiments['richness']['blue_cen_mstar']
+
         # Max of red_num_data = 388
-        mean_stats_red_data = bs(np.log10(red_num_data), red_cen_stellar_mass_data_N, 
+        mean_stats_red_data = bs(np.log10(red_num_data), red_cen_stellar_mass_data, 
             statistic='mean', bins=np.arange(0,2.5,0.5))
         # Max of blue_num_data = 19
-        mean_stats_blue_data = bs(np.log10(blue_num_data), blue_cen_stellar_mass_data_N, 
+        mean_stats_blue_data = bs(np.log10(blue_num_data), blue_cen_stellar_mass_data, 
             statistic='mean', bins=np.arange(0,0.8,0.2))
+        
+        red_num_mocks = data[5]['richness']['red_num']
+        red_cen_stellar_mass_mocks = data[5]['richness']['red_cen_mstar']
+        blue_num_mocks = data[5]['richness']['blue_num']
+        blue_cen_stellar_mass_mocks = data[5]['richness']['blue_cen_mstar']
 
         mean_stats_red_mocks_arr = []
         mean_stats_blue_mocks_arr = []
@@ -2011,7 +2017,7 @@ class Plotting():
         std_mean_cen_arr_red = np.nanstd(mean_stats_red_mocks_arr, axis=0)
         std_mean_cen_arr_blue = np.nanstd(mean_stats_blue_mocks_arr, axis=0)
 
-        fig1,ax1 = plt.subplots(figsize=(10,8))
+        fig1 = plt.subplots(figsize=(10,8))
 
         dr = plt.errorbar(mean_centers_red,mean_stats_red_data[0],yerr=std_mean_cen_arr_red,
                 color='darkred',fmt='^',ecolor='darkred',markersize=12,capsize=10,
@@ -2028,7 +2034,7 @@ class Plotting():
         bfr, = plt.plot(mean_centers_red, mean_stats_red_bf[0], c='indianred', zorder=9)
         bfb, = plt.plot(mean_centers_blue, mean_stats_blue_bf[0], c='cornflowerblue', zorder=9)
 
-        l = plt.legend([(dr, db), (mr, mb), (bfr, bfb)], 
+        plt.legend([(dr, db), (mr, mb), (bfr, bfb)], 
             ['Data','Models','Best-fit'],
             handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, markerscale=1.5, loc='upper left')
 
@@ -2054,7 +2060,7 @@ class Plotting():
 
         plt.show()
 
-    def plot_mean_N_vs_grpcen(self, models, best_fit, data, error_data):
+    def plot_mean_N_vs_grpcen(self, models, data, data_experiments, best_fit):
         """
         Plot average number of galaxies in halos/groups vs. halo/group central 
         stellar mass from data, best fit param values and param values corresponding 
@@ -2106,6 +2112,7 @@ class Plotting():
         ---------
         Plot displayed on screen.
         """   
+        settings = self.settings
 
         stat = 'mean'
 
@@ -2118,17 +2125,11 @@ class Plotting():
         mean_blue_num_arr = []
         chunk_counter = 0 # There are 5 chunks of all 16 statistics each with len 20
         while chunk_counter < 5:
-            for idx in range(len(result[chunk_counter][0])):
-                if settings.level == 'halo':
-                    grp_red_cen_gals_idx = result[chunk_counter][32][idx]
-                    grp_blue_cen_gals_idx = result[chunk_counter][34][idx]
-                    red_num_idx = result[chunk_counter][33][idx]
-                    blue_num_idx = result[chunk_counter][35][idx]
-                elif settings.level == 'group':
-                    grp_red_cen_gals_idx = result[chunk_counter][28][idx]
-                    grp_blue_cen_gals_idx = result[chunk_counter][30][idx]
-                    red_num_idx = result[chunk_counter][29][idx]
-                    blue_num_idx = result[chunk_counter][31][idx]
+            for idx in range(len(models[chunk_counter][1]['richness'])):
+                grp_red_cen_gals_idx = models[chunk_counter][1]['richness']['red_cen_mstar'][idx]
+                grp_blue_cen_gals_idx = models[chunk_counter][1]['richness']['blue_cen_mstar'][idx]
+                red_num_idx = models[chunk_counter][1]['richness']['red_num'][idx]
+                blue_num_idx = models[chunk_counter][1]['richness']['blue_num'][idx]
 
                 mean_stats_red = bs(grp_red_cen_gals_idx, red_num_idx,
                     statistic=stat, bins=red_stellar_mass_bins)
@@ -2153,16 +2154,30 @@ class Plotting():
         mean_centers_blue = 0.5 * (mean_stats_blue[1][1:] + \
             mean_stats_blue[1][:-1])
 
+        red_num_bf, red_cen_stellar_mass_bf = best_fit[1]['richness']['red_num'],\
+            best_fit[1]['richness']['red_cen_mstar']
+        blue_num_bf, blue_cen_stellar_mass_bf = best_fit[1]['richness']['blue_num'],\
+            best_fit[1]['richness']['blue_cen_mstar']
 
         mean_stats_red_bf = bs(red_cen_stellar_mass_bf, red_num_bf, 
             statistic=stat, bins=red_stellar_mass_bins)
         mean_stats_blue_bf = bs(blue_cen_stellar_mass_bf, blue_num_bf,
             statistic=stat, bins=blue_stellar_mass_bins)
 
-        mean_stats_red_data = bs(red_cen_stellar_mass_data_N, red_num_data,
+        red_num_data, red_cen_stellar_mass_data = data_experiments['richness']['red_num'],\
+            data_experiments['richness']['red_cen_mstar']
+        blue_num_data, blue_cen_stellar_mass_data = data_experiments['richness']['blue_num'],\
+            data_experiments['richness']['blue_cen_mstar']
+
+        mean_stats_red_data = bs(red_cen_stellar_mass_data, red_num_data,
             statistic=stat, bins=red_stellar_mass_bins)
-        mean_stats_blue_data = bs(blue_cen_stellar_mass_data_N, blue_num_data,
+        mean_stats_blue_data = bs(blue_cen_stellar_mass_data, blue_num_data,
             statistic=stat, bins=blue_stellar_mass_bins)
+
+        red_num_mocks = data[5]['richness']['red_num']
+        red_cen_stellar_mass_mocks = data[5]['richness']['red_cen_mstar']
+        blue_num_mocks = data[5]['richness']['blue_num']
+        blue_cen_stellar_mass_mocks = data[5]['richness']['blue_cen_mstar']
 
         mean_stats_red_mocks_arr = []
         mean_stats_blue_mocks_arr = []
@@ -2179,7 +2194,7 @@ class Plotting():
         std_mean_cen_arr_red = np.nanstd(mean_stats_red_mocks_arr, axis=0)
         std_mean_cen_arr_blue = np.nanstd(mean_stats_blue_mocks_arr, axis=0)
 
-        fig1,ax1 = plt.subplots(figsize=(10,8))
+        fig1 = plt.subplots(figsize=(10,8))
 
         dr = plt.errorbar(mean_centers_red,mean_stats_red_data[0],yerr=std_mean_cen_arr_red,
                 color='darkred',fmt='^',ecolor='darkred',markersize=12,capsize=10,
@@ -2196,7 +2211,7 @@ class Plotting():
         bfr, = plt.plot(mean_centers_red, mean_stats_red_bf[0], c='indianred', zorder=9)
         bfb, = plt.plot(mean_centers_blue, mean_stats_blue_bf[0], c='cornflowerblue', zorder=9)
 
-        l = plt.legend([(dr, db), (mr, mb), (bfr, bfb)], 
+        plt.legend([(dr, db), (mr, mb), (bfr, bfb)], 
             ['Data','Models','Best-fit'],
             handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, markerscale=1.5, loc='upper left')
 
@@ -2225,7 +2240,9 @@ class Plotting():
 
         plt.show()
 
-    def plot_satellite_weighted_sigma(self, models, best_fit, data):
+    def plot_satellite_weighted_sigma(self, models, data_experiments, best_fit):
+
+        settings = self.settings
 
         def sw_func_red(arr):
             result = np.sum(arr)
@@ -2242,21 +2259,6 @@ class Plotting():
         def hw_func_blue(arr):
             result = np.sum(arr)/len(arr)
             return result
-
-        if settings.level == 'group':
-            vdisp_red_idx = 32
-            vdisp_blue_idx = 34
-            cen_red_idx = 33
-            cen_blue_idx = 35
-            nsat_red_idx = 36
-            nsat_blue_idx = 37
-        elif settings.level == 'halo':
-            vdisp_red_idx = 38
-            vdisp_blue_idx = 40
-            cen_red_idx = 39
-            cen_blue_idx = 41
-            nsat_red_idx = 42
-            nsat_blue_idx = 43
         
         i_outer = 0
         vdisp_red_mod_arr = []
@@ -2266,88 +2268,88 @@ class Plotting():
         nsat_red_mod_arr = []
         nsat_blue_mod_arr = []
         while i_outer < 5:
-            for idx in range(len(result[i_outer][0])):
-                red_mod_ii = result[i_outer][vdisp_red_idx][idx]
+            for idx in range(len(models[i_outer][1]['vel_disp']['red_sigma'])):
+                red_mod_ii = models[i_outer][1]['vel_disp']['red_sigma'][idx]
                 vdisp_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][vdisp_blue_idx][idx]
+                blue_mod_ii = models[i_outer][1]['vel_disp']['blue_sigma'][idx]
                 vdisp_blue_mod_arr.append(blue_mod_ii)
 
-                red_mod_ii = result[i_outer][cen_red_idx][idx]
+                red_mod_ii = models[i_outer][1]['vel_disp']['red_cen_mstar'][idx]
                 cen_mstar_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][cen_blue_idx][idx]
+                blue_mod_ii = models[i_outer][1]['vel_disp']['blue_cen_mstar'][idx]
                 cen_mstar_blue_mod_arr.append(blue_mod_ii)
 
-                red_mod_ii = result[i_outer][nsat_red_idx][idx]
+                red_mod_ii = models[i_outer][1]['vel_disp']['red_nsat'][idx]
                 nsat_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][nsat_blue_idx][idx]
+                blue_mod_ii = models[i_outer][1]['vel_disp']['blue_nsat'][idx]
                 nsat_blue_mod_arr.append(blue_mod_ii)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                red_mod_ii = result[i_outer][vdisp_red_idx][idx]
+            for idx in range(len(models[i_outer][1]['vel_disp']['red_sigma'])):
+                red_mod_ii = models[i_outer][1]['vel_disp']['red_sigma'][idx]
                 vdisp_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][vdisp_blue_idx][idx]
+                blue_mod_ii = models[i_outer][1]['vel_disp']['blue_sigma'][idx]
                 vdisp_blue_mod_arr.append(blue_mod_ii)
 
-                red_mod_ii = result[i_outer][cen_red_idx][idx]
+                red_mod_ii = models[i_outer][1]['vel_disp']['red_cen_mstar'][idx]
                 cen_mstar_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][cen_blue_idx][idx]
+                blue_mod_ii = models[i_outer][1]['vel_disp']['blue_cen_mstar'][idx]
                 cen_mstar_blue_mod_arr.append(blue_mod_ii)
 
-                red_mod_ii = result[i_outer][nsat_red_idx][idx]
+                red_mod_ii = models[i_outer][1]['vel_disp']['red_nsat'][idx]
                 nsat_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][nsat_blue_idx][idx]
+                blue_mod_ii = models[i_outer][1]['vel_disp']['blue_nsat'][idx]
                 nsat_blue_mod_arr.append(blue_mod_ii)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                red_mod_ii = result[i_outer][vdisp_red_idx][idx]
+            for idx in range(len(models[i_outer][1]['vel_disp']['red_sigma'])):
+                red_mod_ii = models[i_outer][1]['vel_disp']['red_sigma'][idx]
                 vdisp_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][vdisp_blue_idx][idx]
+                blue_mod_ii = models[i_outer][1]['vel_disp']['blue_sigma'][idx]
                 vdisp_blue_mod_arr.append(blue_mod_ii)
 
-                red_mod_ii = result[i_outer][cen_red_idx][idx]
+                red_mod_ii = models[i_outer][1]['vel_disp']['red_cen_mstar'][idx]
                 cen_mstar_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][cen_blue_idx][idx]
+                blue_mod_ii = models[i_outer][1]['vel_disp']['blue_cen_mstar'][idx]
                 cen_mstar_blue_mod_arr.append(blue_mod_ii)
 
-                red_mod_ii = result[i_outer][nsat_red_idx][idx]
+                red_mod_ii = models[i_outer][1]['vel_disp']['red_nsat'][idx]
                 nsat_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][nsat_blue_idx][idx]
+                blue_mod_ii = models[i_outer][1]['vel_disp']['blue_nsat'][idx]
                 nsat_blue_mod_arr.append(blue_mod_ii)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                red_mod_ii = result[i_outer][vdisp_red_idx][idx]
+            for idx in range(len(models[i_outer][1]['vel_disp']['red_sigma'])):
+                red_mod_ii = models[i_outer][1]['vel_disp']['red_sigma'][idx]
                 vdisp_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][vdisp_blue_idx][idx]
+                blue_mod_ii = models[i_outer][1]['vel_disp']['blue_sigma'][idx]
                 vdisp_blue_mod_arr.append(blue_mod_ii)
 
-                red_mod_ii = result[i_outer][cen_red_idx][idx]
+                red_mod_ii = models[i_outer][1]['vel_disp']['red_cen_mstar'][idx]
                 cen_mstar_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][cen_blue_idx][idx]
+                blue_mod_ii = models[i_outer][1]['vel_disp']['blue_cen_mstar'][idx]
                 cen_mstar_blue_mod_arr.append(blue_mod_ii)
 
-                red_mod_ii = result[i_outer][nsat_red_idx][idx]
+                red_mod_ii = models[i_outer][1]['vel_disp']['red_nsat'][idx]
                 nsat_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][nsat_blue_idx][idx]
+                blue_mod_ii = models[i_outer][1]['vel_disp']['blue_nsat'][idx]
                 nsat_blue_mod_arr.append(blue_mod_ii)
             i_outer += 1
 
-            for idx in range(len(result[i_outer][0])):
-                red_mod_ii = result[i_outer][vdisp_red_idx][idx]
+            for idx in range(len(models[i_outer][1]['vel_disp']['red_sigma'])):
+                red_mod_ii = models[i_outer][1]['vel_disp']['red_sigma'][idx]
                 vdisp_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][vdisp_blue_idx][idx]
+                blue_mod_ii = models[i_outer][1]['vel_disp']['blue_sigma'][idx]
                 vdisp_blue_mod_arr.append(blue_mod_ii)
 
-                red_mod_ii = result[i_outer][cen_red_idx][idx]
+                red_mod_ii = models[i_outer][1]['vel_disp']['red_cen_mstar'][idx]
                 cen_mstar_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][cen_blue_idx][idx]
+                blue_mod_ii = models[i_outer][1]['vel_disp']['blue_cen_mstar'][idx]
                 cen_mstar_blue_mod_arr.append(blue_mod_ii)
 
-                red_mod_ii = result[i_outer][nsat_red_idx][idx]
+                red_mod_ii = models[i_outer][1]['vel_disp']['red_nsat'][idx]
                 nsat_red_mod_arr.append(red_mod_ii)
-                blue_mod_ii = result[i_outer][nsat_blue_idx][idx]
+                blue_mod_ii = models[i_outer][1]['vel_disp']['blue_nsat'][idx]
                 nsat_blue_mod_arr.append(blue_mod_ii)
             i_outer += 1
 
@@ -2414,6 +2416,10 @@ class Plotting():
         ## Best-fit
         # nsat_red_total = np.sum(nsat_red_bf)
         # nsat_blue_total = np.sum(nsat_blue_bf)
+        nsat_red_bf, vdisp_red_bf, mstar_red_bf = best_fit[1]['vel_disp']['red_nsat'],\
+            best_fit[1]['vel_disp']['red_sigma'], best_fit[1]['vel_disp']['red_cen_mstar']
+        nsat_blue_bf, vdisp_blue_bf, mstar_blue_bf = best_fit[1]['vel_disp']['blue_nsat'],\
+            best_fit[1]['vel_disp']['blue_sigma'], best_fit[1]['vel_disp']['blue_cen_mstar']
 
         nsat_vdisp_product_red = np.array(nsat_red_bf) * (np.array(vdisp_red_bf)**2)
         nsat_vdisp_product_blue = np.array(nsat_blue_bf) * (np.array(vdisp_blue_bf)**2)
@@ -2440,6 +2446,10 @@ class Plotting():
         ## Data
         # nsat_red_total = np.sum(nsat_red_data)
         # nsat_blue_total = np.sum(nsat_blue_data)
+        nsat_red_data, vdisp_red_data, mstar_red_data = data_experiments['vel_disp']['red_nsat'],\
+            data_experiments['vel_disp']['red_sigma'], data_experiments['vel_disp']['red_cen_mstar']
+        nsat_blue_data, vdisp_blue_data, mstar_blue_data = data_experiments['vel_disp']['blue_nsat'],\
+            data_experiments['vel_disp']['blue_sigma'], data_experiments['vel_disp']['blue_cen_mstar']
 
         nsat_vdisp_product_red_data = np.array(nsat_red_data) * (np.array(vdisp_red_data)**2)
         nsat_vdisp_product_blue_data = np.array(nsat_blue_data) * (np.array(vdisp_blue_data)**2)
@@ -2554,10 +2564,13 @@ class Plotting():
             # plt.title('Ratio of satellite-host weighted velocity dispersion in hybrid quenching model (excluding singletons)', fontsize=25)
         plt.show()
 
-    def plot_vdf():
+    def plot_vdf(self, models, data, data_experiments, best_fit):
+        
+        settings = self.settings
+
         fig1= plt.figure(figsize=(10,10))
 
-        data_vdf_dict = data_experimentals['vdf']
+        data_vdf_dict = data_experiments['vdf']
         data_vdf_error = data[5]['vdf']
         dr = plt.errorbar(np.log10(data_vdf_dict['x_vdf']),data_vdf_dict['phi_vdf'][0],
             yerr=data_vdf_error['std_phi_red'],
@@ -2640,19 +2653,14 @@ class Plotting():
 
         self.plot_mean_sigma_vs_grpcen(models, data, data_experiments, best_fit)
 
-        # Plotting.plot_sigma_host_halo_mass_vishnu(Analysis.mp_experimentals, 
-        #     Analysis.best_fit_experimentals)
+        self.plot_sigma_host_halo_mass_vishnu(models, best_fit)
 
-        # Plotting.plot_N_host_halo_mass_vishnu(Analysis.mp_experimentals, 
-        #     Analysis.best_fit_experimentals)
+        self.plot_N_host_halo_mass_vishnu(models, best_fit)
 
-        # Plotting.plot_mean_grpcen_vs_N(Analysis.mp_experimentals, 
-        #     Analysis.best_fit_experimentals, Experiments.data_experimentals,
-        #     Analysis.mocks_stddevs)
+        self.plot_mean_grpcen_vs_N(models, data, data_experiments, best_fit)
 
-        # Plotting.plot_mean_N_vs_grpcen(Analysis.mp_experimentals, 
-        #     Analysis.best_fit_experimentals, Experiments.data_experimentals,
-        #     Analysis.mocks_stddevs)
+        self.plot_mean_N_vs_grpcen(models, data, data_experiments, best_fit)
 
-        # Plotting.plot_satellite_weighted_sigma(Analysis.mp_experimentals, 
-        #     Analysis.best_fit_experimentals, Experiments.data_experimentals)
+        self.plot_satellite_weighted_sigma(models, data_experiments, best_fit)
+
+        self.plot_vdf(models, data, data_experiments, best_fit)
