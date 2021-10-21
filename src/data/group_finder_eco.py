@@ -114,7 +114,7 @@ def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
     os.remove(fof_file)
     os.remove(grep_file)
     os.remove(grep_g_file)
-    os.remove(mock_coord_path)
+    # os.remove(mock_coord_path)
     if param_dict['verbose']:
         print('Group Finding ....Done')
 
