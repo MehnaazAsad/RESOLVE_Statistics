@@ -5,6 +5,7 @@
 """
 
 # Built-in/Generic Imports
+import multiprocessing
 import time
 # import cProfile
 # import pstats
@@ -17,9 +18,12 @@ from cosmo_utils.utils import work_paths as cwpaths
 from matplotlib.pyplot import sca
 from numpy.core.fromnumeric import diagonal
 from scipy.stats import binned_statistic as bs
+from astropy.cosmology import LambdaCDM
+from scipy.interpolate import interp1d
 from multiprocessing import Pool
 import pandas as pd
 import numpy as np
+import subprocess
 import argparse
 import warnings
 import emcee 
@@ -27,6 +31,13 @@ import math
 import os
 
 __author__ = '[Mehnaaz Asad]'
+
+def kms_to_Mpc(H0,v):
+    return v/H0
+
+def vol_sphere(r):
+    volume = (4/3)*np.pi*(r**3)
+    return volume
 
 def mock_add_grpcz(mock_df):
     grpcz = mock_df.groupby('groupid').cz.mean().values
@@ -374,7 +385,7 @@ def blue_frac_helper(arr):
     blue_counter = list(arr).count('B')
     return blue_counter/total_num
 
-def blue_frac(catl, h1_bool, data_bool):
+def blue_frac(catl, h1_bool, data_bool, randint_logmstar=None):
     """
     Calculates blue fraction in bins of stellar mass (which are converted to h=1)
 
@@ -385,6 +396,12 @@ def blue_frac(catl, h1_bool, data_bool):
 
     h1_bool: boolean
         True if units of masses are h=1, False if units of masses are not h=1
+    
+    data_bool: boolean
+        True if data, False if mocks
+    
+    randint_logmstar (optional): int
+        Mock number in case many Behroozi mocks were used. Defaults to None.
 
     Returns
     ---------
@@ -394,18 +411,44 @@ def blue_frac(catl, h1_bool, data_bool):
     f_blue: array
         Array of y-axis blue fraction values
     """
-    if data_bool:
-        mstar_arr = catl.logmstar.values
-    else:
-        mstar_arr = catl.stellar_mass.values
 
-    colour_label_arr = catl.colour_label.values
+    if data_bool:
+        mstar_total_arr = catl.logmstar.values
+        censat_col = 'fc'
+        mstar_cen_arr = catl.logmstar.loc[catl[censat_col] == 1].values
+        mstar_sat_arr = catl.logmstar.loc[catl[censat_col] == 0].values
+    ## Mocks case different than data because of censat_col
+    elif not data_bool and not h1_bool:
+        mstar_total_arr = catl.logmstar.values
+        censat_col = 'g_galtype'
+        # censat_col = 'cs_flag'
+        mstar_cen_arr = catl.logmstar.loc[catl[censat_col] == 1].values
+        mstar_sat_arr = catl.logmstar.loc[catl[censat_col] == 0].values           
+    elif randint_logmstar != 1:
+        mstar_total_arr = catl['{0}'.format(randint_logmstar)].values
+        censat_col = 'g_galtype_{0}'.format(randint_logmstar)
+        mstar_cen_arr = catl['{0}'.format(randint_logmstar)].loc[catl[censat_col] == 1].values
+        mstar_sat_arr = catl['{0}'.format(randint_logmstar)].loc[catl[censat_col] == 0].values
+    elif randint_logmstar == 1:
+        mstar_total_arr = catl['behroozi_bf'].values
+        censat_col = 'g_galtype_{0}'.format(randint_logmstar)
+        mstar_cen_arr = catl['behroozi_bf'].loc[catl[censat_col] == 1].values
+        mstar_sat_arr = catl['behroozi_bf'].loc[catl[censat_col] == 0].values
+
+
+    colour_label_total_arr = catl.colour_label.values
+    colour_label_cen_arr = catl.colour_label.loc[catl[censat_col] == 1].values
+    colour_label_sat_arr = catl.colour_label.loc[catl[censat_col] == 0].values
 
     if not h1_bool:
         # changing from h=0.7 to h=1 assuming h^-2 dependence
-        logmstar_arr = np.log10((10**mstar_arr) / 2.041)
+        logmstar_total_arr = np.log10((10**mstar_total_arr) / 2.041)
+        logmstar_cen_arr = np.log10((10**mstar_cen_arr) / 2.041)
+        logmstar_sat_arr = np.log10((10**mstar_sat_arr) / 2.041)
     else:
-        logmstar_arr = mstar_arr
+        logmstar_total_arr = mstar_total_arr
+        logmstar_cen_arr = mstar_cen_arr
+        logmstar_sat_arr = mstar_sat_arr
 
     if survey == 'eco' or survey == 'resolvea':
         bin_min = np.round(np.log10((10**8.9) / 2.041), 1)
@@ -419,13 +462,18 @@ def blue_frac(catl, h1_bool, data_bool):
         bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
         bins = np.linspace(bin_min, bin_max, 7)
 
-    result = bs(logmstar_arr, colour_label_arr, blue_frac_helper, bins=bins)
-    edges = result[1]
+    result_total = bs(logmstar_total_arr, colour_label_total_arr, blue_frac_helper, bins=bins)
+    result_cen = bs(logmstar_cen_arr, colour_label_cen_arr, blue_frac_helper, bins=bins)
+    result_sat = bs(logmstar_sat_arr, colour_label_sat_arr, blue_frac_helper, bins=bins)
+    edges = result_total[1]
     dm = edges[1] - edges[0]  # Bin width
     maxis = 0.5 * (edges[1:] + edges[:-1])  # Mass axis i.e. bin centers
-    f_blue = result[0]
+    f_blue_total = result_total[0]
 
-    return maxis, f_blue
+    f_blue_cen = result_cen[0]
+    f_blue_sat = result_sat[0]
+
+    return maxis, f_blue_total, f_blue_cen, f_blue_sat
 
 def calc_bary(logmstar_arr, logmgas_arr):
     """Calculates baryonic mass of galaxies from survey"""
@@ -474,7 +522,8 @@ def diff_bmf(mass_arr, volume, h1_bool):
     if survey == 'eco' or survey == 'resolvea':
         bin_min = np.round(np.log10((10**9.4) / 2.041), 1)
         if survey == 'eco':
-            bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
+            # *checked 
+            bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
         elif survey == 'resolvea':
             bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
         bins = np.linspace(bin_min, bin_max, 7)
@@ -770,10 +819,11 @@ def get_err_data(survey, path):
         mstar_limit = 8.7
         volume = 4709.8373  # Survey volume without buffer [Mpc/h]^3
 
-    phi_arr_total = []
+    phi_total_arr = []
     # phi_arr_red = []
     # phi_arr_blue = []
-    f_blue_arr = []
+    f_blue_cen_arr = []
+    f_blue_sat_arr = []
     box_id_arr = np.linspace(5001,5008,8)
     for box in box_id_arr:
         box = int(box)
@@ -838,6 +888,14 @@ def get_err_data(survey, path):
             # logmstar_blue_max = mock_pd.logmstar.loc[mock_pd.colour_label == 'B'].max() 
             # logmstar_blue_max_arr.append(logmstar_blue_max)
             logmstar_arr = mock_pd.logmstar.values
+            # mhi_arr = mock_pd.mhi.values
+            # logmgas_arr = np.log10(1.4 * mhi_arr)
+            # logmbary_arr = calc_bary(logmstar_arr, logmgas_arr)
+            # print("Max of baryonic mass in {0}_{1}:{2}".format(box, num, max(logmbary_arr)))
+
+            # max_total, phi_total, err_total, bins_total, counts_total = \
+            #     diff_bmf(logmbary_arr, volume, False)
+            # phi_total_arr.append(phi_total)
 
             #Measure SMF of mock using diff_smf function
             max_total, phi_total, err_total, bins_total, counts_total = \
@@ -848,20 +906,22 @@ def get_err_data(survey, path):
             # max_blue, phi_blue, err_blue, bins_blue, counts_blue = \
             #     diff_smf(mock_pd.logmstar.loc[mock_pd.colour_label.values == 'B'],
             #     volume, False, 'B')
-            phi_arr_total.append(phi_total)
+            phi_total_arr.append(phi_total)
             # phi_arr_red.append(phi_red)
             # phi_arr_blue.append(phi_blue)
 
 
             #Measure blue fraction of galaxies
-            max, f_blue = blue_frac(mock_pd, False, True)
-            f_blue_arr.append(f_blue)
+            f_blue = blue_frac(mock_pd, False, False)
+            f_blue_cen_arr.append(f_blue[2])
+            f_blue_sat_arr.append(f_blue[3])
 
 
-    phi_arr_total = np.array(phi_arr_total)
+    phi_arr_total = np.array(phi_total_arr)
     # phi_arr_red = np.array(phi_arr_red)
     # phi_arr_blue = np.array(phi_arr_blue)
-    f_blue_arr = np.array(f_blue_arr)
+    f_blue_cen_arr = np.array(f_blue_cen_arr)
+    f_blue_sat_arr = np.array(f_blue_sat_arr)
 
     phi_total_0 = phi_arr_total[:,0]
     phi_total_1 = phi_arr_total[:,1]
@@ -870,20 +930,35 @@ def get_err_data(survey, path):
     phi_total_4 = phi_arr_total[:,4]
     phi_total_5 = phi_arr_total[:,5]
 
-    f_blue_0 = f_blue_arr[:,0]
-    f_blue_1 = f_blue_arr[:,1]
-    f_blue_2 = f_blue_arr[:,2]
-    f_blue_3 = f_blue_arr[:,3]
-    f_blue_4 = f_blue_arr[:,4]
-    f_blue_5 = f_blue_arr[:,5]
+    f_blue_cen_0 = f_blue_cen_arr[:,0]
+    f_blue_cen_1 = f_blue_cen_arr[:,1]
+    f_blue_cen_2 = f_blue_cen_arr[:,2]
+    f_blue_cen_3 = f_blue_cen_arr[:,3]
+    f_blue_cen_4 = f_blue_cen_arr[:,4]
+    f_blue_cen_5 = f_blue_cen_arr[:,5]
 
-    combined_df = pd.DataFrame({'phi_tot_0':phi_total_0, \
-        'phi_tot_1':phi_total_1, 'phi_tot_2':phi_total_2, \
-        'phi_tot_3':phi_total_3, 'phi_tot_4':phi_total_4, \
-        'phi_tot_5':phi_total_5,\
-        'f_blue_0':f_blue_0, 'f_blue_1':f_blue_1, 
-        'f_blue_2':f_blue_2, 'f_blue_3':f_blue_3, 
-        'f_blue_4':f_blue_4, 'f_blue_5':f_blue_5})
+    f_blue_sat_0 = f_blue_sat_arr[:,0]
+    f_blue_sat_1 = f_blue_sat_arr[:,1]
+    f_blue_sat_2 = f_blue_sat_arr[:,2]
+    f_blue_sat_3 = f_blue_sat_arr[:,3]
+    f_blue_sat_4 = f_blue_sat_arr[:,4]
+    f_blue_sat_5 = f_blue_sat_arr[:,5]
+
+    combined_df = pd.DataFrame({
+        'phi_tot_0':phi_total_0, 'phi_tot_1':phi_total_1, 
+        'phi_tot_2':phi_total_2, 'phi_tot_3':phi_total_3, 
+        'phi_tot_4':phi_total_4, 'phi_tot_5':phi_total_5,
+        'f_blue_cen_0':f_blue_cen_0, 'f_blue_cen_1':f_blue_cen_1, 
+        'f_blue_cen_2':f_blue_cen_2, 'f_blue_cen_3':f_blue_cen_3, 
+        'f_blue_cen_4':f_blue_cen_4, 'f_blue_cen_5':f_blue_cen_5,
+        'f_blue_sat_0':f_blue_sat_0, 'f_blue_sat_1':f_blue_sat_1, 
+        'f_blue_sat_2':f_blue_sat_2, 'f_blue_sat_3':f_blue_sat_3, 
+        'f_blue_sat_4':f_blue_sat_4, 'f_blue_sat_5':f_blue_sat_5})
+
+    # Correlation matrix of phi and deltav colour measurements combined
+    corr_mat_colour = combined_df.corr()
+    corr_mat_inv_colour = np.linalg.inv(corr_mat_colour.values)  
+    err_colour = np.sqrt(np.diag(combined_df.cov()))
 
     # phi_red_0 = phi_arr_red[:,0]
     # phi_red_1 = phi_arr_red[:,1]
@@ -903,87 +978,102 @@ def get_err_data(survey, path):
     #     'phi_blue_2':phi_blue_2, 'phi_blue_3':phi_blue_3, 
     #     'phi_blue_4':phi_blue_4})
 
-    import matplotlib.pyplot as plt
-    from matplotlib import rc
-    from matplotlib import cm
+    # from matplotlib.legend_handler import HandlerTuple
+    # import matplotlib.pyplot as plt
+    # from matplotlib import rc
+    # from matplotlib import cm
 
-    rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=25)
-    rc('text', usetex=False)
-    rc('axes', linewidth=2)
-    rc('xtick.major', width=4, size=7)
-    rc('ytick.major', width=4, size=7)
-    rc('xtick.minor', width=2, size=7)
-    rc('ytick.minor', width=2, size=7)
+    # rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=25)
+    # rc('text', usetex=True)
+    # rc('axes', linewidth=2)
+    # rc('xtick.major', width=4, size=7)
+    # rc('ytick.major', width=4, size=7)
+    # rc('xtick.minor', width=2, size=7)
+    # rc('ytick.minor', width=2, size=7)
 
-    fig1 = plt.figure()
-    ax1 = fig1.add_subplot(111)
-    cmap = cm.get_cmap('Spectral')
-    cax = ax1.matshow(combined_df.corr(), cmap=cmap, vmin=-1, vmax=1)
-    tick_marks = [i for i in range(len(combined_df.columns))]
-    plt.xticks(tick_marks, combined_df.columns, rotation='vertical')
-    plt.yticks(tick_marks, combined_df.columns)    
-    plt.gca().invert_yaxis() 
-    plt.gca().xaxis.tick_bottom()
-    plt.colorbar(cax)
-    plt.title(r'Total mass function and blue fraction')
-    plt.show()
+    # fig1 = plt.figure()
+    # ax1 = fig1.add_subplot(111)
+    # cmap = cm.get_cmap('Spectral')
+    # cax = ax1.matshow(combined_df.corr(), cmap=cmap, vmin=-1, vmax=1)
+    # tick_marks = [i for i in range(len(combined_df.columns))]
+    # plt.xticks(tick_marks, combined_df.columns, rotation='vertical')
+    # plt.yticks(tick_marks, combined_df.columns)    
+    # plt.gca().invert_yaxis() 
+    # plt.gca().xaxis.tick_bottom()
+    # plt.colorbar(cax)
+    # plt.title(r'Total mass function and blue fraction')
+    # plt.show()
 
-    fig1 = plt.figure()
-    ax1 = fig1.add_subplot(111)
-    cmap = cm.get_cmap('Spectral')
-    cax = ax1.matshow(combined_df.corr(), cmap=cmap, vmin=-1, vmax=1)
-    plt.colorbar(cax)
-    plt.gca().invert_yaxis() 
-    # # put a blue dot at (10, 20)
-    # plt.scatter([10], [20])
+    # fig1 = plt.figure()
+    # ax1 = fig1.add_subplot(111)
+    # cmap = cm.get_cmap('Spectral')
+    # cax = ax1.matshow(combined_df.corr(), cmap=cmap, vmin=-1, vmax=1)
+    # plt.colorbar(cax)
+    # plt.gca().invert_yaxis() 
+    # # # put a blue dot at (10, 20)
+    # # plt.scatter([10], [20])
 
-    # # put a red dot, size 40, at 2 locations:
-    # plt.scatter(x=[30, 40], y=[50, 60], c='r', s=40)
-    plt.show()
+    # # # put a red dot, size 40, at 2 locations:
+    # # plt.scatter(x=[30, 40], y=[50, 60], c='r', s=40)
+    # plt.show()
 
-    fig1, axes = plt.subplots(12,12, sharex=True, sharey=True, figsize=(10,10))
-    for i, ax_i in enumerate(axes.flatten()):
-        if i == 12:
-            break
-        for j, ax_j in enumerate(axes.flatten()):
-            if j == 12:
-                break
-            elif i == j:
-                axes[i,j].hist(combined_df[combined_df.columns.values[i]], 
-                    density=True, color='k')
-            # else:
-            #     axes[i,j].scatter(combined_df[combined_df.columns.values[i]], 
-            #         combined_df[combined_df.columns.values[j]], c='k')
-            axes[i,j].set_xticks([])
-            axes[i,j].set_yticks([])
-            axes[i,j].set_aspect('equal')
+    # fig1, axes = plt.subplots(12,12, sharex=True, sharey=True, figsize=(10,10))
+    # for i, ax_i in enumerate(axes.flatten()):
+    #     if i == 12:
+    #         break
+    #     for j, ax_j in enumerate(axes.flatten()):
+    #         if j == 12:
+    #             break
+    #         elif i == j:
+    #             axes[i,j].hist(combined_df[combined_df.columns.values[i]], 
+    #                 density=True, color='k')
+    #         # else:
+    #         #     axes[i,j].scatter(combined_df[combined_df.columns.values[i]], 
+    #         #         combined_df[combined_df.columns.values[j]], c='k')
+    #         axes[i,j].set_xticks([])
+    #         axes[i,j].set_yticks([])
+    #         axes[i,j].set_aspect('equal')
 
-    fig1.subplots_adjust(wspace=0, hspace=0)
-    plt.show()
+    # fig1.subplots_adjust(wspace=0, hspace=0)
+    # plt.show()
 
-    fig1, ax_main = plt.subplots(1,1)
-    axes = pd.plotting.scatter_matrix(combined_df, alpha=0.8, diagonal='kde', 
-        c='k', range_padding=0.1)
+    # fig1, ax_main = plt.subplots(1,1)
+    # axes = pd.plotting.scatter_matrix(combined_df, alpha=0.8, diagonal='kde', 
+    #     c='k', range_padding=0.1)
 
-    for i, ax in enumerate(axes.flatten()):
-        c = plt.cm.Spectral(combined_df.corr().values.flatten()[i])
-        ax.set_facecolor(c)
-    # ax_main.invert_yaxis()
-    plt.title(r'Total mass function and blue fraction')
-    plt.show()
+    # for i, ax in enumerate(axes.flatten()):
+    #     c = plt.cm.Spectral(combined_df.corr().values.flatten()[i])
+    #     ax.set_facecolor(c)
+    # # ax_main.invert_yaxis()
+    # plt.title(r'Total mass function and blue fraction')
+    # plt.show()
 
 
     # rc('text', usetex=True)
     # rc('text.latex', preamble=r"\usepackage{amsmath}")
 
-    # ## Total SMFs from mocks
-    # fig2 = plt.figure()
-    # for idx in range(len(combined_df.values[:,:6])):
-    #     plt.plot(max_total, combined_df.values[:,:6][idx])
+    # ## Total SMFs from mocks and data for paper
+    # tot_phi_max = np.amax(combined_df.values[:,:6], axis=0)
+    # tot_phi_min = np.amin(combined_df.values[:,:6], axis=0)
+    # error = np.nanstd(combined_df.values[:,:6], axis=0)
 
-    # plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=25)
-    # plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=25)
-    # plt.title(r'SMFs from mocks')
+    # fig2 = plt.figure()
+    # mt = plt.fill_between(x=max_total, y1=tot_phi_max, 
+    #     y2=tot_phi_min, color='silver', alpha=0.4)
+    # dt = plt.errorbar(total_data[0], total_data[1], yerr=error,
+    #     color='k', fmt='s', ecolor='k', markersize=12, capsize=7,
+    #     capthick=1.5, zorder=10, marker='^')
+    # plt.ylim(-4,-1)
+
+    # plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$')
+    # plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$')
+
+    # plt.legend([(dt), (mt)], ['ECO','Mocks'],
+    #     handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, loc='best')
+    # plt.minorticks_on()
+    # # plt.title(r'SMFs from mocks')
+    # plt.savefig('/Users/asadm2/Desktop/total_smf.svg', format='svg', 
+    #     bbox_inches="tight", dpi=1200)
     # plt.show()
 
     # ## Blue fraction from mocks
@@ -996,14 +1086,10 @@ def get_err_data(survey, path):
     # plt.title(r'Blue fractions from mocks')
     # plt.show()
 
-    # Correlation matrix of phi and deltav colour measurements combined
-    corr_mat_colour = combined_df.corr()
-    corr_mat_inv_colour = np.linalg.inv(corr_mat_colour.values)  
-    err_colour = np.sqrt(np.diag(combined_df.cov()))
-
     return err_colour, corr_mat_inv_colour
 
-def mcmc(nproc, nwalkers, nsteps, phi_total_data, f_blue_data, err, corr_mat_inv):
+def mcmc(nproc, nwalkers, nsteps, phi_total_data, f_blue_cen_data, 
+    f_blue_sat_data, err, corr_mat_inv):
     """
     MCMC analysis
 
@@ -1064,7 +1150,8 @@ def mcmc(nproc, nwalkers, nsteps, phi_total_data, f_blue_data, err, corr_mat_inv
 
     with Pool(processes=nproc) as pool:
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, 
-            args=(phi_total_data, f_blue_data, err, corr_mat_inv), pool=pool)
+            args=(phi_total_data, f_blue_cen_data, f_blue_sat_data, err, 
+                corr_mat_inv), pool=pool)
         start = time.time()
         for i,result in enumerate(sampler.sample(p0, iterations=nsteps, 
             storechain=False)):
@@ -1140,7 +1227,219 @@ def populate_mock(theta, model):
 
     return gals_df
 
-def lnprob(theta, phi_total_data, f_blue_data, err, corr_mat_inv):
+def cart_to_spherical_coords(cart_arr, dist):
+    """
+    Computes the right ascension and declination for the given
+    point in (x,y,z) position
+
+    Parameters
+    -----------
+    cart_arr: numpy.ndarray, shape (3,)
+        array with (x,y,z) positions
+    dist: float
+        dist to the point from observer's position
+
+    Returns
+    -----------
+    ra_val: float
+        right ascension of the point on the sky
+    dec_val: float
+        declination of the point on the sky
+    """
+
+    ## Reformatting coordinates
+    # Cartesian coordinates
+    (   x_val,
+        y_val,
+        z_val) = cart_arr/float(dist)
+    # Distance to object
+    dist = float(dist)
+    ## Declination
+    dec_val = 90. - np.degrees(np.arccos(z_val))
+    ## Right ascension
+    if x_val == 0:
+        if y_val > 0.:
+            ra_val = 90.
+        elif y_val < 0.:
+            ra_val = -90.
+    else:
+        ra_val = np.degrees(np.arctan(y_val/x_val))
+
+    ## Seeing on which quadrant the point is at
+    if x_val < 0.:
+        ra_val += 180.
+    elif (x_val >= 0.) and (y_val < 0.):
+        ra_val += 360.
+
+    return ra_val, dec_val
+
+def apply_rsd(mock_catalog):
+    """
+    Applies redshift-space distortions
+
+    Parameters
+    ----------
+    mock_catalog: Pandas dataframe
+        Galaxy catalog
+
+    Returns
+    ---------
+    mock_catalog: Pandas dataframe
+        Mock catalog with redshift-space distortions now applied and
+        ra,dec,rsd positions and velocity information added
+    """
+
+    ngal = len(mock_catalog)
+    speed_c = 3*10**5 #km/s
+    z_min = 0
+    z_max = 0.5
+    dz = 10**-3
+    H0 = 100
+    omega_m = 0.25
+    omega_b = 0.04
+    Tcmb0 = 2.7255
+
+    redshift_arr = np.arange(z_min,z_max,dz)
+    cosmo = LambdaCDM(H0,omega_m,omega_b,Tcmb0)
+    como_dist = cosmo.comoving_distance(redshift_arr)
+    comodist_z_interp = interp1d(como_dist,redshift_arr)
+
+    cart_gals = mock_catalog[['x','y','z']].values #Mpc/h
+    vel_gals = mock_catalog[['vx','vy','vz']].values #km/s
+
+    ra_arr = np.zeros(ngal)
+    dec_arr = np.zeros(ngal)
+    cz_arr = np.zeros(ngal)
+    for x in range(ngal):
+        dist_from_obs = (np.sum(cart_gals[x]**2))**.5
+        z_cosm  = comodist_z_interp(dist_from_obs)
+        cz_cosm = speed_c * z_cosm
+        cz_val  = cz_cosm
+        ra,dec = cart_to_spherical_coords(cart_gals[x],dist_from_obs)
+        vr = np.dot(cart_gals[x], vel_gals[x])/dist_from_obs
+        #this cz includes hubble flow and peculiar motion
+        cz_val += vr*(1+z_cosm)
+        ra_arr[x] = ra
+        dec_arr[x] = dec
+        cz_arr[x] = cz_val
+
+    mock_catalog['ra'] = ra_arr
+    mock_catalog['dec'] = dec_arr
+    mock_catalog['cz'] = cz_arr
+
+    return mock_catalog
+
+def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
+    """
+    Runs the group finder `FoF` on the file, and assigns galaxies to
+    galaxy groups
+    Parameters
+    -----------
+    mock_pd: pandas DataFrame
+        DataFrame with positions, velocities, and more for the
+        galaxies that made it into the catalogue
+    mock_zz_file: string
+        path to the galaxy catalogue
+    param_dict: python dictionary
+        dictionary with `project` variables
+    file_ext: string, optional (default = 'csv')
+        file extension for the FoF file products
+    Returns
+    -----------
+    mockgal_pd_merged: pandas DataFrame
+        DataFrame with the info on each mock galaxy + their group properties
+    mockgroup_pd: pandas DataFrame
+        DataFrame with the info on each mock galaxy group
+    """
+    ## Constants
+    if param_dict['verbose']:
+        print('Group Finding ....')
+    # Speed of light - in km/s
+    speed_c = param_dict['c']
+    ##
+    ## Running FoF
+    # File prefix
+
+    proc_id = multiprocessing.current_process()
+    # Defining files for FoF output and Mock coordinates
+    fof_file        = '{0}.galcatl_fof_{1}.{2}'.format(mock_zz_file, proc_id, file_ext)
+    grep_file       = '{0}.galcatl_grep_{1}.{2}'.format(mock_zz_file, proc_id, file_ext)
+    grep_g_file     = '{0}.galcatl_grep_g_{1}.{2}'.format(mock_zz_file, proc_id, file_ext)
+    mock_coord_path = '{0}.galcatl_radecczlogmstar_{1}.{2}'.format(mock_zz_file, proc_id, file_ext)
+    ## RA-DEC-CZ file
+    mock_coord_pd = mock_pd[['ra','dec','cz','stellar_mass']].to_csv(mock_coord_path,
+                        sep=' ', header=None, index=False)
+    # cu.File_Exists(mock_coord_path)
+    ## Creating `FoF` command and executing it
+    # fof_exe = '/fs1/caldervf/custom_utilities_c/group_finder_fof/fof9_ascii'
+    fof_exe = '/fs1/masad/Research/Repositories/RESOLVE_Statistics/data/interim/fof/fof9_ascii'
+    # cu.File_Exists(fof_exe)
+    # FoF command
+    fof_str = '{0} {1} {2} {3} {4} {5} {6} {7} > {8}'
+    fof_arr = [ fof_exe,
+                param_dict['survey_vol'],
+                param_dict['zmin'],
+                param_dict['zmax'],
+                param_dict['l_perp'],
+                param_dict['l_para'],
+                param_dict['nmin'],
+                mock_coord_path,
+                fof_file]
+    fof_cmd = fof_str.format(*fof_arr)
+    # Executing command
+    if param_dict['verbose']:
+        print(fof_cmd)
+    subprocess.call(fof_cmd, shell=True)
+    ##
+    ## Parsing `fof_file` - Galaxy and Group files
+    gal_cmd   = 'grep G -v {0} > {1}'.format(fof_file, grep_file)
+    group_cmd = 'grep G    {0} > {1}'.format(fof_file, grep_g_file)
+    # Running commands
+    if param_dict['verbose']:
+        print(gal_cmd  )
+        print(group_cmd)
+    subprocess.call(gal_cmd  , shell=True)
+    subprocess.call(group_cmd, shell=True)
+    ##
+    ## Extracting galaxy and group information
+    # Column names
+    gal_names   = ['groupid', 'galid', 'ra', 'dec', 'z', 'grp_censat']
+    group_names = [ 'G', 'groupid', 'cen_ra', 'cen_dec', 'cen_z', 'ngals',\
+                    'sigma_v', 'rproj']
+    # Pandas DataFrames
+    # Galaxies
+    grep_pd = pd.read_csv(grep_file, sep='\s+', header=None, names=gal_names,
+        index_col='galid').sort_index()
+    grep_pd.index.name = None
+    # Converting redshift to velocity
+    grep_pd.loc[:,'cz'] = grep_pd['z'] * speed_c
+    grep_pd = grep_pd.drop('z', axis=1)
+    # Galaxy groups
+    mockgroup_pd = pd.read_csv(grep_g_file, sep='\s+', header=None,
+        names=group_names)
+    # Group centroid velocity
+    mockgroup_pd.loc[:,'cen_cz'] = mockgroup_pd['cen_z'] * speed_c
+    #* Keep cen z column instead of calculating group cz later
+    # mockgroup_pd = mockgroup_pd.drop('cen_z', axis=1)
+    mockgroup_pd = mockgroup_pd.drop('G', axis=1)
+    ## Joining the 2 datasets for galaxies
+    mockgal_pd_merged = pd.concat([mock_pd, grep_pd['groupid','grp_censat']], axis=1)
+    # Removing `1` from `groupid`
+    mockgroup_pd.loc     [:,'groupid'] -= 1
+    mockgal_pd_merged.loc[:,'groupid'] -= 1
+    ## Removing FoF files
+    if param_dict['verbose']:
+        print('Removing group-finding related files')
+    os.remove(fof_file)
+    os.remove(grep_file)
+    os.remove(grep_g_file)
+    os.remove(mock_coord_path)
+    if param_dict['verbose']:
+        print('Group Finding ....Done')
+
+    return mockgal_pd_merged
+
+def lnprob(theta, phi_total_data, f_blue_cen_data, f_blue_sat_data, err, corr_mat_inv):
     """
     Calculates log probability for emcee
 
@@ -1201,17 +1500,54 @@ def lnprob(theta, phi_total_data, f_blue_data, err, corr_mat_inv):
         chi2 = -np.inf
         return -np.inf, [chi2, randint_logmstar]       
 
+    H0 = 100 # (km/s)/Mpc
+    cz_inner = 3000 # not starting at corner of box
+    cz_outer = 120*H0 # utilizing 120 Mpc of Vishnu box
+
+    dist_inner = kms_to_Mpc(H0,cz_inner) #Mpc/h
+    dist_outer = kms_to_Mpc(H0,cz_outer) #Mpc/h
+
+    v_inner = vol_sphere(dist_inner)
+    v_outer = vol_sphere(dist_outer)
+
+    v_sphere = v_outer-v_inner
+    survey_vol = v_sphere/8
+
+    eco = {
+        'c': 3*10**5,
+        'survey_vol': survey_vol,
+        'min_cz' : cz_inner,
+        'max_cz' : cz_outer,
+        'zmin': cz_inner/(3*10**5),
+        'zmax': cz_outer/(3*10**5),
+        'l_perp': 0.07,
+        'l_para': 1.1,
+        'nmin': 1,
+        'verbose': True,
+        'catl_type': 'mstar'
+    }
+
+    # Changes string name of survey to variable so that the survey dict can
+    # be accessed
+    param_dict = vars()[survey]
+
     warnings.simplefilter("error", (UserWarning, RuntimeWarning))
     try: 
         gals_df = populate_mock(theta[:5], model_init)
-        gals_df = gals_df.loc[gals_df['stellar_mass'] >= 10**8.6].reset_index(drop=True)
+        gals_df = apply_rsd(gals_df)
+
+        gals_df = gals_df.loc[\
+            (gals_df['stellar_mass'] >= 10**8.6) &
+            (gals_df['cz'] >= cz_inner) &
+            (gals_df['cz'] <= cz_outer)].reset_index(drop=True)
         gals_df['cs_flag'] = np.where(gals_df['halo_hostid'] == \
             gals_df['halo_id'], 1, 0)
 
         cols_to_use = ['halo_mvir', 'halo_mvir_host_halo', 'cs_flag', 
-            'stellar_mass']
+            'stellar_mass', 'ra', 'dec', 'cz']
         gals_df = gals_df[cols_to_use]
-
+        gals_df.rename(columns={'stellar_mass':'logmstar'}, inplace=True)
+        #! Check if stellar masses are log or not
         gals_df.stellar_mass = np.log10(gals_df.stellar_mass)
 
         if quenching == 'hybrid':
@@ -1222,20 +1558,26 @@ def lnprob(theta, phi_total_data, f_blue_data, err, corr_mat_inv):
                 'vishnu')
         gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, \
             gals_df)
-        v_sim = 130**3
+
+        gal_group_df = group_finding(gals_df,
+            path_to_data + 'interim/', param_dict)
+
+        # v_sim = 130**3
         # v_sim = 890641.5172927063 #survey volume used in group_finder.py
 
         ## Observable #1 - Total SMF
-        total_model = measure_all_smf(gals_df, v_sim, False)  
+        total_model = measure_all_smf(gal_group_df, survey_vol, False)  
         ## Observable #2 - Blue fraction
-        f_blue = blue_frac(gals_df, True, False)
+        f_blue = blue_frac(gal_group_df, True, False)
 
         data_arr = []
         data_arr.append(phi_total_data)
-        data_arr.append(f_blue_data)
+        data_arr.append(f_blue_cen_data)
+        data_arr.append(f_blue_sat_data)
         model_arr = []
         model_arr.append(total_model[1])
-        model_arr.append(f_blue[1])   
+        model_arr.append(f_blue[2])   
+        model_arr.append(f_blue[3])
         err_arr = err
 
         data_arr, model_arr = np.array(data_arr), np.array(model_arr)
@@ -1329,6 +1671,7 @@ def main(args):
     global survey
     global mf_type
     global quenching
+    global path_to_data
 
     rseed = 12
     np.random.seed(rseed)
@@ -1385,11 +1728,12 @@ def main(args):
     print('sigma: \n', sigma)
     print('inv corr mat: \n', corr_mat_inv)
     print('total phi data: \n', total_data[1])
-    print('blue frac data: \n', f_blue[1])
+    print('blue frac cen data: \n', f_blue[2])
+    print('blue frac sat data: \n', f_blue[3])
 
     print('Running MCMC')
-    sampler = mcmc(nproc, nwalkers, nsteps, total_data[1], f_blue[1], 
-        sigma, corr_mat_inv)
+    sampler = mcmc(nproc, nwalkers, nsteps, total_data[1],
+        f_blue[2], f_blue[3], sigma, corr_mat_inv)
 
     print("Mean acceptance fraction: {0:.3f}".format(
         np.mean(sampler.acceptance_fraction)))
