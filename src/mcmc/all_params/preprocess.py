@@ -206,54 +206,55 @@ class Preprocess():
             eco_buff = self.mock_add_grpcz(eco_buff, True)
 
             if settings.mf_type == 'smf':
-                # 6456 galaxies                       
-                catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
-                    (eco_buff.grpcz.values <= 7000) & 
+                # 6456 galaxies
+                #! Use grpcz_new column
+                catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) &\
+                    (eco_buff.grpcz.values <= 7000) &\
                     (eco_buff.absrmag.values <= -17.33)]
             elif settings.mf_type == 'bmf':
-                catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
-                    (eco_buff.grpcz.values <= 7000) & 
-                    (eco_buff.absrmag.values <= -17.33)] 
+                catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) &\
+                    (eco_buff.grpcz.values <= 7000) &\
+                    (eco_buff.absrmag.values <= -17.33)]
 
             volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
             # cvar = 0.125
             z_median = np.median(catl.grpcz.values) / (3 * 10**5)
-            
+
         elif survey == 'resolvea' or survey == 'resolveb':
-            columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
-                        'logmstar', 'logmgas', 'grp', 'grpn', 'grpnassoc', 'logmh', 
-                        'logmh_s', 'fc', 'grpmb', 'grpms', 'f_a', 'f_b']
+            columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag',
+                    'logmstar', 'logmgas', 'grp', 'grpn', 'grpnassoc', 'logmh',
+                    'logmh_s', 'fc', 'grpmb', 'grpms', 'f_a', 'f_b']
             # 2286 galaxies
             resolve_live18 = pd.read_csv(path_to_file, delimiter=",", header=0, \
                 usecols=columns)
 
             if survey == 'resolvea':
                 if settings.mf_type == 'smf':
-                    catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
-                        (resolve_live18.grpcz.values >= 4500) & 
-                        (resolve_live18.grpcz.values <= 7000) & 
+                    catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) &\
+                        (resolve_live18.grpcz.values >= 4500) &\
+                        (resolve_live18.grpcz.values <= 7000) &\
                         (resolve_live18.absrmag.values <= -17.33)]
                 elif settings.mf_type == 'bmf':
-                    catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
-                        (resolve_live18.grpcz.values >= 4500) & 
-                        (resolve_live18.grpcz.values <= 7000) & 
+                    catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) &\
+                        (resolve_live18.grpcz.values >= 4500) &\
+                        (resolve_live18.grpcz.values <= 7000) &\
                         (resolve_live18.absrmag.values <= -17.33)]
 
                 volume = 13172.384  # Survey volume without buffer [Mpc/h]^3
                 # cvar = 0.30
                 z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
-            
+
             elif survey == 'resolveb':
                 if settings.mf_type == 'smf':
                     # 487 - cz, 369 - grpcz
-                    catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
-                        (resolve_live18.grpcz.values >= 4500) & 
-                        (resolve_live18.grpcz.values <= 7000) & 
+                    catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) &\
+                        (resolve_live18.grpcz.values >= 4500) &\
+                        (resolve_live18.grpcz.values <= 7000) &\
                         (resolve_live18.absrmag.values <= -17)]
                 elif settings.mf_type == 'bmf':
-                    catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
-                        (resolve_live18.grpcz.values >= 4500) & 
-                        (resolve_live18.grpcz.values <= 7000) & 
+                    catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) &\
+                        (resolve_live18.grpcz.values >= 4500) &\
+                        (resolve_live18.grpcz.values <= 7000) &\
                         (resolve_live18.absrmag.values <= -17)]
 
                 volume = 4709.8373  # *2.915 #Survey volume without buffer [Mpc/h]^3
@@ -319,28 +320,32 @@ class Preprocess():
         settings = self.settings
 
         print('Reading files')
-        chi2 = pd.read_csv(settings.chi2_file,header=None,names=['chisquared'])\
+        chi2 = pd.read_csv(settings.chi2_file, header=None, names=['chisquared'])\
             ['chisquared'].values
 
         mcmc_table = self.read_mcmc(settings.chain_file)
         self.catl, self.volume, self.z_median = self.\
             read_data_catl(settings.catl_file, settings.survey)
         ## Group finder run on subset after applying M* cut 8.6 and cz cut 3000-12000
-        gal_group_run32 = self.read_mock_catl(settings.path_to_proc + \
+        # gal_group = self.read_mock_catl(settings.path_to_proc + \
+        #     "gal_group_run{0}.hdf5".format(settings.run)) 
+
+        #! Change this if testing with different cz limit
+        gal_group = self.read_mock_catl(settings.path_to_proc + \
             "gal_group_run{0}.hdf5".format(settings.run)) 
 
         idx_arr = np.insert(np.linspace(0,20,21), len(np.linspace(0,20,21)), \
             (22, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134)).\
             astype(int)
 
-        names_arr = [x for x in gal_group_run32.columns.values[idx_arr]]
+        names_arr = [x for x in gal_group.columns.values[idx_arr]]
         for idx in np.arange(2,101,1):
             names_arr.append('{0}_y'.format(idx))
             names_arr.append('groupid_{0}'.format(idx))
             names_arr.append('g_galtype_{0}'.format(idx))
         names_arr = np.array(names_arr)
 
-        globals.gal_group_df_subset = gal_group_run32[names_arr]
+        globals.gal_group_df_subset = gal_group[names_arr]
 
         # Renaming the "1_y" column kept from line 1896 because of case where it was
         # also in mcmc_table_ptcl.mock_num and was selected twice
@@ -361,7 +366,8 @@ class Preprocess():
 
         colnames = ['mhalo_c', 'mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter', \
             'mstar_q', 'mh_q', 'mu', 'nu']
+        #! Change this if testing with different cz limit
         self.mcmc_table_pctl_subset = pd.read_csv(settings.path_to_proc + 
-            'run{0}_params_subset.txt'.format(settings.run), 
+            'run{0}_params_subset_old.txt'.format(settings.run), 
             delim_whitespace=True, names=colnames)\
             .iloc[1:,:].reset_index(drop=True)
