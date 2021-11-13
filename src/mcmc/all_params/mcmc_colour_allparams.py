@@ -291,7 +291,7 @@ def measure_all_smf(table, volume, data_bool, randint_logmstar=None):
         if randint_logmstar:
             logmstar_col = '{0}'.format(randint_logmstar)
         else:
-            logmstar_col = 'stellar_mass'
+            logmstar_col = 'logmstar'
         ## Changed to 10**X because Behroozi mocks now have M* values in log
         max_total, phi_total, err_total, bins_total, counts_total = \
             diff_smf(10**(table[logmstar_col]), volume, True)
@@ -424,7 +424,7 @@ def blue_frac(catl, h1_bool, data_bool, randint_logmstar=None):
         # censat_col = 'cs_flag'
         mstar_cen_arr = catl.logmstar.loc[catl[censat_col] == 1].values
         mstar_sat_arr = catl.logmstar.loc[catl[censat_col] == 0].values           
-    elif randint_logmstar != 1:
+    elif randint_logmstar != 1 and randint_logmstar is not None:
         mstar_total_arr = catl['{0}'.format(randint_logmstar)].values
         censat_col = 'g_galtype_{0}'.format(randint_logmstar)
         mstar_cen_arr = catl['{0}'.format(randint_logmstar)].loc[catl[censat_col] == 1].values
@@ -434,7 +434,14 @@ def blue_frac(catl, h1_bool, data_bool, randint_logmstar=None):
         censat_col = 'g_galtype_{0}'.format(randint_logmstar)
         mstar_cen_arr = catl['behroozi_bf'].loc[catl[censat_col] == 1].values
         mstar_sat_arr = catl['behroozi_bf'].loc[catl[censat_col] == 0].values
-
+    # New case where no subset of mocks are used and group finding is done within
+    # mcmc framework
+    elif randint_logmstar is None:
+        mstar_total_arr = catl['logmstar'].values
+        censat_col = 'grp_censat'
+        mstar_cen_arr = catl['logmstar'].loc[catl[censat_col] == 1].values
+        mstar_sat_arr = catl['logmstar'].loc[catl[censat_col] == 0].values
+    
 
     colour_label_total_arr = catl.colour_label.values
     colour_label_cen_arr = catl.colour_label.loc[catl[censat_col] == 1].values
@@ -756,8 +763,8 @@ def get_stellar_mock(df, mock, randint=None):
                 sat_gals.append(10**(df['{0}'.format(randint)].values[idx]))
 
     elif mock == 'vishnu':
-        cen_gals = 10**(df.stellar_mass[df.cs_flag == 1]).reset_index(drop=True)
-        sat_gals = 10**(df.stellar_mass[df.cs_flag == 0]).reset_index(drop=True)
+        cen_gals = 10**(df.logmstar[df.cs_flag == 1]).reset_index(drop=True)
+        sat_gals = 10**(df.logmstar[df.cs_flag == 0]).reset_index(drop=True)
     
     else:
         cen_gals = []
@@ -1227,7 +1234,7 @@ def populate_mock(theta, model):
 
     return gals_df
 
-def cart_to_spherical_coords(cart_arr, dist):
+def cart_to_spherical_coords(cart_arr, dist_arr):
     """
     Computes the right ascension and declination for the given
     point in (x,y,z) position
@@ -1249,29 +1256,27 @@ def cart_to_spherical_coords(cart_arr, dist):
 
     ## Reformatting coordinates
     # Cartesian coordinates
-    (   x_val,
-        y_val,
-        z_val) = cart_arr/float(dist)
-    # Distance to object
-    dist = float(dist)
+    (   x_arr,
+        y_arr,
+        z_arr) = (cart_arr/np.vstack(dist_arr)).T
     ## Declination
-    dec_val = 90. - np.degrees(np.arccos(z_val))
+    dec_arr = 90. - np.degrees(np.arccos(z_arr))
     ## Right ascension
-    if x_val == 0:
-        if y_val > 0.:
-            ra_val = 90.
-        elif y_val < 0.:
-            ra_val = -90.
-    else:
-        ra_val = np.degrees(np.arctan(y_val/x_val))
+    ra_arr = np.ones(len(cart_arr))
+    idx_ra_90 = np.where((x_arr==0) & (y_arr>0))
+    idx_ra_minus90 = np.where((x_arr==0) & (y_arr<0))
+    ra_arr[idx_ra_90] = 90.
+    ra_arr[idx_ra_minus90] = -90.
+    idx_ones = np.where(ra_arr==1)
+    ra_arr[idx_ones] = np.degrees(np.arctan(y_arr[idx_ones]/x_arr[idx_ones]))
 
     ## Seeing on which quadrant the point is at
-    if x_val < 0.:
-        ra_val += 180.
-    elif (x_val >= 0.) and (y_val < 0.):
-        ra_val += 360.
+    idx_ra_plus180 = np.where(x_arr<0)
+    ra_arr[idx_ra_plus180] += 180.
+    idx_ra_plus360 = np.where((x_arr>=0) & (y_arr<0))
+    ra_arr[idx_ra_plus360] += 360.
 
-    return ra_val, dec_val
+    return ra_arr, dec_arr
 
 def apply_rsd(mock_catalog):
     """
@@ -1289,7 +1294,6 @@ def apply_rsd(mock_catalog):
         ra,dec,rsd positions and velocity information added
     """
 
-    ngal = len(mock_catalog)
     speed_c = 3*10**5 #km/s
     z_min = 0
     z_max = 0.5
@@ -1307,21 +1311,14 @@ def apply_rsd(mock_catalog):
     cart_gals = mock_catalog[['x','y','z']].values #Mpc/h
     vel_gals = mock_catalog[['vx','vy','vz']].values #km/s
 
-    ra_arr = np.zeros(ngal)
-    dec_arr = np.zeros(ngal)
-    cz_arr = np.zeros(ngal)
-    for x in range(ngal):
-        dist_from_obs = (np.sum(cart_gals[x]**2))**.5
-        z_cosm  = comodist_z_interp(dist_from_obs)
-        cz_cosm = speed_c * z_cosm
-        cz_val  = cz_cosm
-        ra,dec = cart_to_spherical_coords(cart_gals[x],dist_from_obs)
-        vr = np.dot(cart_gals[x], vel_gals[x])/dist_from_obs
-        #this cz includes hubble flow and peculiar motion
-        cz_val += vr*(1+z_cosm)
-        ra_arr[x] = ra
-        dec_arr[x] = dec
-        cz_arr[x] = cz_val
+    dist_from_obs = (np.sum(cart_gals**2, axis=1))**.5
+    z_cosm_arr  = comodist_z_interp(dist_from_obs)
+    cz_cosm_arr = speed_c * z_cosm_arr
+    cz_arr  = cz_cosm_arr
+    ra_arr, dec_arr = cart_to_spherical_coords(cart_gals,dist_from_obs)
+    vr_arr = np.sum(cart_gals*vel_gals, axis=1)/dist_from_obs
+    #this cz includes hubble flow and peculiar motion
+    cz_arr += vr_arr*(1+z_cosm_arr)
 
     mock_catalog['ra'] = ra_arr
     mock_catalog['dec'] = dec_arr
@@ -1360,14 +1357,14 @@ def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
     ## Running FoF
     # File prefix
 
-    proc_id = multiprocessing.current_process()
+    proc_id = multiprocessing.current_process().pid
     # Defining files for FoF output and Mock coordinates
     fof_file        = '{0}.galcatl_fof_{1}.{2}'.format(mock_zz_file, proc_id, file_ext)
     grep_file       = '{0}.galcatl_grep_{1}.{2}'.format(mock_zz_file, proc_id, file_ext)
     grep_g_file     = '{0}.galcatl_grep_g_{1}.{2}'.format(mock_zz_file, proc_id, file_ext)
     mock_coord_path = '{0}.galcatl_radecczlogmstar_{1}.{2}'.format(mock_zz_file, proc_id, file_ext)
     ## RA-DEC-CZ file
-    mock_coord_pd = mock_pd[['ra','dec','cz','stellar_mass']].to_csv(mock_coord_path,
+    mock_coord_pd = mock_pd[['ra','dec','cz','logmstar']].to_csv(mock_coord_path,
                         sep=' ', header=None, index=False)
     # cu.File_Exists(mock_coord_path)
     ## Creating `FoF` command and executing it
@@ -1420,10 +1417,12 @@ def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
     # Group centroid velocity
     mockgroup_pd.loc[:,'cen_cz'] = mockgroup_pd['cen_z'] * speed_c
     #* Keep cen z column instead of calculating group cz later
-    # mockgroup_pd = mockgroup_pd.drop('cen_z', axis=1)
+    mockgroup_pd = mockgroup_pd.drop('cen_z', axis=1)
     mockgroup_pd = mockgroup_pd.drop('G', axis=1)
     ## Joining the 2 datasets for galaxies
-    mockgal_pd_merged = pd.concat([mock_pd, grep_pd['groupid','grp_censat']], axis=1)
+    mockgal_pd_merged = pd.concat([mock_pd, grep_pd[['groupid','grp_censat']]], axis=1)
+    ## Add cen_cz column from mockgroup_pd to final DF
+    mockgal_pd_merged = pd.merge(mockgal_pd_merged, mockgroup_pd[['groupid','cen_cz']], on="groupid")
     # Removing `1` from `groupid`
     mockgroup_pd.loc     [:,'groupid'] -= 1
     mockgal_pd_merged.loc[:,'groupid'] -= 1
@@ -1534,21 +1533,23 @@ def lnprob(theta, phi_total_data, f_blue_cen_data, f_blue_sat_data, err, corr_ma
     warnings.simplefilter("error", (UserWarning, RuntimeWarning))
     try: 
         gals_df = populate_mock(theta[:5], model_init)
+        gals_df = gals_df.loc[gals_df['stellar_mass'] >= 10**8.6].reset_index(drop=True)
         gals_df = apply_rsd(gals_df)
 
         gals_df = gals_df.loc[\
-            (gals_df['stellar_mass'] >= 10**8.6) &
             (gals_df['cz'] >= cz_inner) &
             (gals_df['cz'] <= cz_outer)].reset_index(drop=True)
+        
         gals_df['cs_flag'] = np.where(gals_df['halo_hostid'] == \
             gals_df['halo_id'], 1, 0)
 
         cols_to_use = ['halo_mvir', 'halo_mvir_host_halo', 'cs_flag', 
             'stellar_mass', 'ra', 'dec', 'cz']
         gals_df = gals_df[cols_to_use]
+
         gals_df.rename(columns={'stellar_mass':'logmstar'}, inplace=True)
-        #! Check if stellar masses are log or not
-        gals_df.stellar_mass = np.log10(gals_df.stellar_mass)
+
+        gals_df['logmstar'] = np.log10(gals_df['logmstar'])
 
         if quenching == 'hybrid':
             f_red_cen, f_red_sat = hybrid_quenching_model(theta[5:], gals_df, \
