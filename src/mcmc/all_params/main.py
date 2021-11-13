@@ -26,7 +26,7 @@ def main():
 
     plotting = Plotting(preprocess)
     plotting.Plot_Core(data, models, best_fit)
-    # Plotting.Plot_Experiments(analysis, experiments)
+    plotting.Plot_Experiments(data, data_experimentals, models, best_fit)
 
 
 if __name__ == '__main__':
