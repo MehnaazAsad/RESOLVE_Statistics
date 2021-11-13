@@ -3,19 +3,14 @@
 """
 __author__ = '{Mehnaaz Asad}'
 
-from operator import mod
 import numpy as np
-import matplotlib.pyplot as plt
 from matplotlib.legend_handler import HandlerTuple
 from scipy.stats import binned_statistic as bs
 from collections import OrderedDict
-from analysis import Analysis
-from preprocess import Preprocess
-from experiments import Experiments
 
 from matplotlib.legend_handler import HandlerTuple
 import matplotlib.pyplot as plt
-from matplotlib import markers, rc
+from matplotlib import rc
 
 rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=30)
 rc('text', usetex=True)
@@ -396,10 +391,10 @@ class Plotting():
 
         fblue_total_max = np.amax(total_mod_arr, axis=0)
         fblue_total_min = np.amin(total_mod_arr, axis=0)
-        fblue_cen_max = np.amax(cen_mod_arr, axis=0)
-        fblue_cen_min = np.amin(cen_mod_arr, axis=0)
-        fblue_sat_max = np.amax(sat_mod_arr, axis=0)
-        fblue_sat_min = np.amin(sat_mod_arr, axis=0)
+        fblue_cen_max = np.nanmax(cen_mod_arr, axis=0)
+        fblue_cen_min = np.nanmin(cen_mod_arr, axis=0)
+        fblue_sat_max = np.nanmax(sat_mod_arr, axis=0)
+        fblue_sat_min = np.nanmin(sat_mod_arr, axis=0)
 
         
         fig1= plt.figure(figsize=(10,10))
