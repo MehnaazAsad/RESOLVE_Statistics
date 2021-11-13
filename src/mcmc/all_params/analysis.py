@@ -271,6 +271,7 @@ class Analysis():
         elif not data_bool and not h1_bool:
             mstar_total_arr = catl.logmstar.values
             censat_col = 'g_galtype'
+            # censat_col = 'cs_flag'
             mstar_cen_arr = catl.logmstar.loc[catl[censat_col] == 1].values
             mstar_sat_arr = catl.logmstar.loc[catl[censat_col] == 0].values           
         elif randint_logmstar != 1:
@@ -868,8 +869,8 @@ class Analysis():
                 'vishnu')      
         gals_df = self.assign_colour_label_mock(f_red_cen, f_red_sat, gals_df)
         # v_sim = 130**3 
-        # v_sim = 890641.5172927063  ## cz: 3000-12000
-        v_sim = 165457.21308906242 ## cz: 3000-7000
+        v_sim = 890641.5172927063  ## cz: 3000-12000
+        # v_sim = 165457.21308906242 ## cz: 3000-7000
 
         ## Observable #1 - Total SMF
         total_model = self.measure_all_smf(gals_df, v_sim , False, randint_logmstar)    
@@ -888,7 +889,8 @@ class Analysis():
             True, randint_logmstar)
 
         red_sigma, red_cen_mstar_sigma, blue_sigma, \
-            blue_cen_mstar_sigma, red_nsat, blue_nsat = \
+            blue_cen_mstar_sigma, red_nsat, blue_nsat, red_host_halo_mass_vd, \
+            blue_host_halo_mass_vd = \
             experiments.get_velocity_dispersion(gals_df, 'model', randint_logmstar)
         red_num, red_cen_mstar_richness, blue_num, \
             blue_cen_mstar_richness, red_host_halo_mass, \
@@ -928,7 +930,9 @@ class Analysis():
         best_fit_experimentals["vel_disp"] = {'red_sigma':red_sigma,
             'red_cen_mstar':red_cen_mstar_sigma,
             'blue_sigma':blue_sigma, 'blue_cen_mstar':blue_cen_mstar_sigma,
-            'red_nsat':red_nsat, 'blue_nsat':blue_nsat}
+            'red_nsat':red_nsat, 'blue_nsat':blue_nsat, 
+            'red_hosthalo':red_host_halo_mass_vd, 
+            'blue_hosthalo':blue_host_halo_mass_vd}
         
         best_fit_experimentals["richness"] = {'red_num':red_num,
             'red_cen_mstar':red_cen_mstar_richness, 'blue_num':blue_num,
@@ -1086,7 +1090,8 @@ class Analysis():
                 phi_blue_arr.append(phi_blue)
                 
                 red_sigma, red_cen_mstar_sigma, blue_sigma, \
-                    blue_cen_mstar_sigma, red_nsat, blue_nsat = \
+                    blue_cen_mstar_sigma, red_nsat, blue_nsat, \
+                    red_host_halo_mass, blue_host_halo_mass = \
                     experiments.get_velocity_dispersion(mock_pd, 'mock')
 
                 red_num, red_cen_mstar_richness, blue_num, \
@@ -1196,15 +1201,126 @@ class Analysis():
         f_blue_4 = f_blue_arr[:,4]
         f_blue_5 = f_blue_arr[:,5]
 
-        combined_df = pd.DataFrame({'phi_tot_0':phi_total_0, \
-            'phi_tot_1':phi_total_1, 'phi_tot_2':phi_total_2, \
-            'phi_tot_3':phi_total_3, 'phi_tot_4':phi_total_4, \
-            'phi_tot_5':phi_total_5,\
+        combined_df = pd.DataFrame({'phi_tot_0':phi_total_0, 
+            'phi_tot_1':phi_total_1, 'phi_tot_2':phi_total_2, 
+            'phi_tot_3':phi_total_3, 'phi_tot_4':phi_total_4, 
+            'phi_tot_5':phi_total_5,
             'f_blue_0':f_blue_0, 'f_blue_1':f_blue_1, 
             'f_blue_2':f_blue_2, 'f_blue_3':f_blue_3, 
             'f_blue_4':f_blue_4, 'f_blue_5':f_blue_5})
 
         err_colour = np.sqrt(np.diag(combined_df.cov()))
+
+
+        ## Plotting correlation matrix for fblue split by cen and sat
+        f_blue_cen_0 = f_blue_cen_arr[:,0]
+        f_blue_cen_1 = f_blue_cen_arr[:,1]
+        f_blue_cen_2 = f_blue_cen_arr[:,2]
+        f_blue_cen_3 = f_blue_cen_arr[:,3]
+        f_blue_cen_4 = f_blue_cen_arr[:,4]
+        f_blue_cen_5 = f_blue_cen_arr[:,5]
+
+        f_blue_sat_0 = f_blue_sat_arr[:,0]
+        f_blue_sat_1 = f_blue_sat_arr[:,1]
+        f_blue_sat_2 = f_blue_sat_arr[:,2]
+        f_blue_sat_3 = f_blue_sat_arr[:,3]
+        f_blue_sat_4 = f_blue_sat_arr[:,4]
+        f_blue_sat_5 = f_blue_sat_arr[:,5]
+
+        combined_df = pd.DataFrame({
+            'phi_tot_0':phi_total_0, 'phi_tot_1':phi_total_1, 
+            'phi_tot_2':phi_total_2, 'phi_tot_3':phi_total_3, 
+            'phi_tot_4':phi_total_4, 'phi_tot_5':phi_total_5,
+            'f_blue_cen_0':f_blue_cen_0, 'f_blue_cen_1':f_blue_cen_1, 
+            'f_blue_cen_2':f_blue_cen_2, 'f_blue_cen_3':f_blue_cen_3, 
+            'f_blue_cen_4':f_blue_cen_4, 'f_blue_cen_5':f_blue_cen_5,
+            'f_blue_sat_0':f_blue_sat_0, 'f_blue_sat_1':f_blue_sat_1, 
+            'f_blue_sat_2':f_blue_sat_2, 'f_blue_sat_3':f_blue_sat_3, 
+            'f_blue_sat_4':f_blue_sat_4, 'f_blue_sat_5':f_blue_sat_5,})
+
+        import matplotlib.pyplot as plt
+        from matplotlib import rc
+        from matplotlib import cm
+
+        rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=25)
+        rc('text', usetex=False)
+        rc('axes', linewidth=2)
+        rc('xtick.major', width=4, size=7)
+        rc('ytick.major', width=4, size=7)
+        rc('xtick.minor', width=2, size=7)
+        rc('ytick.minor', width=2, size=7)
+
+        fig1 = plt.figure()
+        ax1 = fig1.add_subplot(111)
+        cmap = cm.get_cmap('Spectral')
+        cax = ax1.matshow(combined_df.corr(), cmap=cmap, vmin=-1, vmax=1)
+        tick_marks = [i for i in range(len(combined_df.columns))]
+        names = [r'$\Phi_1$', r'$\Phi_2$', r'$\Phi_3$', r'$\Phi_4$', 
+        r'$\Phi_5$', r'$\Phi_6$',
+        r'$cen_1$', r'$cen_2$', r'$cen_3$', r'$cen_4$', r'$cen_5$',
+        r'$cen_6$', r'$sat_1$', r'$sat_2$', r'$sat_3$', r'$sat_4$', r'$sat_5$',
+        r'$sat_6$']
+        plt.xticks(tick_marks, names, rotation='vertical')
+        plt.yticks(tick_marks, names)    
+        plt.gca().invert_yaxis() 
+        plt.gca().xaxis.tick_bottom()
+        plt.colorbar(cax)
+        plt.title(r'SMF and blue fraction of centrals and satellites | {0}'.format(settings.quenching))
+        plt.show()
+
+        # ## Plotting correlation matrix for vdf
+        # vdf_red_0 = red_phi_vdf_arr[:,0]
+        # vdf_red_1 = red_phi_vdf_arr[:,1]
+        # vdf_red_2 = red_phi_vdf_arr[:,2]
+        # vdf_red_3 = red_phi_vdf_arr[:,3]
+        # vdf_red_4 = red_phi_vdf_arr[:,4]
+        # vdf_red_5 = red_phi_vdf_arr[:,5]
+
+        # vdf_blue_0 = blue_phi_vdf_arr[:,0]
+        # vdf_blue_1 = blue_phi_vdf_arr[:,1]
+        # vdf_blue_2 = blue_phi_vdf_arr[:,2]
+        # vdf_blue_3 = blue_phi_vdf_arr[:,3]
+        # vdf_blue_4 = blue_phi_vdf_arr[:,4]
+        # vdf_blue_5 = blue_phi_vdf_arr[:,5]
+
+        # combined_df = pd.DataFrame({
+        #     'vdf_red_0':vdf_red_0, 
+        #     'vdf_red_1':vdf_red_1, 
+        #     'vdf_red_2':vdf_red_2, 
+        #     'vdf_red_3':vdf_red_3, 
+        #     'vdf_red_4':vdf_red_4, 
+        #     'vdf_red_5':vdf_red_5,
+        #     'vdf_blue_0':vdf_blue_0, 
+        #     'vdf_blue_1':vdf_blue_1, 
+        #     'vdf_blue_2':vdf_blue_2, 
+        #     'vdf_blue_3':vdf_blue_3, 
+        #     'vdf_blue_4':vdf_blue_4, 
+        #     'vdf_blue_5':vdf_blue_5})
+
+        # import matplotlib.pyplot as plt
+        # from matplotlib import rc
+        # from matplotlib import cm
+
+        # rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=25)
+        # rc('text', usetex=False)
+        # rc('axes', linewidth=2)
+        # rc('xtick.major', width=4, size=7)
+        # rc('ytick.major', width=4, size=7)
+        # rc('xtick.minor', width=2, size=7)
+        # rc('ytick.minor', width=2, size=7)
+
+        # fig1 = plt.figure()
+        # ax1 = fig1.add_subplot(111)
+        # cmap = cm.get_cmap('Spectral')
+        # cax = ax1.matshow(combined_df.corr(), cmap=cmap, vmin=-1, vmax=1)
+        # tick_marks = [i for i in range(len(combined_df.columns))]
+        # plt.xticks(tick_marks, combined_df.columns, rotation='vertical')
+        # plt.yticks(tick_marks, combined_df.columns)    
+        # plt.gca().invert_yaxis() 
+        # plt.gca().xaxis.tick_bottom()
+        # plt.colorbar(cax)
+        # plt.title(r'Velocity dispersion function')
+        # plt.show()
 
         return err_colour, mocks_experimentals
 
@@ -1276,8 +1392,8 @@ class Analysis():
         preprocess = self.preprocess
 
         # v_sim = 130**3
-        # v_sim = 890641.5172927063 
-        v_sim = 165457.21308906242 ## cz: 3000-7000
+        v_sim = 890641.5172927063 ## cz: 3000 - 12000
+        # v_sim = 165457.21308906242 ## cz: 3000-7000
 
         print('Reloaded')
 
@@ -1293,7 +1409,8 @@ class Analysis():
 
         main_keys = ["vel_disp","richness","vdf"]
         sub_keys = [{"red_sigma":[],"red_cen_mstar":[],"blue_sigma":[],\
-            "blue_cen_mstar":[],"red_nsat":[],"blue_nsat":[]},{"red_num":[],\
+            "blue_cen_mstar":[],"red_nsat":[],"blue_nsat":[],"red_hosthalo":[],\
+            "blue_hosthalo":[]},{"red_num":[],\
             "red_cen_mstar":[],"blue_num":[],"blue_cen_mstar":[],\
             "red_hosthalo":[],"blue_hosthalo":[]},{"phi_red":[],"phi_blue":[]}]
 
@@ -1377,7 +1494,8 @@ class Analysis():
                 True, randint_logmstar)
 
             red_sigma, red_cen_mstar_sigma, blue_sigma, \
-                blue_cen_mstar_sigma, red_nsat, blue_nsat = \
+                blue_cen_mstar_sigma, red_nsat, blue_nsat, \
+                red_host_halo_mass_vd, blue_host_halo_mass_vd = \
                 experiments.get_velocity_dispersion(gals_df, 'model', 
                     randint_logmstar)
 
@@ -1388,7 +1506,6 @@ class Analysis():
             # v_sim = 890641.5172927063 
             x_vdf, phi_vdf, error, bins, counts = experiments.\
                 get_vdf(red_sigma, blue_sigma, v_sim)
-
 
             model_results["smf_total"]["max_total"].append(total_model[0])
             model_results["smf_total"]["phi_total"].append(total_model[1])
@@ -1424,6 +1541,8 @@ class Analysis():
             model_experimentals["vel_disp"]["blue_cen_mstar"].append(blue_cen_mstar_sigma)
             model_experimentals["vel_disp"]["red_nsat"].append(red_nsat)
             model_experimentals["vel_disp"]["blue_nsat"].append(blue_nsat)
+            model_experimentals["vel_disp"]["red_hosthalo"].append(red_host_halo_mass_vd)
+            model_experimentals["vel_disp"]["blue_hosthalo"].append(blue_host_halo_mass_vd)
 
             model_experimentals["richness"]["red_num"].append(red_num)
             model_experimentals["richness"]["red_cen_mstar"].append(red_cen_mstar_richness)
