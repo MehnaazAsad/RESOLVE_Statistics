@@ -1367,6 +1367,7 @@ def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
     # File prefix
 
     proc_id = multiprocessing.current_process().pid
+    print(proc_id)
     # Defining files for FoF output and Mock coordinates
     fof_file        = '{0}.galcatl_fof_{1}.{2}'.format(mock_zz_file, proc_id, file_ext)
     grep_file       = '{0}.galcatl_grep_{1}.{2}'.format(mock_zz_file, proc_id, file_ext)
