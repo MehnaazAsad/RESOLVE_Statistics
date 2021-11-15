@@ -40,10 +40,18 @@ def vol_sphere(r):
     return volume
 
 def mock_add_grpcz(mock_df):
-    grpcz = mock_df.groupby('groupid').cz.mean().values
-    grpn = mock_df.groupby('groupid').cz.size().values
-    full_grpcz_arr = np.repeat(grpcz, grpn)
-    mock_df['grpcz'] = full_grpcz_arr
+    groups = mock_df.groupby('groupid') 
+    keys = groups.groups.keys() 
+    grpcz_new = [] 
+    grpn = []
+    for key in keys: 
+        group = groups.get_group(key) 
+        cen_cz = group.cz.loc[group.g_galtype == 1].values[0] 
+        grpcz_new.append(cen_cz) 
+        grpn.append(len(group))
+
+    full_grpcz_arr = np.repeat(grpcz_new, grpn)
+    mock_df['grpcz_new'] = full_grpcz_arr
     return mock_df
 
 def reading_catls(filename, catl_format='.hdf5'):
@@ -148,20 +156,21 @@ def read_data_catl(path_to_file, survey):
         #     usecols=columns)
 
         eco_buff = reading_catls(path_to_file)
+        eco_buff = mock_add_grpcz(eco_buff)
         
         if mf_type == 'smf':
             # 6456 galaxies                       
-            catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
-                (eco_buff.grpcz.values <= 7000) & 
+            catl = eco_buff.loc[(eco_buff.grpcz_new.values >= 3000) & 
+                (eco_buff.grpcz_new.values <= 7000) & 
                 (eco_buff.absrmag.values <= -17.33)]
         elif mf_type == 'bmf':
-            catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
-                (eco_buff.grpcz.values <= 7000) & 
+            catl = eco_buff.loc[(eco_buff.grpcz_new.values >= 3000) & 
+                (eco_buff.grpcz_new.values <= 7000) & 
                 (eco_buff.absrmag.values <= -17.33)] 
 
         volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
         # cvar = 0.125
-        z_median = np.median(catl.grpcz.values) / (3 * 10**5)
+        z_median = np.median(catl.grpcz_new.values) / (3 * 10**5)
         
     elif survey == 'resolvea' or survey == 'resolveb':
         columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
@@ -414,7 +423,7 @@ def blue_frac(catl, h1_bool, data_bool, randint_logmstar=None):
 
     if data_bool:
         mstar_total_arr = catl.logmstar.values
-        censat_col = 'fc'
+        censat_col = 'g_galtype'
         mstar_cen_arr = catl.logmstar.loc[catl[censat_col] == 1].values
         mstar_sat_arr = catl.logmstar.loc[catl[censat_col] == 0].values
     ## Mocks case different than data because of censat_col
@@ -843,8 +852,8 @@ def get_err_data(survey, path):
             mock_pd = mock_add_grpcz(mock_pd)
             # Using the same survey definition as in mcmc smf i.e excluding the 
             # buffer
-            mock_pd = mock_pd.loc[(mock_pd.grpcz.values >= min_cz) & \
-                (mock_pd.grpcz.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
+            mock_pd = mock_pd.loc[(mock_pd.grpcz_new.values >= min_cz) & \
+                (mock_pd.grpcz_new.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
                 (mock_pd.logmstar.values >= mstar_limit)].reset_index(drop=True)
 
             # ## Using best-fit found for old ECO data using optimize_hybridqm_eco,py
