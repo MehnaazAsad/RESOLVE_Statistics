@@ -125,6 +125,21 @@ def read_mock_catl(filename, catl_format='.hdf5'):
 
     return mock_pd
 
+def mock_add_grpcz(mock_df):
+    groups = mock_df.groupby('groupid') 
+    keys = groups.groups.keys() 
+    grpcz_new = [] 
+    grpn = []
+    for key in keys: 
+        group = groups.get_group(key) 
+        cen_cz = group.cz.loc[group.g_galtype == 1].values[0] 
+        grpcz_new.append(cen_cz) 
+        grpn.append(len(group))
+
+    full_grpcz_arr = np.repeat(grpcz_new, grpn)
+    mock_df['grpcz_new'] = full_grpcz_arr
+    return mock_df
+
 def read_data_catl(path_to_file, survey):
     """
     Reads survey catalog from file
@@ -157,11 +172,12 @@ def read_data_catl(path_to_file, survey):
         # eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0)
 
         eco_buff = read_mock_catl(path_to_file)
+        eco_buff = mock_add_grpcz(eco_buff)
 
         if mf_type == 'smf':
             # 6456 galaxies
-            catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) &
-                (eco_buff.grpcz.values <= 7000) &
+            catl = eco_buff.loc[(eco_buff.grpcz_new.values >= 3000) &
+                (eco_buff.grpcz_new.values <= 7000) &
                 (eco_buff.absrmag.values <= -17.33)]
         elif mf_type == 'bmf':
             catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) &
@@ -435,7 +451,7 @@ def assign_cen_sat_flag(gals_df):
     gals_df['cs_flag'] = C_S
     return gals_df
 
-def cart_to_spherical_coords(cart_arr, dist):
+def cart_to_spherical_coords(cart_arr, dist_arr):
     """
     Computes the right ascension and declination for the given
     point in (x,y,z) position
@@ -457,29 +473,27 @@ def cart_to_spherical_coords(cart_arr, dist):
 
     ## Reformatting coordinates
     # Cartesian coordinates
-    (   x_val,
-        y_val,
-        z_val) = cart_arr/float(dist)
-    # Distance to object
-    dist = float(dist)
+    (   x_arr,
+        y_arr,
+        z_arr) = (cart_arr/np.vstack(dist_arr)).T
     ## Declination
-    dec_val = 90. - np.degrees(np.arccos(z_val))
+    dec_arr = 90. - np.degrees(np.arccos(z_arr))
     ## Right ascension
-    if x_val == 0:
-        if y_val > 0.:
-            ra_val = 90.
-        elif y_val < 0.:
-            ra_val = -90.
-    else:
-        ra_val = np.degrees(np.arctan(y_val/x_val))
+    ra_arr = np.ones(len(cart_arr))
+    idx_ra_90 = np.where((x_arr==0) & (y_arr>0))
+    idx_ra_minus90 = np.where((x_arr==0) & (y_arr<0))
+    ra_arr[idx_ra_90] = 90.
+    ra_arr[idx_ra_minus90] = -90.
+    idx_ones = np.where(ra_arr==1)
+    ra_arr[idx_ones] = np.degrees(np.arctan(y_arr[idx_ones]/x_arr[idx_ones]))
 
     ## Seeing on which quadrant the point is at
-    if x_val < 0.:
-        ra_val += 180.
-    elif (x_val >= 0.) and (y_val < 0.):
-        ra_val += 360.
+    idx_ra_plus180 = np.where(x_arr<0)
+    ra_arr[idx_ra_plus180] += 180.
+    idx_ra_plus360 = np.where((x_arr>=0) & (y_arr<0))
+    ra_arr[idx_ra_plus360] += 360.
 
-    return ra_val, dec_val
+    return ra_arr, dec_arr
 
 def apply_rsd(mock_catalog):
     """
@@ -497,7 +511,6 @@ def apply_rsd(mock_catalog):
         ra,dec,rsd positions and velocity information added
     """
 
-    ngal = len(mock_catalog)
     speed_c = 3*10**5 #km/s
     z_min = 0
     z_max = 0.5
@@ -515,47 +528,22 @@ def apply_rsd(mock_catalog):
     cart_gals = mock_catalog[['x','y','z']].values #Mpc/h
     vel_gals = mock_catalog[['vx','vy','vz']].values #km/s
 
-    dist_from_obs_arr = np.zeros(ngal)
-    ra_arr = np.zeros(ngal)
-    dec_arr = np.zeros(ngal)
-    cz_arr = np.zeros(ngal)
-    cz_nodist_arr = np.zeros(ngal)
-    vel_tan_arr = np.zeros(ngal)
-    vel_tot_arr = np.zeros(ngal)
-    vel_pec_arr = np.zeros(ngal)
-    for x in tqdm(range(ngal)):
-        dist_from_obs = (np.sum(cart_gals[x]**2))**.5
-        z_cosm = comodist_z_interp(dist_from_obs)
-        cz_cosm = speed_c * z_cosm
-        cz_val = cz_cosm
-        ra,dec = cart_to_spherical_coords(cart_gals[x],dist_from_obs)
-        vr = np.dot(cart_gals[x], vel_gals[x])/dist_from_obs
-        #this cz includes hubble flow and peculiar motion
-        cz_val += vr*(1+z_cosm)
-        vel_tot = (np.sum(vel_gals[x]**2))**.5
-        vel_tan = (vel_tot**2 - vr**2)**.5
-        vel_pec  = (cz_val - cz_cosm)/(1 + z_cosm)
-        dist_from_obs_arr[x] = dist_from_obs
-        ra_arr[x] = ra
-        dec_arr[x] = dec
-        cz_arr[x] = cz_val
-        cz_nodist_arr[x] = cz_cosm
-        vel_tot_arr[x] = vel_tot
-        vel_tan_arr[x] = vel_tan
-        vel_pec_arr[x] = vel_pec
+    dist_from_obs = (np.sum(cart_gals**2, axis=1))**.5
+    z_cosm_arr  = comodist_z_interp(dist_from_obs)
+    cz_cosm_arr = speed_c * z_cosm_arr
+    cz_arr  = cz_cosm_arr
+    ra_arr, dec_arr = cart_to_spherical_coords(cart_gals,dist_from_obs)
+    vr_arr = np.sum(cart_gals*vel_gals, axis=1)/dist_from_obs
+    #this cz includes hubble flow and peculiar motion
+    cz_arr += vr_arr*(1+z_cosm_arr)
 
-    mock_catalog['r_dist'] = dist_from_obs_arr
     mock_catalog['ra'] = ra_arr
     mock_catalog['dec'] = dec_arr
     mock_catalog['cz'] = cz_arr
-    mock_catalog['cz_nodist'] = cz_nodist_arr
-    mock_catalog['vel_tot'] = vel_tot_arr
-    mock_catalog['vel_tan'] = vel_tan_arr
-    mock_catalog['vel_pec'] = vel_pec_arr
 
     return mock_catalog
 
-def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
+def group_finding(mock_pd, col_id, mock_zz_file, param_dict, file_ext='csv'):
     """
     Runs the group finder `FoF` on the file, and assigns galaxies to
     galaxy groups
@@ -592,12 +580,13 @@ def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
     grep_g_file     = '{0}.galcatl_grep_g.{1}'.format(mock_zz_file, file_ext)
     mock_coord_path = '{0}.galcatl_radeccz.{1}'.format(mock_zz_file, file_ext)
     ## RA-DEC-CZ file
-    #! Add stellar mass column from mock_pd
-    mock_coord_pd = mock_pd[['ra','dec','cz']].to_csv(mock_coord_path,
-                        sep=' ', header=None, index=False)
+    mock_coord_pd = mock_pd[['ra','dec','cz','{0}'.format(col_id)]]
+    mock_coord_pd = mock_coord_pd.rename(columns={"{0}".format(col_id): "logmstar"}).to_csv(mock_coord_path,
+        sep=' ', header=None, index=False)
     # cu.File_Exists(mock_coord_path)
     ## Creating `FoF` command and executing it
-    fof_exe = '/fs1/caldervf/custom_utilities_c/group_finder_fof/fof9_ascii'
+    # fof_exe = '/fs1/caldervf/custom_utilities_c/group_finder_fof/fof9_ascii'
+    fof_exe = '/fs1/masad/Research/Repositories/RESOLVE_Statistics/data/interim/fof/fof9_ascii'
     # cu.File_Exists(fof_exe)
     # FoF command
     fof_str = '{0} {1} {2} {3} {4} {5} {6} {7} > {8}'
@@ -628,8 +617,7 @@ def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
     ##
     ## Extracting galaxy and group information
     # Column names
-    #! Add censat to gal_names array
-    gal_names   = ['groupid', 'galid', 'ra', 'dec', 'z']
+    gal_names   = ['groupid', 'galid', 'ra', 'dec', 'z', 'grp_censat']
     group_names = [ 'G', 'groupid', 'cen_ra', 'cen_dec', 'cen_z', 'ngals',\
                     'sigma_v', 'rproj']
     # Pandas DataFrames
@@ -648,7 +636,9 @@ def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
     mockgroup_pd = mockgroup_pd.drop('cen_z', axis=1)
     mockgroup_pd = mockgroup_pd.drop('G', axis=1)
     ## Joining the 2 datasets for galaxies
-    mockgal_pd_merged = pd.concat([mock_pd, grep_pd['groupid']], axis=1)
+    mockgal_pd_merged = pd.concat([mock_pd, grep_pd[['groupid','grp_censat']]], axis=1)
+    ## Add cen_cz column from mockgroup_pd to final DF
+    mockgal_pd_merged = pd.merge(mockgal_pd_merged, mockgroup_pd[['groupid','cen_cz']], on="groupid")    
     # Removing `1` from `groupid`
     mockgroup_pd.loc     [:,'groupid'] -= 1
     mockgal_pd_merged.loc[:,'groupid'] -= 1
@@ -1072,7 +1062,7 @@ def main():
 
     H0 = 100 # (km/s)/Mpc
     cz_inner = 3000 # not starting at corner of box
-    cz_outer = 7000 #120*H0 # utilizing 120 Mpc of Vishnu box
+    cz_outer = 120*H0 # utilizing 120 Mpc of Vishnu box
 
     dist_inner = kms_to_Mpc(H0,cz_inner) #Mpc/h
     dist_outer = kms_to_Mpc(H0,cz_outer) #Mpc/h
@@ -1116,11 +1106,11 @@ def main():
         # catl_file = path_to_raw + "eco/eco_all.csv"
         catl_file = path_to_processed + "gal_group_eco_data_buffer.hdf5"
 
-    chi2_file = path_to_processed + 'smhm_colour_run33/{0}_colour_chi2.txt'.format(survey)
+    chi2_file = path_to_processed + 'smhm_colour_run34/{0}_colour_chi2.txt'.format(survey)
     if mf_type == 'smf' and survey == 'eco' and ver == 1.0:
         chain_file = path_to_processed + 'mcmc_{0}.dat'.format(survey)
     else:
-        chain_file = path_to_processed + 'smhm_colour_run33/mcmc_{0}_colour_raw.txt'.\
+        chain_file = path_to_processed + 'smhm_colour_run34/mcmc_{0}_colour_raw.txt'.\
             format(survey)
 
     print('Reading chi-squared file')
@@ -1133,7 +1123,7 @@ def main():
     mcmc_table_subset = get_paramvals_percentile(mcmc_table, 68, chi2)
 
     params_df = pd.DataFrame(mcmc_table_subset)
-    params_df.to_csv(path_to_processed + 'run33_params_subset.txt', 
+    params_df.to_csv(path_to_processed + 'run34_params_subset.txt', 
         header=None, index=None, sep=' ', mode='w')
 
     print('Reading survey data')
@@ -1159,7 +1149,7 @@ def main():
         i+=1
     gals_df_.reset_index(inplace=True, drop=True)
 
-    h5File = path_to_processed + "mocks101_run33_cz7000.h5"
+    h5File = path_to_processed + "mocks101_run34.h5"
     gals_df_.to_hdf(h5File, "/gals_df_/d1")
 
     print('Applying RSD')
@@ -1178,18 +1168,20 @@ def main():
             [col]>10**8.6][['{0}'.format(col),'ra','dec','cz']].\
             reset_index(drop=False)
         # * Make sure that df that group finding is run on has its indices reset
-        gal_group_df, group_df = group_finding(gals_rsd_grpfinder_df,
+        gal_group_df, group_df = group_finding(gals_rsd_grpfinder_df, col, 
             path_to_data + 'interim/', param_dict)
-        gal_group_df_new, group_df_new = \
-            group_mass_assignment_rev(gal_group_df, group_df, param_dict, col)
-        gals_rsd_subset_df = pd.merge(gals_rsd_subset_df, gal_group_df_new, 
+        ## No need to run this function since group_finding now returns 
+        ## grp_censat flag
+        # gal_group_df_new, group_df_new = \
+        #     group_mass_assignment_rev(gal_group_df, group_df, param_dict, col)
+        gals_rsd_subset_df = pd.merge(gals_rsd_subset_df, gal_group_df, 
             how='left', left_on = gals_rsd_subset_df.index, right_on='index')
 
     gals_final = gals_rsd_subset_df.drop(columns=['index_x', 'index_y']) 
 
     print('Writing to output files')
     pandas_df_to_hdf5_file(data=gals_final,
-        hdf5_file=path_to_processed + 'gal_group_run33_cz7000.hdf5', key='gal_group_df')
+        hdf5_file=path_to_processed + 'gal_group_run34.hdf5', key='gal_group_df')
     # pandas_df_to_hdf5_file(data=group_df_new,
     #     hdf5_file=path_to_processed + 'group.hdf5', key='group_df')
 
