@@ -642,6 +642,12 @@ def group_finding(mock_pd, col_id, mock_zz_file, param_dict, file_ext='csv'):
     # Removing `1` from `groupid`
     mockgroup_pd.loc     [:,'groupid'] -= 1
     mockgal_pd_merged.loc[:,'groupid'] -= 1
+
+    rename_dict = {'groupid': 'groupid_{0}'.format(col_id),
+                    'grp_censat': 'grp_censat_{0}'.format(col_id),
+                    'cen_cz': 'cen_cz_{0}'.format(col_id)}
+    mockgal_pd_merged.rename(columns=rename_dict, inplace=True)
+
     ## Removing FoF files
     if param_dict['verbose']:
         print('Removing group-finding related files')
@@ -1177,10 +1183,19 @@ def main():
         gals_rsd_subset_df = pd.merge(gals_rsd_subset_df, gal_group_df, 
             how='left', left_on = gals_rsd_subset_df.index, right_on='index')
 
-    gals_final = gals_rsd_subset_df.drop(columns=['index_x', 'index_y']) 
+        rename_dict = {'ra_x': 'ra',
+                        'dec_x': 'dec',
+                        'cz_x': 'cz'}
+        gals_rsd_subset_df.rename(columns=rename_dict, inplace=True)
+        ## 'index_x' and 'index_y' are only created when col > 1. ra, dec and cz
+        ## are calculated for all 101 mocks and the information is only needed
+        ## for group finding so those columns can be dropped.
+        if int(col) > 1:
+            gals_rsd_subset_df.drop(columns=['index_x','index_y','ra_y','dec_y',
+                'cz_y'], inplace=True)
 
     print('Writing to output files')
-    pandas_df_to_hdf5_file(data=gals_final,
+    pandas_df_to_hdf5_file(data=gals_rsd_subset_df,
         hdf5_file=path_to_processed + 'gal_group_run34.hdf5', key='gal_group_df')
     # pandas_df_to_hdf5_file(data=group_df_new,
     #     hdf5_file=path_to_processed + 'group.hdf5', key='group_df')
