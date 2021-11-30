@@ -1426,7 +1426,6 @@ def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
         names=group_names)
     # Group centroid velocity
     mockgroup_pd.loc[:,'cen_cz'] = mockgroup_pd['cen_z'] * speed_c
-    #* Keep cen z column instead of calculating group cz later
     mockgroup_pd = mockgroup_pd.drop('cen_z', axis=1)
     mockgroup_pd = mockgroup_pd.drop('G', axis=1)
     ## Joining the 2 datasets for galaxies
