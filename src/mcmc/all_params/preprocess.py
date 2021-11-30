@@ -16,7 +16,8 @@ class Preprocess():
         self.z_median = None
         self.bf_params = None
         self.bf_chi2 = None
-        self.mcmc_table_pctl_subset = None
+        # self.mcmc_table_pctl_subset = None
+        self.mcmc_table_pctl = None
         self.settings = settings
 
     def read_mcmc(self, path_to_file):
@@ -327,29 +328,32 @@ class Preprocess():
         self.catl, self.volume, self.z_median = self.\
             read_data_catl(settings.catl_file, settings.survey)
         ## Group finder run on subset after applying M* cut 8.6 and cz cut 3000-12000
+        gal_group = self.read_mock_catl(self.path_to_proc + \
+            "gal_group_run{0}.hdf5".format(self.run)) 
+
+        # #! Change this if testing with different cz limit
         # gal_group = self.read_mock_catl(settings.path_to_proc + \
         #     "gal_group_run{0}.hdf5".format(settings.run)) 
 
-        #! Change this if testing with different cz limit
-        gal_group = self.read_mock_catl(settings.path_to_proc + \
-            "gal_group_run{0}.hdf5".format(settings.run)) 
-
         idx_arr = np.insert(np.linspace(0,20,21), len(np.linspace(0,20,21)), \
-            (22, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134)).\
+            (22, 123, 124, 125, 126, 127, 128, 129)).\
             astype(int)
 
         names_arr = [x for x in gal_group.columns.values[idx_arr]]
-        for idx in np.arange(2,101,1):
+        for idx in np.arange(2,102,1):
             names_arr.append('{0}_y'.format(idx))
             names_arr.append('groupid_{0}'.format(idx))
-            names_arr.append('g_galtype_{0}'.format(idx))
+            names_arr.append('grp_censat_{0}'.format(idx))
+            names_arr.append('cen_cz_{0}'.format(idx))
         names_arr = np.array(names_arr)
 
         globals.gal_group_df_subset = gal_group[names_arr]
 
         # Renaming the "1_y" column kept from line 1896 because of case where it was
         # also in mcmc_table_ptcl.mock_num and was selected twice
-        globals.gal_group_df_subset.columns.values[30] = "behroozi_bf"
+        globals.gal_group_df_subset.columns.values[25] = "behroozi_bf"
+
+        #! Remove "_y" from ra, dec and cz columns
 
         ### Removing "_y" from column names for stellar mass
         # Have to remove the first element because it is 'halo_y' column name
@@ -361,7 +365,7 @@ class Preprocess():
 
         print('Getting data in specific percentile')
         # get_paramvals called to get bf params and chi2 values
-        mcmc_table_pctl, self.bf_params, self.bf_chi2 = \
+        self.mcmc_table_pctl, self.bf_params, self.bf_chi2 = \
             self.get_paramvals_percentile(mcmc_table, 68, chi2)
 
         colnames = ['mhalo_c', 'mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter', \
