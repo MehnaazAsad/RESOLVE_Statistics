@@ -433,16 +433,16 @@ def blue_frac(catl, h1_bool, data_bool, randint_logmstar=None):
         # censat_col = 'cs_flag'
         mstar_cen_arr = catl.logmstar.loc[catl[censat_col] == 1].values
         mstar_sat_arr = catl.logmstar.loc[catl[censat_col] == 0].values           
-    elif randint_logmstar != 1 and randint_logmstar is not None:
-        mstar_total_arr = catl['{0}'.format(randint_logmstar)].values
-        censat_col = 'g_galtype_{0}'.format(randint_logmstar)
-        mstar_cen_arr = catl['{0}'.format(randint_logmstar)].loc[catl[censat_col] == 1].values
-        mstar_sat_arr = catl['{0}'.format(randint_logmstar)].loc[catl[censat_col] == 0].values
-    elif randint_logmstar == 1:
-        mstar_total_arr = catl['behroozi_bf'].values
-        censat_col = 'g_galtype_{0}'.format(randint_logmstar)
-        mstar_cen_arr = catl['behroozi_bf'].loc[catl[censat_col] == 1].values
-        mstar_sat_arr = catl['behroozi_bf'].loc[catl[censat_col] == 0].values
+    # elif randint_logmstar != 1 and randint_logmstar is not None:
+    #     mstar_total_arr = catl['{0}'.format(randint_logmstar)].values
+    #     censat_col = 'g_galtype_{0}'.format(randint_logmstar)
+    #     mstar_cen_arr = catl['{0}'.format(randint_logmstar)].loc[catl[censat_col] == 1].values
+    #     mstar_sat_arr = catl['{0}'.format(randint_logmstar)].loc[catl[censat_col] == 0].values
+    # elif randint_logmstar == 1:
+    #     mstar_total_arr = catl['behroozi_bf'].values
+    #     censat_col = 'g_galtype_{0}'.format(randint_logmstar)
+    #     mstar_cen_arr = catl['behroozi_bf'].loc[catl[censat_col] == 1].values
+    #     mstar_sat_arr = catl['behroozi_bf'].loc[catl[censat_col] == 0].values
     # New case where no subset of mocks are used and group finding is done within
     # mcmc framework
     elif randint_logmstar is None:
