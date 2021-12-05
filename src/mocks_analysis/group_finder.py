@@ -1112,11 +1112,11 @@ def main():
         # catl_file = path_to_raw + "eco/eco_all.csv"
         catl_file = path_to_processed + "gal_group_eco_data_buffer.hdf5"
 
-    chi2_file = path_to_processed + 'smhm_colour_run34/{0}_colour_chi2.txt'.format(survey)
+    chi2_file = path_to_processed + 'smhm_colour_run35/{0}_colour_chi2.txt'.format(survey)
     if mf_type == 'smf' and survey == 'eco' and ver == 1.0:
         chain_file = path_to_processed + 'mcmc_{0}.dat'.format(survey)
     else:
-        chain_file = path_to_processed + 'smhm_colour_run34/mcmc_{0}_colour_raw.txt'.\
+        chain_file = path_to_processed + 'smhm_colour_run35/mcmc_{0}_colour_raw.txt'.\
             format(survey)
 
     print('Reading chi-squared file')
@@ -1129,7 +1129,7 @@ def main():
     mcmc_table_subset = get_paramvals_percentile(mcmc_table, 68, chi2)
 
     params_df = pd.DataFrame(mcmc_table_subset)
-    params_df.to_csv(path_to_processed + 'run34_params_subset.txt', 
+    params_df.to_csv(path_to_processed + 'run35_params_subset.txt', 
         header=None, index=None, sep=' ', mode='w')
 
     print('Reading survey data')
@@ -1196,7 +1196,7 @@ def main():
 
     print('Writing to output files')
     pandas_df_to_hdf5_file(data=gals_rsd_subset_df,
-        hdf5_file=path_to_processed + 'gal_group_run34.hdf5', key='gal_group_df')
+        hdf5_file=path_to_processed + 'gal_group_run35.hdf5', key='gal_group_df')
     # pandas_df_to_hdf5_file(data=group_df_new,
     #     hdf5_file=path_to_processed + 'group.hdf5', key='group_df')
 
