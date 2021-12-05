@@ -1119,44 +1119,44 @@ def main():
         chain_file = path_to_processed + 'smhm_colour_run35/mcmc_{0}_colour_raw.txt'.\
             format(survey)
 
-    print('Reading chi-squared file')
-    chi2 = read_chi2(chi2_file)
+    # print('Reading chi-squared file')
+    # chi2 = read_chi2(chi2_file)
 
-    print('Reading mcmc chain file')
-    mcmc_table = read_mcmc(chain_file)
+    # print('Reading mcmc chain file')
+    # mcmc_table = read_mcmc(chain_file)
 
-    print('Getting subset of 100 Behroozi parameters')
-    mcmc_table_subset = get_paramvals_percentile(mcmc_table, 68, chi2)
+    # print('Getting subset of 100 Behroozi parameters')
+    # mcmc_table_subset = get_paramvals_percentile(mcmc_table, 68, chi2)
 
-    params_df = pd.DataFrame(mcmc_table_subset)
-    params_df.to_csv(path_to_processed + 'run35_params_subset.txt', 
-        header=None, index=None, sep=' ', mode='w')
+    # params_df = pd.DataFrame(mcmc_table_subset)
+    # params_df.to_csv(path_to_processed + 'run35_params_subset.txt', 
+    #     header=None, index=None, sep=' ', mode='w')
 
-    print('Reading survey data')
-    # No M* cut
-    catl, volume, cvar, z_median = read_data_catl(catl_file, survey)
+    # print('Reading survey data')
+    # # No M* cut
+    # catl, volume, cvar, z_median = read_data_catl(catl_file, survey)
 
-    print('Populating halos')
-    # Populating halos with best fit set of params
-    model_init = halocat_init(halo_catalog, z_median)
-    bf_params = mcmc_table_subset[0][:5]
-    gals_df_ = populate_mock(bf_params, model_init)
-    gals_df_ = assign_cen_sat_flag(gals_df_)
-    gals_df_ = gals_df_.rename(columns={"stellar_mass": "1"})
-    gals_df_ = gals_df_.sort_values(by='halo_mvir_host_halo')
+    # print('Populating halos')
+    # # Populating halos with best fit set of params
+    # model_init = halocat_init(halo_catalog, z_median)
+    # bf_params = mcmc_table_subset[0][:5]
+    # gals_df_ = populate_mock(bf_params, model_init)
+    # gals_df_ = assign_cen_sat_flag(gals_df_)
+    # gals_df_ = gals_df_.rename(columns={"stellar_mass": "1"})
+    # gals_df_ = gals_df_.sort_values(by='halo_mvir_host_halo')
 
-    # Populating 100 out of the 101 set of params
-    i=2
-    for params in mcmc_table_subset[1:]:
-        params = params[:5]
-        mock = populate_mock(params, model_init)
-        mock = mock.sort_values(by='halo_mvir_host_halo')
-        gals_df_['{0}'.format(i)] = mock.stellar_mass.values
-        i+=1
-    gals_df_.reset_index(inplace=True, drop=True)
+    # # Populating 100 out of the 101 set of params
+    # i=2
+    # for params in mcmc_table_subset[1:]:
+    #     params = params[:5]
+    #     mock = populate_mock(params, model_init)
+    #     mock = mock.sort_values(by='halo_mvir_host_halo')
+    #     gals_df_['{0}'.format(i)] = mock.stellar_mass.values
+    #     i+=1
+    # gals_df_.reset_index(inplace=True, drop=True)
 
     h5File = path_to_processed + "mocks101_run34.h5"
-    gals_df_.to_hdf(h5File, "/gals_df_/d1")
+    # gals_df_.to_hdf(h5File, "/gals_df_/d1")
 
     print('Applying RSD')
     gals_df_ = pd.read_hdf(h5File, "/gals_df_/d1")
