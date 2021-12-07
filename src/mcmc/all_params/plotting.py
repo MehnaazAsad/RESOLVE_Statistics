@@ -9,6 +9,7 @@ from scipy.stats import binned_statistic as bs
 from collections import OrderedDict
 
 from matplotlib.legend_handler import HandlerTuple
+from scipy.stats import chi2
 import matplotlib.pyplot as plt
 from matplotlib import rc
 
@@ -127,6 +128,12 @@ class Plotting():
             format(np.round(preprocess.bf_chi2/dof,2)), 
             xy=(0.87, 0.75), xycoords='axes fraction', bbox=dict(boxstyle="square", 
             ec='k', fc='lightgray', alpha=0.5), size=25)
+
+        plt.annotate(r'$ p \approx$ {0}'.
+            format(np.round((1 - chi2.cdf(preprocess.bf_chi2, dof)),2)), 
+            xy=(0.87, 0.69), xycoords='axes fraction', bbox=dict(boxstyle="square", 
+            ec='k', fc='lightgray', alpha=0.5), size=25)
+
 
         plt.legend([(dt), (mt), (bft)], ['Data','Models','Best-fit'],
             handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, loc='best')
@@ -323,9 +330,11 @@ class Plotting():
         preprocess = self.preprocess
 
         fblue_data = data[1]
-        error_total = data[4][6:]
-        error_cen = data[5]['std_fblue']['std_fblue_cen']
-        error_sat = data[5]['std_fblue']['std_fblue_sat']
+        error_total = data[5]['std_fblue']['std_fblue']
+        # error_cen = data[5]['std_fblue']['std_fblue_cen']
+        # error_sat = data[5]['std_fblue']['std_fblue_sat']
+        error_cen = data[4][6:12]
+        error_sat = data[4][12:]
         dof = data[6]
 
         x_fblue_total_data, y_fblue_total_data = fblue_data[0], fblue_data[1]
@@ -404,6 +413,8 @@ class Plotting():
         dt = plt.errorbar(x_fblue_total_data, y_fblue_total_data, yerr=error_total,
             color='k', fmt='s', ecolor='k', markersize=12, capsize=7,
             capthick=1.5, zorder=10, marker='^')
+        # dt = plt.scatter(x_fblue_total_data, y_fblue_total_data,
+        #     color='k', s=120, zorder=10, marker='^')
         # Best-fit
         # Need a comma after 'bfr' and 'bfb' to solve this:
         #   AttributeError: 'NoneType' object has no attribute 'create_artists'
@@ -422,6 +433,10 @@ class Plotting():
         plt.annotate(r'$\boldsymbol\chi ^2 / dof \approx$ {0}'.
             format(np.round(preprocess.bf_chi2/dof,2)), 
             xy=(0.87, 0.75), xycoords='axes fraction', bbox=dict(boxstyle="square", 
+            ec='k', fc='lightgray', alpha=0.5), size=25)
+        plt.annotate(r'$ p \approx$ {0}'.
+            format(np.round((1 - chi2.cdf(preprocess.bf_chi2, dof)),2)), 
+            xy=(0.87, 0.69), xycoords='axes fraction', bbox=dict(boxstyle="square", 
             ec='k', fc='lightgray', alpha=0.5), size=25)
 
         if settings.survey == 'eco':
@@ -467,8 +482,12 @@ class Plotting():
             handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)})
 
         plt.annotate(r'$\boldsymbol\chi ^2 / dof \approx$ {0}'.
-            format(np.round(preprocess.bf_chi2/dof,2)), 
+            format(np.round(preprocess.bf_chi2/dof,2)),
             xy=(0.87, 0.55), xycoords='axes fraction', bbox=dict(boxstyle="square", 
+            ec='k', fc='lightgray', alpha=0.5), size=25)
+        plt.annotate(r'$ p \approx$ {0}'.
+            format(np.round((1 - chi2.cdf(preprocess.bf_chi2, dof)),2)), 
+            xy=(0.87, 0.49), xycoords='axes fraction', bbox=dict(boxstyle="square", 
             ec='k', fc='lightgray', alpha=0.5), size=25)
 
         if settings.survey == 'eco':
@@ -1523,7 +1542,17 @@ class Plotting():
             xy=(0.015, 0.65), xycoords='axes fraction', bbox=dict(boxstyle="square", 
             ec='k', fc='lightgray', alpha=0.5), size=25)
 
-        plt.ylim(8.9, 11.1)
+        dof_red = 5 # Nparams=0, Nbins=5
+        dof_blue = 5 
+        plt.annotate(r'$ p \approx$ {0}''\n'\
+            r'$ p \approx$ {1}'.format(
+            np.round((1 - chi2.cdf(chi_squared_red, dof_red)),2),
+            np.round((1 - chi2.cdf(chi_squared_blue, dof_blue)),2)), 
+            xy=(0.015, 0.55), xycoords='axes fraction', bbox=dict(boxstyle="square", 
+            ec='k', fc='lightgray', alpha=0.5), size=25)
+
+
+        plt.ylim(8.9,)
 
         plt.xlabel(r'\boldmath$\sigma \left[\mathrm{km/s} \right]$', fontsize=30)
         plt.ylabel(r'\boldmath$\overline{\log_{10}\ M_{*, cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
@@ -1554,6 +1583,8 @@ class Plotting():
 
         error_red = data[5]['vel_disp']['std_mean_sigma_red']
         error_blue = data[5]['vel_disp']['std_mean_sigma_blue']
+
+        dof = data[6]
 
         x_sigma_red_data, y_sigma_red_data = data_experiments['vel_disp']['red_cen_mstar'],\
             data_experiments['vel_disp']['red_sigma']
@@ -1660,6 +1691,13 @@ class Plotting():
             chi_squared_red,2),np.round(chi_squared_blue,2)), 
             xy=(0.015, 0.65), xycoords='axes fraction', bbox=dict(boxstyle="square", 
             ec='k', fc='lightgray', alpha=0.5), size=25)
+
+        # plt.annotate(r'$ p \approx$ {0}''\n'\
+        #     r'$ p \approx$ {1}'.format(
+        #     np.round((1 - chi2.cdf(chi_squared_red, dof)),2),
+        #     np.round((1 - chi2.cdf(chi_squared_blue, dof)),2)), 
+        #     xy=(0.015, 0.55), xycoords='axes fraction', bbox=dict(boxstyle="square", 
+        #     ec='k', fc='lightgray', alpha=0.5), size=25)
 
         if settings.quenching == 'hybrid':
             plt.title('Hybrid quenching model | ECO')
@@ -2648,14 +2686,14 @@ class Plotting():
 
         self.plot_mean_sigma_vs_grpcen(models, data, data_experiments, best_fit)
 
-        self.plot_sigma_host_halo_mass_vishnu(models, best_fit)
+        # self.plot_sigma_host_halo_mass_vishnu(models, best_fit)
 
-        self.plot_N_host_halo_mass_vishnu(models, best_fit)
+        # self.plot_N_host_halo_mass_vishnu(models, best_fit)
 
-        self.plot_mean_grpcen_vs_N(models, data, data_experiments, best_fit)
+        # self.plot_mean_grpcen_vs_N(models, data, data_experiments, best_fit)
 
-        self.plot_mean_N_vs_grpcen(models, data, data_experiments, best_fit)
+        # self.plot_mean_N_vs_grpcen(models, data, data_experiments, best_fit)
 
-        self.plot_satellite_weighted_sigma(models, data_experiments, best_fit)
+        # self.plot_satellite_weighted_sigma(models, data_experiments, best_fit)
 
-        self.plot_vdf(models, data, data_experiments, best_fit)
+        # self.plot_vdf(models, data, data_experiments, best_fit)
