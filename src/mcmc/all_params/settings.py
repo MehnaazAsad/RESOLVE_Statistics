@@ -39,7 +39,7 @@ class Settings():
         if self.quenching == 'halo':
             self.run = 33
         elif self.quenching == 'hybrid':
-            self.run = 32
+            self.run = 34
 
         self.chi2_file = self.path_to_proc + \
             'smhm_colour_run{0}/{1}_colour_chi2.txt'.\
