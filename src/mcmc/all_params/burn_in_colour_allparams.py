@@ -44,9 +44,9 @@ path_to_figures = dict_of_paths['plot_dir']
 
 survey = 'eco'
 mf_type = 'smf'
-quenching = 'halo'
+quenching = 'hybrid'
 nwalkers = 100
-run = 33
+run = 34
 
 if mf_type == 'smf':
     path_to_proc = path_to_proc + 'smhm_colour_run{0}/'.format(run)
