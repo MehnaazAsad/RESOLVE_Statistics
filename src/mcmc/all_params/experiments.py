@@ -79,24 +79,26 @@ class Experiments():
 
             if randint != 1:
                 logmstar_col = '{0}'.format(randint)
-                galtype_col = 'g_galtype_{0}'.format(randint)
+                galtype_col = 'grp_censat_{0}'.format(randint)
+                cencz_col = 'cen_cz_{0}'.format(randint)
                 id_col = 'groupid_{0}'.format(randint)
                 # Using the same survey definition as in mcmc smf i.e excluding the 
                 # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
                 # and M* star cuts to mimic mocks and data.
-                catl = preprocess.mock_add_grpcz(catl, False, id_col)
+                catl = preprocess.mock_add_grpcz(catl, False, id_col, galtype_col, cencz_col)
                 catl = catl.loc[(catl.grpcz.values >= min_cz) & \
                     (catl.grpcz.values <= max_cz) & \
                     (catl[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
 
             elif randint == 1:
                 logmstar_col = 'behroozi_bf'
-                galtype_col = 'g_galtype_{0}'.format(randint)
+                galtype_col = 'grp_censat_{0}'.format(randint)
+                cencz_col = 'cen_cz_{0}'.format(randint)
                 id_col = 'groupid_{0}'.format(randint)
                 # Using the same survey definition as in mcmc smf i.e excluding the 
                 # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
                 # and M* star cuts to mimic mocks and data.
-                catl = preprocess.mock_add_grpcz(catl, False, id_col)
+                catl = preprocess.mock_add_grpcz(catl, False, id_col, galtype_col, cencz_col)
                 catl = catl.loc[(catl.grpcz.values >= min_cz) & \
                     (catl.grpcz.values <= max_cz) & \
                     (catl[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
@@ -252,24 +254,26 @@ class Experiments():
 
             if randint != 1:
                 logmstar_col = '{0}'.format(randint)
-                galtype_col = 'g_galtype_{0}'.format(randint)
+                galtype_col = 'grp_censat_{0}'.format(randint)
+                cencz_col = 'cen_cz_{0}'.format(randint)
                 id_col = 'groupid_{0}'.format(randint)
                 # Using the same survey definition as in mcmc smf i.e excluding the 
                 # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
                 # and M* star cuts to mimic mocks and data.
-                catl = preprocess.mock_add_grpcz(catl, False, id_col)
+                catl = preprocess.mock_add_grpcz(catl, False, id_col, galtype_col, cencz_col)
                 catl = catl.loc[(catl.grpcz.values >= min_cz) & \
                     (catl.grpcz.values <= max_cz) & \
                     (catl[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
 
             elif randint == 1:
                 logmstar_col = 'behroozi_bf'
-                galtype_col = 'g_galtype_{0}'.format(randint)
+                galtype_col = 'grp_censat_{0}'.format(randint)
+                cencz_col = 'cen_cz_{0}'.format(randint)
                 id_col = 'groupid_{0}'.format(randint)
                 # Using the same survey definition as in mcmc smf i.e excluding the 
                 # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
                 # and M* star cuts to mimic mocks and data.
-                catl = preprocess.mock_add_grpcz(catl, False, id_col)
+                catl = preprocess.mock_add_grpcz(catl, False, id_col, galtype_col, cencz_col)
                 catl = catl.loc[(catl.grpcz.values >= min_cz) & \
                     (catl.grpcz.values <= max_cz) & \
                     (catl[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
@@ -433,24 +437,26 @@ class Experiments():
 
             if randint != 1:
                 logmstar_col = '{0}'.format(randint)
-                galtype_col = 'g_galtype_{0}'.format(randint)
+                galtype_col = 'grp_censat_{0}'.format(randint)
+                cencz_col = 'cen_cz_{0}'.format(randint)
                 id_col = 'groupid_{0}'.format(randint)
                 # Using the same survey definition as in mcmc smf i.e excluding the 
                 # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
                 # and M* star cuts to mimic mocks and data.
-                catl_richness = preprocess.mock_add_grpcz(catl_richness, False, id_col)
+                catl_richness = preprocess.mock_add_grpcz(catl_richness, False, id_col, galtype_col, cencz_col)
                 catl_richness = catl_richness.loc[(catl_richness.grpcz.values >= min_cz) & \
                     (catl_richness.grpcz.values <= max_cz) & \
                     (catl_richness[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
 
             elif randint == 1:
                 logmstar_col = 'behroozi_bf'
-                galtype_col = 'g_galtype_{0}'.format(randint)
+                galtype_col = 'grp_censat_{0}'.format(randint)
+                cencz_col = 'cen_cz_{0}'.format(randint)
                 id_col = 'groupid_{0}'.format(randint)
                 # Using the same survey definition as in mcmc smf i.e excluding the 
                 # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
                 # and M* star cuts to mimic mocks and data.
-                catl_richness = preprocess.mock_add_grpcz(catl_richness, False, id_col)
+                catl_richness = preprocess.mock_add_grpcz(catl_richness, False, id_col, galtype_col, cencz_col)
                 catl_richness = catl_richness.loc[(catl_richness.grpcz.values >= min_cz) & \
                     (catl_richness.grpcz.values <= max_cz) & \
                     (catl_richness[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
@@ -597,24 +603,26 @@ class Experiments():
 
             if randint != 1:
                 logmstar_col = '{0}'.format(randint)
-                galtype_col = 'g_galtype_{0}'.format(randint)
+                galtype_col = 'grp_censat_{0}'.format(randint)
+                cencz_col = 'cen_cz_{0}'.format(randint)
                 id_col = 'groupid_{0}'.format(randint)
                 # Using the same survey definition as in mcmc smf i.e excluding the 
                 # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
                 # and M* star cuts to mimic mocks and data.
-                catl_sigma = preprocess.mock_add_grpcz(catl_sigma, False, id_col)
+                catl_sigma = preprocess.mock_add_grpcz(catl_sigma, False, id_col, galtype_col, cencz_col)
                 catl_sigma = catl_sigma.loc[(catl_sigma.grpcz.values >= min_cz) & \
                     (catl_sigma.grpcz.values <= max_cz) & \
                     (catl_sigma[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
 
             elif randint == 1:
                 logmstar_col = 'behroozi_bf'
-                galtype_col = 'g_galtype_{0}'.format(randint)
+                galtype_col = 'grp_censat_{0}'.format(randint)
+                cencz_col = 'cen_cz_{0}'.format(randint)
                 id_col = 'groupid_{0}'.format(randint)
                 # Using the same survey definition as in mcmc smf i.e excluding the 
                 # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
                 # and M* star cuts to mimic mocks and data.
-                catl_sigma = preprocess.mock_add_grpcz(catl_sigma, False, id_col)
+                catl_sigma = preprocess.mock_add_grpcz(catl_sigma, False, id_col, galtype_col, cencz_col)
                 catl_sigma = catl_sigma.loc[(catl_sigma.grpcz.values >= min_cz) & \
                     (catl_sigma.grpcz.values <= max_cz) & \
                     (catl_sigma[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
@@ -706,14 +714,14 @@ class Experiments():
         return red_subset_ids, red_sigma_arr, red_cen_stellar_mass_arr, red_nsat_arr, red_keys_arr, \
             blue_subset_ids, blue_sigma_arr, blue_cen_stellar_mass_arr, blue_nsat_arr, blue_keys_arr
 
-def get_mstar_sigma_halomassbins():
+def get_mstar_sigma_halomassbins(catl, randint_logmstar):
     richness_red_ids, N_red, mhalo_red, richness_mstar_red, richness_blue_ids, \
         N_blue, mhalo_blue, richness_mstar_blue = \
-        get_richness_test(gals_df_test, 'model', randint_logmstar)
+        get_richness_test(catl, 'model', randint_logmstar)
 
     veldisp_red_ids, sigma_red, veldisp_mstar_red, nsat_red, veldisp_red_keys, \
         veldisp_blue_ids, sigma_blue, veldisp_mstar_blue, nsat_blue, veldisp_blue_keys = \
-        get_velocity_dispersion_test(gals_df_test, 'model', randint_logmstar)
+        get_velocity_dispersion_test(catl, 'model', randint_logmstar)
 
     richness_results_red = [richness_red_ids, N_red, mhalo_red, richness_mstar_red]
     richness_results_blue = [richness_blue_ids, N_blue, mhalo_blue, richness_mstar_blue]
