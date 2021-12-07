@@ -139,7 +139,8 @@ class Preprocess():
 
         return mock_pd
 
-    def mock_add_grpcz(self, mock_df, data_bool=None, grpid_col=None):
+    def mock_add_grpcz(self, mock_df, data_bool=None, grpid_col=None, 
+        censat_col=None, cencz_col=None):
         """Adds column of group cz values to mock catalogues
 
         Args:
@@ -149,24 +150,45 @@ class Preprocess():
             pandas.DataFrame: Mock catalogue with new column called grpcz added
         """
         if data_bool:
-            grpcz = mock_df.groupby('groupid').cz.mean().values
-            grp = np.unique(mock_df.groupid.values)
-            mydict = dict(zip(grp, grpcz))
-            full_grpcz_arr = [np.round(mydict[val],2) for val in mock_df.groupid.values]
+            groups = mock_df.groupby('groupid') 
+            keys = groups.groups.keys() 
+            grpcz_new = [] 
+            grpn = []
+            for key in keys: 
+                group = groups.get_group(key) 
+                cen_cz = group.cz.loc[group.g_galtype == 1].values[0] 
+                grpcz_new.append(cen_cz) 
+                grpn.append(len(group))
+
+            full_grpcz_arr = np.repeat(grpcz_new, grpn)
             mock_df['grpcz_new'] = full_grpcz_arr
         elif data_bool is None:
             ## Mocks case
-            grpcz = mock_df.groupby('groupid').cz.mean().values
-            grp = np.unique(mock_df.groupid.values)
-            mydict = dict(zip(grp, grpcz))
-            full_grpcz_arr = [np.round(mydict[val],2) for val in mock_df.groupid.values]
+            groups = mock_df.groupby('groupid') 
+            keys = groups.groups.keys() 
+            grpcz_new = [] 
+            grpn = []
+            for key in keys: 
+                group = groups.get_group(key) 
+                cen_cz = group.cz.loc[group.g_galtype == 1].values[0] 
+                grpcz_new.append(cen_cz) 
+                grpn.append(len(group))
+
+            full_grpcz_arr = np.repeat(grpcz_new, grpn)
             mock_df['grpcz'] = full_grpcz_arr
         else:
             ## Models from Vishnu
-            grpcz = mock_df.groupby(grpid_col).cz.mean().values
-            grp = np.unique(mock_df[grpid_col].values)
-            mydict = dict(zip(grp, grpcz))
-            full_grpcz_arr = [np.round(mydict[val],2) for val in mock_df[grpid_col].values]
+            groups = mock_df.groupby(grpid_col) 
+            keys = groups.groups.keys() 
+            grpcz_new = [] 
+            grpn = []
+            for key in keys: 
+                group = groups.get_group(key)
+                cen_cz = group[cencz_col].loc[group[censat_col] == 1].values[0] 
+                grpcz_new.append(cen_cz) 
+                grpn.append(len(group))
+
+            full_grpcz_arr = np.repeat(grpcz_new, grpn)
             mock_df['grpcz'] = full_grpcz_arr
         return mock_df
 
@@ -208,9 +230,8 @@ class Preprocess():
 
             if settings.mf_type == 'smf':
                 # 6456 galaxies
-                #! Use grpcz_new column
-                catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) &\
-                    (eco_buff.grpcz.values <= 7000) &\
+                catl = eco_buff.loc[(eco_buff.grpcz_new.values >= 3000) &\
+                    (eco_buff.grpcz_new.values <= 7000) &\
                     (eco_buff.absrmag.values <= -17.33)]
             elif settings.mf_type == 'bmf':
                 catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) &\
@@ -328,8 +349,8 @@ class Preprocess():
         self.catl, self.volume, self.z_median = self.\
             read_data_catl(settings.catl_file, settings.survey)
         ## Group finder run on subset after applying M* cut 8.6 and cz cut 3000-12000
-        gal_group = self.read_mock_catl(self.path_to_proc + \
-            "gal_group_run{0}.hdf5".format(self.run)) 
+        gal_group = self.read_mock_catl(settings.path_to_proc + \
+            "gal_group_run{0}.hdf5".format(settings.run)) 
 
         # #! Change this if testing with different cz limit
         # gal_group = self.read_mock_catl(settings.path_to_proc + \
@@ -353,8 +374,6 @@ class Preprocess():
         # also in mcmc_table_ptcl.mock_num and was selected twice
         globals.gal_group_df_subset.columns.values[25] = "behroozi_bf"
 
-        #! Remove "_y" from ra, dec and cz columns
-
         ### Removing "_y" from column names for stellar mass
         # Have to remove the first element because it is 'halo_y' column name
         cols_with_y = np.array([[idx, s] for idx, s in enumerate(
@@ -372,6 +391,6 @@ class Preprocess():
             'mstar_q', 'mh_q', 'mu', 'nu']
         #! Change this if testing with different cz limit
         self.mcmc_table_pctl_subset = pd.read_csv(settings.path_to_proc + 
-            'run{0}_params_subset_old.txt'.format(settings.run), 
+            'run{0}_params_subset.txt'.format(settings.run), 
             delim_whitespace=True, names=colnames)\
             .iloc[1:,:].reset_index(drop=True)
