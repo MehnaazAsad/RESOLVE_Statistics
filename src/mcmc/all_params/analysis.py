@@ -276,12 +276,12 @@ class Analysis():
             mstar_sat_arr = catl.logmstar.loc[catl[censat_col] == 0].values           
         elif randint_logmstar != 1:
             mstar_total_arr = catl['{0}'.format(randint_logmstar)].values
-            censat_col = 'g_galtype_{0}'.format(randint_logmstar)
+            censat_col = 'grp_censat_{0}'.format(randint_logmstar)
             mstar_cen_arr = catl['{0}'.format(randint_logmstar)].loc[catl[censat_col] == 1].values
             mstar_sat_arr = catl['{0}'.format(randint_logmstar)].loc[catl[censat_col] == 0].values
         elif randint_logmstar == 1:
             mstar_total_arr = catl['behroozi_bf'].values
-            censat_col = 'g_galtype_{0}'.format(randint_logmstar)
+            censat_col = 'grp_censat_{0}'.format(randint_logmstar)
             mstar_cen_arr = catl['behroozi_bf'].loc[catl[censat_col] == 1].values
             mstar_sat_arr = catl['behroozi_bf'].loc[catl[censat_col] == 0].values
 
@@ -818,18 +818,18 @@ class Analysis():
             cols_to_use = ['halo_hostid', 'halo_id', 'halo_mvir', \
                 'halo_mvir_host_halo', 'cz', \
                 '{0}'.format(best_fit_mocknum), \
-                'g_galtype_{0}'.format(best_fit_mocknum), \
+                'grp_censat_{0}'.format(best_fit_mocknum), \
                 'groupid_{0}'.format(best_fit_mocknum)]
 
             gals_df = globals.gal_group_df_subset[cols_to_use]
 
-            gals_df = gals_df.dropna(subset=['g_galtype_{0}'.\
+            gals_df = gals_df.dropna(subset=['grp_censat_{0}'.\
                 format(best_fit_mocknum),'groupid_{0}'.format(best_fit_mocknum)]).\
                 reset_index(drop=True)
 
-            gals_df[['g_galtype_{0}'.format(best_fit_mocknum), \
+            gals_df[['grp_censat_{0}'.format(best_fit_mocknum), \
                 'groupid_{0}'.format(best_fit_mocknum)]] = \
-                gals_df[['g_galtype_{0}'.format(best_fit_mocknum),\
+                gals_df[['grp_censat_{0}'.format(best_fit_mocknum),\
                 'groupid_{0}'.format(best_fit_mocknum)]].astype(int)
         else:
             # gals_df = populate_mock(best_fit_params[:5], model_init)
@@ -847,19 +847,23 @@ class Analysis():
             cols_to_use = ['halo_hostid', 'halo_id', 'halo_mvir', \
             'halo_mvir_host_halo', 'cz', 'cs_flag', \
             'behroozi_bf', \
-            'g_galtype_{0}'.format(randint_logmstar), \
-            'groupid_{0}'.format(randint_logmstar)]
+            'grp_censat_{0}'.format(randint_logmstar), \
+            'groupid_{0}'.format(randint_logmstar),\
+            'cen_cz_{0}'.format(randint_logmstar)]
 
             gals_df = globals.gal_group_df_subset[cols_to_use]
 
-            gals_df = gals_df.dropna(subset=['g_galtype_{0}'.\
-            format(randint_logmstar),'groupid_{0}'.format(randint_logmstar)]).\
+            gals_df = gals_df.dropna(subset=['grp_censat_{0}'.\
+            format(randint_logmstar),'groupid_{0}'.format(randint_logmstar),\
+            'cen_cz_{0}'.format(randint_logmstar)]).\
             reset_index(drop=True)
 
-            gals_df[['g_galtype_{0}'.format(randint_logmstar), \
+            gals_df[['grp_censat_{0}'.format(randint_logmstar), \
                 'groupid_{0}'.format(randint_logmstar)]] = \
-                gals_df[['g_galtype_{0}'.format(randint_logmstar),\
+                gals_df[['grp_censat_{0}'.format(randint_logmstar),\
                 'groupid_{0}'.format(randint_logmstar)]].astype(int)
+                        
+            gals_df['behroozi_bf'] = np.log10(gals_df['behroozi_bf'])
 
         if settings.quenching == 'hybrid':
             f_red_cen, f_red_sat = self.hybrid_quenching_model(bf_params[5:], gals_df, 
@@ -1131,7 +1135,9 @@ class Analysis():
                 blue_phi_vdf_arr.append(phi_vdf[1])
                 
         phi_total_arr = np.array(phi_total_arr)
+
         f_blue_arr = np.array(f_blue_arr)
+        std_fblue = np.nanstd(f_blue_arr, axis=0)
 
         ### For calculating std. dev. for:
         ## Blue fraction split by group centrals and satellites
@@ -1169,7 +1175,8 @@ class Analysis():
         std_phi_vdf_red_arr = np.nanstd(red_phi_vdf_arr, axis=0)
         std_phi_vdf_blue_arr = np.nanstd(blue_phi_vdf_arr, axis=0)
 
-        mocks_experimentals["std_fblue"] = {'std_fblue_cen':std_fblue_cen,
+        mocks_experimentals["std_fblue"] = {'std_fblue': std_fblue,
+                                            'std_fblue_cen':std_fblue_cen,
                                             'std_fblue_sat':std_fblue_sat}
 
         mocks_experimentals["std_phi_colour"] = {'std_phi_red':std_phi_red,
@@ -1193,24 +1200,6 @@ class Analysis():
         phi_total_3 = phi_total_arr[:,3]
         phi_total_4 = phi_total_arr[:,4]
         phi_total_5 = phi_total_arr[:,5]
-
-        f_blue_0 = f_blue_arr[:,0]
-        f_blue_1 = f_blue_arr[:,1]
-        f_blue_2 = f_blue_arr[:,2]
-        f_blue_3 = f_blue_arr[:,3]
-        f_blue_4 = f_blue_arr[:,4]
-        f_blue_5 = f_blue_arr[:,5]
-
-        combined_df = pd.DataFrame({'phi_tot_0':phi_total_0, 
-            'phi_tot_1':phi_total_1, 'phi_tot_2':phi_total_2, 
-            'phi_tot_3':phi_total_3, 'phi_tot_4':phi_total_4, 
-            'phi_tot_5':phi_total_5,
-            'f_blue_0':f_blue_0, 'f_blue_1':f_blue_1, 
-            'f_blue_2':f_blue_2, 'f_blue_3':f_blue_3, 
-            'f_blue_4':f_blue_4, 'f_blue_5':f_blue_5})
-
-        err_colour = np.sqrt(np.diag(combined_df.cov()))
-
 
         ## Plotting correlation matrix for fblue split by cen and sat
         f_blue_cen_0 = f_blue_cen_arr[:,0]
@@ -1238,35 +1227,37 @@ class Analysis():
             'f_blue_sat_2':f_blue_sat_2, 'f_blue_sat_3':f_blue_sat_3, 
             'f_blue_sat_4':f_blue_sat_4, 'f_blue_sat_5':f_blue_sat_5,})
 
-        import matplotlib.pyplot as plt
-        from matplotlib import rc
-        from matplotlib import cm
+        err_colour = np.sqrt(np.diag(combined_df.cov()))
 
-        rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=25)
-        rc('text', usetex=False)
-        rc('axes', linewidth=2)
-        rc('xtick.major', width=4, size=7)
-        rc('ytick.major', width=4, size=7)
-        rc('xtick.minor', width=2, size=7)
-        rc('ytick.minor', width=2, size=7)
+        # import matplotlib.pyplot as plt
+        # from matplotlib import rc
+        # from matplotlib import cm
 
-        fig1 = plt.figure()
-        ax1 = fig1.add_subplot(111)
-        cmap = cm.get_cmap('Spectral')
-        cax = ax1.matshow(combined_df.corr(), cmap=cmap, vmin=-1, vmax=1)
-        tick_marks = [i for i in range(len(combined_df.columns))]
-        names = [r'$\Phi_1$', r'$\Phi_2$', r'$\Phi_3$', r'$\Phi_4$', 
-        r'$\Phi_5$', r'$\Phi_6$',
-        r'$cen_1$', r'$cen_2$', r'$cen_3$', r'$cen_4$', r'$cen_5$',
-        r'$cen_6$', r'$sat_1$', r'$sat_2$', r'$sat_3$', r'$sat_4$', r'$sat_5$',
-        r'$sat_6$']
-        plt.xticks(tick_marks, names, rotation='vertical')
-        plt.yticks(tick_marks, names)    
-        plt.gca().invert_yaxis() 
-        plt.gca().xaxis.tick_bottom()
-        plt.colorbar(cax)
-        plt.title(r'SMF and blue fraction of centrals and satellites | {0}'.format(settings.quenching))
-        plt.show()
+        # rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=25)
+        # rc('text', usetex=False)
+        # rc('axes', linewidth=2)
+        # rc('xtick.major', width=4, size=7)
+        # rc('ytick.major', width=4, size=7)
+        # rc('xtick.minor', width=2, size=7)
+        # rc('ytick.minor', width=2, size=7)
+
+        # fig1 = plt.figure()
+        # ax1 = fig1.add_subplot(111)
+        # cmap = cm.get_cmap('Spectral')
+        # cax = ax1.matshow(combined_df.corr(), cmap=cmap, vmin=-1, vmax=1)
+        # tick_marks = [i for i in range(len(combined_df.columns))]
+        # names = [r'$\Phi_1$', r'$\Phi_2$', r'$\Phi_3$', r'$\Phi_4$', 
+        # r'$\Phi_5$', r'$\Phi_6$',
+        # r'$cen_1$', r'$cen_2$', r'$cen_3$', r'$cen_4$', r'$cen_5$',
+        # r'$cen_6$', r'$sat_1$', r'$sat_2$', r'$sat_3$', r'$sat_4$', r'$sat_5$',
+        # r'$sat_6$']
+        # plt.xticks(tick_marks, names, rotation='vertical')
+        # plt.yticks(tick_marks, names)    
+        # plt.gca().invert_yaxis() 
+        # plt.gca().xaxis.tick_bottom()
+        # plt.colorbar(cax)
+        # plt.title(r'SMF and blue fraction of centrals and satellites | {0}'.format(settings.quenching))
+        # plt.show()
 
         # ## Plotting correlation matrix for vdf
         # vdf_red_0 = red_phi_vdf_arr[:,0]
@@ -1422,18 +1413,18 @@ class Analysis():
                 cols_to_use = ['halo_hostid', 'halo_id', 'halo_mvir', \
                 'halo_mvir_host_halo', 'cz', \
                 '{0}'.format(randint_logmstar), \
-                'g_galtype_{0}'.format(randint_logmstar), \
+                'grp_censat_{0}'.format(randint_logmstar), \
                 'groupid_{0}'.format(randint_logmstar)]
                 
                 gals_df = globals.gal_group_df_subset[cols_to_use]
 
-                gals_df = gals_df.dropna(subset=['g_galtype_{0}'.\
+                gals_df = gals_df.dropna(subset=['grp_censat_{0}'.\
                     format(randint_logmstar),'groupid_{0}'.format(randint_logmstar)]).\
                     reset_index(drop=True)
 
-                gals_df[['g_galtype_{0}'.format(randint_logmstar), \
+                gals_df[['grp_censat_{0}'.format(randint_logmstar), \
                     'groupid_{0}'.format(randint_logmstar)]] = \
-                    gals_df[['g_galtype_{0}'.format(randint_logmstar),\
+                    gals_df[['grp_censat_{0}'.format(randint_logmstar),\
                     'groupid_{0}'.format(randint_logmstar)]].astype(int)
 
 
@@ -1446,19 +1437,24 @@ class Analysis():
                 cols_to_use = ['halo_hostid', 'halo_id', 'halo_mvir', \
                 'halo_mvir_host_halo', 'cz', 'cs_flag', \
                 '{0}'.format(randint_logmstar), \
-                'g_galtype_{0}'.format(randint_logmstar), \
-                'groupid_{0}'.format(randint_logmstar)]
+                'grp_censat_{0}'.format(randint_logmstar), \
+                'groupid_{0}'.format(randint_logmstar), \
+                'cen_cz_{0}'.format(randint_logmstar)]
 
                 gals_df = globals.gal_group_df_subset[cols_to_use]
         
-                gals_df = gals_df.dropna(subset=['g_galtype_{0}'.\
-                format(randint_logmstar),'groupid_{0}'.format(randint_logmstar)]).\
+                gals_df = gals_df.dropna(subset=['grp_censat_{0}'.\
+                format(randint_logmstar),'groupid_{0}'.format(randint_logmstar),\
+                'cen_cz_{0}'.format(randint_logmstar)]).\
                 reset_index(drop=True)
 
-                gals_df[['g_galtype_{0}'.format(randint_logmstar), \
+                gals_df[['grp_censat_{0}'.format(randint_logmstar), \
                     'groupid_{0}'.format(randint_logmstar)]] = \
-                    gals_df[['g_galtype_{0}'.format(randint_logmstar),\
+                    gals_df[['grp_censat_{0}'.format(randint_logmstar),\
                     'groupid_{0}'.format(randint_logmstar)]].astype(int)
+
+                gals_df['{0}'.format(randint_logmstar)] = \
+                    np.log10(gals_df['{0}'.format(randint_logmstar)])
 
             #* Stellar masses in log but halo masses not in log
             # randint_logmstar-2 because the best fit randint is 1 in gal_group_df
@@ -1560,21 +1556,21 @@ class Analysis():
         settings = self.settings
         preprocess = self.preprocess
 
-        print('Assigning colour to data')
-        self.catl = self.assign_colour_label_data(preprocess.catl)
+        # print('Assigning colour to data')
+        # self.catl = self.assign_colour_label_data(preprocess.catl)
 
-        print('Measuring SMF for data')
-        self.total_data, red_data, blue_data = self.measure_all_smf(self.catl, preprocess.volume, True)
+        # print('Measuring SMF for data')
+        # self.total_data, red_data, blue_data = self.measure_all_smf(self.catl, preprocess.volume, True)
 
-        print('Measuring blue fraction for data')
-        self.f_blue = self.blue_frac(self.catl, False, True)
+        # print('Measuring blue fraction for data')
+        # self.f_blue = self.blue_frac(self.catl, False, True)
 
-        print('Measuring reconstructed red and blue SMF for data')
-        self.phi_red_data, self.phi_blue_data = self.get_colour_smf_from_fblue(self.catl, self.f_blue[1], 
-            self.f_blue[0], preprocess.volume, False)
+        # print('Measuring reconstructed red and blue SMF for data')
+        # self.phi_red_data, self.phi_blue_data = self.get_colour_smf_from_fblue(self.catl, self.f_blue[1], 
+        #     self.f_blue[0], preprocess.volume, False)
 
-        print('Initial population of halo catalog')
-        self.model_init = self.halocat_init(settings.halo_catalog, preprocess.z_median)
+        # print('Initial population of halo catalog')
+        # self.model_init = self.halocat_init(settings.halo_catalog, preprocess.z_median)
 
         print('Measuring error in data from mocks')
         self.error_data, self.mocks_stdevs = self.get_err_data(settings.path_to_mocks, experiments)
