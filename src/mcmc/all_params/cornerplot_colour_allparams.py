@@ -26,13 +26,13 @@ rc('xtick.major', width=2, size=7)
 rc('ytick.major', width=2, size=7)
 
 survey = 'eco'
-quenching = 'halo'
+quenching = 'hybrid'
 mf_type = 'smf'
 nwalkers = 100
 nsteps = 1000
-burnin = 300
+burnin = 200
 ndim = 9
-run = 33
+run = 34
 
 
 def get_samples(chain_file, nsteps, nwalkers, ndim, burnin):
@@ -149,12 +149,60 @@ c.configure(kde=2.0, label_font_size=15, tick_font_size=10, summary=True,
     sigma2d=False, legend_kwargs={"fontsize": 15}) 
 if quenching == 'hybrid':
     fig1 = c.plotter.plot(display=True, 
-        truth=behroozi10_param_vals+optimizer_best_fit_eco_smf_hybrid)
+        truth=behroozi10_param_vals+zumandelbaum_param_vals_hybrid)
 elif quenching == 'halo':
     fig1 = c.plotter.plot(display=True, 
-        truth=behroozi10_param_vals+optimizer_best_fit_eco_smf_halo)
+        truth=behroozi10_param_vals+zumandelbaum_param_vals_halo)
 # fig2 = c.plotter.plot(filename=path_to_figures+'emcee_cc_mp_eco_corrscatter.png',\
 #      truth=behroozi10_param_vals)
+
+################################################################################
+# CHAIN 32 and 34 (last and current hybrid quenching)
+nwalkers = 100
+nsteps = 1000
+burnin = 200
+ndim = 9
+run_smf = 32
+
+chain_fname_hybrid_32 = path_to_proc + 'smhm_colour_run{0}/mcmc_{1}_colour_raw.txt'.\
+    format(run_smf, survey)
+samples_chain32 = get_samples(chain_fname_hybrid_32, nsteps, nwalkers, ndim, burnin)
+
+c = ChainConsumer()
+# c.add_chain(samples,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
+#     r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
+#     r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
+#     r"$\mathbf{log_{10}\ M^{q}_{*}}$", r"$\mathbf{log_{10}\ M^{q}_{h}}$", 
+#     r"$\boldsymbol{\mu}$", r"$\boldsymbol{\nu}$"],
+#     name=r"ECO: $\mathbf{\Phi}$  + $\mathbf{f_{blue, tot}}$", color='#1f77b4', 
+#     zorder=13)
+
+# c.add_chain(samples,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
+#     r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
+#     r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
+#     r"$\mathbf{log_{10}\ M^{q}_{*}}$", r"$\mathbf{log_{10}\ M^{q}_{h}}$", 
+#     r"$\boldsymbol{\mu}$", r"$\boldsymbol{\nu}$"],\
+#     name=r"ECO: $\mathbf{\Phi}$  + $\mathbf{f_{blue}}$", 
+#     color='#E766EA', zorder=10)
+c.add_chain(samples_chain32,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
+    r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
+    r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
+    r"$\mathbf{log_{10}\ M^{q}_{*}}$", r"$\mathbf{log_{10}\ M^{q}_{h}}$", 
+    r"$\boldsymbol{\mu}$", r"$\boldsymbol{\nu}$"],
+    name="SMF + Total blue fraction", color='#1f77b4', 
+    zorder=10)
+
+c.add_chain(samples,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
+    r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
+    r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
+    r"$\mathbf{log_{10}\ M^{q}_{*}}$", r"$\mathbf{log_{10}\ M^{q}_{h}}$", 
+    r"$\boldsymbol{\mu}$", r"$\boldsymbol{\nu}$"],\
+    name="SMF + Blue fraction of centrals and satellites", 
+    color='#E766EA', zorder=13)
+
+c.configure(kde=2.0,label_font_size=20, tick_font_size=8,summary=True,\
+     sigma2d=False, legend_kwargs={"fontsize": 30}) #1d gaussian showing 68%,95% conf intervals
+fig2 = c.plotter.plot(display=True,truth=behroozi10_param_vals+zumandelbaum_param_vals_hybrid)
 
 ################################################################################
 # CHAIN 6 + CHAIN 32 BEHROOZI
