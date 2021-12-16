@@ -368,7 +368,7 @@ def diff_smf(mstar_arr, volume, h1_bool, colour_flag=False):
         else:
             # For eco total
             bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
-            bin_num = 7
+            bin_num = 5
 
         bins = np.linspace(bin_min, bin_max, bin_num)
 
@@ -469,7 +469,7 @@ def blue_frac(catl, h1_bool, data_bool, randint_logmstar=None):
     if survey == 'eco' or survey == 'resolvea':
         bin_min = np.round(np.log10((10**8.9) / 2.041), 1)
         bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
-        bin_num = 7
+        bin_num = 5
 
         bins = np.linspace(bin_min, bin_max, bin_num)
 
@@ -848,6 +848,7 @@ def get_err_data(survey, path):
         for num in range(num_mocks):
             filename = temp_path + '{0}_cat_{1}_Planck_memb_cat.hdf5'.format(
                 mock_name, num)
+            print('Box {0} : Mock {1}'.format(box, num))
             mock_pd = reading_catls(filename) 
             mock_pd = mock_add_grpcz(mock_pd)
             # Using the same survey definition as in mcmc smf i.e excluding the 
@@ -943,33 +944,30 @@ def get_err_data(survey, path):
     phi_total_1 = phi_arr_total[:,1]
     phi_total_2 = phi_arr_total[:,2]
     phi_total_3 = phi_arr_total[:,3]
-    phi_total_4 = phi_arr_total[:,4]
-    phi_total_5 = phi_arr_total[:,5]
+    # phi_total_4 = phi_arr_total[:,4]
+    # phi_total_5 = phi_arr_total[:,5]
 
     f_blue_cen_0 = f_blue_cen_arr[:,0]
     f_blue_cen_1 = f_blue_cen_arr[:,1]
     f_blue_cen_2 = f_blue_cen_arr[:,2]
     f_blue_cen_3 = f_blue_cen_arr[:,3]
-    f_blue_cen_4 = f_blue_cen_arr[:,4]
-    f_blue_cen_5 = f_blue_cen_arr[:,5]
+    # f_blue_cen_4 = f_blue_cen_arr[:,4]
+    # f_blue_cen_5 = f_blue_cen_arr[:,5]
 
     f_blue_sat_0 = f_blue_sat_arr[:,0]
     f_blue_sat_1 = f_blue_sat_arr[:,1]
     f_blue_sat_2 = f_blue_sat_arr[:,2]
     f_blue_sat_3 = f_blue_sat_arr[:,3]
-    f_blue_sat_4 = f_blue_sat_arr[:,4]
-    f_blue_sat_5 = f_blue_sat_arr[:,5]
+    # f_blue_sat_4 = f_blue_sat_arr[:,4]
+    # f_blue_sat_5 = f_blue_sat_arr[:,5]
 
     combined_df = pd.DataFrame({
         'phi_tot_0':phi_total_0, 'phi_tot_1':phi_total_1, 
-        'phi_tot_2':phi_total_2, 'phi_tot_3':phi_total_3, 
-        'phi_tot_4':phi_total_4, 'phi_tot_5':phi_total_5,
+        'phi_tot_2':phi_total_2, 'phi_tot_3':phi_total_3,
         'f_blue_cen_0':f_blue_cen_0, 'f_blue_cen_1':f_blue_cen_1, 
-        'f_blue_cen_2':f_blue_cen_2, 'f_blue_cen_3':f_blue_cen_3, 
-        'f_blue_cen_4':f_blue_cen_4, 'f_blue_cen_5':f_blue_cen_5,
+        'f_blue_cen_2':f_blue_cen_2, 'f_blue_cen_3':f_blue_cen_3,
         'f_blue_sat_0':f_blue_sat_0, 'f_blue_sat_1':f_blue_sat_1, 
-        'f_blue_sat_2':f_blue_sat_2, 'f_blue_sat_3':f_blue_sat_3, 
-        'f_blue_sat_4':f_blue_sat_4, 'f_blue_sat_5':f_blue_sat_5})
+        'f_blue_sat_2':f_blue_sat_2, 'f_blue_sat_3':f_blue_sat_3})
 
     # Correlation matrix of phi and deltav colour measurements combined
     corr_mat_colour = combined_df.corr()
@@ -1000,12 +998,29 @@ def get_err_data(survey, path):
     # from matplotlib import cm
 
     # rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=25)
-    # rc('text', usetex=True)
+    # rc('text', usetex=False)
     # rc('axes', linewidth=2)
     # rc('xtick.major', width=4, size=7)
     # rc('ytick.major', width=4, size=7)
     # rc('xtick.minor', width=2, size=7)
     # rc('ytick.minor', width=2, size=7)
+
+    # fig1 = plt.figure()
+    # ax1 = fig1.add_subplot(111)
+    # cmap = cm.get_cmap('Spectral')
+    # cax = ax1.matshow(combined_df.corr(), cmap=cmap, vmin=-1, vmax=1)
+    # tick_marks = [i for i in range(len(combined_df.columns))]
+    # names = [
+    # r'$\Phi_1$', r'$\Phi_2$', r'$\Phi_3$', r'$\Phi_4$',
+    # r'$cen_1$', r'$cen_2$', r'$cen_3$', r'$cen_4$',
+    # r'$sat_1$', r'$sat_2$', r'$sat_3$', r'$sat_4$']
+    # plt.xticks(tick_marks, names, rotation='vertical')
+    # plt.yticks(tick_marks, names)    
+    # plt.gca().invert_yaxis() 
+    # plt.gca().xaxis.tick_bottom()
+    # plt.colorbar(cax)
+    # plt.title(r'SMF and blue fraction of centrals and satellites | {0}'.format(quenching))
+    # plt.show()
 
     # fig1 = plt.figure()
     # ax1 = fig1.add_subplot(111)
