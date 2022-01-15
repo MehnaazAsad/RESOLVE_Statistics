@@ -602,10 +602,6 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
     red_singleton_counter = 0
     red_sigma_arr = []
     red_cen_stellar_mass_arr = []
-    red_group_mass_arr = []
-    # red_sigmagapper_arr = []
-    red_nsat_arr = []
-    red_host_halo_mass_arr = []
     for key in red_subset_ids: 
         group = catl.loc[catl[id_col] == key]
         if len(group) == 1:
@@ -613,38 +609,21 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
         else:
             cen_stellar_mass = group[logmstar_col].loc[group[galtype_col]\
                 .values == 1].values[0]
-            group_stellar_mass = np.log10(np.sum(10**group[logmstar_col].values))
-            if catl_type == 'model':
-                host_halo_mass = np.unique(group.halo_mvir_host_halo.values)[0]
-            else: 
-                #So that the array is returned either way without the need for 
-                #two separate return statements
-                host_halo_mass = 0 
-            nsat = len(group.loc[group[galtype_col].values == 0])
+
             # Different velocity definitions
             mean_cz_grp = np.round(np.mean(group.cz.values),2)
             cen_cz_grp = group.cz.loc[group[galtype_col].values == 1].values[0]
-            # cz_grp = np.unique(group.grpcz.values)[0]
 
             # Velocity difference
             deltav = group.cz.values - len(group)*[cen_cz_grp]
             sigma = deltav.std()
-            # red_sigmagapper = np.unique(group.grpsig.values)[0]
             
             red_sigma_arr.append(sigma)
             red_cen_stellar_mass_arr.append(cen_stellar_mass)
-            red_group_mass_arr.append(group_stellar_mass)
-            # red_sigmagapper_arr.append(red_sigmagapper)
-            red_nsat_arr.append(nsat)
-            red_host_halo_mass_arr.append(host_halo_mass)
 
     blue_singleton_counter = 0
     blue_sigma_arr = []
     blue_cen_stellar_mass_arr = []
-    blue_group_mass_arr = []
-    # blue_sigmagapper_arr = []
-    blue_nsat_arr = []
-    blue_host_halo_mass_arr = []
     for key in blue_subset_ids: 
         group = catl.loc[catl[id_col] == key]
         if len(group) == 1:
@@ -652,41 +631,20 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
         else:
             cen_stellar_mass = group[logmstar_col].loc[group[galtype_col]\
                 .values == 1].values[0]
-            group_stellar_mass = np.log10(np.sum(10**group[logmstar_col].values))
-            if catl_type == 'model':
-                host_halo_mass = np.unique(group.halo_mvir_host_halo.values)[0]
-            else: 
-                #So that the array is returned either way without the need for 
-                #two separate return statements
-                host_halo_mass = 0 
 
-            nsat = len(group.loc[group[galtype_col].values == 0])
             # Different velocity definitions
             mean_cz_grp = np.round(np.mean(group.cz.values),2)
             cen_cz_grp = group.cz.loc[group[galtype_col].values == 1].values[0]
-            # cz_grp = np.unique(group.grpcz.values)[0]
 
             # Velocity difference
             deltav = group.cz.values - len(group)*[cen_cz_grp]
-            # sigma = deltav[deltav!=0].std()
             sigma = deltav.std()
-            # blue_sigmagapper = np.unique(group.grpsig.values)[0]
             
             blue_sigma_arr.append(sigma)
             blue_cen_stellar_mass_arr.append(cen_stellar_mass)
-            blue_group_mass_arr.append(group_stellar_mass)
-            # blue_sigmagapper_arr.append(blue_sigmagapper)
-            blue_nsat_arr.append(nsat)
-            blue_host_halo_mass_arr.append(host_halo_mass)
-
-
-    # return red_sigma_arr, red_cen_stellar_mass_arr, blue_sigma_arr, \
-    #     blue_cen_stellar_mass_arr, red_nsat_arr, blue_nsat_arr, \
-    #     red_host_halo_mass_arr, blue_host_halo_mass_arr
 
     return red_sigma_arr, red_cen_stellar_mass_arr, blue_sigma_arr, \
-        blue_cen_stellar_mass_arr, red_nsat_arr, blue_nsat_arr, \
-        red_host_halo_mass_arr, blue_host_halo_mass_arr
+        blue_cen_stellar_mass_arr
 
 def calc_bary(logmstar_arr, logmgas_arr):
     """Calculates baryonic mass of galaxies from survey"""
@@ -1069,12 +1027,12 @@ def get_err_data(survey, path):
             # mu = 0.69
             # nu = 0.148
 
-            ## Using best-fit found for new ECO data using result from chain 32
+            ## Using best-fit found for new ECO data using result from chain 34
             ## i.e. hybrid quenching model
-            Mstar_q = 10.06 # Msun/h
-            Mh_q = 14.05 # Msun/h
-            mu = 0.56
-            nu = 0.48
+            Mstar_q = 10.54 # Msun/h
+            Mh_q = 14.09 # Msun/h
+            mu = 0.77
+            nu = 0.17
 
             # ## Using best-fit found for new ECO data using optimize_qm_eco.py 
             # ## for halo quenching model
@@ -1083,12 +1041,12 @@ def get_err_data(survey, path):
             # mu_c = 0.40
             # mu_s = 0.148
 
-            ## Using best-fit found for new ECO data using result from chain 33
+            ## Using best-fit found for new ECO data using result from chain 35
             ## i.e. halo quenching model
-            Mh_qc = 11.78 # Msun/h
-            Mh_qs = 13.14 # Msun/h
-            mu_c = 1.09
-            mu_s = 1.99
+            Mh_qc = 12.29 # Msun/h
+            Mh_qs = 12.78 # Msun/h
+            mu_c = 1.37
+            mu_s = 1.48
 
             if quenching == 'hybrid':
                 theta = [Mstar_q, Mh_q, mu, nu]
@@ -1133,9 +1091,7 @@ def get_err_data(survey, path):
             f_blue_sat_arr.append(f_blue[3])
     
             red_sigma, red_cen_mstar_sigma, blue_sigma, \
-            blue_cen_mstar_sigma, red_nsat, blue_nsat, \
-            red_host_halo_mass, blue_host_halo_mass = \
-            get_velocity_dispersion(mock_pd, 'mock')
+                blue_cen_mstar_sigma = get_velocity_dispersion(mock_pd, 'mock')
 
             red_sigma = np.log10(red_sigma)
             blue_sigma = np.log10(blue_sigma)
@@ -1157,19 +1113,18 @@ def get_err_data(survey, path):
     mean_mstar_red_arr = np.array(mean_mstar_red_arr)
     mean_mstar_blue_arr = np.array(mean_mstar_blue_arr)
 
-    print('Measuring velocity dispersion for data')
-    red_sigma, red_cen_mstar_sigma, blue_sigma, \
-    blue_cen_mstar_sigma, red_nsat, blue_nsat, \
-    red_host_halo_mass, blue_host_halo_mass = \
-    get_velocity_dispersion(catl, 'data')
+    # print('Measuring velocity dispersion for data')
+    # red_sigma, red_cen_mstar_sigma, blue_sigma, \
+    # blue_cen_mstar_sigma = \
+    # get_velocity_dispersion(catl, 'data')
 
-    red_sigma = np.log10(red_sigma)
-    blue_sigma = np.log10(blue_sigma)
+    # red_sigma = np.log10(red_sigma)
+    # blue_sigma = np.log10(blue_sigma)
 
-    mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
-        statistic='mean', bins=np.linspace(-2,3,5))
-    mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
-        statistic='mean', bins=np.linspace(-1,3,5))
+    # mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
+    #     statistic='mean', bins=np.linspace(-2,3,5))
+    # mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
+    #     statistic='mean', bins=np.linspace(-1,3,5))
 
 
     phi_total_0 = phi_arr_total[:,0]
@@ -1221,89 +1176,85 @@ def get_err_data(survey, path):
     corr_mat_inv_colour = np.linalg.inv(corr_mat_colour.values)  
     err_colour = np.sqrt(np.diag(combined_df.cov()))
 
-    from matplotlib.legend_handler import HandlerTuple
-    import matplotlib.pyplot as plt
-    from matplotlib import rc
-    from matplotlib import cm
+    # from matplotlib.legend_handler import HandlerTuple
+    # import matplotlib.pyplot as plt
+    # from matplotlib import rc
+    # from matplotlib import cm
 
-    rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=15)
-    rc('text', usetex=True)
-    rc('axes', linewidth=2)
-    rc('xtick.major', width=4, size=7)
-    rc('ytick.major', width=4, size=7)
-    rc('xtick.minor', width=2, size=7)
-    rc('ytick.minor', width=2, size=7)
+    # rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=15)
+    # rc('text', usetex=True)
+    # rc('axes', linewidth=2)
+    # rc('xtick.major', width=4, size=7)
+    # rc('ytick.major', width=4, size=7)
+    # rc('xtick.minor', width=2, size=7)
+    # rc('ytick.minor', width=2, size=7)
 
-    fig1 = plt.figure()
-    ax1 = fig1.add_subplot(111)
-    cmap = cm.get_cmap('Spectral')
-    cax = ax1.matshow(combined_df.corr(), cmap=cmap, vmin=-1, vmax=1)
-    tick_marks = [i for i in range(len(combined_df.columns))]
-    names = [
-    r'$\Phi_1$', r'$\Phi_2$', r'$\Phi_3$', r'$\Phi_4$',
-    r'$fblue\ cen_1$', r'$cen_2$', r'$cen_3$', r'$cen_4$',
-    r'$fblue\ sat_1$', r'$sat_2$', r'$sat_3$', r'$sat_4$',
-    r'$mstar\ red\ grpcen_1$', r'$grpcen_2$', r'$grpcen_3$', r'$grpcen_4$',
-    r'$mstar\ blue\ grpcen_1$', r'$grpcen_2$', r'$grpcen_3$', r'$grpcen_4$',]
+    # fig1 = plt.figure()
+    # ax1 = fig1.add_subplot(111)
+    # cmap = cm.get_cmap('Spectral')
+    # cax = ax1.matshow(combined_df.corr(), cmap=cmap, vmin=-1, vmax=1)
+    # tick_marks = [i for i in range(len(combined_df.columns))]
+    # names = [
+    # r'$\Phi_1$', r'$\Phi_2$', r'$\Phi_3$', r'$\Phi_4$',
+    # r'$fblue\ cen_1$', r'$cen_2$', r'$cen_3$', r'$cen_4$',
+    # r'$fblue\ sat_1$', r'$sat_2$', r'$sat_3$', r'$sat_4$',
+    # r'$mstar\ red\ grpcen_1$', r'$grpcen_2$', r'$grpcen_3$', r'$grpcen_4$',
+    # r'$mstar\ blue\ grpcen_1$', r'$grpcen_2$', r'$grpcen_3$', r'$grpcen_4$',]
 
-    plt.xticks(tick_marks, names, rotation='vertical')
-    plt.yticks(tick_marks, names)    
-    plt.gca().invert_yaxis() 
-    plt.gca().xaxis.tick_bottom()
-    plt.colorbar(cax)
-    plt.title('{0}'.format(quenching))
-    plt.show()
-    
-    # plt.title(r'SMF, blue fraction of centrals and satellites, group central stellar mass in bins of sigma | {0}'.format(quenching))
-    # plt.savefig('/Users/asadm2/Desktop/new_corr_mat_it2.png')
-
-    ## Velocity dispersion
-    bins_red=np.linspace(-2,3,5)
-    bins_blue=np.linspace(-1,3,5)
-    bins_red = 0.5 * (bins_red[1:] + bins_red[:-1])
-    bins_blue = 0.5 * (bins_blue[1:] + bins_blue[:-1])
-
-    fig2 = plt.figure()
-    for idx in range(len(combined_df.values[:,12:16])):
-        plt.plot(bins_red, combined_df.values[:,12:16][idx])
-    for idx in range(len(combined_df.values[:,16:20])):
-        plt.plot(bins_blue, combined_df.values[:,16:20][idx])
-    plt.plot(bins_red, mean_mstar_red_data[0], '--r', lw=3, label='data')
-    plt.plot(bins_blue, mean_mstar_blue_data[0], '--b', lw=3, label='data')
-
-    plt.xlabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km/s} \right]$', fontsize=30)
-    plt.ylabel(r'\boldmath$\overline{\log_{10}\ M_{*, cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
-    plt.title(r'Velocity dispersion from mocks and data')
-    plt.legend(loc='best', prop={'size':25})
-    plt.show()
-
-    ## Blue fraction from mocks
-    fig3 = plt.figure(figsize=(10,10))
-    for idx in range(len(combined_df.values[:,4:8])):
-        plt.plot(f_blue[0], combined_df.values[:,4:8][idx], '--')
-    plt.plot(f_blue_data[0], f_blue_data[2], 'k--', lw=3, label='cen data')
-    for idx in range(len(combined_df.values[:,8:12])):
-        plt.plot(f_blue[0], combined_df.values[:,8:12][idx], '-')
-    plt.plot(f_blue_data[0], f_blue_data[3], 'k-', lw=3, label='sat data')
-
-    plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=25)
-    plt.ylabel(r'\boldmath$f_{blue}$', fontsize=25)
-    plt.title(r'Blue fractions from mocks and data')
-    plt.legend(loc='best', prop={'size':25})
+    # plt.xticks(tick_marks, names, rotation='vertical')
+    # plt.yticks(tick_marks, names)    
+    # plt.gca().invert_yaxis() 
+    # plt.gca().xaxis.tick_bottom()
+    # plt.colorbar(cax)
+    # plt.title('{0}'.format(quenching))
     # plt.show()
-    plt.savefig('/Users/asadm2/Desktop/fblue_mocks_data_halo.png')
+    
+    # ## Velocity dispersion
+    # bins_red=np.linspace(-2,3,5)
+    # bins_blue=np.linspace(-1,3,5)
+    # bins_red = 0.5 * (bins_red[1:] + bins_red[:-1])
+    # bins_blue = 0.5 * (bins_blue[1:] + bins_blue[:-1])
 
-    ## SMF from mocks and data
-    fig4 = plt.figure()
-    for idx in range(len(combined_df.values[:,:4])):
-        plt.plot(max_total, combined_df.values[:,:4][idx], '-')
-    plt.plot(total_data[0], total_data[1], 'k--', lw=3, label='data')
+    # fig2 = plt.figure()
+    # for idx in range(len(combined_df.values[:,12:16])):
+    #     plt.plot(bins_red, combined_df.values[:,12:16][idx])
+    # for idx in range(len(combined_df.values[:,16:20])):
+    #     plt.plot(bins_blue, combined_df.values[:,16:20][idx])
+    # plt.plot(bins_red, mean_mstar_red_data[0], '--r', lw=3, label='data')
+    # plt.plot(bins_blue, mean_mstar_blue_data[0], '--b', lw=3, label='data')
 
-    plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$')
-    plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$')
-    plt.title(r'SMFs from mocks and data')
-    plt.legend(loc='best', prop={'size':25})
-    plt.show()
+    # plt.xlabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km/s} \right]$', fontsize=30)
+    # plt.ylabel(r'\boldmath$\overline{\log_{10}\ M_{*, cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
+    # plt.title(r'Velocity dispersion from mocks and data')
+    # plt.legend(loc='best', prop={'size':25})
+    # plt.show()
+
+    # ## Blue fraction from mocks
+    # fig3 = plt.figure(figsize=(10,10))
+    # for idx in range(len(combined_df.values[:,4:8])):
+    #     plt.plot(f_blue[0], combined_df.values[:,4:8][idx], '--')
+    # plt.plot(f_blue_data[0], f_blue_data[2], 'k--', lw=3, label='cen data')
+    # for idx in range(len(combined_df.values[:,8:12])):
+    #     plt.plot(f_blue[0], combined_df.values[:,8:12][idx], '-')
+    # plt.plot(f_blue_data[0], f_blue_data[3], 'k-', lw=3, label='sat data')
+
+    # plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=25)
+    # plt.ylabel(r'\boldmath$f_{blue}$', fontsize=25)
+    # plt.title(r'Blue fractions from mocks and data')
+    # plt.legend(loc='best', prop={'size':25})
+    # plt.show()
+
+    # ## SMF from mocks and data
+    # fig4 = plt.figure()
+    # for idx in range(len(combined_df.values[:,:4])):
+    #     plt.plot(max_total, combined_df.values[:,:4][idx], '-')
+    # plt.plot(total_data[0], total_data[1], 'k--', lw=3, label='data')
+
+    # plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$')
+    # plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$')
+    # plt.title(r'SMFs from mocks and data')
+    # plt.legend(loc='best', prop={'size':25})
+    # plt.show()
 
 
     # fig1 = plt.figure()
@@ -1382,7 +1333,7 @@ def get_err_data(survey, path):
     return err_colour, corr_mat_inv_colour
 
 def mcmc(nproc, nwalkers, nsteps, phi_total_data, f_blue_cen_data, 
-    f_blue_sat_data, err, corr_mat_inv):
+    f_blue_sat_data, vdisp_red_data, vdisp_blue_data, err, corr_mat_inv):
     """
     MCMC analysis
 
@@ -1445,13 +1396,15 @@ def mcmc(nproc, nwalkers, nsteps, phi_total_data, f_blue_cen_data,
     backend = emcee.backends.HDFBackend(filename)
     with Pool(processes=nproc) as pool:
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, backend=backend,
-            args=(phi_total_data, f_blue_cen_data, f_blue_sat_data, err, 
-                corr_mat_inv), pool=pool)
+            args=(phi_total_data, f_blue_cen_data, f_blue_sat_data, 
+                vdisp_red_data, vdisp_blue_data, err, corr_mat_inv), pool=pool)
         start = time.time()
         sampler.run_mcmc(p0, nsteps, progress=True)
         end = time.time()
         multi_time = end - start
         print("Multiprocessing took {0:.1f} seconds".format(multi_time))
+
+    return sampler
 
 def populate_mock(theta, model):
     """
@@ -1702,7 +1655,8 @@ def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
 
     return mockgal_pd_merged
 
-def lnprob(theta, phi_total_data, f_blue_cen_data, f_blue_sat_data, err, corr_mat_inv):
+def lnprob(theta, phi_total_data, f_blue_cen_data, f_blue_sat_data,
+    vdisp_red_data, vdisp_blue_data, err, corr_mat_inv):
     """
     Calculates log probability for emcee
 
@@ -1786,7 +1740,7 @@ def lnprob(theta, phi_total_data, f_blue_cen_data, f_blue_sat_data, err, corr_ma
         'l_perp': 0.07,
         'l_para': 1.1,
         'nmin': 1,
-        'verbose': True,
+        'verbose': False,
         'catl_type': 'mstar'
     }
 
@@ -1834,15 +1788,30 @@ def lnprob(theta, phi_total_data, f_blue_cen_data, f_blue_sat_data, err, corr_ma
         total_model = measure_all_smf(gal_group_df, survey_vol, False)  
         ## Observable #2 - Blue fraction
         f_blue = blue_frac(gal_group_df, True, False)
+        ## Observable #3 - Mstar of central-velocity dispersion
+        red_sigma, red_cen_mstar_sigma, blue_sigma, \
+            blue_cen_mstar_sigma = get_velocity_dispersion(gal_group_df, 'model')
+
+        red_sigma = np.log10(red_sigma)
+        blue_sigma = np.log10(blue_sigma)
+
+        mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
+            statistic='mean', bins=np.linspace(-2,3,5))
+        mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
+            statistic='mean', bins=np.linspace(-1,3,5))
 
         data_arr = []
         data_arr.append(phi_total_data)
         data_arr.append(f_blue_cen_data)
         data_arr.append(f_blue_sat_data)
+        data_arr.append(vdisp_red_data)
+        data_arr.append(vdisp_blue_data)
         model_arr = []
         model_arr.append(total_model[1])
         model_arr.append(f_blue[2])   
         model_arr.append(f_blue[3])
+        model_arr.append(mean_mstar_red[0])
+        model_arr.append(mean_mstar_blue[0])
         err_arr = err
 
         data_arr, model_arr = np.array(data_arr), np.array(model_arr)
@@ -1854,7 +1823,7 @@ def lnprob(theta, phi_total_data, f_blue_cen_data, f_blue_sat_data, err, corr_ma
     except (ValueError, RuntimeWarning, UserWarning):
         lnp = -np.inf
         chi2 = np.inf
-        
+
     return lnp, chi2
 
 def chi_squared(data, model, err_data, inv_corr_mat):
@@ -1937,6 +1906,7 @@ def main(args):
     global mf_type
     global quenching
     global path_to_data
+    global level
 
     rseed = 12
     np.random.seed(rseed)
@@ -1947,6 +1917,7 @@ def main(args):
     nsteps = args.nsteps
     mf_type = args.mf_type
     quenching = args.quenching
+    level = "group"
     
     dict_of_paths = cwpaths.cookiecutter_paths()
     path_to_raw = dict_of_paths['raw_dir']
@@ -1986,9 +1957,7 @@ def main(args):
 
     print('Measuring velocity dispersion for data')
     red_sigma, red_cen_mstar_sigma, blue_sigma, \
-    blue_cen_mstar_sigma, red_nsat, blue_nsat, \
-    red_host_halo_mass, blue_host_halo_mass = \
-    get_velocity_dispersion(catl, 'data')
+        blue_cen_mstar_sigma = get_velocity_dispersion(catl, 'data')
 
     red_sigma = np.log10(red_sigma)
     blue_sigma = np.log10(blue_sigma)
@@ -2004,15 +1973,23 @@ def main(args):
     print('Measuring error in data from mocks')
     sigma, corr_mat_inv = get_err_data(survey, path_to_mocks)
 
-    print('sigma: \n', sigma)
-    print('inv corr mat: \n', corr_mat_inv)
-    print('total phi data: \n', total_data[1])
-    print('blue frac cen data: \n', f_blue[2])
-    print('blue frac sat data: \n', f_blue[3])
+    print('Error in data: \n', sigma)
+    print('------------- \n')
+    print('Inverse of covariance matrix: \n', corr_mat_inv)
+    print('------------- \n')
+    print('SMF total data: \n', total_data[1])
+    print('------------- \n')
+    print('Blue frac cen data: \n', f_blue_data[2])
+    print('Blue frac sat data: \n', f_blue_data[3])
+    print('------------- \n')
+    print('Dispersion red data: \n', mean_mstar_red_data[0])
+    print('Dispersion blue data: \n', mean_mstar_blue_data[0])
+    print('------------- \n')
 
     print('Running MCMC')
     sampler = mcmc(nproc, nwalkers, nsteps, total_data[1],
-        f_blue[2], f_blue[3], sigma, corr_mat_inv)
+        f_blue_data[2], f_blue_data[3], mean_mstar_red_data[0],
+        mean_mstar_blue_data[0], sigma, corr_mat_inv)
 
     print("Mean acceptance fraction: {0:.3f}".format(
         np.mean(sampler.acceptance_fraction)))
