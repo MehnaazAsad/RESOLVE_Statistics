@@ -39,8 +39,8 @@ def vol_sphere(r):
     volume = (4/3)*np.pi*(r**3)
     return volume
 
-def mock_add_grpcz(mock_df):
-    groups = mock_df.groupby('groupid') 
+def mock_add_grpcz(mock_df, grpid_col='groupid', data_bool=None):
+    groups = mock_df.groupby(grpid_col) 
     keys = groups.groups.keys() 
     grpcz_new = [] 
     grpn = []
@@ -551,7 +551,7 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
             max_cz = 7000
             mstar_limit = 8.7
 
-        if randint != 1:
+        if randint > 1:
             logmstar_col = '{0}'.format(randint)
             galtype_col = 'grp_censat_{0}'.format(randint)
             cencz_col = 'cen_cz_{0}'.format(randint)
@@ -559,7 +559,7 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
             # Using the same survey definition as in mcmc smf i.e excluding the 
             # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
             # and M* star cuts to mimic mocks and data.
-            catl = mock_add_grpcz(catl, False, id_col, galtype_col, cencz_col)
+            catl = mock_add_grpcz(catl, id_col, False, galtype_col, cencz_col)
             catl = catl.loc[(catl.grpcz.values >= min_cz) & \
                 (catl.grpcz.values <= max_cz) & \
                 (catl[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
@@ -572,7 +572,7 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
             # Using the same survey definition as in mcmc smf i.e excluding the 
             # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
             # and M* star cuts to mimic mocks and data.
-            catl = mock_add_grpcz(catl, False, id_col, galtype_col, cencz_col)
+            catl = mock_add_grpcz(catl, id_col, False, galtype_col, cencz_col)
             catl = catl.loc[(catl.grpcz.values >= min_cz) & \
                 (catl.grpcz.values <= max_cz) & \
                 (catl[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
@@ -584,7 +584,7 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
             # Using the same survey definition as in mcmc smf i.e excluding the 
             # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
             # and M* star cuts to mimic mocks and data.
-            catl = mock_add_grpcz(catl, False, id_col)
+            catl = mock_add_grpcz(catl, id_col, False)
             catl = catl.loc[(catl.grpcz.values >= min_cz) & \
                 (catl.grpcz.values <= max_cz) & \
                 (catl[logmstar_col].values >= (10**mstar_limit)/2.041)]
