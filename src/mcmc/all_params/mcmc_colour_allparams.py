@@ -1704,16 +1704,20 @@ def lnprob(theta, phi_total_data, f_blue_cen_data, f_blue_sat_data,
 
     if theta[5] < 0:
         chi2 = -np.inf
-        return -np.inf, [chi2, randint_logmstar]
+        return -np.inf, chi2
+        # return -np.inf, [chi2, randint_logmstar]
     if theta[6] < 0:# or theta[6] > 16:
         chi2 = -np.inf
-        return -np.inf, [chi2, randint_logmstar]
+        return -np.inf, chi2
+        # return -np.inf, [chi2, randint_logmstar]
     if theta[7] < 0:
         chi2 = -np.inf
-        return -np.inf, [chi2, randint_logmstar]
+        return -np.inf, chi2
+        # return -np.inf, [chi2, randint_logmstar]
     if theta[8] < 0:# or theta[8] > 5:
         chi2 = -np.inf
-        return -np.inf, [chi2, randint_logmstar]       
+        return -np.inf, chi2
+        # return -np.inf, [chi2, randint_logmstar]       
 
     H0 = 100 # (km/s)/Mpc
     cz_inner = 3000 # not starting at corner of box
