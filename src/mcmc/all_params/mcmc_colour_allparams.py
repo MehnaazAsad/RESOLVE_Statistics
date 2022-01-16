@@ -559,8 +559,8 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
             catl = mock_add_grpcz(catl, id_col, False, galtype_col)
             catl = catl.loc[(catl.grpcz_new.values >= min_cz) & \
                 (catl.grpcz_new.values <= max_cz) & \
-                (catl[logmstar_col].values >= (10**mstar_limit)/2.041)]
-            catl[logmstar_col] = np.log10(catl[logmstar_col])
+                (catl[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
+            # catl[logmstar_col] = np.log10(catl[logmstar_col])
 
         elif isinstance(randint, int) and randint != 1:
             logmstar_col = '{0}'.format(randint)
