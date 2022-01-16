@@ -39,14 +39,14 @@ def vol_sphere(r):
     volume = (4/3)*np.pi*(r**3)
     return volume
 
-def mock_add_grpcz(mock_df, grpid_col='groupid', data_bool=None):
+def mock_add_grpcz(mock_df, grpid_col='groupid', data_bool=None, galtype_col=None):
     groups = mock_df.groupby(grpid_col) 
     keys = groups.groups.keys() 
     grpcz_new = [] 
     grpn = []
     for key in keys: 
         group = groups.get_group(key) 
-        cen_cz = group.cz.loc[group.g_galtype == 1].values[0] 
+        cen_cz = group.cz.loc[group[galtype_col] == 1].values[0] 
         grpcz_new.append(cen_cz) 
         grpn.append(len(group))
 
@@ -156,7 +156,7 @@ def read_data_catl(path_to_file, survey):
         #     usecols=columns)
 
         eco_buff = reading_catls(path_to_file)
-        eco_buff = mock_add_grpcz(eco_buff)
+        eco_buff = mock_add_grpcz(eco_buff, galtype_col='g_galtype')
         
         if mf_type == 'smf':
             # 6456 galaxies                       
@@ -552,13 +552,13 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
             mstar_limit = 8.7
 
         if randint is None:
-            logmstar_col = 'stellar_mass'
-            galtype_col = 'g_galtype'
+            logmstar_col = 'logmstar'
+            galtype_col = 'grp_censat'
             id_col = 'groupid'
             # Using the same survey definition as in mcmc smf i.e excluding the 
             # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
             # and M* star cuts to mimic mocks and data.
-            catl = mock_add_grpcz(catl, id_col, False)
+            catl = mock_add_grpcz(catl, id_col, False, galtype_col)
             catl = catl.loc[(catl.grpcz.values >= min_cz) & \
                 (catl.grpcz.values <= max_cz) & \
                 (catl[logmstar_col].values >= (10**mstar_limit)/2.041)]
@@ -1007,7 +1007,7 @@ def get_err_data(survey, path):
                 mock_name, num)
             print('Box {0} : Mock {1}'.format(box, num))
             mock_pd = reading_catls(filename) 
-            mock_pd = mock_add_grpcz(mock_pd)
+            mock_pd = mock_add_grpcz(mock_pd, galtype_col='g_galtype')
             # Using the same survey definition as in mcmc smf i.e excluding the 
             # buffer
             mock_pd = mock_pd.loc[(mock_pd.grpcz_new.values >= min_cz) & \
