@@ -15,8 +15,6 @@ import time
 from halotools.empirical_models import PrebuiltSubhaloModelFactory
 from halotools.sim_manager import CachedHaloCatalog
 from cosmo_utils.utils import work_paths as cwpaths
-from matplotlib.pyplot import sca
-from numpy.core.fromnumeric import diagonal
 from scipy.stats import binned_statistic as bs
 from astropy.cosmology import LambdaCDM
 from scipy.interpolate import interp1d
@@ -559,8 +557,8 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
             # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
             # and M* star cuts to mimic mocks and data.
             catl = mock_add_grpcz(catl, id_col, False, galtype_col)
-            catl = catl.loc[(catl.grpcz.values >= min_cz) & \
-                (catl.grpcz.values <= max_cz) & \
+            catl = catl.loc[(catl.grpcz_new.values >= min_cz) & \
+                (catl.grpcz_new.values <= max_cz) & \
                 (catl[logmstar_col].values >= (10**mstar_limit)/2.041)]
             catl[logmstar_col] = np.log10(catl[logmstar_col])
 
