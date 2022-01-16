@@ -551,7 +551,20 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
             max_cz = 7000
             mstar_limit = 8.7
 
-        if randint > 1:
+        if randint is None:
+            logmstar_col = 'stellar_mass'
+            galtype_col = 'g_galtype'
+            id_col = 'groupid'
+            # Using the same survey definition as in mcmc smf i.e excluding the 
+            # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
+            # and M* star cuts to mimic mocks and data.
+            catl = mock_add_grpcz(catl, id_col, False)
+            catl = catl.loc[(catl.grpcz.values >= min_cz) & \
+                (catl.grpcz.values <= max_cz) & \
+                (catl[logmstar_col].values >= (10**mstar_limit)/2.041)]
+            catl[logmstar_col] = np.log10(catl[logmstar_col])
+
+        elif isinstance(randint, int) and randint != 1:
             logmstar_col = '{0}'.format(randint)
             galtype_col = 'grp_censat_{0}'.format(randint)
             cencz_col = 'cen_cz_{0}'.format(randint)
@@ -564,7 +577,7 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
                 (catl.grpcz.values <= max_cz) & \
                 (catl[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
 
-        elif randint == 1:
+        elif isinstance(randint, int) and randint == 1:
             logmstar_col = 'behroozi_bf'
             galtype_col = 'grp_censat_{0}'.format(randint)
             cencz_col = 'cen_cz_{0}'.format(randint)
@@ -576,19 +589,6 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
             catl = catl.loc[(catl.grpcz.values >= min_cz) & \
                 (catl.grpcz.values <= max_cz) & \
                 (catl[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
-
-        else:
-            logmstar_col = 'stellar_mass'
-            galtype_col = 'g_galtype'
-            id_col = 'groupid'
-            # Using the same survey definition as in mcmc smf i.e excluding the 
-            # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
-            # and M* star cuts to mimic mocks and data.
-            catl = mock_add_grpcz(catl, id_col, False)
-            catl = catl.loc[(catl.grpcz.values >= min_cz) & \
-                (catl.grpcz.values <= max_cz) & \
-                (catl[logmstar_col].values >= (10**mstar_limit)/2.041)]
-            catl[logmstar_col] = np.log10(catl[logmstar_col])
 
         if level == 'halo':
             galtype_col = 'cs_flag'
