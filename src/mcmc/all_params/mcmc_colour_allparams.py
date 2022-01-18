@@ -5,6 +5,7 @@
 """
 
 # Built-in/Generic Imports
+from asyncio.constants import SENDFILE_FALLBACK_READBUFFER_SIZE
 import multiprocessing
 import time
 # import cProfile
@@ -38,18 +39,33 @@ def vol_sphere(r):
     return volume
 
 def mock_add_grpcz(mock_df, grpid_col='groupid', data_bool=None, galtype_col=None):
-    groups = mock_df.groupby(grpid_col) 
+    start = time.time()
+    groups = catl.groupby(grpid_col) 
     keys = groups.groups.keys() 
-    grpcz_new = [] 
-    grpn = []
+    dict_keys = []
+    dict_values = []
     for key in keys: 
         group = groups.get_group(key) 
-        cen_cz = group.cz.loc[group[galtype_col] == 1].values[0] 
-        grpcz_new.append(cen_cz) 
-        grpn.append(len(group))
+        try:
+            cen_cz = group.cz.loc[group[galtype_col] == 1].values[0]
+            dict_values.append(cen_cz)
+            dict_keys.append(key)
+        except:
+            pass
+    newcz_dict = {dict_keys[i]: dict_values[i] for i in range(len(dict_keys))}
+    catl['grpcz_new'] = catl['groupid'].map(newcz_dict)
+    end = time.time()
+    print("Time taken: {0}".format(end-start))
 
-    full_grpcz_arr = np.repeat(grpcz_new, grpn)
-    mock_df['grpcz_new'] = full_grpcz_arr
+    start = time.time()
+    cen_subset_df = catl.loc[catl.g_galtype == 1].sort_values(by='groupid')
+    cen_cz = cen_subset_df.groupby(['groupid','g_galtype'])['cz'].apply(np.sum).values
+    zip_iterator = zip(list(cen_subset_df.groupid.values), list(cen_cz))
+    a_dictionary = dict(zip_iterator)
+    catl['grpcz_mod'] = catl['groupid'].map(a_dictionary)
+    end = time.time()
+    print("Time taken: {0}".format(end-start))
+
     return mock_df
 
 def reading_catls(filename, catl_format='.hdf5'):
@@ -593,16 +609,43 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
             id_col = 'halo_hostid'
 
     red_subset_ids = np.unique(catl[id_col].loc[(catl.\
-        colour_label == 'R') & (catl[galtype_col] == 1)].values)  
+        colour_label == 'R') & (catl[galtype_col] == 1)].values) 
     blue_subset_ids = np.unique(catl[id_col].loc[(catl.\
         colour_label == 'B') & (catl[galtype_col] == 1)].values)
 
+
+    from collections import Counter
+    start = time.time()
+    red_subset_df = catl.loc[catl['groupid'].isin(red_subset_ids)]
+    # red_subset_ids = [key for key in Counter(
+    #     red_subset_df.groupid).keys() if Counter(
+    #         red_subset_df.groupid)[key] > 1]
+    red_subset_df = catl.loc[catl['groupid'].isin(
+        red_subset_ids)].sort_values(by='groupid')
+    # red_cen_stellar_mass_arr_new = red_subset_df.logmstar.loc[\
+    #     red_subset_df.g_galtype == 1].values
+    cen_red_subset_df = red_subset_df.loc[red_subset_df.g_galtype == 1]
+    red_cen_stellar_mass_arr_new = cen_red_subset_df.groupby(['groupid','g_galtype'])['logmstar'].apply(np.sum).values
+    red_subset_df['deltav'] = red_subset_df['cz'] - red_subset_df['grpcz_test']        
+    red_sigma_arr_new = red_subset_df.groupby('groupid')['deltav'].apply(np.std).values
+    end = time.time()
+    time_taken = end - start
+    print("New method took {0:.1f} seconds".format(time_taken))
+
+    red_subset_ids = np.unique(catl[id_col].loc[(catl.\
+        colour_label == 'R') & (catl[galtype_col] == 1)].values) 
+    blue_subset_ids = np.unique(catl[id_col].loc[(catl.\
+        colour_label == 'B') & (catl[galtype_col] == 1)].values)
+
+    start = time.time() 
     red_singleton_counter = 0
+    red_singleton_ngal = []
     red_sigma_arr = []
     red_cen_stellar_mass_arr = []
     for key in red_subset_ids: 
         group = catl.loc[catl[id_col] == key]
         if len(group) == 1:
+            red_singleton_ngal.append(group.g_ngal.values[0])
             red_singleton_counter += 1
         else:
             cen_stellar_mass = group[logmstar_col].loc[group[galtype_col]\
@@ -618,6 +661,9 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
             
             red_sigma_arr.append(sigma)
             red_cen_stellar_mass_arr.append(cen_stellar_mass)
+    end = time.time()
+    time_taken = end - start
+    print("Old method took {0:.1f} seconds".format(time_taken))
 
     blue_singleton_counter = 0
     blue_sigma_arr = []
@@ -640,7 +686,7 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
             
             blue_sigma_arr.append(sigma)
             blue_cen_stellar_mass_arr.append(cen_stellar_mass)
-
+    
     return red_sigma_arr, red_cen_stellar_mass_arr, blue_sigma_arr, \
         blue_cen_stellar_mass_arr
 
@@ -1952,6 +1998,7 @@ def main(args):
     catl = assign_colour_label_data(catl)
 
     print('Measuring SMF for data')
+    #! Shouldn't h1_bool be False
     total_data = measure_all_smf(catl, volume, True)
 
     print('Measuring blue fraction for data')
