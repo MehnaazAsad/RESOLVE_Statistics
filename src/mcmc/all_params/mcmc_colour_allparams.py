@@ -5,7 +5,6 @@
 """
 
 # Built-in/Generic Imports
-from asyncio.constants import SENDFILE_FALLBACK_READBUFFER_SIZE
 import multiprocessing
 import time
 # import cProfile
@@ -38,35 +37,16 @@ def vol_sphere(r):
     volume = (4/3)*np.pi*(r**3)
     return volume
 
-def mock_add_grpcz(mock_df, grpid_col='groupid', data_bool=None, galtype_col=None):
-    start = time.time()
-    groups = catl.groupby(grpid_col) 
-    keys = groups.groups.keys() 
-    dict_keys = []
-    dict_values = []
-    for key in keys: 
-        group = groups.get_group(key) 
-        try:
-            cen_cz = group.cz.loc[group[galtype_col] == 1].values[0]
-            dict_values.append(cen_cz)
-            dict_keys.append(key)
-        except:
-            pass
-    newcz_dict = {dict_keys[i]: dict_values[i] for i in range(len(dict_keys))}
-    catl['grpcz_new'] = catl['groupid'].map(newcz_dict)
-    end = time.time()
-    print("Time taken: {0}".format(end-start))
-
-    start = time.time()
-    cen_subset_df = catl.loc[catl.g_galtype == 1].sort_values(by='groupid')
-    cen_cz = cen_subset_df.groupby(['groupid','g_galtype'])['cz'].apply(np.sum).values
-    zip_iterator = zip(list(cen_subset_df.groupid.values), list(cen_cz))
+def mock_add_grpcz(df, grpid_col=None, galtype_col=None, cen_cz_col=None):
+    cen_subset_df = df.loc[df[galtype_col] == 1].sort_values(by=grpid_col)
+    # Sum doesn't actually add up anything here but I didn't know how to get
+    # each row as is so I used .apply
+    cen_cz = cen_subset_df.groupby(['{0}'.format(grpid_col),'{0}'.format(
+        galtype_col)])['{0}'.format(cen_cz_col)].apply(np.sum).values    
+    zip_iterator = zip(list(cen_subset_df[grpid_col]), list(cen_cz))
     a_dictionary = dict(zip_iterator)
-    catl['grpcz_mod'] = catl['groupid'].map(a_dictionary)
-    end = time.time()
-    print("Time taken: {0}".format(end-start))
-
-    return mock_df
+    df['grpcz_new'] = df['{0}'.format(grpid_col)].map(a_dictionary)
+    return df
 
 def reading_catls(filename, catl_format='.hdf5'):
     """
@@ -170,7 +150,8 @@ def read_data_catl(path_to_file, survey):
         #     usecols=columns)
 
         eco_buff = reading_catls(path_to_file)
-        eco_buff = mock_add_grpcz(eco_buff, galtype_col='g_galtype')
+        eco_buff = mock_add_grpcz(eco_buff, grpid_col='groupid', 
+            galtype_col='g_galtype', cen_cz_col='cz')
         
         if mf_type == 'smf':
             # 6456 galaxies                       
@@ -457,6 +438,7 @@ def blue_frac(catl, h1_bool, data_bool, randint_logmstar=None):
     #     censat_col = 'g_galtype_{0}'.format(randint_logmstar)
     #     mstar_cen_arr = catl['behroozi_bf'].loc[catl[censat_col] == 1].values
     #     mstar_sat_arr = catl['behroozi_bf'].loc[catl[censat_col] == 0].values
+    
     # New case where no subset of mocks are used and group finding is done within
     # mcmc framework
     elif randint_logmstar is None:
@@ -569,12 +551,14 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
             logmstar_col = 'logmstar'
             galtype_col = 'grp_censat'
             id_col = 'groupid'
+            cencz_col = 'cen_cz'
             # Using the same survey definition as in mcmc smf i.e excluding the 
             # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
             # and M* star cuts to mimic mocks and data.
-            catl = mock_add_grpcz(catl, id_col, False, galtype_col)
-            catl = catl.loc[(catl.grpcz_new.values >= min_cz) & \
-                (catl.grpcz_new.values <= max_cz) & \
+            # catl = mock_add_grpcz(catl, id_col, False, galtype_col)
+            catl = catl.loc[
+                (catl[cencz_col].values >= min_cz) & \
+                (catl[cencz_col].values <= max_cz) & \
                 (catl[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
             # catl[logmstar_col] = np.log10(catl[logmstar_col])
 
@@ -586,9 +570,10 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
             # Using the same survey definition as in mcmc smf i.e excluding the 
             # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
             # and M* star cuts to mimic mocks and data.
-            catl = mock_add_grpcz(catl, id_col, False, galtype_col, cencz_col)
-            catl = catl.loc[(catl.grpcz.values >= min_cz) & \
-                (catl.grpcz.values <= max_cz) & \
+            # catl = mock_add_grpcz(catl, id_col, False, galtype_col, cencz_col)
+            catl = catl.loc[
+                (catl[cencz_col].values >= min_cz) & \
+                (catl[cencz_col].values <= max_cz) & \
                 (catl[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
 
         elif isinstance(randint, int) and randint == 1:
@@ -599,9 +584,10 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
             # Using the same survey definition as in mcmc smf i.e excluding the 
             # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
             # and M* star cuts to mimic mocks and data.
-            catl = mock_add_grpcz(catl, id_col, False, galtype_col, cencz_col)
-            catl = catl.loc[(catl.grpcz.values >= min_cz) & \
-                (catl.grpcz.values <= max_cz) & \
+            # catl = mock_add_grpcz(catl, id_col, False, galtype_col, cencz_col)
+            catl = catl.loc[
+                (catl[cencz_col].values >= min_cz) & \
+                (catl[cencz_col].values <= max_cz) & \
                 (catl[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
 
         if level == 'halo':
@@ -614,79 +600,50 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
         colour_label == 'B') & (catl[galtype_col] == 1)].values)
 
 
-    from collections import Counter
-    start = time.time()
-    red_subset_df = catl.loc[catl['groupid'].isin(red_subset_ids)]
+    # start = time.time()
+    red_subset_df = catl.loc[catl[id_col].isin(red_subset_ids)]
     # red_subset_ids = [key for key in Counter(
     #     red_subset_df.groupid).keys() if Counter(
     #         red_subset_df.groupid)[key] > 1]
-    red_subset_df = catl.loc[catl['groupid'].isin(
-        red_subset_ids)].sort_values(by='groupid')
+    red_subset_ids = red_subset_df.groupby([id_col]).filter(lambda x: len(x) > 1)[id_col].unique()
+    red_subset_df = catl.loc[catl[id_col].isin(
+        red_subset_ids)].sort_values(by='{0}'.format(id_col))
     # red_cen_stellar_mass_arr_new = red_subset_df.logmstar.loc[\
     #     red_subset_df.g_galtype == 1].values
-    cen_red_subset_df = red_subset_df.loc[red_subset_df.g_galtype == 1]
-    red_cen_stellar_mass_arr_new = cen_red_subset_df.groupby(['groupid','g_galtype'])['logmstar'].apply(np.sum).values
-    red_subset_df['deltav'] = red_subset_df['cz'] - red_subset_df['grpcz_test']        
-    red_sigma_arr_new = red_subset_df.groupby('groupid')['deltav'].apply(np.std).values
-    end = time.time()
-    time_taken = end - start
-    print("New method took {0:.1f} seconds".format(time_taken))
+    cen_red_subset_df = red_subset_df.loc[red_subset_df[galtype_col] == 1]
+    red_cen_stellar_mass_arr = cen_red_subset_df.groupby(['{0}'.format(id_col),
+        '{0}'.format(galtype_col)])[logmstar_col].apply(np.sum).values
+    if catl_type == 'data' or catl_type == 'mock':
+        red_subset_df['deltav'] = red_subset_df['cz'] - red_subset_df['grpcz_new']   
+    elif catl_type == 'model':     
+        red_subset_df['deltav'] = red_subset_df['cz'] - red_subset_df[cencz_col]   
+    red_sigma_arr = red_subset_df.groupby(id_col)['deltav'].apply(np.std).values
+    # end = time.time()
+    # time_taken = end - start
+    # print("New method took {0:.1f} seconds".format(time_taken))
 
-    red_subset_ids = np.unique(catl[id_col].loc[(catl.\
-        colour_label == 'R') & (catl[galtype_col] == 1)].values) 
-    blue_subset_ids = np.unique(catl[id_col].loc[(catl.\
-        colour_label == 'B') & (catl[galtype_col] == 1)].values)
+    # start = time.time()
+    blue_subset_df = catl.loc[catl[id_col].isin(blue_subset_ids)]
+    # red_subset_ids = [key for key in Counter(
+    #     red_subset_df.groupid).keys() if Counter(
+    #         red_subset_df.groupid)[key] > 1]
+    blue_subset_ids = blue_subset_df.groupby([id_col]).filter(lambda x: len(x) > 1)[id_col].unique()
+    blue_subset_df = catl.loc[catl[id_col].isin(
+        blue_subset_ids)].sort_values(by='{0}'.format(id_col))
+    # red_cen_stellar_mass_arr_new = red_subset_df.logmstar.loc[\
+    #     red_subset_df.g_galtype == 1].values
+    cen_blue_subset_df = blue_subset_df.loc[blue_subset_df[galtype_col] == 1]
+    blue_cen_stellar_mass_arr = cen_blue_subset_df.groupby(['{0}'.format(id_col),
+        '{0}'.format(galtype_col)])[logmstar_col].apply(np.sum).values
+    if catl_type == 'data' or catl_type == 'mock':
+        blue_subset_df['deltav'] = blue_subset_df['cz'] - blue_subset_df['grpcz_new']    
+    elif catl_type == 'model':
+        blue_subset_df['deltav'] = blue_subset_df['cz'] - blue_subset_df[cencz_col]            
+    blue_sigma_arr = blue_subset_df.groupby('{0}'.format(id_col))['deltav'].apply(np.std).values
+    # end = time.time()
+    # time_taken = end - start
+    # print("New method took {0:.1f} seconds".format(time_taken))
 
-    start = time.time() 
-    red_singleton_counter = 0
-    red_singleton_ngal = []
-    red_sigma_arr = []
-    red_cen_stellar_mass_arr = []
-    for key in red_subset_ids: 
-        group = catl.loc[catl[id_col] == key]
-        if len(group) == 1:
-            red_singleton_ngal.append(group.g_ngal.values[0])
-            red_singleton_counter += 1
-        else:
-            cen_stellar_mass = group[logmstar_col].loc[group[galtype_col]\
-                .values == 1].values[0]
-
-            # Different velocity definitions
-            mean_cz_grp = np.round(np.mean(group.cz.values),2)
-            cen_cz_grp = group.cz.loc[group[galtype_col].values == 1].values[0]
-
-            # Velocity difference
-            deltav = group.cz.values - len(group)*[cen_cz_grp]
-            sigma = deltav.std()
-            
-            red_sigma_arr.append(sigma)
-            red_cen_stellar_mass_arr.append(cen_stellar_mass)
-    end = time.time()
-    time_taken = end - start
-    print("Old method took {0:.1f} seconds".format(time_taken))
-
-    blue_singleton_counter = 0
-    blue_sigma_arr = []
-    blue_cen_stellar_mass_arr = []
-    for key in blue_subset_ids: 
-        group = catl.loc[catl[id_col] == key]
-        if len(group) == 1:
-            blue_singleton_counter += 1
-        else:
-            cen_stellar_mass = group[logmstar_col].loc[group[galtype_col]\
-                .values == 1].values[0]
-
-            # Different velocity definitions
-            mean_cz_grp = np.round(np.mean(group.cz.values),2)
-            cen_cz_grp = group.cz.loc[group[galtype_col].values == 1].values[0]
-
-            # Velocity difference
-            deltav = group.cz.values - len(group)*[cen_cz_grp]
-            sigma = deltav.std()
-            
-            blue_sigma_arr.append(sigma)
-            blue_cen_stellar_mass_arr.append(cen_stellar_mass)
-    
     return red_sigma_arr, red_cen_stellar_mass_arr, blue_sigma_arr, \
         blue_cen_stellar_mass_arr
 
@@ -1051,7 +1008,8 @@ def get_err_data(survey, path):
                 mock_name, num)
             print('Box {0} : Mock {1}'.format(box, num))
             mock_pd = reading_catls(filename) 
-            mock_pd = mock_add_grpcz(mock_pd, galtype_col='g_galtype')
+            mock_pd = mock_add_grpcz(mock_pd, grpid_col='groupid', 
+                galtype_col='g_galtype', cen_cz_col='cz')
             # Using the same survey definition as in mcmc smf i.e excluding the 
             # buffer
             mock_pd = mock_pd.loc[(mock_pd.grpcz_new.values >= min_cz) & \
@@ -1998,7 +1956,6 @@ def main(args):
     catl = assign_colour_label_data(catl)
 
     print('Measuring SMF for data')
-    #! Shouldn't h1_bool be False
     total_data = measure_all_smf(catl, volume, True)
 
     print('Measuring blue fraction for data')
