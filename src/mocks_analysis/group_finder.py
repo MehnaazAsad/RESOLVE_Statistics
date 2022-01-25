@@ -575,11 +575,15 @@ def group_finding(mock_pd, col_id, mock_zz_file, param_dict, file_ext='csv'):
     ## Running FoF
     # File prefix
 
+    #* Added to make sure that by running the exe from two different screen
+    #* sessions simultaneously, the files wouldn't get mixed up when being 
+    #* written to in the same location. Filenames in the other session had no i.
+    i=1393
     # Defining files for FoF output and Mock coordinates
-    fof_file        = '{0}.galcatl_fof.{1}'.format(mock_zz_file, file_ext)
-    grep_file       = '{0}.galcatl_grep.{1}'.format(mock_zz_file, file_ext)
-    grep_g_file     = '{0}.galcatl_grep_g.{1}'.format(mock_zz_file, file_ext)
-    mock_coord_path = '{0}.galcatl_radeccz.{1}'.format(mock_zz_file, file_ext)
+    fof_file        = '{0}.galcatl_fof_{1}.{2}'.format(mock_zz_file, i, file_ext)
+    grep_file       = '{0}.galcatl_grep_{1}.{2}'.format(mock_zz_file, i, file_ext)
+    grep_g_file     = '{0}.galcatl_grep_g_{1}.{2}'.format(mock_zz_file, i, file_ext)
+    mock_coord_path = '{0}.galcatl_radeccz_{1}.{2}'.format(mock_zz_file, i, file_ext)
     ## RA-DEC-CZ file
     mock_coord_pd = mock_pd[['ra','dec','cz','{0}'.format(col_id)]]
     mock_coord_pd = mock_coord_pd.rename(columns={"{0}".format(col_id): "logmstar"}).to_csv(mock_coord_path,
