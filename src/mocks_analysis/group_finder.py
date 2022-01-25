@@ -1247,4 +1247,5 @@ def main(args):
 
 # Main function
 if __name__ == '__main__':
-    main()
+    args = args_parser()
+    main(args)
