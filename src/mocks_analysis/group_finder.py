@@ -14,6 +14,7 @@ from tqdm import tqdm
 import pandas as pd
 import numpy as np
 import subprocess
+import emcee
 import os
 
 __author__ = '{Mehnaaz Asad}'
@@ -125,20 +126,16 @@ def read_mock_catl(filename, catl_format='.hdf5'):
 
     return mock_pd
 
-def mock_add_grpcz(mock_df):
-    groups = mock_df.groupby('groupid') 
-    keys = groups.groups.keys() 
-    grpcz_new = [] 
-    grpn = []
-    for key in keys: 
-        group = groups.get_group(key) 
-        cen_cz = group.cz.loc[group.g_galtype == 1].values[0] 
-        grpcz_new.append(cen_cz) 
-        grpn.append(len(group))
-
-    full_grpcz_arr = np.repeat(grpcz_new, grpn)
-    mock_df['grpcz_new'] = full_grpcz_arr
-    return mock_df
+def mock_add_grpcz(df, grpid_col=None, galtype_col=None, cen_cz_col=None):
+    cen_subset_df = df.loc[df[galtype_col] == 1].sort_values(by=grpid_col)
+    # Sum doesn't actually add up anything here but I didn't know how to get
+    # each row as is so I used .apply
+    cen_cz = cen_subset_df.groupby(['{0}'.format(grpid_col),'{0}'.format(
+        galtype_col)])['{0}'.format(cen_cz_col)].apply(np.sum).values    
+    zip_iterator = zip(list(cen_subset_df[grpid_col]), list(cen_cz))
+    a_dictionary = dict(zip_iterator)
+    df['grpcz_new'] = df['{0}'.format(grpid_col)].map(a_dictionary)
+    return df
 
 def read_data_catl(path_to_file, survey):
     """
@@ -172,7 +169,8 @@ def read_data_catl(path_to_file, survey):
         # eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0)
 
         eco_buff = read_mock_catl(path_to_file)
-        eco_buff = mock_add_grpcz(eco_buff)
+        eco_buff = mock_add_grpcz(eco_buff, grpid_col='groupid', 
+            galtype_col='g_galtype', cen_cz_col='cz')
 
         if mf_type == 'smf':
             # 6456 galaxies
@@ -391,7 +389,7 @@ def halocat_init(halo_catalog, z_median):
 
     return model
 
-def populate_mock(theta, model):
+def populate_mock(theta, model, remove_cols=False):
     """
     Populate mock based on five SMHM parameter values and model
 
@@ -422,6 +420,8 @@ def populate_mock(theta, model):
 
     gals = model.mock.galaxy_table
     gals_df = pd.DataFrame(np.array(gals))
+    if remove_cols:
+        gals_df = gals_df[['halo_mvir_host_halo','stellar_mass']]
 
     return gals_df
 
@@ -1065,6 +1065,7 @@ def main():
     mf_type = 'smf'
     machine = 'bender'
     ver = 2.0
+    run = 38
 
     H0 = 100 # (km/s)/Mpc
     cz_inner = 3000 # not starting at corner of box
@@ -1112,24 +1113,31 @@ def main():
         # catl_file = path_to_raw + "eco/eco_all.csv"
         catl_file = path_to_processed + "gal_group_eco_data_buffer.hdf5"
 
-    chi2_file = path_to_processed + 'smhm_colour_run35/{0}_colour_chi2.txt'.format(survey)
-    if mf_type == 'smf' and survey == 'eco' and ver == 1.0:
-        chain_file = path_to_processed + 'mcmc_{0}.dat'.format(survey)
-    else:
-        chain_file = path_to_processed + 'smhm_colour_run35/mcmc_{0}_colour_raw.txt'.\
-            format(survey)
+    # chi2_file = path_to_processed + 'smhm_colour_run35/{0}_colour_chi2.txt'.format(survey)
+    # if mf_type == 'smf' and survey == 'eco' and ver == 1.0:
+    #     chain_file = path_to_processed + 'mcmc_{0}.dat'.format(survey)
+    # else:
+    #     chain_file = path_to_processed + 'smhm_colour_run35/mcmc_{0}_colour_raw.txt'.\
+    #         format(survey)
 
     print('Reading chi-squared file')
-    chi2 = read_chi2(chi2_file)
+    # chi2 = read_chi2(chi2_file)
+    reader = emcee.backends.HDFBackend(
+        path_to_processed + "smhm_colour_run{0}/chain.h5".format(run), read_only=True)
+    chi2 = reader.get_blobs(flat=True)
 
     print('Reading mcmc chain file')
-    mcmc_table = read_mcmc(chain_file)
+    # mcmc_table = read_mcmc(chain_file)
+    names=['Mhalo_c', 'Mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter',
+            'Mstar_q','Mhalo_q','mu','nu']
+    flatchain = reader.get_chain(flat=True)
+    mcmc_table = pd.DataFrame(flatchain, columns=names)
 
     print('Getting subset of 100 Behroozi parameters')
     mcmc_table_subset = get_paramvals_percentile(mcmc_table, 68, chi2)
 
     params_df = pd.DataFrame(mcmc_table_subset)
-    params_df.to_csv(path_to_processed + 'run35_params_subset.txt', 
+    params_df.to_csv(path_to_processed + 'run{0}_params_subset.txt'.format(run), 
         header=None, index=None, sep=' ', mode='w')
 
     print('Reading survey data')
@@ -1140,22 +1148,42 @@ def main():
     # Populating halos with best fit set of params
     model_init = halocat_init(halo_catalog, z_median)
     bf_params = mcmc_table_subset[0][:5]
-    gals_df_ = populate_mock(bf_params, model_init)
-    gals_df_ = assign_cen_sat_flag(gals_df_)
+    gals_df_ = populate_mock(bf_params, model_init, False)
+    gals_df_['cs_flag'] = np.where(gals_df_['halo_hostid'] == \
+        gals_df_['halo_id'], 1, 0)
     gals_df_ = gals_df_.rename(columns={"stellar_mass": "1"})
     gals_df_ = gals_df_.sort_values(by='halo_mvir_host_halo')
+
 
     # Populating 100 out of the 101 set of params
     i=2
     for params in mcmc_table_subset[1:]:
+        print(i)
         params = params[:5]
-        mock = populate_mock(params, model_init)
+        mock = populate_mock(params, model_init, True)
         mock = mock.sort_values(by='halo_mvir_host_halo')
         gals_df_['{0}'.format(i)] = mock.stellar_mass.values
         i+=1
     gals_df_.reset_index(inplace=True, drop=True)
 
-    h5File = path_to_processed + "mocks101_run35.h5"
+    # def mp_func(a_list):
+    #     for theta in enumerate(a_list):
+    #         params = theta[:5]
+    #         mock = populate_mock(params, model_init)
+    #         mock = mock.sort_values(by='halo_mvir_host_halo')
+    #         gals_arr = np.insert(gals_arr, mock.stellar_mass.values, axis=1)
+
+    # chunks = np.array([mcmc_table_subset_test[1:][i::5] \
+    #     for i in range(5)])
+    # from multiprocessing import Pool
+    # nproc = 4
+    # pool = Pool(processes=nproc)
+    # global gals_arr 
+    # gals_arr = np.zeros(shape=(7450441,10))
+
+    # pool.map(mp_func, chunks)
+
+    h5File = path_to_processed + "mocks101_run{0}.h5".format(run)
     gals_df_.to_hdf(h5File, "/gals_df_/d1")
 
     print('Applying RSD')
@@ -1196,7 +1224,8 @@ def main():
 
     print('Writing to output files')
     pandas_df_to_hdf5_file(data=gals_rsd_subset_df,
-        hdf5_file=path_to_processed + 'gal_group_run35.hdf5', key='gal_group_df')
+        hdf5_file=path_to_processed + 'gal_group_run{0}.hdf5'.format(run), 
+        key='gal_group_df')
     # pandas_df_to_hdf5_file(data=group_df_new,
     #     hdf5_file=path_to_processed + 'group.hdf5', key='group_df')
 
