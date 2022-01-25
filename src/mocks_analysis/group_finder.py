@@ -14,6 +14,7 @@ from tqdm import tqdm
 import pandas as pd
 import numpy as np
 import subprocess
+import argparse
 import emcee
 import os
 
@@ -1057,7 +1058,22 @@ def diff_smf_mod(mstar_arr, volume, h1_bool, colour_flag=False):
 
     return maxis, phi, err_tot, bins, counts
 
-def main():
+def args_parser():
+    """
+    Parsing arguments passed to script
+
+    Returns
+    -------
+    args: 
+        Input arguments to the script
+    """
+    print('Parsing in progress')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('run', type=int, nargs='?', help='Chain number')
+    args = parser.parse_args()
+    return args
+
+def main(args):
     global survey
     global mf_type
     global ver
@@ -1065,7 +1081,7 @@ def main():
     mf_type = 'smf'
     machine = 'bender'
     ver = 2.0
-    run = 38
+    run = args.run
 
     H0 = 100 # (km/s)/Mpc
     cz_inner = 3000 # not starting at corner of box
