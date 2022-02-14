@@ -382,7 +382,8 @@ survey = 'eco'
 ## Running group-finding on data including the buffer
 cz_inner = 2530
 cz_outer = 7470
-volume = 192351.36 * 2.915 # survey volume with buffer in h=0.7
+#* Should have the same units as Warren (h=1.0)
+volume = 192351.36 # survey volume with buffer in h=0.7
 
 eco = {
     'c': 3*10**5,
@@ -413,6 +414,11 @@ eco_subset_df = eco_buff.loc[(eco_buff.cz >= cz_inner) & \
     (eco_buff.cz <= cz_outer) & (eco_buff.logmstar >= 8.9)].\
     reset_index(drop=True)
 
+## Testing without M* cut
+# eco_subset_df = eco_buff.loc[(eco_buff.cz >= cz_inner) & \
+#     (eco_buff.cz <= cz_outer)].\
+#     reset_index(drop=True)
+
 eco_subset_df = eco_subset_df.rename(columns={'radeg':'ra'})
 eco_subset_df = eco_subset_df.rename(columns={'dedeg':'dec'})
 
@@ -424,4 +430,5 @@ gal_group_df_new, group_df_new = \
 
 print('Writing to output files')
 pandas_df_to_hdf5_file(data=gal_group_df_new,
-    hdf5_file=path_to_processed + 'gal_group_eco_data_buffer.hdf5', key='gal_group_df')
+    hdf5_file=path_to_processed + 'gal_group_eco_data_buffer_volh1.hdf5', 
+    key='gal_group_df')
