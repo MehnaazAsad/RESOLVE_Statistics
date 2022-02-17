@@ -348,6 +348,7 @@ def diff_smf(mstar_arr, volume, h1_bool, colour_flag=False):
 
     if survey == 'eco' or survey == 'resolvea':
         bin_min = np.round(np.log10((10**8.9) / 2.041), 1)
+        
         if survey == 'eco' and colour_flag == 'R':
             bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
             bin_num = 6
@@ -1724,7 +1725,8 @@ def lnprob(theta, phi_total_data, f_blue_cen_data, f_blue_sat_data,
         # return -np.inf, [chi2, randint_logmstar]       
 
     H0 = 100 # (km/s)/Mpc
-    cz_inner = 3000 # not starting at corner of box
+    cz_inner = 2530 # not starting at corner of box
+    # cz_inner = 3000 # not starting at corner of box
     cz_outer = 120*H0 # utilizing 120 Mpc of Vishnu box
 
     dist_inner = kms_to_Mpc(H0,cz_inner) #Mpc/h
@@ -1786,6 +1788,22 @@ def lnprob(theta, phi_total_data, f_blue_cen_data, f_blue_sat_data,
 
         gal_group_df = group_finding(gals_df,
             path_to_data + 'interim/', param_dict)
+
+        ## Making a similar cz cut as in data which is based on grpcz being 
+        ## defined as cz of the central of the group
+        cz_inner_mod = 3000
+        gal_group_df = gal_group_df.loc[\
+            (gal_group_df['cen_cz'] >= cz_inner_mod) &
+            (gal_group_df['cen_cz'] <= cz_outer)].reset_index(drop=True)
+
+        dist_inner = kms_to_Mpc(H0,cz_inner_mod) #Mpc/h
+        dist_outer = kms_to_Mpc(H0,cz_outer) #Mpc/h
+
+        v_inner = vol_sphere(dist_inner)
+        v_outer = vol_sphere(dist_outer)
+
+        v_sphere = v_outer-v_inner
+        survey_vol = v_sphere/8
 
         # v_sim = 130**3
         # v_sim = 890641.5172927063 #survey volume used in group_finder.py
@@ -1938,7 +1956,7 @@ def main(args):
         halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
 
     if survey == 'eco':
-        catl_file = path_to_proc + "gal_group_eco_data_buffer.hdf5"
+        catl_file = path_to_proc + "gal_group_eco_data_buffer_volh1.hdf5"
     elif survey == 'resolvea' or survey == 'resolveb':
         catl_file = path_to_raw + "resolve/RESOLVE_liveJune2018.csv"
     
