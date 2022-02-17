@@ -537,7 +537,7 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
     if catl_type == 'model':
         if survey == 'eco':
             min_cz = 3000
-            max_cz = 7000
+            max_cz = 12000
             mstar_limit = 8.9
         elif survey == 'resolvea':
             min_cz = 4500
