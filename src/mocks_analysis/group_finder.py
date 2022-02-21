@@ -1088,7 +1088,8 @@ def main(args):
     run = args.run
 
     H0 = 100 # (km/s)/Mpc
-    cz_inner = 3000 # not starting at corner of box
+    cz_inner = 2530 # not starting at corner of box
+    # cz_inner = 3000 # not starting at corner of box
     cz_outer = 120*H0 # utilizing 120 Mpc of Vishnu box
 
     dist_inner = kms_to_Mpc(H0,cz_inner) #Mpc/h
