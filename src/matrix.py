@@ -1095,13 +1095,14 @@ err_colour = np.sqrt(np.diag(combined_df.cov()))
 
 corr_mat_colour = corr_mat_colour.iloc[::-1]
 
-fig, ax = plt.subplots(20, 20, figsize=(13.5,13.5), 
+#figsize was 13.5
+fig, ax = plt.subplots(20, 20, figsize=(8,8), 
     gridspec_kw={'wspace':0, 'hspace':0})
 
 color_norm = colors.Normalize(vmin=-1, vmax=1)
 mapper = cm.ScalarMappable(norm=color_norm, cmap=cm.Spectral_r)
 #Flip the rows so that the diagonal matches the diagonal in the plot
-
+    
 for i in range(20):
     for j in range(20):
         if i+j!=19:
@@ -1120,9 +1121,27 @@ for i in range(20):
             n, bins, patches = ax[i][j].hist(combined_df.iloc[:,j][~combined_df.iloc[:,j].isnull()], 
                 histtype='step', color='k')
             #Plotting gaussian fit to histogram
-            ax[i][j].plot(bins, norm.pdf(bins, mu, sigma), 'w-', lw=2)
+            ax01 = ax[i][j].twinx() 
+            ax01.plot(bins, norm.pdf(bins, mu, sigma), 'w-', lw=2)
+            ax01.scatter(data_observables[j], 
+                norm.pdf(data_observables[j], mu, sigma), marker='+', 
+                c='w', s=60, lw=2)
+            ax01.tick_params(left=False, labelleft=False, top=False, labeltop=False,
+                            right=False, labelright=False, bottom=False, labelbottom=False)
             # ax[i][j].scatter(data_observables[j], data_observables[j], marker='+', c='r', s=20)
         ax[i][j].set_facecolor(mapper.to_rgba(corr_mat_colour.values[i][j]))
+        ax[i][j].tick_params(
+            axis='both',        # changes apply to the x-axis
+            which='both',       # both major and minor ticks are affected
+            bottom=False,       # ticks along the bottom edge are off
+            top=False,          # ticks along the top edge are off
+            left=False,         # ticks along the left edge are off
+            right=False,        # ticks along the right edge are off
+            labelleft=False,    # labels along the left edge are off
+            labeltop=False,     # labels along the top edge are off
+            labelbottom=False,  # labels along the bottom edge are off
+            labelright=False)   # labels along the right edge are off
+
         # if j > 0 and i < 19:
         #     ax[i][j].tick_params(
         #         axis='both',        # changes apply to the x-axis
@@ -1132,7 +1151,8 @@ for i in range(20):
         #         left=False,         # ticks along the left edge are off
         #         right=False,        # ticks along the right edge are off
         #         labelleft=False,    # labels along the left edge are off
-        #         labelbottom=False)  # labels along the bottom edge are off
+        #         labelbottom=False,  # labels along the bottom edge are off
+        #         labelright=False)   # labels along the right edge are off
         # if i == 19 and j > 0:
         #     ax[i][j].tick_params(
         #         axis='y',           # changes apply to the y-axis
@@ -1145,6 +1165,19 @@ for i in range(20):
         #         which='both',       # both major and minor ticks are affected
         #         bottom=False,       # ticks along the bottom edge are off
         #         labelbottom=False)  # labels along the bottom edge are off
+   
+        # if i == 19:
+        #     labels = [item.get_text() for item in ax[i][j].get_xticklabels()]
+        #     labels = ['8.6', '9.25', '9.9', '10.55', '11.2', '8.6', '9.25', 
+        #         '9.9', '10.55', '11.2', '-2', '-0.75', '0.5', '1.75', '3',
+        #         '-1', '0', '1', '2', '3']
+        #     ax[i][j].set_xticklabels(labels[j])
+        # if j == 0:
+        #     labels = [item.get_text() for item in ax[i][j].get_yticklabels()]
+        #     labels = ['8.6', '9.25', '9.9', '10.55', '11.2', '8.6', '9.25', 
+        #         '9.9', '10.55', '11.2', '-2', '-0.75', '0.5', '1.75', '3',
+        #         '-1', '0', '1', '2', '3']
+        #     ax[i][j].set_yticklabels(labels[::-1][i])
         # if i == 19:
         #     ax[i][j].xaxis.set_major_locator(plt.MaxNLocator(2))
         # if j == 0:
@@ -1236,16 +1269,26 @@ ax[5][19].spines["right"].set_linewidth(4)
 ax[6][19].spines["right"].set_linewidth(4)
 ax[7][19].spines["right"].set_linewidth(4)
 
-for ax in ax.flat:
-    ax.label_outer()
+# for ax in ax.flat:
+#     ax.label_outer()
 
 cax = plt.axes([0.27, 0.93, 0.5, 0.04])
 cbar = plt.colorbar(mapper, cax=cax, orientation="horizontal")
 cbar.ax.tick_params(labelsize=30)
+
+# Horizontal axis tick labels
+plt.annotate("8.6", (-1.63, -43.5), fontsize=10, annotation_clip=False)
+plt.annotate("9.25", (-1.5, -43.5), fontsize=10, annotation_clip=False)
+plt.annotate("9.9", (-1.33, -43.5), fontsize=10, annotation_clip=False)
+plt.annotate("10.55", (-1.21, -43.5), fontsize=10, annotation_clip=False)
+plt.annotate("11.2", (-1.03, -43.5), fontsize=10, annotation_clip=False)
+
+# Vertical axis tick labels
+plt.annotate("8.6", (-1.73, -42.3), fontsize=10, annotation_clip=False)
+
 plt.show()
 
-fig, ax = plt.subplots(20, 20, figsize=(8,8), 
-    gridspec_kw={'wspace':0, 'hspace':0})
+bins_smf = [ 8.6 ,  9.25,  9.9 , 10.55, 11.2 ]
 
 plt.annotate(r"$\boldsymbol\phi$", (-17.2, -1.7), fontsize="small", annotation_clip=False)
 plt.annotate("",
@@ -1254,7 +1297,7 @@ plt.annotate("",
             arrowprops=dict(arrowstyle="->",
                             connectionstyle="arc3"),
             )
-plt.show()
+
 plt.annotate("",
             xy=(-16.9, -1.5), xycoords='figure pixels',
             xytext=(-15.1, -1.5), textcoords='figure pixels',
@@ -1334,4 +1377,4 @@ plt.annotate("",
 #                             connectionstyle="arc3"),
 #             )
 
-plt.show()
+
