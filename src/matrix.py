@@ -10,15 +10,17 @@ import os
 
 import matplotlib.pyplot as plt
 from matplotlib import rc
+from matplotlib import cm
+from matplotlib import colors
 
-rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=30)
+rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=7)
 rc('text', usetex=True)
 rc('text.latex', preamble=r"\usepackage{amsmath}")
-rc('axes', linewidth=1)
-rc('xtick.major', width=4, size=7)
-rc('ytick.major', width=4, size=7)
-rc('xtick.minor', width=2, size=7)
-rc('ytick.minor', width=2, size=7)
+rc('axes', linewidth=1, labelsize=5)
+rc('xtick.major', width=2, size=4)
+rc('ytick.major', width=2, size=4)
+rc('xtick.minor', width=2, size=4)
+rc('ytick.minor', width=2, size=4)
 
 __author__ = '[Mehnaaz Asad]'
 
@@ -1091,9 +1093,15 @@ corr_mat_inv_colour = np.linalg.inv(corr_mat_colour.values)
 err_colour = np.sqrt(np.diag(combined_df.cov()))
 
 
-fig, ax = plt.subplots(20, 20, figsize=(24,13.5), 
+corr_mat_colour = corr_mat_colour.iloc[::-1]
+
+fig, ax = plt.subplots(20, 20, figsize=(13.5,13.5), 
     gridspec_kw={'wspace':0, 'hspace':0})
-    
+
+color_norm = colors.Normalize(vmin=-1, vmax=1)
+mapper = cm.ScalarMappable(norm=color_norm, cmap=cm.Spectral_r)
+#Flip the rows so that the diagonal matches the diagonal in the plot
+
 for i in range(20):
     for j in range(20):
         if i+j!=19:
@@ -1102,26 +1110,46 @@ for i in range(20):
             #because we have to plot backwards for the y values i.e. subplot[0][0]
             #is the top left cell of the matrix which has x=first bin of phi and 
             #y=last bin of last observable.
-            ax[i][j].scatter(combined_df.iloc[:,j], combined_df.iloc[:,-(i+1)], c='k', s=10)
-            ax[i][j].scatter(data_observables[j], data_observables[-(i+1)], marker='+', c='r', s=40)
+            ax[i][j].scatter(combined_df.iloc[:,j], combined_df.iloc[:,-(i+1)], 
+                c='k', s=10)
+            ax[i][j].scatter(data_observables[j], data_observables[-(i+1)], 
+                marker='+', c='w', s=60, lw=2)
         else:
             #Filtering out nans before fit
             (mu, sigma) = norm.fit(combined_df.iloc[:,j][~combined_df.iloc[:,j].isnull()])
             n, bins, patches = ax[i][j].hist(combined_df.iloc[:,j][~combined_df.iloc[:,j].isnull()], 
                 histtype='step', color='k')
             #Plotting gaussian fit to histogram
-            ax[i][j].plot(bins, norm.pdf(bins, mu, sigma), 'r--', lw=2)
+            ax[i][j].plot(bins, norm.pdf(bins, mu, sigma), 'w-', lw=2)
             # ax[i][j].scatter(data_observables[j], data_observables[j], marker='+', c='r', s=20)
-        ax[i][j].tick_params(
-            axis='both',        # changes apply to the x-axis
-            which='both',       # both major and minor ticks are affected
-            bottom=False,       # ticks along the bottom edge are off
-            top=False,          # ticks along the top edge are off
-            left=False,         # ticks along the left edge are off
-            right=False,        # ticks along the right edge are off
-            labelleft=False,    # labels along the left edge are off
-            labelbottom=False)  # labels along the bottom edge are off
-        # ax[i][j].set(adjustable='datalim', aspect='equal')
+        ax[i][j].set_facecolor(mapper.to_rgba(corr_mat_colour.values[i][j]))
+        # if j > 0 and i < 19:
+        #     ax[i][j].tick_params(
+        #         axis='both',        # changes apply to the x-axis
+        #         which='both',       # both major and minor ticks are affected
+        #         bottom=False,       # ticks along the bottom edge are off
+        #         top=False,          # ticks along the top edge are off
+        #         left=False,         # ticks along the left edge are off
+        #         right=False,        # ticks along the right edge are off
+        #         labelleft=False,    # labels along the left edge are off
+        #         labelbottom=False)  # labels along the bottom edge are off
+        # if i == 19 and j > 0:
+        #     ax[i][j].tick_params(
+        #         axis='y',           # changes apply to the y-axis
+        #         which='both',       # both major and minor ticks are affected
+        #         left=False,         # ticks along the left edge are off
+        #         labelleft=False)    # labels along the left edge are off
+        # if i < 19 and j == 0:
+        #     ax[i][j].tick_params(
+        #         axis='x',           # changes apply to the x-axis
+        #         which='both',       # both major and minor ticks are affected
+        #         bottom=False,       # ticks along the bottom edge are off
+        #         labelbottom=False)  # labels along the bottom edge are off
+        # if i == 19:
+        #     ax[i][j].xaxis.set_major_locator(plt.MaxNLocator(2))
+        # if j == 0:
+        #     ax[i][j].yaxis.set_major_locator(plt.MaxNLocator(2))
+
 #Dark box around SMF observable
 ax[19][0].spines["bottom"].set_linewidth(4)
 ax[19][1].spines["bottom"].set_linewidth(4)
@@ -1207,5 +1235,103 @@ ax[4][19].spines["right"].set_linewidth(4)
 ax[5][19].spines["right"].set_linewidth(4)
 ax[6][19].spines["right"].set_linewidth(4)
 ax[7][19].spines["right"].set_linewidth(4)
+
+for ax in ax.flat:
+    ax.label_outer()
+
+cax = plt.axes([0.27, 0.93, 0.5, 0.04])
+cbar = plt.colorbar(mapper, cax=cax, orientation="horizontal")
+cbar.ax.tick_params(labelsize=30)
+plt.show()
+
+fig, ax = plt.subplots(20, 20, figsize=(8,8), 
+    gridspec_kw={'wspace':0, 'hspace':0})
+
+plt.annotate(r"$\boldsymbol\phi$", (-17.2, -1.7), fontsize="small", annotation_clip=False)
+plt.annotate("",
+            xy=(10, 10), xycoords='figure pixels',
+            xytext=(20, 10), textcoords='figure pixels',
+            arrowprops=dict(arrowstyle="->",
+                            connectionstyle="arc3"),
+            )
+plt.show()
+plt.annotate("",
+            xy=(-16.9, -1.5), xycoords='figure pixels',
+            xytext=(-15.1, -1.5), textcoords='figure pixels',
+            arrowprops=dict(arrowstyle="<-",
+                            connectionstyle="arc3"),
+            )
+
+# plt.annotate(r"$\boldsymbol\phi$", (-19.8, 1.9), fontsize="small", annotation_clip=False)
+# plt.annotate("",
+#             xy=(-19.7, 0), xycoords='axes fraction',
+#             xytext=(-19.7, 1.7), textcoords='axes fraction',
+#             arrowprops=dict(arrowstyle="->",
+#                             connectionstyle="arc3"),
+#             )
+# plt.annotate("",
+#             xy=(-19.7, 2.2), xycoords='axes fraction',
+#             xytext=(-19.7, 3.9), textcoords='axes fraction',
+#             arrowprops=dict(arrowstyle="<-",
+#                             connectionstyle="arc3"),
+#             )
+
+
+# plt.annotate(r"$\boldmath{f_{blue}}$", (-11.4, -1.7), fontsize="small", annotation_clip=False)
+# plt.annotate("",
+#             xy=(-15.0, -1.5), xycoords='axes fraction',
+#             xytext=(-11.4, -1.5), textcoords='axes fraction',
+#             arrowprops=dict(arrowstyle="->",
+#                             connectionstyle="arc3"),
+#             )
+# plt.annotate("",
+#             xy=(-10.8, -1.5), xycoords='axes fraction',
+#             xytext=(-7.1, -1.5), textcoords='axes fraction',
+#             arrowprops=dict(arrowstyle="<-",
+#                             connectionstyle="arc3"),
+#             )
+
+# plt.annotate(r"$\boldmath{f_{blue}}$", (-19.8, 7.6), fontsize="small", annotation_clip=False)
+# plt.annotate("",
+#             xy=(-19.7, 4.0), xycoords='axes fraction',
+#             xytext=(-19.7, 7.4), textcoords='axes fraction',
+#             arrowprops=dict(arrowstyle="->",
+#                             connectionstyle="arc3"),
+#             )
+# plt.annotate("",
+#             xy=(-19.7, 8.2), xycoords='axes fraction',
+#             xytext=(-19.7, 11.8), textcoords='axes fraction',
+#             arrowprops=dict(arrowstyle="<-",
+#                             connectionstyle="arc3"),
+#             )
+
+
+# plt.annotate(r"$\boldsymbol\sigma$", (-3.2, -1.7), fontsize="small", annotation_clip=False)
+# plt.annotate("",
+#             xy=(-7.0, -1.5), xycoords='axes fraction',
+#             xytext=(-3.2, -1.5), textcoords='axes fraction',
+#             arrowprops=dict(arrowstyle="->",
+#                             connectionstyle="arc3"),
+#             )
+# plt.annotate("",
+#             xy=(-2.9, -1.5), xycoords='axes fraction',
+#             xytext=(1.0, -1.5), textcoords='axes fraction',
+#             arrowprops=dict(arrowstyle="<-",
+#                             connectionstyle="arc3"),
+#             )
+
+# plt.annotate(r"$\boldsymbol\sigma$", (-19.8, 15.4), fontsize="small", annotation_clip=False)
+# plt.annotate("",
+#             xy=(-19.7, 11.9), xycoords='axes fraction',
+#             xytext=(-19.7, 15.2), textcoords='axes fraction',
+#             arrowprops=dict(arrowstyle="->",
+#                             connectionstyle="arc3"),
+#             )
+# plt.annotate("",
+#             xy=(-19.7, 15.7), xycoords='axes fraction',
+#             xytext=(-19.7, 20.2), textcoords='axes fraction',
+#             arrowprops=dict(arrowstyle="<-",
+#                             connectionstyle="arc3"),
+#             )
 
 plt.show()
