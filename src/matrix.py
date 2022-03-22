@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from matplotlib import rc
 from matplotlib import cm
 from matplotlib import colors
+from matplotlib import ticker
 
 rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=7)
 rc('text', usetex=True)
@@ -1092,16 +1093,14 @@ corr_mat_colour = combined_df.corr()
 corr_mat_inv_colour = np.linalg.inv(corr_mat_colour.values)  
 err_colour = np.sqrt(np.diag(combined_df.cov()))
 
-
+#Flip the rows so that the diagonal matches the diagonal in the plot
 corr_mat_colour = corr_mat_colour.iloc[::-1]
 
-#figsize was 13.5
-fig, ax = plt.subplots(20, 20, figsize=(8,8), 
+fig, ax = plt.subplots(20, 20, figsize=(13.5,13.5), 
     gridspec_kw={'wspace':0, 'hspace':0})
 
 color_norm = colors.Normalize(vmin=-1, vmax=1)
 mapper = cm.ScalarMappable(norm=color_norm, cmap=cm.Spectral_r)
-#Flip the rows so that the diagonal matches the diagonal in the plot
     
 for i in range(20):
     for j in range(20):
@@ -1128,7 +1127,10 @@ for i in range(20):
                 c='w', s=60, lw=2)
             ax01.tick_params(left=False, labelleft=False, top=False, labeltop=False,
                             right=False, labelright=False, bottom=False, labelbottom=False)
-            # ax[i][j].scatter(data_observables[j], data_observables[j], marker='+', c='r', s=20)
+            ax01.spines['top'].set_linewidth(0)
+            ax01.spines['bottom'].set_linewidth(0)
+            ax01.spines['left'].set_linewidth(0)
+            ax01.spines['right'].set_linewidth(0)
         ax[i][j].set_facecolor(mapper.to_rgba(corr_mat_colour.values[i][j]))
         ax[i][j].tick_params(
             axis='both',        # changes apply to the x-axis
@@ -1141,47 +1143,14 @@ for i in range(20):
             labeltop=False,     # labels along the top edge are off
             labelbottom=False,  # labels along the bottom edge are off
             labelright=False)   # labels along the right edge are off
-
-        # if j > 0 and i < 19:
-        #     ax[i][j].tick_params(
-        #         axis='both',        # changes apply to the x-axis
-        #         which='both',       # both major and minor ticks are affected
-        #         bottom=False,       # ticks along the bottom edge are off
-        #         top=False,          # ticks along the top edge are off
-        #         left=False,         # ticks along the left edge are off
-        #         right=False,        # ticks along the right edge are off
-        #         labelleft=False,    # labels along the left edge are off
-        #         labelbottom=False,  # labels along the bottom edge are off
-        #         labelright=False)   # labels along the right edge are off
-        # if i == 19 and j > 0:
-        #     ax[i][j].tick_params(
-        #         axis='y',           # changes apply to the y-axis
-        #         which='both',       # both major and minor ticks are affected
-        #         left=False,         # ticks along the left edge are off
-        #         labelleft=False)    # labels along the left edge are off
-        # if i < 19 and j == 0:
-        #     ax[i][j].tick_params(
-        #         axis='x',           # changes apply to the x-axis
-        #         which='both',       # both major and minor ticks are affected
-        #         bottom=False,       # ticks along the bottom edge are off
-        #         labelbottom=False)  # labels along the bottom edge are off
-   
-        # if i == 19:
-        #     labels = [item.get_text() for item in ax[i][j].get_xticklabels()]
-        #     labels = ['8.6', '9.25', '9.9', '10.55', '11.2', '8.6', '9.25', 
-        #         '9.9', '10.55', '11.2', '-2', '-0.75', '0.5', '1.75', '3',
-        #         '-1', '0', '1', '2', '3']
-        #     ax[i][j].set_xticklabels(labels[j])
-        # if j == 0:
-        #     labels = [item.get_text() for item in ax[i][j].get_yticklabels()]
-        #     labels = ['8.6', '9.25', '9.9', '10.55', '11.2', '8.6', '9.25', 
-        #         '9.9', '10.55', '11.2', '-2', '-0.75', '0.5', '1.75', '3',
-        #         '-1', '0', '1', '2', '3']
-        #     ax[i][j].set_yticklabels(labels[::-1][i])
-        # if i == 19:
-        #     ax[i][j].xaxis.set_major_locator(plt.MaxNLocator(2))
-        # if j == 0:
-        #     ax[i][j].yaxis.set_major_locator(plt.MaxNLocator(2))
+        if i > 0:
+            ax[i][j].spines['top'].set_linewidth(0)
+        if j > 0:
+            ax[i][j].spines['left'].set_linewidth(0)
+        if i >= 0 and i < 19:
+            ax[i][j].spines['bottom'].set_linewidth(0)
+        if j >= 0 and j < 19:
+            ax[i][j].spines['right'].set_linewidth(0)
 
 #Dark box around SMF observable
 ax[19][0].spines["bottom"].set_linewidth(4)
@@ -1196,20 +1165,20 @@ ax[16][0].spines["top"].set_linewidth(4)
 ax[16][1].spines["top"].set_linewidth(4)
 ax[16][2].spines["top"].set_linewidth(4)
 ax[16][3].spines["top"].set_linewidth(4)
-ax[16][3].spines["right"].set_linewidth(4)
-ax[17][3].spines["right"].set_linewidth(4)
-ax[18][3].spines["right"].set_linewidth(4)
-ax[19][3].spines["right"].set_linewidth(4)
+ax[16][4].spines["left"].set_linewidth(4)
+ax[17][4].spines["left"].set_linewidth(4)
+ax[18][4].spines["left"].set_linewidth(4)
+ax[19][4].spines["left"].set_linewidth(4)
 
 #Dark box around blue fraction observable
-ax[15][4].spines["bottom"].set_linewidth(4)
-ax[15][5].spines["bottom"].set_linewidth(4)
-ax[15][6].spines["bottom"].set_linewidth(4)
-ax[15][7].spines["bottom"].set_linewidth(4)
-ax[15][8].spines["bottom"].set_linewidth(4)
-ax[15][9].spines["bottom"].set_linewidth(4)
-ax[15][10].spines["bottom"].set_linewidth(4)
-ax[15][11].spines["bottom"].set_linewidth(4)
+ax[16][4].spines["top"].set_linewidth(4)
+ax[16][5].spines["top"].set_linewidth(4)
+ax[16][6].spines["top"].set_linewidth(4)
+ax[16][7].spines["top"].set_linewidth(4)
+ax[16][8].spines["top"].set_linewidth(4)
+ax[16][9].spines["top"].set_linewidth(4)
+ax[16][10].spines["top"].set_linewidth(4)
+ax[16][11].spines["top"].set_linewidth(4)
 ax[15][4].spines["left"].set_linewidth(4)
 ax[14][4].spines["left"].set_linewidth(4)
 ax[13][4].spines["left"].set_linewidth(4)
@@ -1226,24 +1195,24 @@ ax[8][8].spines["top"].set_linewidth(4)
 ax[8][9].spines["top"].set_linewidth(4)
 ax[8][10].spines["top"].set_linewidth(4)
 ax[8][11].spines["top"].set_linewidth(4)
-ax[8][11].spines["right"].set_linewidth(4)
-ax[9][11].spines["right"].set_linewidth(4)
-ax[10][11].spines["right"].set_linewidth(4)
-ax[11][11].spines["right"].set_linewidth(4)
-ax[12][11].spines["right"].set_linewidth(4)
-ax[13][11].spines["right"].set_linewidth(4)
-ax[14][11].spines["right"].set_linewidth(4)
-ax[15][11].spines["right"].set_linewidth(4)
+ax[8][12].spines["left"].set_linewidth(4)
+ax[9][12].spines["left"].set_linewidth(4)
+ax[10][12].spines["left"].set_linewidth(4)
+ax[11][12].spines["left"].set_linewidth(4)
+ax[12][12].spines["left"].set_linewidth(4)
+ax[13][12].spines["left"].set_linewidth(4)
+ax[14][12].spines["left"].set_linewidth(4)
+ax[15][12].spines["left"].set_linewidth(4)
 
 #Dark box around velocity dispersion observable
-ax[7][12].spines["bottom"].set_linewidth(4)
-ax[7][13].spines["bottom"].set_linewidth(4)
-ax[7][14].spines["bottom"].set_linewidth(4)
-ax[7][15].spines["bottom"].set_linewidth(4)
-ax[7][16].spines["bottom"].set_linewidth(4)
-ax[7][17].spines["bottom"].set_linewidth(4)
-ax[7][18].spines["bottom"].set_linewidth(4)
-ax[7][19].spines["bottom"].set_linewidth(4)
+ax[8][12].spines["top"].set_linewidth(4)
+ax[8][13].spines["top"].set_linewidth(4)
+ax[8][14].spines["top"].set_linewidth(4)
+ax[8][15].spines["top"].set_linewidth(4)
+ax[8][16].spines["top"].set_linewidth(4)
+ax[8][17].spines["top"].set_linewidth(4)
+ax[8][18].spines["top"].set_linewidth(4)
+ax[8][19].spines["top"].set_linewidth(4)
 ax[7][12].spines["left"].set_linewidth(4)
 ax[6][12].spines["left"].set_linewidth(4)
 ax[5][12].spines["left"].set_linewidth(4)
@@ -1274,23 +1243,84 @@ ax[7][19].spines["right"].set_linewidth(4)
 
 cax = plt.axes([0.27, 0.93, 0.5, 0.04])
 cbar = plt.colorbar(mapper, cax=cax, orientation="horizontal")
-cbar.ax.tick_params(labelsize=30)
+tick_locator = ticker.MaxNLocator(nbins=10)
+cbar.locator = tick_locator
+cbar.update_ticks()
+cbar.ax.tick_params(labelsize=17)
 
 # Horizontal axis tick labels
-plt.annotate("8.6", (-1.63, -43.5), fontsize=10, annotation_clip=False)
-plt.annotate("9.25", (-1.5, -43.5), fontsize=10, annotation_clip=False)
-plt.annotate("9.9", (-1.33, -43.5), fontsize=10, annotation_clip=False)
-plt.annotate("10.55", (-1.21, -43.5), fontsize=10, annotation_clip=False)
-plt.annotate("11.2", (-1.03, -43.5), fontsize=10, annotation_clip=False)
+plt.annotate("8.6", (-1.63, -43.5), fontsize=12, annotation_clip=False)
+# plt.annotate("9.25", (-1.5, -43.5), fontsize=10, annotation_clip=False)
+plt.annotate("9.9", (-1.32, -43.5), fontsize=12, annotation_clip=False)
+# plt.annotate("10.55", (-1.21, -43.5), fontsize=10, annotation_clip=False)
+plt.annotate("11.2", (-1.06, -43.5), fontsize=12, annotation_clip=False)
+
+plt.annotate("8.6", (-0.95, -43.5), fontsize=12, annotation_clip=False)
+plt.annotate("9.9", (-0.69, -43.5), fontsize=12, annotation_clip=False)
+plt.annotate("11.2", (-0.44, -43.5), fontsize=12, annotation_clip=False)
+
+plt.annotate("8.6", (-0.33, -43.5), fontsize=12, annotation_clip=False)
+plt.annotate("9.9", (-0.08, -43.5), fontsize=12, annotation_clip=False)
+plt.annotate("11.2", (0.18, -43.5), fontsize=12, annotation_clip=False)
+
+plt.annotate("-2.0", (0.29, -43.5), fontsize=12, annotation_clip=False)
+# plt.annotate("-0.75", (0.38, -43.5), fontsize=12, annotation_clip=False)
+plt.annotate("0.5", (0.55, -43.5), fontsize=12, annotation_clip=False)
+# plt.annotate("1.75", (0.64, -43.5), fontsize=12, annotation_clip=False)
+plt.annotate("3.0", (0.82, -43.5), fontsize=12, annotation_clip=False)
+
+plt.annotate("-1", (0.91, -43.5), fontsize=12, annotation_clip=False)
+# plt.annotate("-0.75", (0.38, -43.5), fontsize=12, annotation_clip=False)
+plt.annotate("1.0", (1.18, -43.5), fontsize=12, annotation_clip=False)
+# plt.annotate("1.75", (0.64, -43.5), fontsize=12, annotation_clip=False)
+plt.annotate("3.0", (1.45, -43.5), fontsize=12, annotation_clip=False)
+
+# plt.annotate("9.25", (-1.5, -43.5), fontsize=10, annotation_clip=False)
+# plt.annotate("9.9", (-0.71, -43.5), fontsize=12, annotation_clip=False)
+# # plt.annotate("10.55", (-1.21, -43.5), fontsize=10, annotation_clip=False)
+# plt.annotate("11.2", (-0.41, -43.5), fontsize=12, annotation_clip=False)
+
+# # plt.annotate("9.25", (-0.88, -43.5), fontsize=12, annotation_clip=False)
+# # plt.annotate("10.55", (-0.58, -43.5), fontsize=12, annotation_clip=False)
+
+# plt.annotate("8.6", (-0.36, -43.5), fontsize=12, annotation_clip=False)
+# plt.annotate("9.9", (-0.22, -43.5), fontsize=12, annotation_clip=False)
+# # plt.annotate("10.55", (0.07, -43.5), fontsize=12, annotation_clip=False)
+
+# plt.annotate("11.2", (-1.03, -43.5), fontsize=12, annotation_clip=False)
+
+
+# plt.annotate("-2", (0.25, -43.5), fontsize=12, annotation_clip=False)
+# plt.annotate("-0.75", (0.38, -43.5), fontsize=12, annotation_clip=False)
+# plt.annotate("0.5", (0.51, -43.5), fontsize=12, annotation_clip=False)
+# plt.annotate("1.75", (0.64, -43.5), fontsize=12, annotation_clip=False)
+# plt.annotate("3", (0.75, -43.5), fontsize=12, annotation_clip=False)
 
 # Vertical axis tick labels
-plt.annotate("8.6", (-1.73, -42.3), fontsize=10, annotation_clip=False)
+plt.annotate("8.6", (-1.73, -42.3), fontsize=12, annotation_clip=False)
+plt.annotate("9.9", (-1.73, -38.3), fontsize=12, annotation_clip=False)
+plt.annotate("11.2", (-1.73, -35.0), fontsize=12, annotation_clip=False)
+
+plt.annotate("8.6", (-1.73, -34.4), fontsize=12, annotation_clip=False)
+plt.annotate("9.9", (-1.73, -30.8), fontsize=12, annotation_clip=False)
+plt.annotate("11.2", (-1.73, -27.3), fontsize=12, annotation_clip=False)
+
+plt.annotate("8.6", (-1.73, -26.6), fontsize=12, annotation_clip=False)
+plt.annotate("9.9", (-1.73, -22.9), fontsize=12, annotation_clip=False)
+plt.annotate("11.2", (-1.73, -19.5), fontsize=12, annotation_clip=False)
+
+plt.annotate("-2.0", (-1.73, -18.8), fontsize=12, annotation_clip=False)
+plt.annotate("0.5", (-1.73, -15.2), fontsize=12, annotation_clip=False)
+plt.annotate("3.0", (-1.73, -11.8), fontsize=12, annotation_clip=False)
+
+plt.annotate("-1.0", (-1.75, -11.1), fontsize=12, annotation_clip=False)
+plt.annotate("1.0", (-1.73, -7.6), fontsize=12, annotation_clip=False)
+plt.annotate("3.0", (-1.73, -3.9), fontsize=12, annotation_clip=False)
 
 plt.show()
 
-bins_smf = [ 8.6 ,  9.25,  9.9 , 10.55, 11.2 ]
 
-plt.annotate(r"$\boldsymbol\phi$", (-17.2, -1.7), fontsize="small", annotation_clip=False)
+plt.annotate(r"$\boldsymbol\phi$", (-1.33, -44), fontsize="small", annotation_clip=False)
 plt.annotate("",
             xy=(10, 10), xycoords='figure pixels',
             xytext=(20, 10), textcoords='figure pixels',
