@@ -1317,94 +1317,97 @@ plt.annotate("-1.0", (-1.75, -11.1), fontsize=12, annotation_clip=False)
 plt.annotate("1.0", (-1.73, -7.6), fontsize=12, annotation_clip=False)
 plt.annotate("3.0", (-1.73, -3.9), fontsize=12, annotation_clip=False)
 
-plt.show()
+## Horizontal axis labels
+plt.annotate(r"$\boldsymbol\phi$", (-1.31, -44.8), fontsize=20, 
+    annotation_clip=False)
+plt.annotate("", xy=(0.12, 0.06), xytext=(0.19, 0.06), 
+    xycoords="figure fraction", textcoords="figure fraction", 
+    arrowprops=dict(arrowstyle="->", facecolor='k', linewidth=2))
+plt.annotate("", xy=(0.21, 0.06), xytext=(0.28, 0.06), 
+    xycoords="figure fraction", textcoords="figure fraction", 
+    arrowprops=dict(arrowstyle="<-", facecolor='k', linewidth=2))
 
+plt.annotate(r"$\boldsymbol{f_{blue}^{c}}$", (-0.7, -44.8), fontsize=20, 
+    annotation_clip=False)
+plt.annotate("", xy=(0.28, 0.06), xytext=(0.34, 0.06), 
+    xycoords="figure fraction", textcoords="figure fraction", 
+    arrowprops=dict(arrowstyle="->", facecolor='k', linewidth=2)) 
+plt.annotate("", xy=(0.37, 0.06), xytext=(0.435, 0.06), 
+    xycoords="figure fraction", textcoords="figure fraction", 
+    arrowprops=dict(arrowstyle="<-", facecolor='k', linewidth=2))
 
-plt.annotate(r"$\boldsymbol\phi$", (-1.33, -44), fontsize="small", annotation_clip=False)
-plt.annotate("",
-            xy=(10, 10), xycoords='figure pixels',
-            xytext=(20, 10), textcoords='figure pixels',
-            arrowprops=dict(arrowstyle="->",
-                            connectionstyle="arc3"),
-            )
+plt.annotate(r"$\boldsymbol{f_{blue}^{s}}$", (-0.05, -44.8), fontsize=20, 
+    annotation_clip=False)
+plt.annotate("", xy=(0.436, 0.06), xytext=(0.505, 0.06), 
+    xycoords="figure fraction", textcoords="figure fraction", 
+    arrowprops=dict(arrowstyle="->", facecolor='k', linewidth=2))  
+plt.annotate("", xy=(0.53, 0.06), xytext=(0.593, 0.06), 
+    xycoords="figure fraction", textcoords="figure fraction", 
+    arrowprops=dict(arrowstyle="<-", facecolor='k', linewidth=2))
 
-plt.annotate("",
-            xy=(-16.9, -1.5), xycoords='figure pixels',
-            xytext=(-15.1, -1.5), textcoords='figure pixels',
-            arrowprops=dict(arrowstyle="<-",
-                            connectionstyle="arc3"),
-            )
+plt.annotate(r"$\boldsymbol{\sigma_{red}}$", (0.55, -44.8), fontsize=20, 
+    annotation_clip=False)
+plt.annotate("", xy=(0.594, 0.06), xytext=(0.65, 0.06), 
+    xycoords="figure fraction", textcoords="figure fraction", 
+    arrowprops=dict(arrowstyle="->", facecolor='k', linewidth=2))
+plt.annotate("", xy=(0.7, 0.06), xytext=(0.748, 0.06), 
+    xycoords="figure fraction", textcoords="figure fraction", 
+    arrowprops=dict(arrowstyle="<-", facecolor='k', linewidth=2))
+    
+plt.annotate(r"$\boldsymbol{\sigma_{blue}}$", (1.14, -44.8), fontsize=20, 
+    annotation_clip=False)
+plt.annotate("", xy=(0.75, 0.06), xytext=(0.80, 0.06), 
+    xycoords="figure fraction", textcoords="figure fraction", 
+    arrowprops=dict(arrowstyle="->", facecolor='k', linewidth=2))
+plt.annotate("", xy=(0.85, 0.06), xytext=(0.90, 0.06), 
+    xycoords="figure fraction", textcoords="figure fraction", 
+    arrowprops=dict(arrowstyle="<-", facecolor='k', linewidth=2))
 
-# plt.annotate(r"$\boldsymbol\phi$", (-19.8, 1.9), fontsize="small", annotation_clip=False)
-# plt.annotate("",
-#             xy=(-19.7, 0), xycoords='axes fraction',
-#             xytext=(-19.7, 1.7), textcoords='axes fraction',
-#             arrowprops=dict(arrowstyle="->",
-#                             connectionstyle="arc3"),
-#             )
-# plt.annotate("",
-#             xy=(-19.7, 2.2), xycoords='axes fraction',
-#             xytext=(-19.7, 3.9), textcoords='axes fraction',
-#             arrowprops=dict(arrowstyle="<-",
-#                             connectionstyle="arc3"),
-#             )
+# Vertical axis  labels
+plt.annotate(r"$\boldsymbol\phi$", (-1.85, -38.5), fontsize=20, rotation=90,
+    annotation_clip=False)
+plt.annotate("", xy=(0.065, 0.11), xytext=(0.065, 0.171), 
+    xycoords="figure fraction", textcoords="figure fraction", 
+    arrowprops=dict(arrowstyle="->", facecolor='k', linewidth=2))
+plt.annotate("", xy=(0.065, 0.197), xytext=(0.065, 0.264), 
+    xycoords="figure fraction", textcoords="figure fraction", 
+    arrowprops=dict(arrowstyle="<-", facecolor='k', linewidth=2))
 
+plt.annotate(r"$\boldsymbol{f_{blue}^{c}}$", (-1.85, -30.5), fontsize=20, 
+    rotation=90, annotation_clip=False)
+plt.annotate("", xy=(0.065, 0.266), xytext=(0.065, 0.33), 
+    xycoords="figure fraction", textcoords="figure fraction", 
+    arrowprops=dict(arrowstyle="->", facecolor='k', linewidth=2)) 
+plt.annotate("", xy=(0.065, 0.36), xytext=(0.065, 0.42), 
+    xycoords="figure fraction", textcoords="figure fraction", 
+    arrowprops=dict(arrowstyle="<-", facecolor='k', linewidth=2))
 
-# plt.annotate(r"$\boldmath{f_{blue}}$", (-11.4, -1.7), fontsize="small", annotation_clip=False)
-# plt.annotate("",
-#             xy=(-15.0, -1.5), xycoords='axes fraction',
-#             xytext=(-11.4, -1.5), textcoords='axes fraction',
-#             arrowprops=dict(arrowstyle="->",
-#                             connectionstyle="arc3"),
-#             )
-# plt.annotate("",
-#             xy=(-10.8, -1.5), xycoords='axes fraction',
-#             xytext=(-7.1, -1.5), textcoords='axes fraction',
-#             arrowprops=dict(arrowstyle="<-",
-#                             connectionstyle="arc3"),
-#             )
+plt.annotate(r"$\boldsymbol{f_{blue}^{s}}$", (-1.85, -22.5), fontsize=20, 
+    rotation=90, annotation_clip=False)
+plt.annotate("", xy=(0.065, 0.422), xytext=(0.065, 0.49), 
+    xycoords="figure fraction", textcoords="figure fraction", 
+    arrowprops=dict(arrowstyle="->", facecolor='k', linewidth=2)) 
+plt.annotate("", xy=(0.065, 0.52), xytext=(0.065, 0.575), 
+    xycoords="figure fraction", textcoords="figure fraction", 
+    arrowprops=dict(arrowstyle="<-", facecolor='k', linewidth=2))
 
-# plt.annotate(r"$\boldmath{f_{blue}}$", (-19.8, 7.6), fontsize="small", annotation_clip=False)
-# plt.annotate("",
-#             xy=(-19.7, 4.0), xycoords='axes fraction',
-#             xytext=(-19.7, 7.4), textcoords='axes fraction',
-#             arrowprops=dict(arrowstyle="->",
-#                             connectionstyle="arc3"),
-#             )
-# plt.annotate("",
-#             xy=(-19.7, 8.2), xycoords='axes fraction',
-#             xytext=(-19.7, 11.8), textcoords='axes fraction',
-#             arrowprops=dict(arrowstyle="<-",
-#                             connectionstyle="arc3"),
-#             )
+plt.annotate(r"$\boldsymbol{\sigma_{red}}$", (-1.85, -15.6), fontsize=20, 
+    rotation=90, annotation_clip=False)
+plt.annotate("", xy=(0.065, 0.577), xytext=(0.065, 0.63), 
+    xycoords="figure fraction", textcoords="figure fraction", 
+    arrowprops=dict(arrowstyle="->", facecolor='k', linewidth=2)) 
+plt.annotate("", xy=(0.065, 0.677), xytext=(0.065, 0.728), 
+    xycoords="figure fraction", textcoords="figure fraction", 
+    arrowprops=dict(arrowstyle="<-", facecolor='k', linewidth=2))
 
+plt.annotate(r"$\boldsymbol{\sigma_{blue}}$", (-1.85, -8.1), fontsize=20, 
+    rotation=90, annotation_clip=False)
+plt.annotate("", xy=(0.065, 0.73), xytext=(0.065, 0.78), 
+    xycoords="figure fraction", textcoords="figure fraction", 
+    arrowprops=dict(arrowstyle="->", facecolor='k', linewidth=2)) 
+plt.annotate("", xy=(0.065, 0.83), xytext=(0.065, 0.88), 
+    xycoords="figure fraction", textcoords="figure fraction", 
+    arrowprops=dict(arrowstyle="<-", facecolor='k', linewidth=2))
 
-# plt.annotate(r"$\boldsymbol\sigma$", (-3.2, -1.7), fontsize="small", annotation_clip=False)
-# plt.annotate("",
-#             xy=(-7.0, -1.5), xycoords='axes fraction',
-#             xytext=(-3.2, -1.5), textcoords='axes fraction',
-#             arrowprops=dict(arrowstyle="->",
-#                             connectionstyle="arc3"),
-#             )
-# plt.annotate("",
-#             xy=(-2.9, -1.5), xycoords='axes fraction',
-#             xytext=(1.0, -1.5), textcoords='axes fraction',
-#             arrowprops=dict(arrowstyle="<-",
-#                             connectionstyle="arc3"),
-#             )
-
-# plt.annotate(r"$\boldsymbol\sigma$", (-19.8, 15.4), fontsize="small", annotation_clip=False)
-# plt.annotate("",
-#             xy=(-19.7, 11.9), xycoords='axes fraction',
-#             xytext=(-19.7, 15.2), textcoords='axes fraction',
-#             arrowprops=dict(arrowstyle="->",
-#                             connectionstyle="arc3"),
-#             )
-# plt.annotate("",
-#             xy=(-19.7, 15.7), xycoords='axes fraction',
-#             xytext=(-19.7, 20.2), textcoords='axes fraction',
-#             arrowprops=dict(arrowstyle="<-",
-#                             connectionstyle="arc3"),
-#             )
-
-
+plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/matrix_hybrid.eps', 
+    format="eps", bbox_inches="tight", dpi=1200)
