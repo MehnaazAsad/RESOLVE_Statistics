@@ -975,10 +975,10 @@ for box in box_id_arr:
 
         ## Using best-fit found for new ECO data using result from chain 41
         ## i.e. halo quenching model
-        Mh_qc = 10.18750357 # Msun/h
-        Mh_qs = 13.68402857 # Msun/h
-        mu_c = 0.8052876
-        mu_s = 0.11115838
+        Mh_qc = 11.68499777 # Msun/h
+        Mh_qs = 12.3832308 # Msun/h
+        mu_c = 1.41969021
+        mu_s = 0.46442463
 
         if quenching == 'hybrid':
             theta = [Mstar_q, Mh_q, mu, nu]
@@ -1111,7 +1111,7 @@ for i in range(20):
             #is the top left cell of the matrix which has x=first bin of phi and 
             #y=last bin of last observable.
             ax[i][j].scatter(combined_df.iloc[:,j], combined_df.iloc[:,-(i+1)], 
-                c='k', s=10)
+                c='k', s=2)
             ax[i][j].scatter(data_observables[j], data_observables[-(i+1)], 
                 marker='+', c='w', s=60, lw=2)
         else:
@@ -1253,21 +1253,21 @@ plt.annotate("8.6", (-1.63, -43.5), fontsize=12, annotation_clip=False)
 # plt.annotate("9.25", (-1.5, -43.5), fontsize=10, annotation_clip=False)
 plt.annotate("9.9", (-1.32, -43.5), fontsize=12, annotation_clip=False)
 # plt.annotate("10.55", (-1.21, -43.5), fontsize=10, annotation_clip=False)
-plt.annotate("11.2", (-1.06, -43.5), fontsize=12, annotation_clip=False)
+# plt.annotate("11.2", (-1.06, -43.5), fontsize=12, annotation_clip=False)
 
 plt.annotate("8.6", (-0.95, -43.5), fontsize=12, annotation_clip=False)
 plt.annotate("9.9", (-0.69, -43.5), fontsize=12, annotation_clip=False)
-plt.annotate("11.2", (-0.44, -43.5), fontsize=12, annotation_clip=False)
+# plt.annotate("11.2", (-0.44, -43.5), fontsize=12, annotation_clip=False)
 
 plt.annotate("8.6", (-0.33, -43.5), fontsize=12, annotation_clip=False)
 plt.annotate("9.9", (-0.08, -43.5), fontsize=12, annotation_clip=False)
-plt.annotate("11.2", (0.18, -43.5), fontsize=12, annotation_clip=False)
+# plt.annotate("11.2", (0.18, -43.5), fontsize=12, annotation_clip=False)
 
 plt.annotate("-2.0", (0.29, -43.5), fontsize=12, annotation_clip=False)
 # plt.annotate("-0.75", (0.38, -43.5), fontsize=12, annotation_clip=False)
 plt.annotate("0.5", (0.55, -43.5), fontsize=12, annotation_clip=False)
 # plt.annotate("1.75", (0.64, -43.5), fontsize=12, annotation_clip=False)
-plt.annotate("3.0", (0.82, -43.5), fontsize=12, annotation_clip=False)
+# plt.annotate("3.0", (0.82, -43.5), fontsize=12, annotation_clip=False)
 
 plt.annotate("-1", (0.91, -43.5), fontsize=12, annotation_clip=False)
 # plt.annotate("-0.75", (0.38, -43.5), fontsize=12, annotation_clip=False)
@@ -1299,19 +1299,19 @@ plt.annotate("3.0", (1.45, -43.5), fontsize=12, annotation_clip=False)
 # Vertical axis tick labels
 plt.annotate("8.6", (-1.73, -42.3), fontsize=12, annotation_clip=False)
 plt.annotate("9.9", (-1.73, -38.3), fontsize=12, annotation_clip=False)
-plt.annotate("11.2", (-1.73, -35.0), fontsize=12, annotation_clip=False)
+# plt.annotate("11.2", (-1.73, -35.0), fontsize=12, annotation_clip=False)
 
 plt.annotate("8.6", (-1.73, -34.4), fontsize=12, annotation_clip=False)
 plt.annotate("9.9", (-1.73, -30.8), fontsize=12, annotation_clip=False)
-plt.annotate("11.2", (-1.73, -27.3), fontsize=12, annotation_clip=False)
+# plt.annotate("11.2", (-1.73, -27.3), fontsize=12, annotation_clip=False)
 
 plt.annotate("8.6", (-1.73, -26.6), fontsize=12, annotation_clip=False)
 plt.annotate("9.9", (-1.73, -22.9), fontsize=12, annotation_clip=False)
-plt.annotate("11.2", (-1.73, -19.5), fontsize=12, annotation_clip=False)
+# plt.annotate("11.2", (-1.73, -19.5), fontsize=12, annotation_clip=False)
 
 plt.annotate("-2.0", (-1.73, -18.8), fontsize=12, annotation_clip=False)
 plt.annotate("0.5", (-1.73, -15.2), fontsize=12, annotation_clip=False)
-plt.annotate("3.0", (-1.73, -11.8), fontsize=12, annotation_clip=False)
+# plt.annotate("3.0", (-1.73, -11.8), fontsize=12, annotation_clip=False)
 
 plt.annotate("-1.0", (-1.75, -11.1), fontsize=12, annotation_clip=False)
 plt.annotate("1.0", (-1.73, -7.6), fontsize=12, annotation_clip=False)
@@ -1409,5 +1409,6 @@ plt.annotate("", xy=(0.065, 0.83), xytext=(0.065, 0.88),
     xycoords="figure fraction", textcoords="figure fraction", 
     arrowprops=dict(arrowstyle="<-", facecolor='k', linewidth=2))
 
-plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/matrix_hybrid.eps', 
-    format="eps", bbox_inches="tight", dpi=1200)
+# plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/matrix_hybrid.pdf')
+
+plt.show()
