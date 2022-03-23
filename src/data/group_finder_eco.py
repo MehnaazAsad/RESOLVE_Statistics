@@ -406,7 +406,7 @@ path_to_raw = dict_of_paths['raw_dir']
 path_to_data = dict_of_paths['data_dir']
 path_to_processed = dict_of_paths['proc_dir']
 
-catl_file = path_to_raw + "eco/eco_all.csv"
+catl_file = path_to_raw + "eco/ecodr2.csv"
 
 eco_buff = pd.read_csv(catl_file,delimiter=",", header=0) 
 
@@ -430,5 +430,5 @@ gal_group_df_new, group_df_new = \
 
 print('Writing to output files')
 pandas_df_to_hdf5_file(data=gal_group_df_new,
-    hdf5_file=path_to_processed + 'gal_group_eco_data_buffer_volh1.hdf5', 
+    hdf5_file=path_to_processed + 'gal_group_eco_data_buffer_volh1_dr2.hdf5', 
     key='gal_group_df')
