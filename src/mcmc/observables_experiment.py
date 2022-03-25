@@ -3,7 +3,6 @@
 """
 __author__ = '{Mehnaaz Asad}'
 
-from turtle import st
 from halotools.empirical_models import PrebuiltSubhaloModelFactory
 from halotools.sim_manager import CachedHaloCatalog
 from cosmo_utils.utils import work_paths as cwpaths
@@ -11,6 +10,7 @@ from matplotlib.legend_handler import HandlerTuple
 from scipy.stats import binned_statistic as bs
 from scipy.interpolate import interp1d
 from matplotlib import pyplot as plt
+from sqlalchemy import all_
 from tqdm import tqdm
 import numpy as np
 import pandas as pd
@@ -2759,7 +2759,8 @@ plt.legend(loc='best',prop={'size':30})
 plt.show()
 
 ################################################################################
-### Group stellar mass plot of eco data right after re-running group finder
+##* Group stellar mass plot of eco data right after re-running group finder ####
+################################################################################
 
 dict_of_paths = cwpaths.cookiecutter_paths()
 path_to_raw = dict_of_paths['raw_dir']
@@ -2911,7 +2912,9 @@ plt.title('Group stellar mass function')
 plt.legend(loc='best',prop={'size':30})
 plt.show()
 ################################################################################
-### Group halo mass plot of eco data right after re-running group finder
+##* Group halo mass plot of eco data right after re-running group finder #######
+################################################################################
+
 def cumu_num_dens(data,nbins,weights,volume,bool_mag):
     if weights is None:
         weights = np.ones(len(data))
@@ -3099,7 +3102,8 @@ plt.legend(loc='best',prop={'size':30})
 plt.show()
 
 ################################################################################
-# Plot of satellite fractions in best-fit and data
+#* Plot of satellite fractions in best-fit and data
+################################################################################
 
 def sat_frac_helper(arr):
     total_num = len(arr)
@@ -3191,7 +3195,10 @@ result_bf = bs(sigma_all, colour_label_all, blue_frac_helper, bins=bins)
 maxis, [phi_red_bf, phi_blue_bf], [err_poiss_red_bf, err_poiss_blue_bf], bins, \
     [counts_red, counts_blue] = get_vdf(sigma_red, sigma_blue, volume_analysis)
 
-## VDF
+################################################################################
+#* VDF
+################################################################################
+
 plt.plot(maxis, phi_red_bf, lw=5, ls='--', color='maroon', label='Best-fit')
 plt.plot(maxis, phi_red_d, lw=5, ls='-', color='maroon', label='Data')
 plt.plot(maxis, phi_blue_bf, lw=5, ls='--', color='cornflowerblue', label='Best-fit')
@@ -3199,7 +3206,10 @@ plt.plot(maxis, phi_blue_d, lw=5, ls='-', color='cornflowerblue', label='Data')
 plt.legend(loc='best', prop={'size': 30})
 plt.show()
 
-## Blue fraction vs velocity dispersion
+################################################################################
+#* Blue fraction vs velocity dispersion
+################################################################################
+
 bin_centers = 0.5 * (bins[1:] + bins[:-1])
 plt.plot(bin_centers, result_bf[0], lw=5, ls='--', color='k', label='Best-fit')
 plt.plot(bin_centers, result_data[0], lw=5, ls='-', color='k', label='Data')
@@ -3208,9 +3218,10 @@ plt.ylabel('Blue fraction')
 plt.legend(loc='best', prop={'size': 30})
 plt.show()
 
-
-## velocity dispersion vs group halo mass for red and blue group centrals 
-## Binned both ways
+################################################################################
+#* velocity dispersion vs group halo mass for red and blue group centrals 
+#* Binned both ways
+################################################################################
 
 bins_grp_halo = np.linspace(11, 14, 7)
 result_red_bf = bs(mhalo_red, sigma_red, statistic='median', bins=bins_grp_halo)
@@ -3248,8 +3259,10 @@ plt.show()
 
 ################################################################################
 #* Delta V (binned both ways) centrals not included
+################################################################################
 
-#* Bins of Delta V
+#* Bins of Delta V and bins of sigma
+################################################################################
 
 if survey == 'eco':
     mock_name = 'ECO'
@@ -3296,6 +3309,8 @@ for box in box_id_arr:
             (mock_pd.grpcz_new.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
             (mock_pd.logmstar.values >= mstar_limit)].reset_index(drop=True)
 
+        mock_pd.logmstar = np.log10((10**mock_pd.logmstar.values)/2.041)
+
         ## Using best-fit found for new ECO data using result from chain 34
         ## i.e. hybrid quenching model
         Mstar_q = 10.54 # Msun/h
@@ -3327,6 +3342,8 @@ for box in box_id_arr:
         deltav_blue_mock = []
         red_cen_mstar_mock = []
         blue_cen_mstar_mock = []
+        sigma_red_mock = []
+        sigma_blue_mock = []
 
         for key in red_keys:
             group = mock_pd.loc[mock_pd.groupid == key]
@@ -3339,6 +3356,9 @@ for box in box_id_arr:
                 if val > 0 :
                     deltav_red_mock.append(val)
                     red_cen_mstar_mock.append(cen_mstar)
+            sigma = np.std(deltav[deltav!=0])
+            sigma_red_mock.append(sigma)
+            # red_cen_mstar_mock.append(cen_mstar)
 
         for key in blue_keys:
             group = mock_pd.loc[mock_pd.groupid == key]
@@ -3351,19 +3371,27 @@ for box in box_id_arr:
                 if val > 0 :
                     deltav_blue_mock.append(val)
                     blue_cen_mstar_mock.append(cen_mstar)
+            sigma = np.std(deltav[deltav!=0])
+            sigma_blue_mock.append(sigma)
+            # blue_cen_mstar_mock.append(cen_mstar)
 
         deltav_red_mock = np.asarray(deltav_red_mock)
         deltav_blue_mock = np.asarray(deltav_blue_mock)
         red_cen_mstar_mock = np.asarray(red_cen_mstar_mock)
         blue_cen_mstar_mock = np.asarray(blue_cen_mstar_mock)
+        sigma_red_mock = np.asarray(sigma_red_mock)
+        sigma_blue_mock = np.asarray(sigma_blue_mock)
 
         deltav_red_mock = np.log10(deltav_red_mock)
         deltav_blue_mock = np.log10(deltav_blue_mock)
 
+        sigma_red_mock = np.log10(sigma_red_mock)
+        sigma_blue_mock = np.log10(sigma_blue_mock)
+
         mean_stats_red_mock = bs(deltav_red_mock, red_cen_mstar_mock, 
-            statistic='mean', bins=np.linspace(-1,4,10))
+            statistic='mean', bins=np.linspace(-1,4,8))
         mean_stats_blue_mock = bs(deltav_blue_mock, blue_cen_mstar_mock,
-            statistic='mean', bins=np.linspace(-1,4,10))
+            statistic='mean', bins=np.linspace(-1,4,8))
 
         stat_red_mocks.append(mean_stats_red_mock[0])
         stat_blue_mocks.append(mean_stats_blue_mock[0])
@@ -3372,6 +3400,8 @@ deltav_red_data = []
 deltav_blue_data = []
 red_cen_mstar_data = []
 blue_cen_mstar_data = []
+sigma_red_data = []
+sigma_blue_data = []
 
 red_keys = catl.groupid.loc[(catl.g_galtype == 1)&(catl.colour_label=='R')]
 blue_keys = catl.groupid.loc[(catl.g_galtype == 1)&(catl.colour_label=='B')]
@@ -3387,6 +3417,9 @@ for key in red_keys:
         if val > 0 :
             deltav_red_data.append(val)
             red_cen_mstar_data.append(cen_mstar)
+    sigma = np.std(deltav[deltav!=0])
+    sigma_red_data.append(sigma)
+    # red_cen_mstar_data.append(cen_mstar)
 
 for key in blue_keys:
     group = catl.loc[catl.groupid == key]
@@ -3399,20 +3432,30 @@ for key in blue_keys:
         if val > 0 :
             deltav_blue_data.append(val)
             blue_cen_mstar_data.append(cen_mstar)
+    sigma = np.std(deltav[deltav!=0])
+    sigma_blue_data.append(sigma)
+    # blue_cen_mstar_data.append(cen_mstar)
 
 deltav_red_data = np.asarray(deltav_red_data)
 deltav_blue_data = np.asarray(deltav_blue_data)
 red_cen_mstar_data = np.asarray(red_cen_mstar_data)
 blue_cen_mstar_data = np.asarray(blue_cen_mstar_data)
+sigma_red_data = np.asarray(sigma_red_data)
+sigma_blue_data = np.asarray(sigma_blue_data)
 
 deltav_red_data = np.log10(deltav_red_data)
 deltav_blue_data = np.log10(deltav_blue_data)
+
+sigma_red_data = np.log10(sigma_red_data)
+sigma_blue_data = np.log10(sigma_blue_data)
 
 
 deltav_red_bf = []
 deltav_blue_bf = []
 red_cen_mstar_bf = []
 blue_cen_mstar_bf = []
+sigma_red_bf = []
+sigma_blue_bf = []
 
 red_keys = gals_df_subset.groupid_1.loc[(gals_df_subset.grp_censat_1 == 1)&(gals_df_subset.colour_label=='R')]
 blue_keys = gals_df_subset.groupid_1.loc[(gals_df_subset.grp_censat_1 == 1)&(gals_df_subset.colour_label=='B')]
@@ -3429,6 +3472,10 @@ for key in red_keys:
             deltav_red_bf.append(val)
             red_cen_mstar_bf.append(cen_mstar)
 
+    sigma = np.std(deltav[deltav!=0])
+    sigma_red_bf.append(sigma)
+    # red_cen_mstar_bf.append(cen_mstar)
+
 for key in blue_keys:
     group = gals_df_subset.loc[gals_df_subset.groupid_1 == key]
     if len(group) == 1:
@@ -3441,24 +3488,36 @@ for key in blue_keys:
         if val > 0 :
             deltav_blue_bf.append(val)
             blue_cen_mstar_bf.append(cen_mstar)
+    sigma = np.std(deltav[deltav!=0])
+    sigma_blue_bf.append(sigma)
+    # blue_cen_mstar_bf.append(cen_mstar)
 
 deltav_red_bf = np.asarray(deltav_red_bf)
 deltav_blue_bf = np.asarray(deltav_blue_bf)
 red_cen_mstar_bf = np.asarray(red_cen_mstar_bf)
 blue_cen_mstar_bf = np.asarray(blue_cen_mstar_bf)
+sigma_red_bf = np.asarray(sigma_red_bf)
+sigma_blue_bf = np.asarray(sigma_blue_bf)
 
 deltav_red_bf = np.log10(deltav_red_bf)
 deltav_blue_bf = np.log10(deltav_blue_bf)
 
-mean_stats_red_data = bs(deltav_red_data, red_cen_mstar_data, 
-    statistic='mean', bins=np.linspace(-1,4,10))
-mean_stats_blue_data = bs(deltav_blue_data, blue_cen_mstar_data,
-    statistic='mean', bins=np.linspace(-1,4,10))
+sigma_red_bf = np.log10(sigma_red_bf)
+sigma_blue_bf = np.log10(sigma_blue_bf)
+
+def logmstar_h70_to_h100(values):
+    result = np.log10((10**values)/2.041)
+    return result
+
+mean_stats_red_data = bs(deltav_red_data, logmstar_h70_to_h100(red_cen_mstar_data), 
+    statistic='mean', bins=np.linspace(-1,4,8))
+mean_stats_blue_data = bs(deltav_blue_data, logmstar_h70_to_h100(blue_cen_mstar_data),
+    statistic='mean', bins=np.linspace(-1,4,8))
 
 mean_stats_red_bf = bs(deltav_red_bf, red_cen_mstar_bf, 
-    statistic='mean', bins=np.linspace(-1,4,10))
+    statistic='mean', bins=np.linspace(-1,4,8))
 mean_stats_blue_bf = bs(deltav_blue_bf, blue_cen_mstar_bf,
-    statistic='mean', bins=np.linspace(-1,4,10))
+    statistic='mean', bins=np.linspace(-1,4,8))
 
 mean_centers_red = 0.5 * (mean_stats_red_data[1][1:] + \
     mean_stats_red_data[1][:-1])
@@ -3485,7 +3544,9 @@ l = plt.legend([(dr, db),(bfr, bfb)],
 plt.ylim(8.9,)
 
 plt.xlabel(r'\boldmath$\log_{10}\ \Delta v \left[\mathrm{km/s} \right]$', fontsize=30)
-plt.ylabel(r'\boldmath$\overline{\log_{10}\ M_{*, group cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
+# plt.xlabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km/s} \right]$', fontsize=30)
+plt.ylabel(r'\boldmath$\overline{\log_{10}\ M_{*, group \ cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
+# plt.ylabel(r'\boldmath${\log_{10}\ \sigma(M_{*, group \ cen}}) \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
 
 if quenching == 'hybrid':
     plt.title('Hybrid quenching model | ECO')
@@ -3494,7 +3555,14 @@ elif quenching == 'halo':
 
 plt.show()
 
+################################################################################
 #* Bins of M* group cen
+################################################################################
+
+stat_opt = ['std', 'mean', 'median']
+deltav_opt = ['cen', 'mean']
+stat_mode = stat_opt[0]
+deltav_mode = deltav_opt[0]
 
 if survey == 'eco':
     mock_name = 'ECO'
@@ -3541,6 +3609,7 @@ for box in box_id_arr:
             (mock_pd.grpcz_new.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
             (mock_pd.logmstar.values >= mstar_limit)].reset_index(drop=True)
 
+        mock_pd.logmstar = np.log10((10**mock_pd.logmstar.values)/2.041)
         ## Using best-fit found for new ECO data using result from chain 34
         ## i.e. hybrid quenching model
         Mstar_q = 10.54 # Msun/h
@@ -3572,43 +3641,69 @@ for box in box_id_arr:
         deltav_blue_mock = []
         red_cen_mstar_mock = []
         blue_cen_mstar_mock = []
+        sigma_red_mock = []
+        sigma_blue_mock = []
 
         for key in red_keys:
             group = mock_pd.loc[mock_pd.groupid == key]
             if len(group) == 1:
                 continue
+            mean_cz_grp = np.average(group.cz.values)
             cen_cz_grp = group.cz.loc[group['g_galtype'].values == 1].values[0]
             cen_mstar = group.logmstar.loc[group['g_galtype'].values == 1].values[0]
-            deltav = np.abs(group.cz.values - len(group)*[cen_cz_grp])
-            for val in deltav:
-                if val > 0 :
+            if deltav_mode == 'cen':
+                deltav = np.abs(group.cz.values - len(group)*[cen_cz_grp])
+                for val in deltav:
+                    if val > 0 :
+                        deltav_red_mock.append(val)
+                        red_cen_mstar_mock.append(cen_mstar)
+                sigma = np.std(deltav)
+            elif deltav_mode == 'mean':
+                deltav = np.abs(group.cz.values - len(group)*[mean_cz_grp])
+                for val in deltav:
                     deltav_red_mock.append(val)
                     red_cen_mstar_mock.append(cen_mstar)
+                sigma = np.std(deltav)
+            # red_cen_mstar_mock.append(cen_mstar)
+            sigma_red_mock.append(sigma)
 
         for key in blue_keys:
             group = mock_pd.loc[mock_pd.groupid == key]
             if len(group) == 1:
                 continue
+            mean_cz_grp = np.average(group.cz.values)
             cen_cz_grp = group.cz.loc[group['g_galtype'].values == 1].values[0]
             cen_mstar = group.logmstar.loc[group['g_galtype'].values == 1].values[0]
-            deltav = np.abs(group.cz.values - len(group)*[cen_cz_grp])
-            for val in deltav:
-                if val > 0 :
+            if deltav_mode == 'cen':
+                deltav = np.abs(group.cz.values - len(group)*[cen_cz_grp])
+                for val in deltav:
+                    if val > 0 :
+                        deltav_blue_mock.append(val)
+                        blue_cen_mstar_mock.append(cen_mstar)
+                sigma = np.std(deltav)
+            elif deltav_mode == 'mean':
+                deltav = np.abs(group.cz.values - len(group)*[mean_cz_grp])
+                for val in deltav:
                     deltav_blue_mock.append(val)
                     blue_cen_mstar_mock.append(cen_mstar)
+                sigma = np.std(deltav)
+            # blue_cen_mstar_mock.append(cen_mstar)
+            sigma_blue_mock.append(sigma)
 
         deltav_red_mock = np.asarray(deltav_red_mock)
         deltav_blue_mock = np.asarray(deltav_blue_mock)
         red_cen_mstar_mock = np.asarray(red_cen_mstar_mock)
         blue_cen_mstar_mock = np.asarray(blue_cen_mstar_mock)
+        sigma_red_mock = np.asarray(sigma_red_mock)
+        sigma_blue_mock = np.asarray(sigma_blue_mock)
 
         deltav_red_mock = np.log10(deltav_red_mock)
         deltav_blue_mock = np.log10(deltav_blue_mock)
 
         mean_stats_red_mock = bs(red_cen_mstar_mock, deltav_red_mock, 
-            statistic='mean', bins=np.linspace(8.9,12,8))
+            statistic=stat_mode, bins=np.linspace(8.6,12,8))
         mean_stats_blue_mock = bs(blue_cen_mstar_mock, deltav_blue_mock,
-            statistic='mean', bins=np.linspace(8.9,12,8))
+            statistic=stat_mode, bins=np.linspace(8.6,12,8))
 
         stat_red_mocks.append(mean_stats_red_mock[0])
         stat_blue_mocks.append(mean_stats_blue_mock[0])
@@ -3617,6 +3712,8 @@ deltav_red_data = []
 deltav_blue_data = []
 red_cen_mstar_data = []
 blue_cen_mstar_data = []
+sigma_red_data = []
+sigma_blue_data = []
 
 red_keys = catl.groupid.loc[(catl.g_galtype == 1)&(catl.colour_label=='R')]
 blue_keys = catl.groupid.loc[(catl.g_galtype == 1)&(catl.colour_label=='B')]
@@ -3625,30 +3722,54 @@ for key in red_keys:
     group = catl.loc[catl.groupid == key]
     if len(group) == 1:
         continue
+    mean_cz_grp = np.average(group.cz.values)
     cen_cz_grp = group.cz.loc[group['g_galtype'].values == 1].values[0]
     cen_mstar = group.logmstar.loc[group['g_galtype'].values == 1].values[0]
-    deltav = np.abs(group.cz.values - len(group)*[cen_cz_grp])
-    for val in deltav:
-        if val > 0 :
+    if deltav_mode == 'cen':
+        deltav = np.abs(group.cz.values - len(group)*[cen_cz_grp])
+        for val in deltav:
+            if val > 0 :
+                deltav_red_data.append(val)
+                red_cen_mstar_data.append(cen_mstar)
+        sigma = np.std(deltav)
+    elif deltav_mode == 'mean':
+        deltav = np.abs(group.cz.values - len(group)*[mean_cz_grp])
+        for val in deltav:
             deltav_red_data.append(val)
             red_cen_mstar_data.append(cen_mstar)
+        sigma = np.std(deltav)
+    # red_cen_mstar_data.append(cen_mstar)
+    sigma_red_data.append(sigma)
 
 for key in blue_keys:
     group = catl.loc[catl.groupid == key]
     if len(group) == 1:
         continue
+    mean_cz_grp = np.average(group.cz.values)
     cen_cz_grp = group.cz.loc[group['g_galtype'].values == 1].values[0]
     cen_mstar = group.logmstar.loc[group['g_galtype'].values == 1].values[0]
-    deltav = np.abs(group.cz.values - len(group)*[cen_cz_grp])
-    for val in deltav:
-        if val > 0 :
+    if deltav_mode == 'cen':
+        deltav = np.abs(group.cz.values - len(group)*[cen_cz_grp])
+        for val in deltav:
+            if val > 0 :
+                deltav_blue_data.append(val)
+                blue_cen_mstar_data.append(cen_mstar)
+        sigma = np.std(deltav)
+    elif deltav_mode == 'mean':
+        deltav = np.abs(group.cz.values - len(group)*[mean_cz_grp])
+        for val in deltav:
             deltav_blue_data.append(val)
             blue_cen_mstar_data.append(cen_mstar)
+        sigma = np.std(deltav)
+    # blue_cen_mstar_data.append(cen_mstar)
+    sigma_blue_data.append(sigma)
 
 deltav_red_data = np.asarray(deltav_red_data)
 deltav_blue_data = np.asarray(deltav_blue_data)
 red_cen_mstar_data = np.asarray(red_cen_mstar_data)
 blue_cen_mstar_data = np.asarray(blue_cen_mstar_data)
+sigma_red_data = np.asarray(sigma_red_data)
+sigma_blue_data = np.asarray(sigma_blue_data)
 
 deltav_red_data = np.log10(deltav_red_data)
 deltav_blue_data = np.log10(deltav_blue_data)
@@ -3658,6 +3779,8 @@ deltav_red_bf = []
 deltav_blue_bf = []
 red_cen_mstar_bf = []
 blue_cen_mstar_bf = []
+sigma_red_bf = []
+sigma_blue_bf = []
 
 red_keys = gals_df_subset.groupid_1.loc[(gals_df_subset.grp_censat_1 == 1)&(gals_df_subset.colour_label=='R')]
 blue_keys = gals_df_subset.groupid_1.loc[(gals_df_subset.grp_censat_1 == 1)&(gals_df_subset.colour_label=='B')]
@@ -3666,45 +3789,72 @@ for key in red_keys:
     group = gals_df_subset.loc[gals_df_subset.groupid_1 == key]
     if len(group) == 1:
         continue
+    mean_cz_grp = np.average(group.cz.values)
     cen_cz_grp = group.cz.loc[group['grp_censat_1'].values == 1].values[0]
     cen_mstar = group.behroozi_bf.loc[group['grp_censat_1'].values == 1].values[0]
-    deltav = np.abs(group.cz.values - len(group)*[cen_cz_grp])
-    for val in deltav:
-        if val > 0 :
+    if deltav_mode == 'cen':
+        deltav = np.abs(group.cz.values - len(group)*[cen_cz_grp])
+        for val in deltav:
+            if val > 0 :
+                deltav_red_bf.append(val)
+                red_cen_mstar_bf.append(cen_mstar)
+        sigma = np.std(deltav)
+    elif deltav_mode == 'mean':
+        deltav = np.abs(group.cz.values - len(group)*[mean_cz_grp])
+        for val in deltav:
             deltav_red_bf.append(val)
             red_cen_mstar_bf.append(cen_mstar)
+        sigma = np.std(deltav)
+    # red_cen_mstar_bf.append(cen_mstar)
+    sigma_red_bf.append(sigma)
 
 for key in blue_keys:
     group = gals_df_subset.loc[gals_df_subset.groupid_1 == key]
     if len(group) == 1:
         continue
+    mean_cz_grp = np.average(group.cz.values)
     cen_cz_grp = group.cz.loc[group['grp_censat_1'].values == 1].values[0]
     cen_mstar = group.behroozi_bf.loc[group['grp_censat_1'].values == 1].values[0]
-    deltav = np.abs(group.cz.values - len(group)*[cen_cz_grp])
-
-    for val in deltav:
-        if val > 0 :
+    if deltav_mode == 'cen':
+        deltav = np.abs(group.cz.values - len(group)*[cen_cz_grp])
+        for val in deltav:
+            if val > 0 :
+                deltav_blue_bf.append(val)
+                blue_cen_mstar_bf.append(cen_mstar)
+        sigma = np.std(deltav)
+    elif deltav_mode == 'mean':
+        deltav = np.abs(group.cz.values - len(group)*[mean_cz_grp])
+        for val in deltav:
             deltav_blue_bf.append(val)
             blue_cen_mstar_bf.append(cen_mstar)
+        sigma = np.std(deltav)
+    # blue_cen_mstar_bf.append(cen_mstar)
+    sigma_blue_bf.append(sigma)
 
 deltav_red_bf = np.asarray(deltav_red_bf)
 deltav_blue_bf = np.asarray(deltav_blue_bf)
 red_cen_mstar_bf = np.asarray(red_cen_mstar_bf)
 blue_cen_mstar_bf = np.asarray(blue_cen_mstar_bf)
+sigma_red_bf = np.asarray(sigma_red_bf)
+sigma_blue_bf = np.asarray(sigma_blue_bf)
 
 deltav_red_bf = np.log10(deltav_red_bf)
 deltav_blue_bf = np.log10(deltav_blue_bf)
 
-## Stack delta V and measure mean
-mean_stats_red_data = bs(red_cen_mstar_data, deltav_red_data, 
-    statistic='mean', bins=np.linspace(8.9,12,8))
-mean_stats_blue_data = bs(blue_cen_mstar_data, deltav_blue_data,
-    statistic='mean', bins=np.linspace(8.9,12,8))
+def logmstar_h70_to_h100(values):
+    result = np.log10((10**values)/2.041)
+    return result
+
+## Stack delta V and measure mean/meadian/std
+mean_stats_red_data = bs(logmstar_h70_to_h100(red_cen_mstar_data), 
+    deltav_red_data, statistic=stat_mode, bins=np.linspace(8.6,12,8))
+mean_stats_blue_data = bs(logmstar_h70_to_h100(blue_cen_mstar_data), 
+    deltav_blue_data, statistic=stat_mode, bins=np.linspace(8.6,12,8))
 
 mean_stats_red_bf = bs(red_cen_mstar_bf, deltav_red_bf,
-    statistic='mean', bins=np.linspace(8.9,12,8))
+    statistic=stat_mode, bins=np.linspace(8.6,12,8))
 mean_stats_blue_bf = bs(blue_cen_mstar_bf, deltav_blue_bf,
-    statistic='mean', bins=np.linspace(8.9,12,8))
+    statistic=stat_mode, bins=np.linspace(8.6,12,8))
 
 mean_centers_red = 0.5 * (mean_stats_red_data[1][1:] + \
     mean_stats_red_data[1][:-1])
@@ -3716,9 +3866,9 @@ error_blue = np.nanstd(stat_blue_mocks, axis=0)
 
 # dr, = plt.plot(mean_centers_red, mean_stats_red_data[0], lw=3, c='darkred', ls='-')
 # db, = plt.plot(mean_centers_blue, mean_stats_blue_data[0], lw=3, c='darkblue', ls='-')
-dr = plt.errorbar(mean_centers_red, mean_stats_red_data[0], yerr=error_red, 
+dr = plt.errorbar(mean_centers_red, mean_stats_red_data[0], error_red, 
     lw=3, c='darkred', ls='none', capsize=10, marker='^', markersize=10)
-db = plt.errorbar(mean_centers_blue, mean_stats_blue_data[0], yerr=error_blue, 
+db = plt.errorbar(mean_centers_blue, mean_stats_blue_data[0], error_blue, 
     lw=3, c='darkblue', ls='none', capsize=10, marker='^', markersize=10)
 
 bfr, = plt.plot(mean_centers_red, mean_stats_red_bf[0], lw=3, c='indianred', ls='--')
@@ -3728,7 +3878,13 @@ l = plt.legend([(dr, db),(bfr, bfb)],
     ['Data', 'Best-fit'],
     handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, markerscale=1.5, loc='upper left')
 
-plt.ylabel(r'\boldmath$\overline{\log_{10}\ \Delta v} \left[\mathrm{km/s} \right]$', fontsize=30)
+if stat_mode == 'std':
+    plt.ylabel(r'\boldmath$\log_{10}\ \sigma({\Delta v}) \left[\mathrm{km/s} \right]$', fontsize=30)
+elif stat_mode == 'mean':
+    plt.ylabel(r'\boldmath$\overline{\log_{10}\ \sigma} \left[\mathrm{km/s} \right]$', fontsize=30)
+elif stat_mode == 'median':
+    plt.ylabel(r'\boldmath$\tilde{\log_{10}\ \Delta v} \left[\mathrm{km/s} \right]$', fontsize=30)
+
 plt.xlabel(r'\boldmath$\log_{10}\ M_{*, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
 
 if quenching == 'hybrid':
@@ -3738,9 +3894,11 @@ elif quenching == 'halo':
 
 plt.show()
 
-## Measuring velocity dispersion per bin of central stellar mass (stacked) 
-## instead of measuring it per group and then averaging sigma per bin of central
-## stellar mass
+################################################################################
+#* Measuring velocity dispersion per bin of central stellar mass (stacked) 
+#* instead of measuring it per group and then averaging sigma per bin of central
+#* stellar mass
+################################################################################
 
 if survey == 'eco':
     mock_name = 'ECO'
@@ -4054,7 +4212,8 @@ elif quenching == 'halo':
 plt.show()
 
 ################################################################################
-# Group multiplicity function from data and best-fit
+#* Group multiplicity function from data and best-fit
+################################################################################
 
 if survey == 'eco':
     mock_name = 'ECO'
@@ -4196,8 +4355,10 @@ df_bf = pd.DataFrame(data={'n_members_bf':n_members_bf})
 singleton_data_counter/len(keys_data)
 singleton_bf_counter/len(keys_bf)
 
+################################################################################
+#* Estimating effective radius and stellar velocity dispersion
+################################################################################
 
-##* Estimating effective radius and stellar velocity dispersion
 # Msun = 1.989*10**30 #kg
 # Rsun = 6.95*10**8 #m
 # rho_crit = 9.47*10**-27 #kg/m3
@@ -4285,7 +4446,8 @@ elif quenching == 'halo':
 plt.show()
 
 ################################################################################
-##* Central stellar mass vs group integrated stellar mass
+#* Central stellar mass vs group integrated stellar mass
+################################################################################
 
 groups = catl.groupby('groupid')
 keys_data = groups.groups.keys()
@@ -4342,8 +4504,9 @@ elif quenching == 'halo':
 
 plt.show()
 
-
-##* Group halo mass vs group integrated stellar mass
+################################################################################
+#* Group halo mass vs group integrated stellar mass
+################################################################################
 
 d = plt.scatter(np.log10((10**group_mstar_data)/2.041), 
     group_mhalo_data, facecolors="None", 
@@ -4367,8 +4530,9 @@ plt.show()
 
 
 
-
-##* Data vs best-fit group stellar mass function
+################################################################################
+#* Data vs best-fit group stellar mass function
+################################################################################
 
 groups = catl.groupby('groupid')
 keys = groups.groups.keys()
@@ -4418,6 +4582,9 @@ plt.title('Group stellar mass function')
 plt.legend(loc='best',prop={'size':30})
 plt.show()
 
+################################################################################
+#* Mr - M* ECO
+################################################################################
 
 
 eco_buff = eco_buff.loc[eco_buff.logmstar.values > 0]
@@ -4436,8 +4603,10 @@ plt.show()
 ## 24 galaxies that are above the mass completeness but below the luminosity 
 ## completeness
 
+################################################################################
 #* Measuring grp sigma by stacking central sigma in resolve like in Seo et al 2020
 #? Not possible since very few groups where vdisp measurements are not 0
+################################################################################
 
 resolve = pd.read_csv('/Users/asadm2/Documents/Grad_School/Research/Repositories/'\
     'resolve_statistics/data/raw/resolve/RESOLVE_liveJune2018.csv')
@@ -4493,3 +4662,615 @@ mean_stats_red_data = bs(red_cen_mstar_data, deltav_red_data,
     statistic='std', bins=np.linspace(8.9,12,8))
 mean_stats_blue_data = bs(blue_cen_mstar_data, deltav_blue_data,
     statistic='std', bins=np.linspace(8.9,12,8))
+
+################################################################################
+#* Comparing sigma measurement using central and average group cz
+################################################################################
+
+def mock_add_grpcz(df, grpid_col=None, galtype_col=None, cen_cz_col=None):
+    cen_subset_df = df.loc[df[galtype_col] == 1].sort_values(by=grpid_col)
+    # Sum doesn't actually add up anything here but I didn't know how to get
+    # each row as is so I used .apply
+    cen_cz = cen_subset_df.groupby(['{0}'.format(grpid_col),'{0}'.format(
+        galtype_col)])['{0}'.format(cen_cz_col)].apply(np.sum).values    
+    zip_iterator = zip(list(cen_subset_df[grpid_col]), list(cen_cz))
+    a_dictionary = dict(zip_iterator)
+    df['grpcz_new'] = df['{0}'.format(grpid_col)].map(a_dictionary)
+
+    av_cz = df.groupby(['{0}'.format(grpid_col)])\
+        ['cz'].apply(np.average).values
+    zip_iterator = zip(list(cen_subset_df[grpid_col]), list(av_cz))
+    a_dictionary = dict(zip_iterator)
+    df['grpcz_av'] = df['{0}'.format(grpid_col)].map(a_dictionary)
+
+    return df
+
+def reading_catls(filename, catl_format='.hdf5'):
+    """
+    Function to read ECO/RESOLVE catalogues.
+
+    Parameters
+    ----------
+    filename: string
+        path and name of the ECO/RESOLVE catalogue to read
+
+    catl_format: string, optional (default = '.hdf5')
+        type of file to read.
+        Options:
+            - '.hdf5': Reads in a catalogue in HDF5 format
+
+    Returns
+    -------
+    mock_pd: pandas DataFrame
+        DataFrame with galaxy/group information
+
+    Examples
+    --------
+    # Specifying `filename`
+    >>> filename = 'ECO_catl.hdf5'
+
+    # Reading in Catalogue
+    >>> mock_pd = reading_catls(filename, format='.hdf5')
+
+    >>> mock_pd.head()
+               x          y         z          vx          vy          vz  \
+    0  10.225435  24.778214  3.148386  356.112457 -318.894409  366.721832
+    1  20.945772  14.500367 -0.237940  168.731766   37.558834  447.436951
+    2  21.335835  14.808488  0.004653  967.204407 -701.556763 -388.055115
+    3  11.102760  21.782235  2.947002  611.646484 -179.032089  113.388794
+    4  13.217764  21.214905  2.113904  120.689598  -63.448833  400.766541
+
+       loghalom  cs_flag  haloid  halo_ngal    ...        cz_nodist      vel_tot  \
+    0    12.170        1  196005          1    ...      2704.599189   602.490355
+    1    11.079        1  197110          1    ...      2552.681697   479.667489
+    2    11.339        1  197131          1    ...      2602.377466  1256.285409
+    3    11.529        1  199056          1    ...      2467.277182   647.318259
+    4    10.642        1  199118          1    ...      2513.381124   423.326770
+
+           vel_tan     vel_pec     ra_orig  groupid    M_group g_ngal  g_galtype  \
+    0   591.399858 -115.068833  215.025116        0  11.702527      1          1
+    1   453.617221  155.924074  182.144134        1  11.524787      4          0
+    2  1192.742240  394.485714  182.213220        1  11.524787      4          0
+    3   633.928896  130.977416  210.441320        2  11.502205      1          1
+    4   421.064495   43.706352  205.525386        3  10.899680      1          1
+
+       halo_rvir
+    0   0.184839
+    1   0.079997
+    2   0.097636
+    3   0.113011
+    4   0.057210
+    """
+    ## Checking if file exists
+    if not os.path.exists(filename):
+        msg = '`filename`: {0} NOT FOUND! Exiting..'.format(filename)
+        raise ValueError(msg)
+    ## Reading file
+    if catl_format=='.hdf5':
+        mock_pd = pd.read_hdf(filename)
+    else:
+        msg = '`catl_format` ({0}) not supported! Exiting...'.format(catl_format)
+        raise ValueError(msg)
+
+    return mock_pd
+
+def read_data_catl(path_to_file, survey):
+    """
+    Reads survey catalog from file
+
+    Parameters
+    ----------
+    path_to_file: `string`
+        Path to survey catalog file
+
+    survey: `string`
+        Name of survey
+
+    Returns
+    ---------
+    catl: `pandas.DataFrame`
+        Survey catalog with grpcz, abs rmag and stellar mass limits
+    
+    volume: `float`
+        Volume of survey
+
+    z_median: `float`
+        Median redshift of survey
+    """
+    if survey == 'eco':
+        # columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
+        #             'logmstar', 'logmgas', 'grp', 'grpn', 'logmh', 'logmh_s', 
+        #             'fc', 'grpmb', 'grpms','modelu_rcorr']
+
+        # 13878 galaxies
+        # eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0, \
+        #     usecols=columns)
+
+        eco_buff = reading_catls(path_to_file)
+        #* Recommended to exclude this galaxy in erratum to Hood et. al 2018
+        eco_buff = eco_buff.loc[eco_buff.name != 'ECO13860']
+
+        eco_buff = mock_add_grpcz(eco_buff, grpid_col='groupid', 
+            galtype_col='g_galtype', cen_cz_col='cz')
+        
+        if mf_type == 'smf':
+            # 6456 galaxies                       
+            catl = eco_buff.loc[(eco_buff.grpcz_new.values >= 3000) & 
+                (eco_buff.grpcz_new.values <= 7000) & 
+                (eco_buff.absrmag.values <= -17.33)]
+        elif mf_type == 'bmf':
+            catl = eco_buff.loc[(eco_buff.grpcz_new.values >= 3000) & 
+                (eco_buff.grpcz_new.values <= 7000) & 
+                (eco_buff.absrmag.values <= -17.33)] 
+
+        volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
+        # cvar = 0.125
+        z_median = np.median(catl.grpcz_new.values) / (3 * 10**5)
+        
+    elif survey == 'resolvea' or survey == 'resolveb':
+        columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
+                    'logmstar', 'logmgas', 'grp', 'grpn', 'grpnassoc', 'logmh', 
+                    'logmh_s', 'fc', 'grpmb', 'grpms', 'f_a', 'f_b']
+        # 2286 galaxies
+        resolve_live18 = pd.read_csv(path_to_file, delimiter=",", header=0, \
+            usecols=columns)
+
+        if survey == 'resolvea':
+            if mf_type == 'smf':
+                catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
+                    (resolve_live18.grpcz.values >= 4500) & 
+                    (resolve_live18.grpcz.values <= 7000) & 
+                    (resolve_live18.absrmag.values <= -17.33)]
+            elif mf_type == 'bmf':
+                catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
+                    (resolve_live18.grpcz.values >= 4500) & 
+                    (resolve_live18.grpcz.values <= 7000) & 
+                    (resolve_live18.absrmag.values <= -17.33)]
+
+            volume = 13172.384  # Survey volume without buffer [Mpc/h]^3
+            # cvar = 0.30
+            z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
+        
+        elif survey == 'resolveb':
+            if mf_type == 'smf':
+                # 487 - cz, 369 - grpcz
+                catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
+                    (resolve_live18.grpcz.values >= 4500) & 
+                    (resolve_live18.grpcz.values <= 7000) & 
+                    (resolve_live18.absrmag.values <= -17)]
+            elif mf_type == 'bmf':
+                catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
+                    (resolve_live18.grpcz.values >= 4500) & 
+                    (resolve_live18.grpcz.values <= 7000) & 
+                    (resolve_live18.absrmag.values <= -17)]
+
+            volume = 4709.8373  # *2.915 #Survey volume without buffer [Mpc/h]^3
+            # cvar = 0.58
+            z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
+
+    return catl, volume, z_median
+
+def assign_colour_label_data(catl):
+    """
+    Assign colour label to data
+
+    Parameters
+    ----------
+    catl: pandas Dataframe 
+        Data catalog
+
+    Returns
+    ---------
+    catl: pandas Dataframe
+        Data catalog with colour label assigned as new column
+    """
+
+    logmstar_arr = catl.logmstar.values
+    u_r_arr = catl.modelu_rcorr.values
+
+    colour_label_arr = np.empty(len(catl), dtype='str')
+    for idx, value in enumerate(logmstar_arr):
+
+        # Divisions taken from Moffett et al. 2015 equation 1
+        if value <= 9.1:
+            if u_r_arr[idx] > 1.457:
+                colour_label = 'R'
+            else:
+                colour_label = 'B'
+
+        if value > 9.1 and value < 10.1:
+            divider = 0.24 * value - 0.7
+            if u_r_arr[idx] > divider:
+                colour_label = 'R'
+            else:
+                colour_label = 'B'
+
+        if value >= 10.1:
+            if u_r_arr[idx] > 1.7:
+                colour_label = 'R'
+            else:
+                colour_label = 'B'
+            
+        colour_label_arr[idx] = colour_label
+    
+    catl['colour_label'] = colour_label_arr
+
+    return catl
+
+
+catl_file = path_to_proc + "gal_group_eco_data_buffer_volh1_dr2.hdf5"
+catl, volume, z_median = read_data_catl(catl_file, survey)
+catl = assign_colour_label_data(catl)
+
+all_groups = catl.groupby('groupid')
+all_keys = all_groups.groups.keys()
+sigma_av_total = []
+sigma_cen_total = []
+for key in all_keys:
+    group = all_groups.get_group(key)
+    if len(group) > 2:
+        grpcz_av = group.grpcz_av.values
+        grpcz_cen = group.grpcz_new.values
+
+        deltav_av = group.cz.values - grpcz_av
+        deltav_cen = group.cz.values - grpcz_cen
+
+        sigma_av_total.append(np.std(deltav_av, ddof=1))
+        sigma_cen_total.append(np.std(deltav_cen[[deltav_cen!=0]]))
+
+
+red_subset_ids = np.unique(catl['groupid'].loc[(catl.\
+    colour_label == 'R') & (catl['g_galtype'] == 1)].values) 
+blue_subset_ids = np.unique(catl['groupid'].loc[(catl.\
+    colour_label == 'B') & (catl['g_galtype'] == 1)].values)
+
+sigma_av_red = []
+sigma_cen_red = []
+sigma_av_blue = []
+sigma_cen_blue = []
+grpcz_av_red = []
+grpcz_av_blue = []
+grpcz_cen_red = []
+grpcz_cen_blue = []
+
+my_sigma_av_red = []
+my_sigma_av_blue = []
+N_red = 0
+for key in red_subset_ids:
+    group = all_groups.get_group(key)
+    if len(group) > 2:
+        N_red+=1
+        grpcz_av = group.grpcz_av.values
+        grpcz_cen = group.grpcz_new.values
+
+        deltav_av = group.cz.values - grpcz_av
+        deltav_cen = group.cz.values - grpcz_cen
+
+        sigma_red = np.sqrt(np.sum(deltav_av**2)/len(deltav_av)-1)
+        my_sigma_av_red.append(sigma_red)
+
+        sigma_av_red.append(np.std(deltav_av, ddof=1))
+        sigma_cen_red.append(np.std(deltav_cen[[deltav_cen!=0]]))
+
+        grpcz_cen_red.append(np.unique(grpcz_cen)[0])
+        grpcz_av_red.append(np.unique(grpcz_av)[0])
+N_blue = 0
+for key in blue_subset_ids:
+    group = all_groups.get_group(key)
+    if len(group) > 2:
+        N_blue+=1
+        grpcz_av = group.grpcz_av.values
+        grpcz_cen = group.grpcz_new.values
+
+        deltav_av = group.cz.values - grpcz_av
+        deltav_cen = group.cz.values - grpcz_cen
+
+        sigma_blue = np.sqrt(np.sum(deltav_av**2)/len(deltav_av)-1)
+        my_sigma_av_blue.append(sigma_blue)
+
+        sigma_av_blue.append(np.std(deltav_av, ddof=1))
+        sigma_cen_blue.append(np.std(deltav_cen[[deltav_cen!=0]]))
+
+        grpcz_cen_blue.append(np.unique(grpcz_cen)[0])
+        grpcz_av_blue.append(np.unique(grpcz_av)[0])
+
+sigma_av_red = np.asarray(sigma_av_red)
+sigma_cen_red = np.asarray(sigma_cen_red)
+sigma_av_blue = np.asarray(sigma_av_blue)
+sigma_cen_blue = np.asarray(sigma_cen_blue)
+
+grpcz_av_red = np.asarray(grpcz_av_red)
+grpcz_av_blue = np.asarray(grpcz_av_blue)
+grpcz_cen_red = np.asarray(grpcz_cen_red)
+grpcz_cen_blue = np.asarray(grpcz_cen_blue)
+
+my_sigma_av_red = np.asarray(my_sigma_av_red)
+my_sigma_av_blue = np.asarray(my_sigma_av_blue)
+
+#* Comparison of sigma defined both ways i.e. average group cz and central cz
+plt.scatter(sigma_av_red, sigma_cen_red, color='maroon', s=100, marker='^', 
+    label='Red groups')
+plt.scatter(sigma_av_blue, sigma_cen_blue, color='cornflowerblue', s=100, 
+    marker='^', label='Blue groups')
+plt.plot(np.linspace(0, 630, 10), np.linspace(0, 630, 10), 'k--', lw=2)
+plt.yscale('log')
+plt.xscale('log')
+plt.xlabel(r'$ {\sigma}$ \ wrt. \ $\overline{cz}$', fontsize=30)
+plt.ylabel(r'$ {\sigma}$ \ wrt. \ central cz', fontsize=30)
+plt.title('Sigma comparison between using group central and group average cz')
+plt.legend(loc='best',prop={'size':30})
+plt.show()
+
+#* Comparison of grpcz values between using average and central cz
+plt.scatter(grpcz_av_red, grpcz_cen_red, color='maroon', s=100, marker='^', 
+    label='Red groups')
+plt.scatter(grpcz_av_blue, grpcz_cen_blue, color='cornflowerblue', s=100, 
+    marker='^', label='Blue groups')
+plt.plot(np.linspace(3000, 7000, 10), np.linspace(3000, 7000, 10), 'k--', lw=2)
+
+plt.xlabel(r'group average cz', fontsize=30)
+plt.ylabel(r'group central cz', fontsize=30)
+plt.title('Group cz comparison between using group central and group average cz')
+plt.legend(loc='best',prop={'size':30})
+plt.show()
+
+#* How I was calculating sigma and how I should be calculating sigma
+#* although it makes no difference at all to the actual values
+plt.scatter(my_sigma_av_red, sigma_av_red, color='maroon', s=100, marker='^', 
+    label='Red groups')
+plt.scatter(my_sigma_av_blue, sigma_av_blue, color='cornflowerblue', s=100, 
+    marker='^', label='Red groups')
+plt.show()
+
+
+#* Average sigma with and without redshift factor from Eq 5, Calderon and Berlind
+#* 2019
+
+def average_z(average_cz):
+    c = 3*10**5 #m/s
+    return average_cz/c
+
+sigma_av_red_arr = []
+sigma_cen_red_arr = []
+sigma_av_blue_arr = []
+sigma_cen_blue_arr = []
+mod_sigma_av_red_arr = []
+mod_sigma_av_blue_arr = []
+
+for key in red_subset_ids:
+    group = all_groups.get_group(key)
+    if len(group) > 2:
+        N_red+=1
+        grpcz_av = group.grpcz_av.values
+        grpcz_cen = group.grpcz_new.values
+
+        deltav_av = group.cz.values - grpcz_av
+        deltav_cen = group.cz.values - grpcz_cen
+
+        sigma_av_red = np.std(deltav_av, ddof=1)
+        sigma_cen_red = np.std(deltav_cen[[deltav_cen!=0]])
+        z_factor = 1/(1+average_z(np.unique(grpcz_av)[0]))
+
+        sigma_av_red_arr.append(z_factor*sigma_av_red)
+        sigma_cen_red_arr.append(sigma_cen_red)
+        mod_sigma_av_red_arr.append(sigma_av_red)
+
+N_blue = 0
+for key in blue_subset_ids:
+    group = all_groups.get_group(key)
+    if len(group) > 2:
+        N_blue+=1
+        grpcz_av = group.grpcz_av.values
+        grpcz_cen = group.grpcz_new.values
+
+        deltav_av = group.cz.values - grpcz_av
+        deltav_cen = group.cz.values - grpcz_cen
+
+        sigma_av_blue = np.std(deltav_av, ddof=1)
+        sigma_cen_blue = np.std(deltav_cen[[deltav_cen!=0]])
+        z_factor = 1/(1+average_z(np.unique(grpcz_av)[0]))
+
+        sigma_av_blue_arr.append(z_factor*sigma_av_blue)
+        sigma_cen_blue_arr.append(sigma_cen_blue)
+        mod_sigma_av_blue_arr.append(sigma_av_blue)
+
+plt.scatter(sigma_av_red_arr, mod_sigma_av_red_arr, color='maroon', s=100, marker='^', 
+    label='Red groups')
+plt.scatter(sigma_av_blue_arr, mod_sigma_av_blue_arr, color='cornflowerblue', s=100, 
+    marker='^', label='Blue groups')
+plt.plot(np.linspace(0, 630, 10), np.linspace(0, 630, 10), 'k--', lw=2)
+# plt.yscale('log')
+# plt.xscale('log')
+plt.xlabel(r'${\sigma}$ with z factor', fontsize=30)
+plt.ylabel(r'${\sigma}$ without z factor', fontsize=30)
+plt.title('Sigma comparison between using group average cz with/without redshift factor')
+plt.legend(loc='best',prop={'size':30})
+plt.show()
+
+#* Mean absolute deltaV - M*
+
+red_cen_stellar_mass_arr = []
+blue_cen_stellar_mass_arr = []
+red_deltav_arr = []
+blue_deltav_arr = []
+
+N_red = 0
+for key in red_subset_ids:
+    group = all_groups.get_group(key)
+    if len(group) > 1:
+        N_red+=1
+        grpcz_av = group.grpcz_av.values
+
+        deltav_av = group.cz.values - grpcz_av
+
+        cen_stellar_mass = group.logmstar.loc[group.g_galtype == 1].values[0]
+        
+        for val in deltav_av:
+            red_cen_stellar_mass_arr.append(cen_stellar_mass)
+            red_deltav_arr.append(np.abs(val))
+
+N_blue = 0
+for key in blue_subset_ids:
+    group = all_groups.get_group(key)
+    if len(group) > 1:
+        N_blue+=1
+        grpcz_av = group.grpcz_av.values
+
+        deltav_av = group.cz.values - grpcz_av
+
+        cen_stellar_mass = group.logmstar.loc[group.g_galtype == 1].values[0]
+        
+        for val in deltav_av:
+            blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+            blue_deltav_arr.append(np.abs(val))
+
+mean_stats_red = bs(red_cen_stellar_mass_arr, red_deltav_arr,
+    statistic='mean', bins=np.linspace(8.6,11,6))
+mean_stats_blue = bs(blue_cen_stellar_mass_arr, blue_deltav_arr,
+    statistic='mean', bins=np.linspace(8.6,11,6))
+
+mean_centers_red = 0.5 * (mean_stats_red[1][1:] + \
+    mean_stats_red[1][:-1])
+mean_centers_blue = 0.5 * (mean_stats_blue[1][1:] + \
+    mean_stats_blue[1][:-1])
+
+mock_name = 'ECO'
+num_mocks = 8
+min_cz = 3000
+max_cz = 7000
+mag_limit = -17.33
+mstar_limit = 8.9
+volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
+
+mean_stat_red_arr = []
+mean_stat_blue_arr = []
+box_id_arr = np.linspace(5001,5008,8)
+for box in box_id_arr:
+    box = int(box)
+    temp_path = path_to_mocks + '{0}/{1}_m200b_catls/'.format(box, 
+        mock_name) 
+    for num in range(num_mocks):
+        filename = temp_path + '{0}_cat_{1}_Planck_memb_cat.hdf5'.format(
+            mock_name, num)
+        print('Box {0} : Mock {1}'.format(box, num))
+        mock_pd = reading_catls(filename) 
+        mock_pd = mock_add_grpcz(mock_pd, grpid_col='groupid', 
+            galtype_col='g_galtype', cen_cz_col='cz')
+        # Using the same survey definition as in mcmc smf i.e excluding the 
+        # buffer
+        mock_pd = mock_pd.loc[(mock_pd.grpcz_new.values >= min_cz) & \
+            (mock_pd.grpcz_new.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
+            (mock_pd.logmstar.values >= mstar_limit)].reset_index(drop=True)
+
+        ## Using best-fit found for new ECO data using result from chain 42
+        ## i.e. hybrid quenching model
+        Mstar_q = 10.11652049 # Msun/h**2
+        Mh_q = 13.86684472 # Msun/h
+        mu = 0.76086959
+        nu = 0.04489465
+
+        ## Using best-fit found for new ECO data using result from chain 41
+        ## i.e. halo quenching model
+        Mh_qc = 11.68499777 # Msun/h
+        Mh_qs = 12.3832308 # Msun/h
+        mu_c = 1.41969021
+        mu_s = 0.46442463
+
+        if quenching == 'hybrid':
+            theta = [Mstar_q, Mh_q, mu, nu]
+            f_red_c, f_red_s = hybrid_quenching_model(theta, mock_pd, 
+                'nonvishnu')
+        elif quenching == 'halo':
+            theta = [Mh_qc, Mh_qs, mu_c, mu_s]
+            f_red_c, f_red_s = halo_quenching_model(theta, mock_pd, 
+                'nonvishnu')
+        mock_pd = assign_colour_label_mock(f_red_c, f_red_s, mock_pd)
+        logmstar_arr = mock_pd.logmstar.values
+
+        red_cen_stellar_mass_arr = []
+        blue_cen_stellar_mass_arr = []
+        red_deltav_arr = []
+        blue_deltav_arr = []
+
+        all_groups = mock_pd.groupby('groupid')
+
+        red_subset_ids = np.unique(mock_pd['groupid'].loc[(mock_pd.\
+            colour_label == 'R') & (mock_pd['g_galtype'] == 1)].values) 
+        blue_subset_ids = np.unique(mock_pd['groupid'].loc[(mock_pd.\
+            colour_label == 'B') & (mock_pd['g_galtype'] == 1)].values)
+
+        for key in red_subset_ids:
+            group = all_groups.get_group(key)
+            if len(group) > 1:
+                N_red+=1
+                grpcz_av = group.grpcz_av.values
+
+                deltav_av = group.cz.values - grpcz_av
+
+                cen_stellar_mass = group.logmstar.loc[group.g_galtype == 1].values[0]
+                
+                for val in deltav_av:
+                    red_cen_stellar_mass_arr.append(cen_stellar_mass)
+                    red_deltav_arr.append(np.abs(val))
+
+        N_blue = 0
+        for key in blue_subset_ids:
+            group = all_groups.get_group(key)
+            if len(group) > 1:
+                N_blue+=1
+                grpcz_av = group.grpcz_av.values
+
+                deltav_av = group.cz.values - grpcz_av
+
+                cen_stellar_mass = group.logmstar.loc[group.g_galtype == 1].values[0]
+                
+                for val in deltav_av:
+                    blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+                    blue_deltav_arr.append(np.abs(val))
+
+        mean_stat_red = bs(red_cen_stellar_mass_arr, red_deltav_arr,
+            statistic='mean', bins=np.linspace(8.6,11,6))
+        mean_stat_blue = bs(blue_cen_stellar_mass_arr, blue_deltav_arr,
+            statistic='mean', bins=np.linspace(8.6,11,6))
+
+        mean_stat_red_arr.append(mean_stat_red[0])
+        mean_stat_blue_arr.append(mean_stat_blue[0])
+
+mean_stat_red_arr = np.array(mean_stat_red_arr)
+mean_stat_blue_arr = np.array(mean_stat_blue_arr)
+
+error_red = np.nanstd(mean_stat_red_arr, axis=0)
+error_blue = np.nanstd(mean_stat_blue_arr, axis=0)
+
+
+plt.errorbar(mean_centers_red, mean_stats_red[0], yerr=error_red, 
+    color='darkred',fmt='^',ecolor='darkred', 
+    markersize=12,capsize=10,capthick=1.0,zorder=10)
+plt.errorbar(mean_centers_blue, mean_stats_blue[0], yerr=error_blue, 
+    color='darkblue',fmt='^',ecolor='darkblue',
+    markersize=12,capsize=10,capthick=1.0,zorder=10)
+plt.xlabel(r'$M_{*, \ group cen}$', fontsize=30)
+plt.ylabel(r'$|\overline{{\Delta v}}|$', fontsize=30)
+plt.title(r'Average absolute deltaV vs group central stellar mass for N $>$ 1 groups')
+plt.show()
+
+#* Gapper method
+def gapper(vel_arr):
+    n = len(vel_arr)
+    factor = np.sqrt(np.pi)/(n*(n-1))
+
+    summation = 0
+    sorted_vel = np.sort(vel_arr)
+    for i in range(len(sorted_vel)):
+        i += 1
+        if i == len(sorted_vel):
+            break
+        
+        deltav_i = sorted_vel[i] - sorted_vel[i-1]
+        weight_i = i*(n-i)
+        prod = deltav_i * weight_i
+        summation += prod
+
+    sigma_gapper = factor * summation
+
+    return sigma_gapper
