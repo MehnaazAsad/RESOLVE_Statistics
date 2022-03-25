@@ -1132,6 +1132,10 @@ def main(args):
 
     if survey == 'eco':
         # catl_file = path_to_raw + "eco/eco_all.csv"
+        #! Change to updated catalog 
+        #* although this wont affect this script much since the catalog is only
+        #* used to calculate median z which remains 0.02 whether you use grpcz
+        #* or grpcz_new
         catl_file = path_to_processed + "gal_group_eco_data_buffer.hdf5"
 
     # chi2_file = path_to_processed + 'smhm_colour_run35/{0}_colour_chi2.txt'.format(survey)
