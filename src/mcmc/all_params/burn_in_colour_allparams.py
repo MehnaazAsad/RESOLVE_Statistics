@@ -10,6 +10,7 @@ from matplotlib import rc
 import matplotlib
 import pandas as pd
 import numpy as np
+import emcee
 import math
 import os
 
@@ -46,87 +47,107 @@ survey = 'eco'
 mf_type = 'smf'
 quenching = 'hybrid'
 nwalkers = 100
-run = 34
+run = 42
 
 if mf_type == 'smf':
     path_to_proc = path_to_proc + 'smhm_colour_run{0}/'.format(run)
 else:
     path_to_proc = path_to_proc + 'bmhm_run3/'
 
-chain_fname = path_to_proc + 'mcmc_{0}_colour_raw.txt'.format(survey)
+if run >= 37:
+    quenching = 'halo'
+    reader = emcee.backends.HDFBackend(
+        path_to_proc + "chain.h5".format(run), read_only=True)
+    flatchain = reader.get_chain(flat=True)
 
-if quenching == 'hybrid':
-    emcee_table = pd.read_csv(chain_fname, header=None, comment='#', 
-        names=['Mhalo_c', 'Mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter',
-        'Mstar_q','Mhalo_q','mu','nu'], sep='\s+')
+    names_hybrid=['Mhalo_c', 'Mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter',
+            'Mstar_q','Mhalo_q','mu','nu']
+    names_halo=['Mhalo_c', 'Mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter',
+        'Mh_qc','Mh_qs','mu_c','mu_s']
 
-    for idx,row in enumerate(emcee_table.values):
+    if quenching == 'hybrid':
+        emcee_table = pd.DataFrame(flatchain, columns=names_hybrid)
+    elif quenching == 'halo':
+        emcee_table = pd.DataFrame(flatchain, columns=names_halo)       
 
-        ## For cases where 5 params on one line and 3 on the next
-        if np.isnan(row)[6] == True and np.isnan(row)[5] == False:
-            mhalo_q_val = emcee_table.values[idx+1][0]
-            mu_val = emcee_table.values[idx+1][1]
-            nu_val = emcee_table.values[idx+1][2]
-            row[6] = mhalo_q_val
-            row[7] = mu_val
-            row[8] = nu_val 
+    chi2 = reader.get_blobs(flat=True)
+    emcee_table['chi2'] = chi2
 
-        ## For cases where 4 params on one line, 4 on the next and 1 on the 
-        ## third line (numbers in scientific notation unlike case above)
-        elif np.isnan(row)[4] == True and np.isnan(row)[3] == False:
-            scatter_val = emcee_table.values[idx+1][0]
-            mstar_q_val = emcee_table.values[idx+1][1]
-            mhalo_q_val = emcee_table.values[idx+1][2]
-            mu_val = emcee_table.values[idx+1][3]
-            nu_val = emcee_table.values[idx+2][0]
-            row[4] = scatter_val
-            row[5] = mstar_q_val
-            row[6] = mhalo_q_val
-            row[7] = mu_val
-            row[8] = nu_val 
+else:
+    chain_fname = path_to_proc + 'mcmc_{0}_colour_raw.txt'.format(survey)
 
-    emcee_table = emcee_table.dropna(axis='index', how='any').\
-        reset_index(drop=True)
+    if quenching == 'hybrid':
+        emcee_table = pd.read_csv(chain_fname, header=None, comment='#', 
+            names=['Mhalo_c', 'Mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter',
+            'Mstar_q','Mhalo_q','mu','nu'], sep='\s+')
 
+        for idx,row in enumerate(emcee_table.values):
 
-elif quenching == 'halo':
-    emcee_table = pd.read_csv(chain_fname, header=None, comment='#', 
-        names=['Mhalo_c', 'Mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter',
-        'Mh_qc','Mh_qs','mu_c','mu_s'], sep='\s+')
+            ## For cases where 5 params on one line and 3 on the next
+            if np.isnan(row)[6] == True and np.isnan(row)[5] == False:
+                mhalo_q_val = emcee_table.values[idx+1][0]
+                mu_val = emcee_table.values[idx+1][1]
+                nu_val = emcee_table.values[idx+1][2]
+                row[6] = mhalo_q_val
+                row[7] = mu_val
+                row[8] = nu_val 
 
-    for idx,row in enumerate(emcee_table.values):
+            ## For cases where 4 params on one line, 4 on the next and 1 on the 
+            ## third line (numbers in scientific notation unlike case above)
+            elif np.isnan(row)[4] == True and np.isnan(row)[3] == False:
+                scatter_val = emcee_table.values[idx+1][0]
+                mstar_q_val = emcee_table.values[idx+1][1]
+                mhalo_q_val = emcee_table.values[idx+1][2]
+                mu_val = emcee_table.values[idx+1][3]
+                nu_val = emcee_table.values[idx+2][0]
+                row[4] = scatter_val
+                row[5] = mstar_q_val
+                row[6] = mhalo_q_val
+                row[7] = mu_val
+                row[8] = nu_val 
 
-        ## For cases where 5 params on one line and 3 on the next
-        if np.isnan(row)[6] == True and np.isnan(row)[5] == False:
-            mhalo_qs_val = emcee_table.values[idx+1][0]
-            mu_c_val = emcee_table.values[idx+1][1]
-            mu_s_val = emcee_table.values[idx+1][2]
-            row[6] = mhalo_qs_val
-            row[7] = mu_c_val
-            row[8] = mu_s_val 
-
-        ## For cases where 4 params on one line, 4 on the next and 1 on the 
-        ## third line (numbers in scientific notation unlike case above)
-        elif np.isnan(row)[4] == True and np.isnan(row)[3] == False:
-            scatter_val = emcee_table.values[idx+1][0]
-            mhalo_qc_val = emcee_table.values[idx+1][1]
-            mhalo_qs_val = emcee_table.values[idx+1][2]
-            mu_c_val = emcee_table.values[idx+1][3]
-            mu_s_val = emcee_table.values[idx+2][0]
-            row[4] = scatter_val
-            row[5] = mhalo_qc_val
-            row[6] = mhalo_qs_val
-            row[7] = mu_c_val
-            row[8] = mu_s_val 
-
-    emcee_table = emcee_table.dropna(axis='index', how='any').\
-        reset_index(drop=True)
+        emcee_table = emcee_table.dropna(axis='index', how='any').\
+            reset_index(drop=True)
 
 
-chi2_fname = path_to_proc + '{0}_colour_chi2.txt'.format(survey)
-chi2_df = pd.read_csv(chi2_fname,header=None,names=['chisquared'])
-# chi2 = np.log10(chi2_df.chisquared.values)
-emcee_table['chi2'] = chi2_df['chisquared']
+    elif quenching == 'halo':
+        emcee_table = pd.read_csv(chain_fname, header=None, comment='#', 
+            names=['Mhalo_c', 'Mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter',
+            'Mh_qc','Mh_qs','mu_c','mu_s'], sep='\s+')
+
+        for idx,row in enumerate(emcee_table.values):
+
+            ## For cases where 5 params on one line and 3 on the next
+            if np.isnan(row)[6] == True and np.isnan(row)[5] == False:
+                mhalo_qs_val = emcee_table.values[idx+1][0]
+                mu_c_val = emcee_table.values[idx+1][1]
+                mu_s_val = emcee_table.values[idx+1][2]
+                row[6] = mhalo_qs_val
+                row[7] = mu_c_val
+                row[8] = mu_s_val 
+
+            ## For cases where 4 params on one line, 4 on the next and 1 on the 
+            ## third line (numbers in scientific notation unlike case above)
+            elif np.isnan(row)[4] == True and np.isnan(row)[3] == False:
+                scatter_val = emcee_table.values[idx+1][0]
+                mhalo_qc_val = emcee_table.values[idx+1][1]
+                mhalo_qs_val = emcee_table.values[idx+1][2]
+                mu_c_val = emcee_table.values[idx+1][3]
+                mu_s_val = emcee_table.values[idx+2][0]
+                row[4] = scatter_val
+                row[5] = mhalo_qc_val
+                row[6] = mhalo_qs_val
+                row[7] = mu_c_val
+                row[8] = mu_s_val 
+
+        emcee_table = emcee_table.dropna(axis='index', how='any').\
+            reset_index(drop=True)
+
+
+    chi2_fname = path_to_proc + '{0}_colour_chi2.txt'.format(survey)
+    chi2_df = pd.read_csv(chi2_fname,header=None,names=['chisquared'])
+    # chi2 = np.log10(chi2_df.chisquared.values)
+    emcee_table['chi2'] = chi2_df['chisquared']
 
 # Each chunk is now a step and within each chunk, each row is a walker
 # Different from what it used to be where each chunk was a walker and 
@@ -369,7 +390,6 @@ elif quenching == 'halo':
         chi2[0][idx] = chi2_mean
         chi2[1][idx] = chi2_std
 
-    #TODO modify plot making to add behroozi params
     Mhalo_c_fid = 12.35
     Mstar_c_fid = 10.72
     mlow_slope_fid = 0.44
@@ -557,3 +577,4 @@ num_unique_rows = emcee_table[['Mhalo_c', 'Mstar_c', 'mlow_slope',
 num_rows = len(emcee_table)
 acceptance_fraction = num_unique_rows / num_rows
 print("Acceptance fraction: {0}%".format(np.round(acceptance_fraction,2)*100))
+
