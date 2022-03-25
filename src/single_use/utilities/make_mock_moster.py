@@ -56,14 +56,14 @@ halocat.halo_table['stellar_mass'] = model.mc_stellar_mass(
 scatter = model.param_dict['scatter_model_param1']
 
 mock_catalog = pd.DataFrame(np.array(halocat.halo_table[['halo_id','halo_pid',\
-    'halo_upid', 'halo_hostid','halo_x','halo_y','halo_z', 'halo_vz', \
-    'halo_mvir', 'halo_macc', 'stellar_mass']]))
+    'halo_upid', 'halo_hostid','halo_x','halo_y','halo_z', 'halo_vx', 'halo_vy',\
+    'halo_vz', 'halo_mvir', 'halo_macc', 'stellar_mass']]))
 mock_catalog = assign_cen_sat(mock_catalog)
 
-mock_catalog.to_hdf(path_to_int+'vishnu_rockstar_moster_z{0}_{1}dex_v2.hdf5'.\
+mock_catalog.to_hdf(path_to_int+'vishnu_rockstar_moster_z{0}_{1}dex_v3.hdf5'.\
     format(z, scatter), key='\gal_catl', mode='w', complevel=8)
 
-tf = tarfile.open(path_to_int+'vishnu_rockstar_moster_z{0}_{1}dex_v2.tar.gz'.\
+tf = tarfile.open(path_to_int+'vishnu_rockstar_moster_z{0}_{1}dex_v3.tar.gz'.\
     format(z, scatter), mode="w:gz")
-tf.add(path_to_int+'vishnu_rockstar_moster_z{0}_{1}dex_v2.hdf5'.format(z, scatter))
+tf.add(path_to_int+'vishnu_rockstar_moster_z{0}_{1}dex_v3.hdf5'.format(z, scatter))
 tf.close()
