@@ -22,7 +22,7 @@ def main():
     data = analysis.Core(experiments)
     data_experimentals = experiments.Run_Experiments()
     
-    models, best_fit = analysis.Mocks_And_Models(experiments)
+    models, best_fit, gals_df = analysis.Mocks_And_Models(experiments)
 
     plotting = Plotting(preprocess)
     plotting.Plot_Core(data, models, best_fit)
