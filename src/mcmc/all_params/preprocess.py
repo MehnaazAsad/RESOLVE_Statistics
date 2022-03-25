@@ -6,6 +6,7 @@ __author__ = '{Mehnaaz Asad}'
 import pandas as pd
 import numpy as np
 import globals
+import emcee
 import os
 
 class Preprocess():
@@ -34,39 +35,46 @@ class Preprocess():
         emcee_table: pandas.DataFrame
             Dataframe of mcmc chain values with NANs removed
         """
+        settings = self.settings
+
         colnames = ['mhalo_c', 'mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter',
             'mstar_q','mh_q','mu','nu']
         
-        emcee_table = pd.read_csv(path_to_file, names=colnames, comment='#',
-            header=None, sep='\s+')
+        if settings.run >= 37:
+            reader = emcee.backends.HDFBackend(path_to_file, read_only=True)
+            flatchain = reader.get_chain(flat=True)
+            emcee_table = pd.DataFrame(flatchain, columns=colnames)
+        elif settings.run < 37:
+            emcee_table = pd.read_csv(path_to_file, names=colnames, comment='#',
+                header=None, sep='\s+')
 
-        for idx,row in enumerate(emcee_table.values):
+            for idx,row in enumerate(emcee_table.values):
 
-            ## For cases where 5 params on one line and 3 on the next
-            if np.isnan(row)[6] == True and np.isnan(row)[5] == False:
-                mhalo_q_val = emcee_table.values[idx+1][0]
-                mu_val = emcee_table.values[idx+1][1]
-                nu_val = emcee_table.values[idx+1][2]
-                row[6] = mhalo_q_val
-                row[7] = mu_val
-                row[8] = nu_val 
+                ## For cases where 5 params on one line and 3 on the next
+                if np.isnan(row)[6] == True and np.isnan(row)[5] == False:
+                    mhalo_q_val = emcee_table.values[idx+1][0]
+                    mu_val = emcee_table.values[idx+1][1]
+                    nu_val = emcee_table.values[idx+1][2]
+                    row[6] = mhalo_q_val
+                    row[7] = mu_val
+                    row[8] = nu_val 
 
-            ## For cases where 4 params on one line, 4 on the next and 1 on the 
-            ## third line (numbers in scientific notation unlike case above)
-            elif np.isnan(row)[4] == True and np.isnan(row)[3] == False:
-                scatter_val = emcee_table.values[idx+1][0]
-                mstar_q_val = emcee_table.values[idx+1][1]
-                mhalo_q_val = emcee_table.values[idx+1][2]
-                mu_val = emcee_table.values[idx+1][3]
-                nu_val = emcee_table.values[idx+2][0]
-                row[4] = scatter_val
-                row[5] = mstar_q_val
-                row[6] = mhalo_q_val
-                row[7] = mu_val
-                row[8] = nu_val 
+                ## For cases where 4 params on one line, 4 on the next and 1 on the 
+                ## third line (numbers in scientific notation unlike case above)
+                elif np.isnan(row)[4] == True and np.isnan(row)[3] == False:
+                    scatter_val = emcee_table.values[idx+1][0]
+                    mstar_q_val = emcee_table.values[idx+1][1]
+                    mhalo_q_val = emcee_table.values[idx+1][2]
+                    mu_val = emcee_table.values[idx+1][3]
+                    nu_val = emcee_table.values[idx+2][0]
+                    row[4] = scatter_val
+                    row[5] = mstar_q_val
+                    row[6] = mhalo_q_val
+                    row[7] = mu_val
+                    row[8] = nu_val 
 
-        emcee_table = emcee_table.dropna(axis='index', how='any').\
-            reset_index(drop=True)
+            emcee_table = emcee_table.dropna(axis='index', how='any').\
+                reset_index(drop=True)
 
         return emcee_table
 
@@ -139,7 +147,7 @@ class Preprocess():
 
         return mock_pd
 
-    def mock_add_grpcz(self, mock_df, data_bool=None, grpid_col=None, 
+    def mock_add_grpcz_old(self, mock_df, data_bool=None, grpid_col=None, 
         censat_col=None, cencz_col=None):
         """Adds column of group cz values to mock catalogues
 
@@ -192,6 +200,17 @@ class Preprocess():
             mock_df['grpcz'] = full_grpcz_arr
         return mock_df
 
+    def mock_add_grpcz(self, df, grpid_col=None, galtype_col=None, cen_cz_col=None):
+        cen_subset_df = df.loc[df[galtype_col] == 1].sort_values(by=grpid_col)
+        # Sum doesn't actually add up anything here but I didn't know how to get
+        # each row as is so I used .apply
+        cen_cz = cen_subset_df.groupby(['{0}'.format(grpid_col),'{0}'.format(
+            galtype_col)])['{0}'.format(cen_cz_col)].apply(np.sum).values    
+        zip_iterator = zip(list(cen_subset_df[grpid_col]), list(cen_cz))
+        a_dictionary = dict(zip_iterator)
+        df['grpcz_new'] = df['{0}'.format(grpid_col)].map(a_dictionary)
+        return df
+
     def read_data_catl(self, path_to_file, survey):
         """
         Reads survey catalog from file
@@ -226,7 +245,8 @@ class Preprocess():
             #     usecols=columns)
 
             eco_buff = self.read_mock_catl(path_to_file)
-            eco_buff = self.mock_add_grpcz(eco_buff, True)
+            eco_buff = self.mock_add_grpcz(eco_buff, grpid_col='groupid', 
+                galtype_col='g_galtype', cen_cz_col='cz')
 
             if settings.mf_type == 'smf':
                 # 6456 galaxies
@@ -342,8 +362,11 @@ class Preprocess():
         settings = self.settings
 
         print('Reading files')
-        chi2 = pd.read_csv(settings.chi2_file, header=None, names=['chisquared'])\
-            ['chisquared'].values
+        # chi2 = pd.read_csv(settings.chi2_file, header=None, names=['chisquared'])\
+        #     ['chisquared'].values
+
+        reader = emcee.backends.HDFBackend(settings.chi2_file , read_only=True)
+        chi2 = reader.get_blobs(flat=True)
 
         mcmc_table = self.read_mcmc(settings.chain_file)
         self.catl, self.volume, self.z_median = self.\
