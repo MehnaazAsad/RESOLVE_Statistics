@@ -5255,6 +5255,7 @@ plt.title(r'Average absolute deltaV vs group central stellar mass for N $>$ 1 gr
 plt.show()
 
 #* Gapper method
+
 def gapper(vel_arr):
     n = len(vel_arr)
     factor = np.sqrt(np.pi)/(n*(n-1))
@@ -5274,3 +5275,117 @@ def gapper(vel_arr):
     sigma_gapper = factor * summation
 
     return sigma_gapper
+
+red_gapper_sigma_arr = []
+red_sigma_arr = []
+blue_gapper_sigma_arr = []
+blue_sigma_arr = []
+red_cen_stellar_mass_arr = []
+blue_cen_stellar_mass_arr = []
+red_group_N = []
+blue_group_N = []
+
+N_red = 0
+for key in red_subset_ids:
+    group = all_groups.get_group(key)
+    if len(group) > 1:
+        N_red+=1
+        grpcz_av = group.grpcz_av.values
+
+        deltav_av = group.cz.values - grpcz_av
+
+        sigma_av_red = np.std(deltav_av, ddof=1)
+        gapper_red = gapper(deltav_av)
+
+        cen_stellar_mass = group.logmstar.loc[group.g_galtype == 1].values[0]
+        
+        red_gapper_sigma_arr.append(gapper_red)
+        red_sigma_arr.append(sigma_av_red)
+        red_cen_stellar_mass_arr.append(cen_stellar_mass)  
+        red_group_N.append(len(group))
+
+N_blue = 0
+for key in blue_subset_ids:
+    group = all_groups.get_group(key)
+    if len(group) > 1:
+        N_blue+=1
+        grpcz_av = group.grpcz_av.values
+
+        deltav_av = group.cz.values - grpcz_av
+
+        sigma_av_blue = np.std(deltav_av, ddof=1)
+        gapper_blue = gapper(deltav_av)
+
+        cen_stellar_mass = group.logmstar.loc[group.g_galtype == 1].values[0]
+
+        blue_gapper_sigma_arr.append(gapper_blue)
+        blue_sigma_arr.append(sigma_av_blue)
+        blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+        blue_group_N.append(len(group))
+
+mean_mstar_red = bs(red_sigma_arr, red_cen_stellar_mass_arr, 
+    statistic='mean', bins=np.linspace(-2,3,5))
+mean_mstar_blue = bs(blue_sigma_arr, blue_cen_stellar_mass_arr, 
+    statistic='mean', bins=np.linspace(-1,3,5))
+
+mean_mstar_red_gapper = bs(red_gapper_sigma_arr, red_cen_stellar_mass_arr, 
+    statistic='mean', bins=np.linspace(-2,3,5))
+mean_mstar_blue_gapper = bs(blue_gapper_sigma_arr, blue_cen_stellar_mass_arr, 
+    statistic='mean', bins=np.linspace(-1,3,5))
+
+mean_centers_red = 0.5 * (mean_mstar_red[1][1:] + \
+    mean_mstar_red[1][:-1])
+mean_centers_blue = 0.5 * (mean_mstar_blue[1][1:] + \
+    mean_mstar_blue[1][:-1])
+
+mean_stats_red_gapper = bs(red_cen_stellar_mass_arr, red_gapper_sigma_arr,
+    statistic='mean', bins=np.linspace(8.6,11,5))
+mean_stats_blue_gapper = bs(blue_cen_stellar_mass_arr, blue_gapper_sigma_arr,
+    statistic='mean', bins=np.linspace(8.6,11,5))
+
+mean_stats_red = bs(red_cen_stellar_mass_arr, red_sigma_arr,
+    statistic='mean', bins=np.linspace(8.6,11,5))
+mean_stats_blue = bs(blue_cen_stellar_mass_arr, blue_sigma_arr,
+    statistic='mean', bins=np.linspace(8.6,11,5))
+
+mean_centers_red = 0.5 * (mean_stats_red[1][1:] + \
+    mean_stats_red[1][:-1])
+mean_centers_blue = 0.5 * (mean_stats_blue[1][1:] + \
+    mean_stats_blue[1][:-1])
+
+
+plt.plot(mean_centers_red, mean_stats_red[0], color='darkred', lw=2, ls='-')
+plt.plot(mean_centers_blue, mean_stats_blue[0], color='darkblue', lw=2, ls='-')
+
+plt.plot(mean_centers_red, mean_stats_red_gapper[0], color='darkred', lw=2, ls='--', label='gapper')
+plt.plot(mean_centers_blue, mean_stats_blue_gapper[0], color='darkblue', lw=2, ls='--', label='gapper')
+
+plt.xlabel(r'$M_{*, \ group cen}$', fontsize=30)
+plt.ylabel(r'$\sigma$', fontsize=30)
+plt.title(r'Gapper method vs standard deviation for N $>$ 1 groups')
+plt.show()
+
+plt.plot(mean_centers_red, mean_mstar_red[0], color='darkred', lw=2, ls='-', label='std. dev.')
+plt.plot(mean_centers_blue, mean_mstar_blue[0], color='darkblue', lw=2, ls='-', label='std. dev.')
+
+plt.plot(mean_centers_red, mean_mstar_red_gapper[0], color='darkred', lw=2, ls='--', label='gapper')
+plt.plot(mean_centers_blue, mean_mstar_blue_gapper[0], color='darkblue', lw=2, ls='--', label='gapper')
+
+plt.ylabel(r'$\overline{M_{*, \ group cen}}$', fontsize=30)
+plt.xlabel(r'$\sigma$', fontsize=30)
+plt.legend(loc='best', prop={'size':30})
+plt.title(r'Gapper method vs standard deviation for N $>$ 1 groups')
+plt.show()
+
+red_group_N = np.array(red_group_N)
+blue_group_N = np.array(blue_group_N)
+plt.scatter(red_group_N, red_sigma_arr, marker='*', s=100, c='maroon', label='std. dev.')
+plt.scatter(red_group_N+(len(red_group_N)*[0.2]), red_gapper_sigma_arr, marker='^', s=100, c='maroon', label='gapper')
+plt.scatter(blue_group_N, blue_sigma_arr, marker='*', s=100, c='cornflowerblue', label='std. dev.')
+plt.scatter(blue_group_N+(len(blue_group_N)*[0.2]), blue_gapper_sigma_arr, marker='^', s=100, c='cornflowerblue', label='gapper')
+plt.xscale('log')
+plt.yscale('log')
+plt.ylabel(r'$\sigma$', fontsize=30)
+plt.xlabel(r'group richness', fontsize=30)
+plt.legend(loc='best', prop={'size':30})
+plt.show()
