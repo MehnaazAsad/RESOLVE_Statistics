@@ -639,7 +639,7 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
     red_cen_stellar_mass_arr = cen_red_subset_df.groupby(['{0}'.format(id_col),
         '{0}'.format(galtype_col)])[logmstar_col].apply(np.sum).values
     # if catl_type == 'data' or catl_type == 'mock':
-    red_subset_df['deltav'] = red_subset_df['cz'] - red_subset_df['grpcz_av']
+    # red_subset_df['deltav'] = red_subset_df['cz'] - red_subset_df['grpcz_av']
         #* Sigma measurement to exclude central
         # red_subset_df = red_subset_df.loc[red_subset_df.deltav > 0]   
     # elif catl_type == 'model':     
@@ -649,7 +649,7 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
     #* another way to exclude the central from the measurement of sigma 
     #* We can no longer use deltav > 0 since deltav is wrt to average grpcz 
     #* instead of central cz.
-    red_sigma_arr = red_subset_df.groupby(id_col)['deltav'].apply(np.std, ddof=1).values
+    red_sigma_arr = red_subset_df.groupby(id_col)['cz'].apply(np.std, ddof=1).values
     # end = time.time()
     # time_taken = end - start
     # print("New method took {0:.1f} seconds".format(time_taken))
@@ -669,13 +669,13 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
     blue_cen_stellar_mass_arr = cen_blue_subset_df.groupby(['{0}'.format(id_col),
         '{0}'.format(galtype_col)])[logmstar_col].apply(np.sum).values
     # if catl_type == 'data' or catl_type == 'mock':
-    blue_subset_df['deltav'] = blue_subset_df['cz'] - blue_subset_df['grpcz_av']
+    # blue_subset_df['deltav'] = blue_subset_df['cz'] - blue_subset_df['grpcz_av']
         #* Sigma measurement to exclude central
         # blue_subset_df = red_subset_df.loc[red_subset_df.deltav > 0]       
     # elif catl_type == 'model':
     #     blue_subset_df['deltav'] = blue_subset_df['cz'] - blue_subset_df[cencz_col] 
         # blue_subset_df = red_subset_df.loc[red_subset_df.deltav > 0]            
-    blue_sigma_arr = blue_subset_df.groupby('{0}'.format(id_col))['deltav'].apply(np.std, ddof=1).values
+    blue_sigma_arr = blue_subset_df.groupby('{0}'.format(id_col))['cz'].apply(np.std, ddof=1).values
     # end = time.time()
     # time_taken = end - start
     # print("New method took {0:.1f} seconds".format(time_taken))
