@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from matplotlib import rc
 import pandas as pd
 import numpy as np
+import emcee
 
 __author__ = '{Mehnaaz Asad}'
 
@@ -26,15 +27,14 @@ rc('xtick.major', width=2, size=7)
 rc('ytick.major', width=2, size=7)
 
 survey = 'eco'
-quenching = 'hybrid'
+quenching = 'halo'
 mf_type = 'smf'
 nwalkers = 100
 nsteps = 1000
-burnin = 200
+burnin = 350
 ndim = 9
-run = 34
-
-
+run = 41
+    
 def get_samples(chain_file, nsteps, nwalkers, ndim, burnin):
     if quenching == 'hybrid':
         emcee_table = pd.read_csv(chain_file, header=None, comment='#', 
@@ -106,10 +106,40 @@ def get_samples(chain_file, nsteps, nwalkers, ndim, burnin):
 
     return samples
 
-chain_fname = path_to_proc + 'smhm_colour_run{0}/mcmc_{1}_colour_raw.txt'.\
-    format(run, survey)
 
-samples = get_samples(chain_fname, nsteps, nwalkers, ndim, burnin)
+if run >= 37:
+    reader = emcee.backends.HDFBackend(
+        path_to_proc + "smhm_colour_run{0}/chain.h5".format(run), 
+        read_only=True)
+    samples = reader.get_chain(flat=True, discard=burnin) 
+
+else:
+    chain_fname = path_to_proc + 'smhm_colour_run{0}/mcmc_{1}_colour_raw.txt'.\
+        format(run, survey)
+
+    samples = get_samples(chain_fname, nsteps, nwalkers, ndim, burnin)
+
+nwalkers = 100
+nsteps = 1000
+burnin = 300
+ndim = 9
+run = 38
+
+if run >= 37:
+    reader = emcee.backends.HDFBackend(
+        path_to_proc + "smhm_colour_run{0}/chain.h5".format(run), 
+        read_only=True)
+    samples_38 = reader.get_chain(flat=True, discard=burnin) 
+
+else:
+    chain_fname = path_to_proc + 'smhm_colour_run{0}/mcmc_{1}_colour_raw.txt'.\
+        format(run, survey)
+
+    samples = get_samples(chain_fname, nsteps, nwalkers, ndim, burnin)
+
+# chain_fname_halo_35 = path_to_proc + 'smhm_colour_run{0}/mcmc_{1}_colour_raw.txt'.\
+#     format(run_smf, survey)
+# samples_chain35 = get_samples(chain_fname_halo_35, nsteps, nwalkers, ndim, burnin)
 
 Mhalo_c_fid = 12.35
 Mstar_c_fid = 10.72
@@ -118,43 +148,143 @@ mhigh_slope_fid = 0.57
 scatter_fid = 0.15
 behroozi10_param_vals = [Mhalo_c_fid, Mstar_c_fid, mlow_slope_fid, \
     mhigh_slope_fid, scatter_fid]
+    
 zumandelbaum_param_vals_hybrid = [10.5, 13.76, 0.69, 0.15] # For hybrid model
-optimizer_best_fit_eco_smf_hybrid = [10.49, 14.03, 0.69, 0.14] # For hybrid model
+optimizer_best_fit_eco_smf_hybrid = [10.49, 14.03, 0.69, 0.148] # For hybrid model
 zumandelbaum_param_vals_halo = [12.20, 0.38, 12.17, 0.15] # For halo model
 optimizer_best_fit_eco_smf_halo = [12.61, 13.5, 0.40, 0.148] # For halo model
 
+best_fit_hybrid = [12.16154153, 10.49436558,  0.40970844,  0.92746082,  0.37782192,
+       10.11652049, 13.86684472,  0.76086959,  0.04489465]
+best_fit_halo = [12.15533183, 10.50835579,  0.39131807,  0.58730261,  0.34483536,
+       11.68499777, 12.3832308 ,  1.41969021,  0.46442463]
+# parameters=[r"${log_{10}\ M_{1}}$", 
+#         r"${log_{10}\ M_{*}}$", r"${\beta}$",
+#         r"${\delta}$", r"${\xi}$", 
+#         r"${log_{10}\ M^{q}_{*}}$", r"${log_{10}\ M^{q}_{h}}$", 
+#         r"${\mu}$", r"${\nu}$"]
+
 c = ChainConsumer()
 if quenching == 'hybrid':
-    c.add_chain(samples,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
+    c.add_chain(samples, parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
         r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
         r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
         r"$\mathbf{log_{10}\ M^{q}_{*}}$", r"$\mathbf{log_{10}\ M^{q}_{h}}$", 
         r"$\boldsymbol{\mu}$", r"$\boldsymbol{\nu}$"],
-        name=r"ECO: $\mathbf{\Phi}$  + $\mathbf{f_{blue}}$", color='#1f77b4', 
-        zorder=13)
+        name=r"ECO hybrid (new data)", color="#663399", zorder=10)
+
+    # for i in range(len(best_fit_hybrid)):
+    #     for j in range(len(best_fit_hybrid)):
+    #         if i==j:
+    #             continue
+    #         else:
+    #             c.add_marker([best_fit_hybrid[i],best_fit_hybrid[j]], 
+    #             [parameters[i], parameters[j]], marker_style="*", 
+    #             marker_size=100, color='#1f77b4')
+        
+
+    # c.add_chain(samples_38,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
+    #     r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
+    #     r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
+    #     r"$\mathbf{log_{10}\ M^{q}_{*}}$", r"$\mathbf{log_{10}\ M^{q}_{h}}$", 
+    #     r"$\boldsymbol{\mu}$", r"$\boldsymbol{\nu}$"],
+    #     name="ECO hybrid (old data)", color='#E766EA', 
+    #     zorder=13)
+
 elif quenching == 'halo':
     c.add_chain(samples,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
         r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
         r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
         r"$\mathbf{log_{10}\ M^{qc}_{h}}$", r"$\mathbf{log_{10}\ M^{qs}_{h}}$", 
         r"$\boldsymbol{{\mu}_c}$", r"$\boldsymbol{{\mu}_s}$"],
-        name=r"Halo quenching model", color='#1f77b4', 
-        zorder=13)
+        name=r"ECO halo (new data)", color='#663399', zorder=13)
+
+    # c.add_chain(samples_39,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
+    #     r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
+    #     r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
+    #     r"$\mathbf{log_{10}\ M^{qc}_{h}}$", r"$\mathbf{log_{10}\ M^{qs}_{h}}$", 
+    #     r"$\boldsymbol{{\mu}_c}$", r"$\boldsymbol{{\mu}_s}$"],
+    #     name=r"ECO halo (old data)", color='#E766EA', 
+    #     zorder=10)
+
+
+    # c.add_chain(samples_chain35,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
+    #     r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
+    #     r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
+    #     r"$\mathbf{log_{10}\ M^{qc}_{h}}$", r"$\mathbf{log_{10}\ M^{qs}_{h}}$", 
+    #     r"$\boldsymbol{{\mu}_c}$", r"$\boldsymbol{{\mu}_s}$"],
+    #     name=r"ECO halo: $\mathbf{\Phi}$  + $\mathbf{f_{blue, cen}}$ + $\mathbf{f_{blue, sat}}$", color='#E766EA', 
+    #     zorder=10)
 
 # c.configure(shade_gradient=[0.1, 3.0], colors=['r', 'b'], \
 #      sigmas=[1,2], shade_alpha=0.4)
 
 # sigma levels for 1D gaussian showing 68%,95% conf intervals
-c.configure(kde=2.0, label_font_size=15, tick_font_size=10, summary=True, 
-    sigma2d=False, legend_kwargs={"fontsize": 15}) 
+c.configure(kde=2.0, shade_gradient = 2.0, shade_alpha=0.8, label_font_size=15, 
+    tick_font_size=10, summary=False, sigma2d=False, diagonal_tick_labels=False, 
+    max_ticks=4, linewidths=2, legend_kwargs={"fontsize": 15})
+c.configure_truth(color='goldenrod', lw=1.7)
+fig1 = c.plotter.plot(display=True)
+# c.configure(label_font_size=15, tick_font_size=10, summary=True, 
+#     sigma2d=False, legend_kwargs={"fontsize": 15}) 
 if quenching == 'hybrid':
-    fig1 = c.plotter.plot(display=True, 
-        truth=behroozi10_param_vals+zumandelbaum_param_vals_hybrid)
+    fig1 = c.plotter.plot(filename='/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/contours_{0}.pdf'.format(quenching), 
+    truth=best_fit_hybrid)
 elif quenching == 'halo':
-    fig1 = c.plotter.plot(display=True, 
-        truth=behroozi10_param_vals+zumandelbaum_param_vals_halo)
+    fig1 = c.plotter.plot(filename='/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/contours_{0}.pdf'.format(quenching), 
+        truth=best_fit_halo)
+
 # fig2 = c.plotter.plot(filename=path_to_figures+'emcee_cc_mp_eco_corrscatter.png',\
 #      truth=behroozi10_param_vals)
+################################################################################
+# CHAIN 33 and 35 (last and current halo quenching)
+nwalkers = 100
+nsteps = 1000
+burnin = 200
+ndim = 9
+run_smf = 33
+
+chain_fname_halo_33 = path_to_proc + 'smhm_colour_run{0}/mcmc_{1}_colour_raw.txt'.\
+    format(run_smf, survey)
+samples_chain33 = get_samples(chain_fname_halo_33, nsteps, nwalkers, ndim, burnin)
+
+c = ChainConsumer()
+# c.add_chain(samples,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
+#     r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
+#     r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
+#     r"$\mathbf{log_{10}\ M^{q}_{*}}$", r"$\mathbf{log_{10}\ M^{q}_{h}}$", 
+#     r"$\boldsymbol{\mu}$", r"$\boldsymbol{\nu}$"],
+#     name=r"ECO: $\mathbf{\Phi}$  + $\mathbf{f_{blue, tot}}$", color='#1f77b4', 
+#     zorder=13)
+
+# c.add_chain(samples,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
+#     r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
+#     r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
+#     r"$\mathbf{log_{10}\ M^{q}_{*}}$", r"$\mathbf{log_{10}\ M^{q}_{h}}$", 
+#     r"$\boldsymbol{\mu}$", r"$\boldsymbol{\nu}$"],\
+#     name=r"ECO: $\mathbf{\Phi}$  + $\mathbf{f_{blue}}$", 
+#     color='#E766EA', zorder=10)
+c.add_chain(samples_chain33,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
+    r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
+    r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
+    r"$\mathbf{log_{10}\ M^{q}_{*}}$", r"$\mathbf{log_{10}\ M^{q}_{h}}$", 
+    r"$\boldsymbol{\mu}$", r"$\boldsymbol{\nu}$"],
+    name="SMF + Total blue fraction", color='#1f77b4', 
+    zorder=10)
+
+c.add_chain(samples,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
+    r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
+    r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
+    r"$\mathbf{log_{10}\ M^{q}_{*}}$", r"$\mathbf{log_{10}\ M^{q}_{h}}$", 
+    r"$\boldsymbol{\mu}$", r"$\boldsymbol{\nu}$"],\
+    name="SMF + Blue fraction of centrals and satellites", 
+    color='#E766EA', zorder=13)
+
+c.configure(kde=2.0,label_font_size=20, tick_font_size=8,summary=True,\
+     sigma2d=False, legend_kwargs={"fontsize": 30}) #1d gaussian showing 68%,95% conf intervals
+fig2 = c.plotter.plot(display=True,truth=behroozi10_param_vals+zumandelbaum_param_vals_hybrid)
+
+################################################################################
 
 ################################################################################
 # CHAIN 32 and 34 (last and current hybrid quenching)
@@ -167,6 +297,16 @@ run_smf = 32
 chain_fname_hybrid_32 = path_to_proc + 'smhm_colour_run{0}/mcmc_{1}_colour_raw.txt'.\
     format(run_smf, survey)
 samples_chain32 = get_samples(chain_fname_hybrid_32, nsteps, nwalkers, ndim, burnin)
+
+nwalkers = 100
+nsteps = 1000
+burnin = 200
+ndim = 9
+run_smf = 34
+
+chain_fname_hybrid_34 = path_to_proc + 'smhm_colour_run{0}/mcmc_{1}_colour_raw.txt'.\
+    format(run_smf, survey)
+samples_chain34 = get_samples(chain_fname_hybrid_34, nsteps, nwalkers, ndim, burnin)
 
 c = ChainConsumer()
 # c.add_chain(samples,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
