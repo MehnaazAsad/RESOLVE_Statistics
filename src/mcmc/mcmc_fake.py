@@ -1118,6 +1118,7 @@ def mcmc(nproc, nwalkers, nsteps, phi_total_data, f_blue_cen_data,
     mhigh_slope = 0.57
     scatter = 0.15
 
+
     behroozi10_param_vals = [Mhalo_c, Mstar_c, mlow_slope, mhigh_slope, scatter]
 
     if quenching == 'hybrid':
@@ -1808,7 +1809,8 @@ def test():
     theta = np.array([12.42877028, 10.7496672 ,  0.49743833,  0.59420229,  0.16614364,
         10.49855279, 14.12568771,  0.70864637,  0.18365174])
     sim_len = 130
-    wedge_radius = 71.62
+    wedge_radius_lowerleft = 71.62
+    wedge_radius_upperright = 113
 
     gals_df = populate_mock(theta[:5], model_init)
     gals_df = gals_df.loc[gals_df['stellar_mass'] >= 10**8.6].reset_index(drop=True)
@@ -1819,9 +1821,10 @@ def test():
     gals_df['distance_from_upperright'] = np.sqrt((gals_df['x']-sim_len)**2 + \
         gals_df['y']**2 + (gals_df['z']-sim_len)**2)
 
-    gals_df_lowerleft = gals_df.loc[gals_df.distance_from_lowerleft.values <= wedge_radius]
-    gals_df_upperright = gals_df.loc[gals_df.distance_from_upperright.values <= wedge_radius]
+    gals_df_lowerleft = gals_df.loc[gals_df.distance_from_lowerleft.values <= wedge_radius_lowerleft]
+    gals_df_upperright = gals_df.loc[gals_df.distance_from_upperright.values <= wedge_radius_upperright]
 
+    gals_common = gals_df.loc[gals_df.halo_id.isin(np.intersect1d(gals_df_lowerleft.halo_id, gals_df_upperright.halo_id))]
 
     xdata = gals_df_lowerleft.x.values
     ydata = gals_df_lowerleft.y.values
@@ -1831,6 +1834,10 @@ def test():
     ydata_invert = gals_df_upperright.y.values
     zdata_invert = gals_df_upperright.z.values
 
+    xdata_common = gals_common.x.values
+    ydata_common = gals_common.y.values
+    zdata_common = gals_common.z.values
+
     fig = plt.figure()
     ax = plt.axes(projection='3d')
 
@@ -1838,6 +1845,8 @@ def test():
     ax.axes.set_ylim3d(bottom=0, top=sim_len)
     ax.axes.set_zlim3d(bottom=0, top=sim_len)
 
-    ax.scatter3D(xdata, ydata, zdata, c=zdata, cmap='coolwarm')
-    ax.scatter3D(xdata_invert, ydata_invert, zdata_invert, c=zdata_invert, cmap='coolwarm')
+    ax.scatter3D(xdata, ydata, zdata, c='gold', zorder=5)
+    ax.scatter3D(xdata_invert, ydata_invert, zdata_invert, c='mediumorchid', zorder=5)
+    # ax.scatter3D(xdata_common, ydata_common, zdata_common, c='k', zorder=10)
+
     plt.show()
