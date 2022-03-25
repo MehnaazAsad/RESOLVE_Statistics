@@ -23,6 +23,8 @@ class Analysis():
         self.f_blue = None
         self.phi_red_data = None
         self.phi_blue_data = None
+        self.mean_mstar_red_data = None
+        self.mean_mstar_blue_data = None
         self.model_init = None
         self.best_fit_core = None
         self.best_fit_experimentals = None
@@ -32,6 +34,8 @@ class Analysis():
         self.result = None
         self.preprocess = preprocess
         self.settings = preprocess.settings
+        self.vdisp_red_data = None
+        self.vdisp_blue_data = None
 
     def assign_colour_label_data(self, catl):
         """
@@ -181,6 +185,7 @@ class Analysis():
 
         if settings.survey == 'eco' or settings.survey == 'resolvea':
             bin_min = np.round(np.log10((10**8.9) / 2.041), 1)
+
             if settings.survey == 'eco' and colour_flag == 'R':
                 bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
                 bin_num = 6
@@ -197,7 +202,7 @@ class Analysis():
             else:
                 # For eco total
                 bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
-                bin_num = 7
+                bin_num = 5
 
             bins = np.linspace(bin_min, bin_max, bin_num)
 
@@ -261,10 +266,17 @@ class Analysis():
             Array of y-axis blue fraction values
         """
         settings = self.settings
+        # print("before type set")
+        # print(type(randint_logmstar))
+
+        # randint_logmstar = int(randint_logmstar)
+
+        # print(type(randint_logmstar))
+        # print("after type set")
 
         if data_bool:
             mstar_total_arr = catl.logmstar.values
-            censat_col = 'fc'
+            censat_col = 'g_galtype'
             mstar_cen_arr = catl.logmstar.loc[catl[censat_col] == 1].values
             mstar_sat_arr = catl.logmstar.loc[catl[censat_col] == 0].values
         ## Mocks case different than data because of censat_col
@@ -274,18 +286,20 @@ class Analysis():
             # censat_col = 'cs_flag'
             mstar_cen_arr = catl.logmstar.loc[catl[censat_col] == 1].values
             mstar_sat_arr = catl.logmstar.loc[catl[censat_col] == 0].values           
-        elif randint_logmstar != 1:
+        elif isinstance(randint_logmstar, int) and randint_logmstar != 1:
+            # print("mp_func brought me here")
             mstar_total_arr = catl['{0}'.format(randint_logmstar)].values
             censat_col = 'grp_censat_{0}'.format(randint_logmstar)
             mstar_cen_arr = catl['{0}'.format(randint_logmstar)].loc[catl[censat_col] == 1].values
             mstar_sat_arr = catl['{0}'.format(randint_logmstar)].loc[catl[censat_col] == 0].values
-        elif randint_logmstar == 1:
+        elif isinstance(randint_logmstar, int) and randint_logmstar == 1:
             mstar_total_arr = catl['behroozi_bf'].values
             censat_col = 'grp_censat_{0}'.format(randint_logmstar)
             mstar_cen_arr = catl['behroozi_bf'].loc[catl[censat_col] == 1].values
             mstar_sat_arr = catl['behroozi_bf'].loc[catl[censat_col] == 0].values
 
-
+        # print("censat_col:{0}".format(censat_col))
+        # print(type(randint_logmstar))
         colour_label_total_arr = catl.colour_label.values
         colour_label_cen_arr = catl.colour_label.loc[catl[censat_col] == 1].values
         colour_label_sat_arr = catl.colour_label.loc[catl[censat_col] == 0].values
@@ -303,7 +317,7 @@ class Analysis():
         if settings.survey == 'eco' or settings.survey == 'resolvea':
             bin_min = np.round(np.log10((10**8.9) / 2.041), 1)
             bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
-            bin_num = 7
+            bin_num = 5
 
             bins = np.linspace(bin_min, bin_max, bin_num)
 
@@ -866,20 +880,34 @@ class Analysis():
             gals_df['behroozi_bf'] = np.log10(gals_df['behroozi_bf'])
 
         if settings.quenching == 'hybrid':
-            f_red_cen, f_red_sat = self.hybrid_quenching_model(bf_params[5:], gals_df, 
-                'vishnu', randint_logmstar)
+            f_red_cen, f_red_sat = self.hybrid_quenching_model(bf_params[5:], 
+                gals_df, 'vishnu', randint_logmstar)
         elif settings.quenching == 'halo':
-            f_red_cen, f_red_sat = self.halo_quenching_model(bf_params[5:], gals_df, 
-                'vishnu')      
+            f_red_cen, f_red_sat = self.halo_quenching_model(bf_params[5:], 
+                gals_df, 'vishnu')      
         gals_df = self.assign_colour_label_mock(f_red_cen, f_red_sat, gals_df)
         # v_sim = 130**3 
         v_sim = 890641.5172927063  ## cz: 3000-12000
         # v_sim = 165457.21308906242 ## cz: 3000-7000
 
         ## Observable #1 - Total SMF
-        total_model = self.measure_all_smf(gals_df, v_sim , False, randint_logmstar)    
+        total_model = self.measure_all_smf(gals_df, v_sim , False, 
+            randint_logmstar)    
         ## Observable #2 - Blue fraction
         f_blue = self.blue_frac(gals_df, True, False, randint_logmstar)
+
+        ## Observable #3 - Mstar of central-velocity dispersion
+        red_sigma, red_cen_mstar_sigma, blue_sigma, \
+            blue_cen_mstar_sigma = experiments.get_velocity_dispersion(
+                gals_df, 'model', randint_logmstar)
+
+        red_sigma = np.log10(red_sigma)
+        blue_sigma = np.log10(blue_sigma)
+
+        # mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
+        #     statistic='mean', bins=np.linspace(-2,3,5))
+        # mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
+        #     statistic='mean', bins=np.linspace(-1,3,5))
 
         cen_gals, cen_halos, cen_gals_red, cen_halos_red, cen_gals_blue, \
             cen_halos_blue, f_red_cen_red, f_red_cen_blue = \
@@ -892,17 +920,18 @@ class Analysis():
             self.get_colour_smf_from_fblue(gals_df, f_blue[1], f_blue[0], v_sim, 
             True, randint_logmstar)
 
-        red_sigma, red_cen_mstar_sigma, blue_sigma, \
-            blue_cen_mstar_sigma, red_nsat, blue_nsat, red_host_halo_mass_vd, \
-            blue_host_halo_mass_vd = \
-            experiments.get_velocity_dispersion(gals_df, 'model', randint_logmstar)
+        # red_sigma, red_cen_mstar_sigma, blue_sigma, \
+        #     blue_cen_mstar_sigma, red_nsat, blue_nsat, red_host_halo_mass_vd, \
+        #     blue_host_halo_mass_vd = \
+        #     experiments.get_velocity_dispersion(gals_df, 'model', randint_logmstar)
         red_num, red_cen_mstar_richness, blue_num, \
             blue_cen_mstar_richness, red_host_halo_mass, \
             blue_host_halo_mass = \
             experiments.get_richness(gals_df, 'model', randint_logmstar)
 
         # v_sim = 890641.5172927063 
-        x_vdf, phi_vdf, error, bins, counts = experiments.get_vdf(red_sigma, blue_sigma, v_sim)
+        x_vdf, phi_vdf, error, bins, counts = experiments.get_vdf(
+            red_sigma, blue_sigma, v_sim)
 
         best_fit_results["smf_total"] = {'max_total':total_model[0],
                                         'phi_total':total_model[1]}
@@ -930,13 +959,17 @@ class Analysis():
                                     'cen_blue':f_red_cen_blue,
                                     'sat_red':f_red_sat_red,
                                     'sat_blue':f_red_sat_blue}
-        
+
         best_fit_experimentals["vel_disp"] = {'red_sigma':red_sigma,
             'red_cen_mstar':red_cen_mstar_sigma,
-            'blue_sigma':blue_sigma, 'blue_cen_mstar':blue_cen_mstar_sigma,
-            'red_nsat':red_nsat, 'blue_nsat':blue_nsat, 
-            'red_hosthalo':red_host_halo_mass_vd, 
-            'blue_hosthalo':blue_host_halo_mass_vd}
+            'blue_sigma':blue_sigma, 'blue_cen_mstar':blue_cen_mstar_sigma}
+
+        # best_fit_experimentals["vel_disp"] = {'red_sigma':mean_mstar_red[1],
+        #     'red_cen_mstar':mean_mstar_red[0],
+        #     'blue_sigma':mean_mstar_blue[1], 'blue_cen_mstar':mean_mstar_blue[0]}
+            # 'red_nsat':red_nsat, 'blue_nsat':blue_nsat, 
+            # 'red_hosthalo':red_host_halo_mass_vd, 
+            # 'blue_hosthalo':blue_host_halo_mass_vd}
         
         best_fit_experimentals["richness"] = {'red_num':red_num,
             'red_cen_mstar':red_cen_mstar_richness, 'blue_num':blue_num,
@@ -948,7 +981,7 @@ class Analysis():
             'error':error, 'bins':bins,
             'counts':counts}
 
-        return best_fit_results, best_fit_experimentals
+        return best_fit_results, best_fit_experimentals, gals_df
 
     def get_err_data(self, path, experiments):
         """
@@ -1040,11 +1073,12 @@ class Analysis():
                 filename = temp_path + '{0}_cat_{1}_Planck_memb_cat.hdf5'.format(
                     mock_name, num)
                 mock_pd = preprocess.read_mock_catl(filename) 
-                mock_pd = preprocess.mock_add_grpcz(mock_pd)
+                mock_pd = preprocess.mock_add_grpcz(mock_pd, grpid_col='groupid', 
+                    galtype_col='g_galtype', cen_cz_col='cz')
                 # Using the same survey definition as in mcmc smf i.e excluding the 
                 # buffer
-                mock_pd = mock_pd.loc[(mock_pd.grpcz.values >= min_cz) & \
-                    (mock_pd.grpcz.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
+                mock_pd = mock_pd.loc[(mock_pd.grpcz_new.values >= min_cz) & \
+                    (mock_pd.grpcz_new.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
                     (mock_pd.logmstar.values >= mstar_limit)].reset_index(drop=True)
 
                 ## Using best-fit found for new ECO data using result from chain 32
@@ -1086,6 +1120,21 @@ class Analysis():
                 f_blue_cen_arr.append(f_blue_cen)
                 f_blue_sat_arr.append(f_blue_sat)
 
+                red_sigma, red_cen_mstar_sigma, blue_sigma, \
+                    blue_cen_mstar_sigma = \
+                    experiments.get_velocity_dispersion(mock_pd, 'mock')
+
+                red_sigma = np.log10(red_sigma)
+                blue_sigma = np.log10(blue_sigma)
+
+                mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
+                    statistic='mean', bins=np.linspace(-2,3,5))
+                mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
+                    statistic='mean', bins=np.linspace(-1,3,5))
+
+                mean_mstar_red_arr.append(mean_mstar_red[0])
+                mean_mstar_blue_arr.append(mean_mstar_blue[0])
+
                 ### Statistics for measuring std. dev. to plot error bars
                 phi_red, phi_blue = \
                     self.get_colour_smf_from_fblue(mock_pd, f_blue, mass, volume, 
@@ -1093,28 +1142,26 @@ class Analysis():
                 phi_red_arr.append(phi_red)
                 phi_blue_arr.append(phi_blue)
                 
-                red_sigma, red_cen_mstar_sigma, blue_sigma, \
-                    blue_cen_mstar_sigma, red_nsat, blue_nsat, \
-                    red_host_halo_mass, blue_host_halo_mass = \
-                    experiments.get_velocity_dispersion(mock_pd, 'mock')
+                # red_sigma, red_cen_mstar_sigma, blue_sigma, \
+                #     blue_cen_mstar_sigma, red_nsat, blue_nsat, \
+                #     red_host_halo_mass, blue_host_halo_mass = \
+                #     experiments.get_velocity_dispersion(mock_pd, 'mock')
 
                 red_num, red_cen_mstar_richness, blue_num, \
                     blue_cen_mstar_richness, red_host_halo_mass, \
                     blue_host_halo_mass = \
                     experiments.get_richness(mock_pd, 'mock')
                 
-                mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
-                    statistic='mean', bins=np.linspace(0,250,6))
-                mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
-                    statistic='mean', bins=np.linspace(0,250,6))
+                # mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
+                #     statistic='mean', bins=np.linspace(0,250,6))
+                # mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
+                #     statistic='mean', bins=np.linspace(0,250,6))
 
-                mean_mstar_red_arr.append(mean_mstar_red[0])
-                mean_mstar_blue_arr.append(mean_mstar_blue[0])
 
                 mean_sigma_red = bs(red_cen_mstar_sigma, red_sigma,
-                    statistic='mean', bins=np.linspace(8.6,11,6))
+                    statistic='mean', bins=np.linspace(8.6,11,5))
                 mean_sigma_blue = bs( blue_cen_mstar_sigma, blue_sigma,
-                    statistic='mean', bins=np.linspace(8.6,11,6))
+                    statistic='mean', bins=np.linspace(8.6,11,5))
 
                 mean_sigma_red_arr.append(mean_sigma_red[0])
                 mean_sigma_blue_arr.append(mean_sigma_blue[0])
@@ -1198,35 +1245,46 @@ class Analysis():
         phi_total_1 = phi_total_arr[:,1]
         phi_total_2 = phi_total_arr[:,2]
         phi_total_3 = phi_total_arr[:,3]
-        phi_total_4 = phi_total_arr[:,4]
-        phi_total_5 = phi_total_arr[:,5]
+        # phi_total_4 = phi_total_arr[:,4]
+        # phi_total_5 = phi_total_arr[:,5]
 
         ## Plotting correlation matrix for fblue split by cen and sat
         f_blue_cen_0 = f_blue_cen_arr[:,0]
         f_blue_cen_1 = f_blue_cen_arr[:,1]
         f_blue_cen_2 = f_blue_cen_arr[:,2]
         f_blue_cen_3 = f_blue_cen_arr[:,3]
-        f_blue_cen_4 = f_blue_cen_arr[:,4]
-        f_blue_cen_5 = f_blue_cen_arr[:,5]
+        # f_blue_cen_4 = f_blue_cen_arr[:,4]
+        # f_blue_cen_5 = f_blue_cen_arr[:,5]
 
         f_blue_sat_0 = f_blue_sat_arr[:,0]
         f_blue_sat_1 = f_blue_sat_arr[:,1]
         f_blue_sat_2 = f_blue_sat_arr[:,2]
         f_blue_sat_3 = f_blue_sat_arr[:,3]
-        f_blue_sat_4 = f_blue_sat_arr[:,4]
-        f_blue_sat_5 = f_blue_sat_arr[:,5]
+        # f_blue_sat_4 = f_blue_sat_arr[:,4]
+        # f_blue_sat_5 = f_blue_sat_arr[:,5]
+
+        mstar_red_cen_0 = mean_mstar_red_arr[:,0]
+        mstar_red_cen_1 = mean_mstar_red_arr[:,1]
+        mstar_red_cen_2 = mean_mstar_red_arr[:,2]
+        mstar_red_cen_3 = mean_mstar_red_arr[:,3]
+
+        mstar_blue_cen_0 = mean_mstar_blue_arr[:,0]
+        mstar_blue_cen_1 = mean_mstar_blue_arr[:,1]
+        mstar_blue_cen_2 = mean_mstar_blue_arr[:,2]
+        mstar_blue_cen_3 = mean_mstar_blue_arr[:,3]
 
         combined_df = pd.DataFrame({
             'phi_tot_0':phi_total_0, 'phi_tot_1':phi_total_1, 
-            'phi_tot_2':phi_total_2, 'phi_tot_3':phi_total_3, 
-            'phi_tot_4':phi_total_4, 'phi_tot_5':phi_total_5,
+            'phi_tot_2':phi_total_2, 'phi_tot_3':phi_total_3,
             'f_blue_cen_0':f_blue_cen_0, 'f_blue_cen_1':f_blue_cen_1, 
-            'f_blue_cen_2':f_blue_cen_2, 'f_blue_cen_3':f_blue_cen_3, 
-            'f_blue_cen_4':f_blue_cen_4, 'f_blue_cen_5':f_blue_cen_5,
+            'f_blue_cen_2':f_blue_cen_2, 'f_blue_cen_3':f_blue_cen_3,
             'f_blue_sat_0':f_blue_sat_0, 'f_blue_sat_1':f_blue_sat_1, 
-            'f_blue_sat_2':f_blue_sat_2, 'f_blue_sat_3':f_blue_sat_3, 
-            'f_blue_sat_4':f_blue_sat_4, 'f_blue_sat_5':f_blue_sat_5,})
-
+            'f_blue_sat_2':f_blue_sat_2, 'f_blue_sat_3':f_blue_sat_3,
+            'mstar_red_cen_0':mstar_red_cen_0, 'mstar_red_cen_1':mstar_red_cen_1, 
+            'mstar_red_cen_2':mstar_red_cen_2, 'mstar_red_cen_3':mstar_red_cen_3,
+            'mstar_blue_cen_0':mstar_blue_cen_0, 'mstar_blue_cen_1':mstar_blue_cen_1, 
+            'mstar_blue_cen_2':mstar_blue_cen_2, 'mstar_blue_cen_3':mstar_blue_cen_3})
+        
         err_colour = np.sqrt(np.diag(combined_df.cov()))
 
         # import matplotlib.pyplot as plt
@@ -1414,13 +1472,14 @@ class Analysis():
                 'halo_mvir_host_halo', 'cz', \
                 '{0}'.format(randint_logmstar), \
                 'grp_censat_{0}'.format(randint_logmstar), \
-                'groupid_{0}'.format(randint_logmstar)]
+                'groupid_{0}'.format(randint_logmstar),\
+                'cen_cz_{0}'.format(randint_logmstar)]
                 
                 gals_df = globals.gal_group_df_subset[cols_to_use]
 
                 gals_df = gals_df.dropna(subset=['grp_censat_{0}'.\
-                    format(randint_logmstar),'groupid_{0}'.format(randint_logmstar)]).\
-                    reset_index(drop=True)
+                    format(randint_logmstar),'groupid_{0}'.format(
+                    randint_logmstar)]).reset_index(drop=True)
 
                 gals_df[['grp_censat_{0}'.format(randint_logmstar), \
                     'groupid_{0}'.format(randint_logmstar)]] = \
@@ -1430,6 +1489,9 @@ class Analysis():
 
             else:
                 randint_logmstar = theta[0]
+                ## Change from np.int64 to int so that isinstance if statements
+                ## in functions called below execute
+                randint_logmstar = int(randint_logmstar)
                 # 1 is the best-fit model which is calculated separately 
                 if randint_logmstar == 1:
                     continue
@@ -1476,8 +1538,21 @@ class Analysis():
             ## Observable #1 - Total SMF
             total_model = self.measure_all_smf(gals_df, v_sim , False, randint_logmstar)    
             ## Observable #2 - Blue fraction
+            # print(type(randint_logmstar))
             f_blue = self.blue_frac(gals_df, True, False, randint_logmstar)
-            
+
+            ## Observable #3 - Mstar of central-velocity dispersion
+            red_sigma, red_cen_mstar_sigma, blue_sigma, \
+                blue_cen_mstar_sigma = experiments.get_velocity_dispersion(gals_df, 'model', randint_logmstar)
+
+            red_sigma = np.log10(red_sigma)
+            blue_sigma = np.log10(blue_sigma)
+
+            # mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
+            #     statistic='mean', bins=np.linspace(-2,3,5))
+            # mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
+            #     statistic='mean', bins=np.linspace(-1,3,5))
+
             cen_gals, cen_halos, cen_gals_red, cen_halos_red, cen_gals_blue, \
                 cen_halos_blue, f_red_cen_red, f_red_cen_blue = \
                     self.get_centrals_mock(gals_df, randint_logmstar)
@@ -1489,11 +1564,11 @@ class Analysis():
                 self.get_colour_smf_from_fblue(gals_df, f_blue[1], f_blue[0], v_sim, 
                 True, randint_logmstar)
 
-            red_sigma, red_cen_mstar_sigma, blue_sigma, \
-                blue_cen_mstar_sigma, red_nsat, blue_nsat, \
-                red_host_halo_mass_vd, blue_host_halo_mass_vd = \
-                experiments.get_velocity_dispersion(gals_df, 'model', 
-                    randint_logmstar)
+            # red_sigma, red_cen_mstar_sigma, blue_sigma, \
+            #     blue_cen_mstar_sigma, red_nsat, blue_nsat, \
+            #     red_host_halo_mass_vd, blue_host_halo_mass_vd = \
+            #     experiments.get_velocity_dispersion(gals_df, 'model', 
+            #         randint_logmstar)
 
             red_num, red_cen_mstar_richness, blue_num, \
                 blue_cen_mstar_richness, red_host_halo_mass, \
@@ -1535,10 +1610,15 @@ class Analysis():
             model_experimentals["vel_disp"]["red_cen_mstar"].append(red_cen_mstar_sigma)
             model_experimentals["vel_disp"]["blue_sigma"].append(blue_sigma)
             model_experimentals["vel_disp"]["blue_cen_mstar"].append(blue_cen_mstar_sigma)
-            model_experimentals["vel_disp"]["red_nsat"].append(red_nsat)
-            model_experimentals["vel_disp"]["blue_nsat"].append(blue_nsat)
-            model_experimentals["vel_disp"]["red_hosthalo"].append(red_host_halo_mass_vd)
-            model_experimentals["vel_disp"]["blue_hosthalo"].append(blue_host_halo_mass_vd)
+
+            # model_experimentals["vel_disp"]["red_sigma"].append(mean_mstar_red[1])
+            # model_experimentals["vel_disp"]["red_cen_mstar"].append(mean_mstar_red[0])
+            # model_experimentals["vel_disp"]["blue_sigma"].append(mean_mstar_blue[1])
+            # model_experimentals["vel_disp"]["blue_cen_mstar"].append(mean_mstar_blue[0])
+            # model_experimentals["vel_disp"]["red_nsat"].append(red_nsat)
+            # model_experimentals["vel_disp"]["blue_nsat"].append(blue_nsat)
+            # model_experimentals["vel_disp"]["red_hosthalo"].append(red_host_halo_mass_vd)
+            # model_experimentals["vel_disp"]["blue_hosthalo"].append(blue_host_halo_mass_vd)
 
             model_experimentals["richness"]["red_num"].append(red_num)
             model_experimentals["richness"]["red_cen_mstar"].append(red_cen_mstar_richness)
@@ -1556,39 +1636,55 @@ class Analysis():
         settings = self.settings
         preprocess = self.preprocess
 
-        # print('Assigning colour to data')
-        # self.catl = self.assign_colour_label_data(preprocess.catl)
+        print('Assigning colour to data')
+        self.catl = self.assign_colour_label_data(preprocess.catl)
 
-        # print('Measuring SMF for data')
-        # self.total_data, red_data, blue_data = self.measure_all_smf(self.catl, preprocess.volume, True)
+        print('Measuring SMF for data')
+        self.total_data, red_data, blue_data = self.measure_all_smf(self.catl, preprocess.volume, True)
 
-        # print('Measuring blue fraction for data')
-        # self.f_blue = self.blue_frac(self.catl, False, True)
+        print('Measuring blue fraction for data')
+        self.f_blue = self.blue_frac(self.catl, False, True)
 
-        # print('Measuring reconstructed red and blue SMF for data')
-        # self.phi_red_data, self.phi_blue_data = self.get_colour_smf_from_fblue(self.catl, self.f_blue[1], 
-        #     self.f_blue[0], preprocess.volume, False)
+        print('Measuring velocity dispersion for data')
+        red_sigma, red_cen_mstar_sigma, blue_sigma, \
+            blue_cen_mstar_sigma = experiments.get_velocity_dispersion(self.catl, 'data')
 
-        # print('Initial population of halo catalog')
-        # self.model_init = self.halocat_init(settings.halo_catalog, preprocess.z_median)
+        red_sigma = np.log10(red_sigma)
+        blue_sigma = np.log10(blue_sigma)
+
+        # self.mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
+        #     statistic='mean', bins=np.linspace(-2,3,5))
+        # self.mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
+        #     statistic='mean', bins=np.linspace(-1,3,5))
+
+        self.vdisp_red_data = [red_sigma, red_cen_mstar_sigma]
+        self.vdisp_blue_data = [blue_sigma, blue_cen_mstar_sigma]
+
+        print('Measuring reconstructed red and blue SMF for data')
+        self.phi_red_data, self.phi_blue_data = self.get_colour_smf_from_fblue(self.catl, self.f_blue[1], 
+            self.f_blue[0], preprocess.volume, False)
+
+        print('Initial population of halo catalog')
+        self.model_init = self.halocat_init(settings.halo_catalog, preprocess.z_median)
 
         print('Measuring error in data from mocks')
         self.error_data, self.mocks_stdevs = self.get_err_data(settings.path_to_mocks, experiments)
         self.dof = len(self.error_data) - len(preprocess.bf_params)
 
-        return [self.total_data, self.f_blue, self.phi_red_data, self.phi_blue_data, self.error_data, self.mocks_stdevs, self.dof]
+        # return [self.total_data, self.f_blue, self.mean_mstar_red_data, self.mean_mstar_blue_data, self.phi_red_data, self.phi_blue_data, self.error_data, self.mocks_stdevs, self.dof]
+
+        return [self.total_data, self.f_blue, self.vdisp_red_data, self.vdisp_blue_data, self.phi_red_data, self.phi_blue_data, self.error_data, self.mocks_stdevs, self.dof]
 
     def Mocks_And_Models(self, experiments):
         settings = self.settings
         preprocess = self.preprocess
 
-        self.best_fit_core, self.best_fit_experimentals = self.get_best_fit_model(preprocess.bf_params, experiments)
+        self.best_fit_core, self.best_fit_experimentals, gals_df = self.get_best_fit_model(preprocess.bf_params, experiments)
 
         print('Multiprocessing') #~18 minutes
         ## self.result has shape [5,2]: 5 chunks of 2 dictionaries
         self.result = self.mp_init(preprocess.mcmc_table_pctl_subset, settings.nproc, experiments)
-        # self.result = 0
-        return self.result, [self.best_fit_core, self.best_fit_experimentals]
+        return self.result, [self.best_fit_core, self.best_fit_experimentals], gals_df
         # self.mp_models, self.mp_experimentals = self.mp_init(preprocess.mcmc_table_pctl_subset, settings.nproc)
 
     
