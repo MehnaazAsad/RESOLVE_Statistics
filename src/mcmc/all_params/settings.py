@@ -37,23 +37,31 @@ class Settings():
             self.halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
 
         if self.quenching == 'halo':
-            self.run = 35
+            self.run = 41
         elif self.quenching == 'hybrid':
-            self.run = 34
+            self.run = 42
 
-        self.chi2_file = self.path_to_proc + \
-            'smhm_colour_run{0}/{1}_colour_chi2.txt'.\
-            format(self.run, self.survey)
-        self.chain_file = self.path_to_proc + \
-            'smhm_colour_run{0}/mcmc_{1}_colour_raw.txt'.\
-            format(self.run, self.survey)
+        if self.run >= 37:
+            self.chi2_file = self.path_to_proc + \
+                'smhm_colour_run{0}/chain.h5'.\
+                format(self.run, self.survey)
+            self.chain_file = self.path_to_proc + \
+                'smhm_colour_run{0}/chain.h5'.\
+                format(self.run, self.survey)
+        elif self.run < 37:
+            self.chi2_file = self.path_to_proc + \
+                'smhm_colour_run{0}/{1}_colour_chi2.txt'.\
+                format(self.run, self.survey)
+            self.chain_file = self.path_to_proc + \
+                'smhm_colour_run{0}/mcmc_{1}_colour_raw.txt'.\
+                format(self.run, self.survey)
 
         if self.survey == 'eco':
             # catl_file = path_to_raw + "eco/eco_all.csv"
-            ## New catalog with group finder run on subset after applying M* 
-            # and cz cuts
+            ## Updated catalog with group finder run on subset after applying M* 
+            # and cz cuts: changed volume to be in h=1 instead of 0.7
             self.catl_file = self.path_to_proc + \
-                "gal_group_eco_data_buffer.hdf5"
+                "gal_group_eco_data_buffer_volh1.hdf5"
             self.path_to_mocks = path_to_data + 'mocks/m200b/eco/'
         elif self.survey == 'resolvea' or self.survey == 'resolveb':
             self.catl_file = path_to_raw + "RESOLVE_liveJune2018.csv"
