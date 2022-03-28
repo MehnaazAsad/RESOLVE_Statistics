@@ -1132,11 +1132,7 @@ def main(args):
 
     if survey == 'eco':
         # catl_file = path_to_raw + "eco/eco_all.csv"
-        #! Change to updated catalog 
-        #* although this wont affect this script much since the catalog is only
-        #* used to calculate median z which remains 0.02 whether you use grpcz
-        #* or grpcz_new
-        catl_file = path_to_processed + "gal_group_eco_data_buffer.hdf5"
+        catl_file = path_to_processed + "gal_group_eco_data_buffer_volh1_dr2.hdf5"
 
     # chi2_file = path_to_processed + 'smhm_colour_run35/{0}_colour_chi2.txt'.format(survey)
     # if mf_type == 'smf' and survey == 'eco' and ver == 1.0:
@@ -1177,6 +1173,7 @@ def main(args):
     gals_df_['cs_flag'] = np.where(gals_df_['halo_hostid'] == \
         gals_df_['halo_id'], 1, 0)
     gals_df_ = gals_df_.rename(columns={"stellar_mass": "1"})
+    #Sorts in ascending order
     gals_df_ = gals_df_.sort_values(by='halo_mvir_host_halo')
 
 
