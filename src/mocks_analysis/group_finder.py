@@ -577,8 +577,8 @@ def group_finding(mock_pd, col_id, mock_zz_file, param_dict, file_ext='csv'):
 
     #* Added to make sure that by running the exe from two different screen
     #* sessions simultaneously, the files wouldn't get mixed up when being 
-    #* written to in the same location. Filenames in the other session had no i.
-    i=1393
+    #* written to in the same location.
+    i=run*1000
     # Defining files for FoF output and Mock coordinates
     fof_file        = '{0}.galcatl_fof_{1}.{2}'.format(mock_zz_file, i, file_ext)
     grep_file       = '{0}.galcatl_grep_{1}.{2}'.format(mock_zz_file, i, file_ext)
@@ -1081,6 +1081,7 @@ def main(args):
     global survey
     global mf_type
     global ver
+    global run
     survey = 'eco'
     mf_type = 'smf'
     machine = 'bender'
