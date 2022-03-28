@@ -180,12 +180,12 @@ def read_data_catl(path_to_file, survey):
                 (eco_buff.absrmag.values <= -17.33)]
         elif mf_type == 'bmf':
             catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) &
-                (eco_buff.grpcz.values <= 7000) &
+                (eco_buff.grpcz_new.values <= 7000) &
                 (eco_buff.absrmag.values <= -17.33)]
 
         volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
         cvar = 0.125
-        z_median = np.median(catl.grpcz.values) / (3 * 10**5)
+        z_median = np.median(catl.grpcz_new.values) / (3 * 10**5)
 
     elif survey == 'resolvea' or survey == 'resolveb':
         # 2286 galaxies
