@@ -509,6 +509,26 @@ def blue_frac(catl, h1_bool, data_bool, randint_logmstar=None):
 
     return maxis, f_blue_total, f_blue_cen, f_blue_sat
 
+def gapper(vel_arr):
+    n = len(vel_arr)
+    factor = np.sqrt(np.pi)/(n*(n-1))
+
+    summation = 0
+    sorted_vel = np.sort(vel_arr)
+    for i in range(len(sorted_vel)):
+        i += 1
+        if i == len(sorted_vel):
+            break
+        
+        deltav_i = sorted_vel[i] - sorted_vel[i-1]
+        weight_i = i*(n-i)
+        prod = deltav_i * weight_i
+        summation += prod
+
+    sigma_gapper = factor * summation
+
+    return sigma_gapper
+
 def get_velocity_dispersion(catl, catl_type, randint=None):
     """Calculating velocity dispersion of groups from real data, model or 
         mock
@@ -624,61 +644,36 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
         colour_label == 'B') & (catl[galtype_col] == 1)].values)
 
 
-    # start = time.time()
     red_subset_df = catl.loc[catl[id_col].isin(red_subset_ids)]
-    # red_subset_ids = [key for key in Counter(
-    #     red_subset_df.groupid).keys() if Counter(
-    #         red_subset_df.groupid)[key] > 1]
     #* Excluding N=1 groups
     red_subset_ids = red_subset_df.groupby([id_col]).filter(lambda x: len(x) > 1)[id_col].unique()
     red_subset_df = catl.loc[catl[id_col].isin(
         red_subset_ids)].sort_values(by='{0}'.format(id_col))
-    # red_cen_stellar_mass_arr_new = red_subset_df.logmstar.loc[\
-    #     red_subset_df.g_galtype == 1].values
     cen_red_subset_df = red_subset_df.loc[red_subset_df[galtype_col] == 1]
     red_cen_stellar_mass_arr = cen_red_subset_df.groupby(['{0}'.format(id_col),
         '{0}'.format(galtype_col)])[logmstar_col].apply(np.sum).values
-    # if catl_type == 'data' or catl_type == 'mock':
-    # red_subset_df['deltav'] = red_subset_df['cz'] - red_subset_df['grpcz_av']
-        #* Sigma measurement to exclude central
-        # red_subset_df = red_subset_df.loc[red_subset_df.deltav > 0]   
-    # elif catl_type == 'model':     
-    #     red_subset_df['deltav'] = red_subset_df['cz'] - red_subset_df[cencz_col]  
-        # red_subset_df = red_subset_df.loc[red_subset_df.deltav > 0] 
+    red_subset_df['deltav'] = red_subset_df['cz'] - red_subset_df['grpcz_av']
+    #* The gapper method does not exclude the central 
+    red_sigma_arr = gapper(red_subset_df['deltav'])
+
     #* Using ddof = 1 means the denom in std is N-1 instead of N which is 
     #* another way to exclude the central from the measurement of sigma 
     #* We can no longer use deltav > 0 since deltav is wrt to average grpcz 
     #* instead of central cz.
-    red_sigma_arr = red_subset_df.groupby(id_col)['cz'].apply(np.std, ddof=1).values
-    # end = time.time()
-    # time_taken = end - start
-    # print("New method took {0:.1f} seconds".format(time_taken))
+    # red_sigma_arr = red_subset_df.groupby(id_col)['cz'].apply(np.std, ddof=1).values
 
-    # start = time.time()
     blue_subset_df = catl.loc[catl[id_col].isin(blue_subset_ids)]
-    # red_subset_ids = [key for key in Counter(
-    #     red_subset_df.groupid).keys() if Counter(
-    #         red_subset_df.groupid)[key] > 1]
     #* Excluding N=1 groups
     blue_subset_ids = blue_subset_df.groupby([id_col]).filter(lambda x: len(x) > 1)[id_col].unique()
     blue_subset_df = catl.loc[catl[id_col].isin(
         blue_subset_ids)].sort_values(by='{0}'.format(id_col))
-    # red_cen_stellar_mass_arr_new = red_subset_df.logmstar.loc[\
-    #     red_subset_df.g_galtype == 1].values
     cen_blue_subset_df = blue_subset_df.loc[blue_subset_df[galtype_col] == 1]
     blue_cen_stellar_mass_arr = cen_blue_subset_df.groupby(['{0}'.format(id_col),
         '{0}'.format(galtype_col)])[logmstar_col].apply(np.sum).values
-    # if catl_type == 'data' or catl_type == 'mock':
-    # blue_subset_df['deltav'] = blue_subset_df['cz'] - blue_subset_df['grpcz_av']
-        #* Sigma measurement to exclude central
-        # blue_subset_df = red_subset_df.loc[red_subset_df.deltav > 0]       
-    # elif catl_type == 'model':
-    #     blue_subset_df['deltav'] = blue_subset_df['cz'] - blue_subset_df[cencz_col] 
-        # blue_subset_df = red_subset_df.loc[red_subset_df.deltav > 0]            
-    blue_sigma_arr = blue_subset_df.groupby('{0}'.format(id_col))['cz'].apply(np.std, ddof=1).values
-    # end = time.time()
-    # time_taken = end - start
-    # print("New method took {0:.1f} seconds".format(time_taken))
+    blue_subset_df['deltav'] = blue_subset_df['cz'] - blue_subset_df['grpcz_av']
+    blue_sigma_arr = gapper(blue_subset_df['deltav'])
+
+    # blue_sigma_arr = blue_subset_df.groupby('{0}'.format(id_col))['cz'].apply(np.std, ddof=1).values
 
     return red_sigma_arr, red_cen_stellar_mass_arr, blue_sigma_arr, \
         blue_cen_stellar_mass_arr
