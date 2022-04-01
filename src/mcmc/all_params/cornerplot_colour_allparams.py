@@ -27,13 +27,13 @@ rc('xtick.major', width=2, size=7)
 rc('ytick.major', width=2, size=7)
 
 survey = 'eco'
-quenching = 'halo'
+quenching = 'hybrid'
 mf_type = 'smf'
 nwalkers = 100
 nsteps = 1000
-burnin = 350
+burnin = 300
 ndim = 9
-run = 41
+run = 43
     
 def get_samples(chain_file, nsteps, nwalkers, ndim, burnin):
     if quenching == 'hybrid':
@@ -123,13 +123,13 @@ nwalkers = 100
 nsteps = 1000
 burnin = 300
 ndim = 9
-run = 38
+run = 42
 
 if run >= 37:
     reader = emcee.backends.HDFBackend(
         path_to_proc + "smhm_colour_run{0}/chain.h5".format(run), 
         read_only=True)
-    samples_38 = reader.get_chain(flat=True, discard=burnin) 
+    samples_42 = reader.get_chain(flat=True, discard=burnin) 
 
 else:
     chain_fname = path_to_proc + 'smhm_colour_run{0}/mcmc_{1}_colour_raw.txt'.\
@@ -183,13 +183,13 @@ if quenching == 'hybrid':
     #             marker_size=100, color='#1f77b4')
         
 
-    # c.add_chain(samples_38,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
-    #     r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
-    #     r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
-    #     r"$\mathbf{log_{10}\ M^{q}_{*}}$", r"$\mathbf{log_{10}\ M^{q}_{h}}$", 
-    #     r"$\boldsymbol{\mu}$", r"$\boldsymbol{\nu}$"],
-    #     name="ECO hybrid (old data)", color='#E766EA', 
-    #     zorder=13)
+    c.add_chain(samples_42,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
+        r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
+        r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
+        r"$\mathbf{log_{10}\ M^{q}_{*}}$", r"$\mathbf{log_{10}\ M^{q}_{h}}$", 
+        r"$\boldsymbol{\mu}$", r"$\boldsymbol{\nu}$"],
+        name="ECO hybrid (old data)", color='#E766EA', 
+        zorder=13)
 
 elif quenching == 'halo':
     c.add_chain(samples,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
@@ -227,6 +227,11 @@ c.configure_truth(color='goldenrod', lw=1.7)
 fig1 = c.plotter.plot(display=True)
 # c.configure(label_font_size=15, tick_font_size=10, summary=True, 
 #     sigma2d=False, legend_kwargs={"fontsize": 15}) 
+if quenching == 'hybrid':
+    fig1 = c.plotter.plot(display=True, truth=best_fit_hybrid)
+elif quenching == 'halo':
+    fig1 = c.plotter.plot(display=True, truth=best_fit_halo)
+
 if quenching == 'hybrid':
     fig1 = c.plotter.plot(filename='/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/contours_{0}.pdf'.format(quenching), 
     truth=best_fit_hybrid)
