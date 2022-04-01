@@ -50,6 +50,7 @@ plt.plot(np.log10(mass_func_tinker_337.m),
     np.log10(mass_func_tinker_337.ngtm), color='teal', 
     label='Tinker (SO Mean - 337)', solid_capstyle='round')
 
+
 plt.plot(mass_func_tinker_300.logM, 
     np.log10(mass_func_tinker_300.n), color='mediumvioletred', 
     label='Tinker (SO Mean - 300)', solid_capstyle='round')
@@ -69,6 +70,43 @@ plt.ylim(-7.5, 2.5)
 plt.title('HMF comparisons')
 plt.legend(prop={"size":25})
 plt.show()
+
+#* Comparing how h affects cumulative HMF (A: not much)
+H0=68.1
+hmf_type = 'cumulative' 
+# hmf_type = 'numdens'
+# hmf_type = 'differential'
+
+cosmo_model_H68 = astrocosmo.Planck15.clone(H0=H0)
+
+hmf_choice_fit_eco_default = hmf.fitting_functions.Warren
+hmf_choice_fit_tinker_default = hmf.fitting_functions.Tinker08
+
+mass_func_tinker_337_H68 = hmf.mass_function.hmf.MassFunction(Mmin=10, Mmax=15, 
+    cosmo_model=cosmo_model_H68, hmf_model=hmf_choice_fit_tinker_default, 
+    mdef_model='SOMean', mdef_params={"overdensity":337})
+
+fig2 = plt.figure(figsize=(10,10))
+plt.plot(np.log10(mass_func_tinker_337_H68.m), 
+    np.log10(mass_func_tinker_337_H68.ngtm), color='teal', 
+    label='Tinker (SO Mean - 337) h=0.681', solid_capstyle='round')
+
+plt.plot(np.log10(mass_func_tinker_337.m), 
+    np.log10(mass_func_tinker_337.ngtm), color='mediumvioletred', 
+    label='Tinker (SO Mean - 337) h=1.0', solid_capstyle='round')
+
+plt.xlabel(r"Halo Mass [$M_\odot/h$]", fontsize=30)
+plt.ylabel(r"log\ n($>$M)", fontsize=30)
+
+
+# plt.xscale('log')
+# plt.yscale('log')
+plt.xlim(8.5,15.5)
+plt.ylim(-7.5, 2.5)
+plt.title('HMF comparisons')
+plt.legend(prop={"size":25})
+plt.show()
+
 
 if hmf_type == 'cumulative':
     ngtm_fid = mass_func_eco_default.ngtm
