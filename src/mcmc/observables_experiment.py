@@ -5354,11 +5354,11 @@ mean_centers_blue = 0.5 * (mean_stats_blue[1][1:] + \
     mean_stats_blue[1][:-1])
 
 
-plt.plot(mean_centers_red, mean_stats_red[0], color='darkred', lw=2, ls='-')
-plt.plot(mean_centers_blue, mean_stats_blue[0], color='darkblue', lw=2, ls='-')
+plt.plot(mean_centers_red, np.log10(mean_stats_red[0]), color='darkred', lw=2, ls='-')
+plt.plot(mean_centers_blue, np.log10(mean_stats_blue[0]), color='darkblue', lw=2, ls='-')
 
-plt.plot(mean_centers_red, mean_stats_red_gapper[0], color='darkred', lw=2, ls='--', label='gapper')
-plt.plot(mean_centers_blue, mean_stats_blue_gapper[0], color='darkblue', lw=2, ls='--', label='gapper')
+plt.plot(mean_centers_red, np.log10(mean_stats_red_gapper[0]), color='darkred', lw=2, ls='--', label='gapper')
+plt.plot(mean_centers_blue, np.log10(mean_stats_blue_gapper[0]), color='darkblue', lw=2, ls='--', label='gapper')
 
 plt.xlabel(r'$M_{*, \ group cen}$', fontsize=30)
 plt.ylabel(r'$\sigma$', fontsize=30)
