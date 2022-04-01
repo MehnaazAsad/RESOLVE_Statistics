@@ -209,6 +209,13 @@ class Preprocess():
         zip_iterator = zip(list(cen_subset_df[grpid_col]), list(cen_cz))
         a_dictionary = dict(zip_iterator)
         df['grpcz_new'] = df['{0}'.format(grpid_col)].map(a_dictionary)
+
+        av_cz = df.groupby(['{0}'.format(grpid_col)])\
+            ['cz'].apply(np.average).values
+        zip_iterator = zip(list(cen_subset_df[grpid_col]), list(av_cz))
+        a_dictionary = dict(zip_iterator)
+        df['grpcz_av'] = df['{0}'.format(grpid_col)].map(a_dictionary)
+
         return df
 
     def read_data_catl(self, path_to_file, survey):
@@ -245,6 +252,9 @@ class Preprocess():
             #     usecols=columns)
 
             eco_buff = self.read_mock_catl(path_to_file)
+            #* Recommended to exclude this galaxy in erratum to Hood et. al 2018
+            eco_buff = eco_buff.loc[eco_buff.name != 'ECO13860']
+
             eco_buff = self.mock_add_grpcz(eco_buff, grpid_col='groupid', 
                 galtype_col='g_galtype', cen_cz_col='cz')
 
@@ -254,13 +264,13 @@ class Preprocess():
                     (eco_buff.grpcz_new.values <= 7000) &\
                     (eco_buff.absrmag.values <= -17.33)]
             elif settings.mf_type == 'bmf':
-                catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) &\
-                    (eco_buff.grpcz.values <= 7000) &\
+                catl = eco_buff.loc[(eco_buff.grpcz_new.values >= 3000) &\
+                    (eco_buff.grpcz_new.values <= 7000) &\
                     (eco_buff.absrmag.values <= -17.33)]
 
             volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
             # cvar = 0.125
-            z_median = np.median(catl.grpcz.values) / (3 * 10**5)
+            z_median = np.median(catl.grpcz_new.values) / (3 * 10**5)
 
         elif survey == 'resolvea' or survey == 'resolveb':
             columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag',
