@@ -646,7 +646,8 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
 
     red_subset_df = catl.loc[catl[id_col].isin(red_subset_ids)]
     #* Excluding N=1 groups
-    red_subset_ids = red_subset_df.groupby([id_col]).filter(lambda x: len(x) > 1)[id_col].unique()
+    red_subset_ids = red_subset_df.groupby([id_col]).filter\
+        (lambda x: len(x) > 1)[id_col].unique()
     red_subset_df = catl.loc[catl[id_col].isin(
         red_subset_ids)].sort_values(by='{0}'.format(id_col))
     cen_red_subset_df = red_subset_df.loc[red_subset_df[galtype_col] == 1]
@@ -654,7 +655,9 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
         '{0}'.format(galtype_col)])[logmstar_col].apply(np.sum).values
     red_subset_df['deltav'] = red_subset_df['cz'] - red_subset_df['grpcz_av']
     #* The gapper method does not exclude the central 
-    red_sigma_arr = gapper(red_subset_df['deltav'])
+    red_sigma_arr = red_subset_df.groupby(['{0}'.format(id_col)])['deltav'].\
+        apply(lambda x: gapper(x)).values
+    # red_sigma_arr = gapper(red_subset_df['deltav'])
 
     #* Using ddof = 1 means the denom in std is N-1 instead of N which is 
     #* another way to exclude the central from the measurement of sigma 
@@ -664,14 +667,17 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
 
     blue_subset_df = catl.loc[catl[id_col].isin(blue_subset_ids)]
     #* Excluding N=1 groups
-    blue_subset_ids = blue_subset_df.groupby([id_col]).filter(lambda x: len(x) > 1)[id_col].unique()
+    blue_subset_ids = blue_subset_df.groupby([id_col]).filter\
+        (lambda x: len(x) > 1)[id_col].unique()
     blue_subset_df = catl.loc[catl[id_col].isin(
         blue_subset_ids)].sort_values(by='{0}'.format(id_col))
     cen_blue_subset_df = blue_subset_df.loc[blue_subset_df[galtype_col] == 1]
     blue_cen_stellar_mass_arr = cen_blue_subset_df.groupby(['{0}'.format(id_col),
         '{0}'.format(galtype_col)])[logmstar_col].apply(np.sum).values
     blue_subset_df['deltav'] = blue_subset_df['cz'] - blue_subset_df['grpcz_av']
-    blue_sigma_arr = gapper(blue_subset_df['deltav'])
+    blue_sigma_arr = blue_subset_df.groupby(['{0}'.format(id_col)])['deltav'].\
+        apply(lambda x: gapper(x)).values
+    # blue_sigma_arr = gapper(blue_subset_df['deltav'])
 
     # blue_sigma_arr = blue_subset_df.groupby('{0}'.format(id_col))['cz'].apply(np.std, ddof=1).values
 
