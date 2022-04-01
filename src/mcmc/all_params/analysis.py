@@ -1081,19 +1081,19 @@ class Analysis():
                     (mock_pd.grpcz_new.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
                     (mock_pd.logmstar.values >= mstar_limit)].reset_index(drop=True)
 
-                ## Using best-fit found for new ECO data using result from chain 32
+                ## Using best-fit found for new ECO data using result from chain 42
                 ## i.e. hybrid quenching model
-                Mstar_q = 10.06 # Msun/h
-                Mh_q = 14.05 # Msun/h
-                mu = 0.56
-                nu = 0.48
+                Mstar_q = 10.11652049 # Msun/h**2
+                Mh_q = 13.86684472 # Msun/h
+                mu = 0.76086959
+                nu = 0.04489465
 
-                ## Using best-fit found for new ECO data using result from chain 33
+                ## Using best-fit found for new ECO data using result from chain 43
                 ## i.e. halo quenching model
-                Mh_qc = 11.78 # Msun/h
-                Mh_qs = 13.14 # Msun/h
-                mu_c = 1.09
-                mu_s = 1.99
+                Mh_qc = 11.68499777 # Msun/h
+                Mh_qs = 12.3832308 # Msun/h
+                mu_c = 1.41969021
+                mu_s = 0.46442463
 
                 if settings.quenching == 'hybrid':
                     theta = [Mstar_q, Mh_q, mu, nu]
@@ -1115,7 +1115,8 @@ class Analysis():
                 phi_total_arr.append(phi_total)
 
                 #Measure blue fraction of galaxies
-                mass, f_blue, f_blue_cen, f_blue_sat = self.blue_frac(mock_pd, False, False)
+                mass, f_blue, f_blue_cen, f_blue_sat = self.blue_frac(mock_pd, 
+                    False, False)
                 f_blue_arr.append(f_blue)
                 f_blue_cen_arr.append(f_blue_cen)
                 f_blue_sat_arr.append(f_blue_sat)
