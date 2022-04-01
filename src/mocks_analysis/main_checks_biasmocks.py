@@ -177,7 +177,8 @@ def cumu_num_dens(data, weights, volume, bool_mag):
         weights = np.array(weights) 
     #Unnormalized histogram and bin edges 
     data += 0.775 #change mags from h=0.7 to h=1
-    bins = np.arange(data.min(), data.max(), 0.2) 
+    # bins = np.arange(data.min(), data.max(), 0.2) 
+    bins = np.arange(10, 15, 0.2) 
     freq,edg = np.histogram(data,bins=bins,weights=weights) 
     bin_centers = 0.5*(edg[1:]+edg[:-1]) 
     bin_width = edg[1] - edg[0] 
@@ -296,6 +297,46 @@ def measure_num_dens(catl, path_to_mocks):
     plt.ylabel(r'\boldmath $n\ {[Mpc/h]}^{-3}$', fontsize=20)
     plt.title('Number density comparison (with buffer)')
     plt.legend(loc='best', prop={'size': 20})
+    plt.show()
+
+def cumu_hmf(path_to_mocks):
+
+    volume =  temp_dict.get('volume') 
+
+    hmf_arr = [] 
+    ghmf_arr = []
+    mock_dir_arr = glob.glob(path_to_mocks + 'ECO_mvir*')
+    for idx, mock_dir in enumerate(mock_dir_arr): 
+        for num in range(temp_dict.get('num_mocks')): 
+            filename = mock_dir + '/{0}_cat_{1}_Planck_memb_cat.hdf5'.format( 
+                    temp_dict.get('mock_name'), num)  
+            mock_pd = reading_catls(filename) 
+            mock_pd = mock_pd.loc[(mock_pd.cz.values >= temp_dict.get('min_cz'))
+                & (mock_pd.cz.values <= temp_dict.get('max_cz')) & 
+                (mock_pd.M_r.values <= temp_dict.get('mag_limit')) & 
+                (mock_pd.logmstar.values >= temp_dict.get('mstar_limit'))] 
+            result_halo = cumu_num_dens(mock_pd.loghalom.values, weights=None, 
+                volume=volume, bool_mag=False)
+            result_group = cumu_num_dens(mock_pd.M_group.values, weights=None, 
+                volume=volume, bool_mag=False)
+        hmf_arr.append(result_halo) 
+        ghmf_arr.append(result_group)
+    hmf_arr = np.array(hmf_arr)
+    ghmf_arr = np.array(ghmf_arr)
+
+    ms = ['o','^','s','d','<','>','v','p'] 
+    colors = ['salmon', 'orangered','darkorange','mediumorchid','cornflowerblue',
+        'gold', 'mediumslateblue','mediumturquoise'] 
+    fig7 = plt.figure(figsize=(10,8))
+    for i in range(len(hmf_arr)): 
+        plt.scatter(hmf_arr[i][0],np.log10(hmf_arr[i][2]),marker=ms[0],
+            edgecolors=colors[i],facecolors='none',s=150, linewidths=2) 
+    for i in range(len(ghmf_arr)): 
+        plt.scatter(ghmf_arr[i][0],np.log10(ghmf_arr[i][2]),marker=ms[1],
+            edgecolors=colors[i],facecolors='none',s=150, linewidths=2) 
+    plt.ylabel(r'\boldmath $n\ {[Mpc/h]}^{-3}$', fontsize=20)
+    plt.xlabel(r'\boldmath $Halo\ Mass\ h^{-1}M_{\odot}$', fontsize=20)
+    plt.title('Cumulative halo mass function')
     plt.show()
 
 def args_parser():
