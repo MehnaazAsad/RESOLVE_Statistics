@@ -14,6 +14,17 @@ class Experiments():
         self.preprocess = analysis.preprocess
         self.analysis = analysis
 
+    def models_add_avgrpcz(self, df, grpid_col=None, galtype_col=None):
+        cen_subset_df = df.loc[df[galtype_col] == 1].sort_values(by=grpid_col)
+
+        av_cz = df.groupby(['{0}'.format(grpid_col)])\
+            ['cz'].apply(np.average).values
+        zip_iterator = zip(list(cen_subset_df[grpid_col]), list(av_cz))
+        a_dictionary = dict(zip_iterator)
+        df['grpcz_av'] = df['{0}'.format(grpid_col)].map(a_dictionary)
+
+        return df
+
     def get_velocity_dispersion(self, catl, catl_type, randint=None):
         """Calculating velocity dispersion of groups from real data, model or 
             mock
@@ -66,7 +77,7 @@ class Experiments():
         if catl_type == 'model':
             if settings.survey == 'eco':
                 min_cz = 3000
-                max_cz = 7000
+                max_cz = 12000
                 mstar_limit = 8.9
             elif settings.survey == 'resolvea':
                 min_cz = 4500
@@ -137,6 +148,8 @@ class Experiments():
                 galtype_col = 'cs_flag'
                 id_col = 'halo_hostid'
 
+            catl = self.models_add_avgrpcz(catl, id_col, galtype_col)
+
         red_subset_ids = np.unique(catl[id_col].loc[(catl.\
             colour_label == 'R') & (catl[galtype_col] == 1)].values)  
         blue_subset_ids = np.unique(catl[id_col].loc[(catl.\
@@ -146,6 +159,7 @@ class Experiments():
         # red_subset_ids = [key for key in Counter(
         #     red_subset_df.groupid).keys() if Counter(
         #         red_subset_df.groupid)[key] > 1]
+        #* Excluding N=1 groups
         red_subset_ids = red_subset_df.groupby([id_col]).filter(lambda x: len(x) > 1)[id_col].unique()
         red_subset_df = catl.loc[catl[id_col].isin(
             red_subset_ids)].sort_values(by='{0}'.format(id_col))
@@ -168,6 +182,7 @@ class Experiments():
         # red_subset_ids = [key for key in Counter(
         #     red_subset_df.groupid).keys() if Counter(
         #         red_subset_df.groupid)[key] > 1]
+        #* Excluding N=1 groups
         blue_subset_ids = blue_subset_df.groupby([id_col]).filter(lambda x: len(x) > 1)[id_col].unique()
         blue_subset_df = catl.loc[catl[id_col].isin(
             blue_subset_ids)].sort_values(by='{0}'.format(id_col))
