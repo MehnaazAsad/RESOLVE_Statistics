@@ -11,22 +11,50 @@ from halotools.empirical_models import PrebuiltSubhaloModelFactory
 from cosmo_utils.utils.stats_funcs import Stats_one_arr
 from halotools.sim_manager import CachedHaloCatalog
 from cosmo_utils.utils import work_paths as cwpaths
+from scipy.stats import binned_statistic as bs
 from collections import OrderedDict
-from multiprocessing import Pool
 import matplotlib.pyplot as plt
 from matplotlib import rc
 import pandas as pd
 import numpy as np
-import argparse
 import random
-import math
-import time
+import emcee
 import os
 
 
-rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=20)
+rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=30)
 rc('text', usetex=True)
-rc('text.latex', preamble=[r"\usepackage{amsmath}"])
+rc('text.latex', preamble=r"\usepackage{amsmath}")
+rc('axes', linewidth=2)
+rc('xtick.major', width=4, size=7)
+rc('ytick.major', width=4, size=7)
+rc('xtick.minor', width=2, size=7)
+rc('ytick.minor', width=2, size=7)
+
+def kms_to_Mpc(H0,v):
+    return v/H0
+
+def vol_sphere(r):
+    volume = (4/3)*np.pi*(r**3)
+    return volume
+
+def mock_add_grpcz(df, grpid_col=None, galtype_col=None, cen_cz_col=None):
+    cen_subset_df = df.loc[df[galtype_col] == 1].sort_values(by=grpid_col)
+    # Sum doesn't actually add up anything here but I didn't know how to get
+    # each row as is so I used .apply
+    cen_cz = cen_subset_df.groupby(['{0}'.format(grpid_col),'{0}'.format(
+        galtype_col)])['{0}'.format(cen_cz_col)].apply(np.sum).values    
+    zip_iterator = zip(list(cen_subset_df[grpid_col]), list(cen_cz))
+    a_dictionary = dict(zip_iterator)
+    df['grpcz_new'] = df['{0}'.format(grpid_col)].map(a_dictionary)
+
+    av_cz = df.groupby(['{0}'.format(grpid_col)])\
+        ['cz'].apply(np.average).values
+    zip_iterator = zip(list(cen_subset_df[grpid_col]), list(av_cz))
+    a_dictionary = dict(zip_iterator)
+    df['grpcz_av'] = df['{0}'.format(grpid_col)].map(a_dictionary)
+
+    return df
 
 def reading_catls(filename, catl_format='.hdf5'):
     """
@@ -121,27 +149,34 @@ def read_data_catl(path_to_file, survey):
         Median redshift of survey
     """
     if survey == 'eco':
-        columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
-                    'logmstar', 'logmgas', 'grp', 'grpn', 'logmh', 'logmh_s', 
-                    'fc', 'grpmb', 'grpms','modelu_rcorr']
+        # columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
+        #             'logmstar', 'logmgas', 'grp', 'grpn', 'logmh', 'logmh_s', 
+        #             'fc', 'grpmb', 'grpms','modelu_rcorr']
 
         # 13878 galaxies
-        eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0, \
-            usecols=columns)
+        # eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0, \
+        #     usecols=columns)
 
+        eco_buff = reading_catls(path_to_file)
+        #* Recommended to exclude this galaxy in erratum to Hood et. al 2018
+        eco_buff = eco_buff.loc[eco_buff.name != 'ECO13860']
+
+        eco_buff = mock_add_grpcz(eco_buff, grpid_col='groupid', 
+            galtype_col='g_galtype', cen_cz_col='cz')
+        
         if mf_type == 'smf':
             # 6456 galaxies                       
-            catl = eco_buff.loc[(eco_buff.cz.values >= 3000) & 
-                (eco_buff.cz.values <= 7000) & 
+            catl = eco_buff.loc[(eco_buff.grpcz_new.values >= 3000) & 
+                (eco_buff.grpcz_new.values <= 7000) & 
                 (eco_buff.absrmag.values <= -17.33)]
         elif mf_type == 'bmf':
-            catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
-                (eco_buff.grpcz.values <= 7000) & 
+            catl = eco_buff.loc[(eco_buff.grpcz_new.values >= 3000) & 
+                (eco_buff.grpcz_new.values <= 7000) & 
                 (eco_buff.absrmag.values <= -17.33)] 
 
         volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
         # cvar = 0.125
-        z_median = np.median(catl.grpcz.values) / (3 * 10**5)
+        z_median = np.median(catl.grpcz_new.values) / (3 * 10**5)
         
     elif survey == 'resolvea' or survey == 'resolveb':
         columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
@@ -186,34 +221,6 @@ def read_data_catl(path_to_file, survey):
 
     return catl, volume, z_median
 
-def read_chi2(path_to_file):
-    """
-    Reads chi-squared values from file
-
-    Parameters
-    ----------
-    path_to_file: string
-        Path to chi-squared values file
-
-    Returns
-    ---------
-    chi2: array
-        Array of reshaped chi^2 values to match chain values
-    """
-    chi2_df = pd.read_csv(path_to_file,header=None,names=['chisquared'])
-
-    # Applies to runs prior to run 5?
-    if mf_type == 'smf' and survey == 'eco' and ver==1.0:
-        # Needed to reshape since flattened along wrong axis, 
-        # didn't correspond to chain
-        test_reshape = chi2_df.chisquared.values.reshape((1000,250))
-        chi2 = np.ndarray.flatten(np.array(test_reshape),'F')
-    
-    else:
-        chi2 = chi2_df.chisquared.values
-
-    return chi2
-
 def read_mcmc(path_to_file):
     """
     Reads mcmc chain from file
@@ -225,69 +232,102 @@ def read_mcmc(path_to_file):
 
     Returns
     ---------
-    emcee_table: pandas dataframe
+    emcee_table: pandas.DataFrame
         Dataframe of mcmc chain values with NANs removed
     """
-    colnames = ['mhalo_c','mstellar_c','lowmass_slope','highmass_slope',\
-        'scatter']
+    colnames = ['mhalo_c', 'mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter',
+        'mstar_q','mh_q','mu','nu']
     
-    if mf_type == 'smf' and survey == 'eco' and ver==1.0:
-        emcee_table = pd.read_csv(path_to_file,names=colnames,sep='\s+',\
-            dtype=np.float64)
+    if run >= 37:
+        reader = emcee.backends.HDFBackend(path_to_file, read_only=True)
+        flatchain = reader.get_chain(flat=True)
+        emcee_table = pd.DataFrame(flatchain, columns=colnames)
+    elif run < 37:
+        emcee_table = pd.read_csv(path_to_file, names=colnames, comment='#',
+            header=None, sep='\s+')
 
-    else:
-        emcee_table = pd.read_csv(path_to_file, names=colnames, 
-            delim_whitespace=True, header=None)
+        for idx,row in enumerate(emcee_table.values):
 
-        emcee_table = emcee_table[emcee_table.mhalo_c.values != '#']
-        emcee_table.mhalo_c = emcee_table.mhalo_c.astype(np.float64)
-        emcee_table.mstellar_c = emcee_table.mstellar_c.astype(np.float64)
-        emcee_table.lowmass_slope = emcee_table.lowmass_slope.astype(np.float64)
+            ## For cases where 5 params on one line and 3 on the next
+            if np.isnan(row)[6] == True and np.isnan(row)[5] == False:
+                mhalo_q_val = emcee_table.values[idx+1][0]
+                mu_val = emcee_table.values[idx+1][1]
+                nu_val = emcee_table.values[idx+1][2]
+                row[6] = mhalo_q_val
+                row[7] = mu_val
+                row[8] = nu_val 
 
-    # Cases where last parameter was a NaN and its value was being written to 
-    # the first element of the next line followed by 4 NaNs for the other 
-    # parameters
-    for idx,row in enumerate(emcee_table.values):
-        if np.isnan(row)[4] == True and np.isnan(row)[3] == False:
-            scatter_val = emcee_table.values[idx+1][0]
-            row[4] = scatter_val
-    
-    # Cases where rows of NANs appear
-    emcee_table = emcee_table.dropna(axis='index', how='any').\
-        reset_index(drop=True)
-    
+            ## For cases where 4 params on one line, 4 on the next and 1 on the 
+            ## third line (numbers in scientific notation unlike case above)
+            elif np.isnan(row)[4] == True and np.isnan(row)[3] == False:
+                scatter_val = emcee_table.values[idx+1][0]
+                mstar_q_val = emcee_table.values[idx+1][1]
+                mhalo_q_val = emcee_table.values[idx+1][2]
+                mu_val = emcee_table.values[idx+1][3]
+                nu_val = emcee_table.values[idx+2][0]
+                row[4] = scatter_val
+                row[5] = mstar_q_val
+                row[6] = mhalo_q_val
+                row[7] = mu_val
+                row[8] = nu_val 
+
+        emcee_table = emcee_table.dropna(axis='index', how='any').\
+            reset_index(drop=True)
+
     return emcee_table
 
-def get_paramvals_percentile(table, percentile, chi2_arr):
+def get_paramvals_percentile(mcmc_table, pctl, chi2, randints_df=None):
     """
-    Isolates 68th percentile lowest chi^2 values and takes random 1000 sample
+    Isolates 68th percentile lowest chi^2 values and takes random 100 sample
 
     Parameters
     ----------
-    table: pandas dataframe
+    mcmc_table: pandas.DataFrame
         Mcmc chain dataframe
 
     pctl: int
         Percentile to use
 
-    chi2_arr: array
+    chi2: array
         Array of chi^2 values
+    
+    randints_df (optional): pandas.DataFrame
+        Dataframe of mock numbers in case many Behroozi mocks were used.
+        Defaults to None.
 
     Returns
     ---------
-    subset: ndarray
-        Random 100 sample of param values from 68th percentile
+    mcmc_table_pctl: pandas dataframe
+        Sample of 100 68th percentile lowest chi^2 values
+    bf_params: numpy array
+        Array of parameter values corresponding to the best-fit model
+    bf_chi2: float
+        Chi-squared value corresponding to the best-fit model
+    bf_randint: int
+        In case multiple Behroozi mocks were used, this is the mock number
+        that corresponds to the best-fit model. Otherwise, this is not returned.
     """ 
-    percentile = percentile/100
-    table['chi2'] = chi2_arr
-    table = table.sort_values('chi2').reset_index(drop=True)
-    slice_end = int(percentile*len(table))
-    mcmc_table_pctl = table[:slice_end]
+    pctl = pctl/100
+    mcmc_table['chi2'] = chi2
+    if randints_df is not None: # This returns a bool; True if df has contents
+        mcmc_table['mock_num'] = randints_df.mock_num.values.astype(int)
+    mcmc_table = mcmc_table.sort_values('chi2').reset_index(drop=True)
+    slice_end = int(pctl*len(mcmc_table))
+    mcmc_table_pctl = mcmc_table[:slice_end]
     # Best fit params are the parameters that correspond to the smallest chi2
     bf_params = mcmc_table_pctl.drop_duplicates().reset_index(drop=True).\
-        values[0][:5]
+        values[0][:9]
+    bf_chi2 = mcmc_table_pctl.drop_duplicates().reset_index(drop=True).\
+        values[0][9]
+    if randints_df is not None:
+        bf_randint = mcmc_table_pctl.drop_duplicates().reset_index(drop=True).\
+            values[0][5].astype(int)
+        mcmc_table_pctl = mcmc_table_pctl.drop_duplicates().sample(100)
+        return mcmc_table_pctl, bf_params, bf_chi2, bf_randint
+    # Randomly sample 100 lowest chi2 
+    mcmc_table_pctl = mcmc_table_pctl.drop_duplicates().sample(100)
 
-    return bf_params
+    return mcmc_table_pctl, bf_params, bf_chi2
 
 def halocat_init(halo_catalog, z_median):
     """
@@ -350,20 +390,26 @@ def diff_smf(mstar_arr, volume, h1_bool, colour_flag=False):
 
     if survey == 'eco' or survey == 'resolvea':
         bin_min = np.round(np.log10((10**8.9) / 2.041), 1)
+        
         if survey == 'eco' and colour_flag == 'R':
             bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
             bin_num = 6
         elif survey == 'eco' and colour_flag == 'B':
             bin_max = np.round(np.log10((10**11) / 2.041), 1)
             bin_num = 6
+
         elif survey == 'resolvea':
             # different to avoid nan in inverse corr mat
             bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
             bin_num = 7
+
         else:
+            # For eco total
             bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
-            bin_num = 7
+            bin_num = 5
+
         bins = np.linspace(bin_min, bin_max, bin_num)
+
     elif survey == 'resolveb':
         bin_min = np.round(np.log10((10**8.7) / 2.041), 1)
         bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
@@ -381,7 +427,7 @@ def diff_smf(mstar_arr, volume, h1_bool, colour_flag=False):
 
     return maxis, phi, err_tot, bins, counts
 
-def get_host_halo_mock(gals_df, mock):
+def get_host_halo_mock(df, mock):
     """
     Get host halo mass from mock catalog
 
@@ -398,31 +444,32 @@ def get_host_halo_mock(gals_df, mock):
         Array of satellite host halo masses
     """
 
-    df = gals_df.copy()
+    # groups = df.groupby('halo_id')
+    # keys = groups.groups.keys()
+
+    # for key in keys:
+    #     group = groups.get_group(key)
+    # for index, value in enumerate(group.cs_flag):
+    #     if value == 1:
+    #         cen_halos.append(group.loghalom.values[index])
+    #     else:
+    #         sat_halos.append(group.loghalom.values[index])
 
     if mock == 'vishnu':
-        cen_halos = []
-        sat_halos = []
-        for index, value in enumerate(df.cs_flag):
-            if value == 1:
-                cen_halos.append(np.log10(df.halo_mvir.values[index]))
-            else:
-                sat_halos.append(np.log10(df.halo_mvir.values[index]))
+        cen_halos = np.log10(df.halo_mvir[df.cs_flag == 1]).reset_index(drop=True)
+        sat_halos = np.log10(df.halo_mvir_host_halo[df.cs_flag == 0]).reset_index(drop=True)
     else:
-        cen_halos = []
-        sat_halos = []
-        for index, value in enumerate(df.cs_flag):
-            if value == 1:
-                cen_halos.append(df.loghalom.values[index])
-            else:
-                sat_halos.append(df.loghalom.values[index])
+        # Both cen and sat are the same mass for a halo i.e. the satellites
+        # are assigned a halo mass of the central. 
+        cen_halos = df.loghalom[df.cs_flag == 1].reset_index(drop=True)
+        sat_halos = df.loghalom[df.cs_flag == 0].reset_index(drop=True)
 
     cen_halos = np.array(cen_halos)
     sat_halos = np.array(sat_halos)
 
     return cen_halos, sat_halos
 
-def get_stellar_mock(gals_df, mock):
+def get_stellar_mock(df, mock, randint=None):
     """
     Get stellar mass from mock catalog
 
@@ -439,55 +486,34 @@ def get_stellar_mock(gals_df, mock):
         Array of satellite stellar masses
     """
 
-    df = gals_df.copy()
-    if mock == 'vishnu':
+    if mock == 'vishnu' and randint:
         cen_gals = []
         sat_gals = []
         for idx,value in enumerate(df.cs_flag):
             if value == 1:
-                cen_gals.append(np.log10(df.stellar_mass.values[idx]))
+                cen_gals.append(10**(df['{0}'.format(randint)].values[idx]))
             elif value == 0:
-                sat_gals.append(np.log10(df.stellar_mass.values[idx]))
+                sat_gals.append(10**(df['{0}'.format(randint)].values[idx]))
 
+    elif mock == 'vishnu':
+        # cen_gals = 10**(df.logmstar[df.cs_flag == 1]).reset_index(drop=True)
+        # sat_gals = 10**(df.logmstar[df.cs_flag == 0]).reset_index(drop=True)
+        cen_gals = np.log10(df.stellar_mass[df.cs_flag == 1].reset_index(drop=True))
+        sat_gals = np.log10(df.stellar_mass[df.cs_flag == 0].reset_index(drop=True))
+   
     else:
         cen_gals = []
         sat_gals = []
         for idx,value in enumerate(df.cs_flag):
             if value == 1:
-                cen_gals.append(df.logmstar.values[idx])
+                cen_gals.append(np.log10((10**(df.logmstar.values[idx]))/2.041))
             elif value == 0:
-                sat_gals.append(df.logmstar.values[idx])
+                sat_gals.append(np.log10((10**(df.logmstar.values[idx]))/2.041))
 
     cen_gals = np.array(cen_gals)
     sat_gals = np.array(sat_gals)
 
     return cen_gals, sat_gals
-
-def assign_cen_sat_flag(gals_df):
-    """
-    Assign centrals and satellites flag to dataframe
-
-    Parameters
-    ----------
-    gals_df: pandas dataframe
-        Mock catalog
-
-    Returns
-    ---------
-    gals_df: pandas dataframe
-        Mock catalog with centrals/satellites flag as new column
-    """
-
-    C_S = []
-    for idx in range(len(gals_df)):
-        if gals_df['halo_hostid'][idx] == gals_df['halo_id'][idx]:
-            C_S.append(1)
-        else:
-            C_S.append(0)
-
-    C_S = np.array(C_S)
-    gals_df['cs_flag'] = C_S
-    return gals_df
 
 def populate_mock(theta, model):
     """
@@ -518,18 +544,18 @@ def populate_mock(theta, model):
 
     model.mock.populate()
 
-    if survey == 'eco' or survey == 'resolvea':
-        if mf_type == 'smf':
-            limit = np.round(np.log10((10**8.9) / 2.041), 1)
-        elif mf_type == 'bmf':
-            limit = np.round(np.log10((10**9.4) / 2.041), 1)
-    elif survey == 'resolveb':
-        if mf_type == 'smf':
-            limit = np.round(np.log10((10**8.7) / 2.041), 1)
-        elif mf_type == 'bmf':
-            limit = np.round(np.log10((10**9.1) / 2.041), 1)
-    sample_mask = model_init.mock.galaxy_table['stellar_mass'] >= 10**limit
-    gals = model.mock.galaxy_table[sample_mask]
+    # if survey == 'eco' or survey == 'resolvea':
+    #     if mf_type == 'smf':
+    #         limit = np.round(np.log10((10**8.9) / 2.041), 1)
+    #     elif mf_type == 'bmf':
+    #         limit = np.round(np.log10((10**9.4) / 2.041), 1)
+    # elif survey == 'resolveb':
+    #     if mf_type == 'smf':
+    #         limit = np.round(np.log10((10**8.7) / 2.041), 1)
+    #     elif mf_type == 'bmf':
+    #         limit = np.round(np.log10((10**9.1) / 2.041), 1)
+    # sample_mask = model_init.mock.galaxy_table['stellar_mass'] >= 10**limit
+    gals = model.mock.galaxy_table#[sample_mask]
     gals_df = pd.DataFrame(np.array(gals))
 
     return gals_df
@@ -554,11 +580,20 @@ def cumu_num_dens(data, bins, weights, volume, bool_mag):
 global model_init
 global survey
 global mf_type
+global quenching
+global level 
 
 survey = 'eco'
 machine = 'mac'
 mf_type = 'smf'
+quenching = 'hybrid'
 ver = 2.0 # No more .dat
+
+if quenching == 'halo':
+    run = 44
+elif quenching == 'hybrid':
+    run = 43
+
 
 dict_of_paths = cwpaths.cookiecutter_paths()
 path_to_raw = dict_of_paths['raw_dir']
@@ -573,20 +608,11 @@ if machine == 'bender':
 elif machine == 'mac':
     halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
 
-if mf_type == 'smf':
-    path_to_proc = path_to_proc + 'smhm_run6/'
-elif mf_type == 'bmf':
-    path_to_proc = path_to_proc + 'bmhm_run3/'
-
-chi2_file = path_to_proc + '{0}_chi2.txt'.format(survey)
-
-if mf_type == 'smf' and survey == 'eco' and ver == 1.0:
-    chain_file = path_to_proc + 'mcmc_{0}.dat'.format(survey)
-else:
-    chain_file = path_to_proc + 'mcmc_{0}_raw.txt'.format(survey)
+chi2_file = path_to_proc + 'smhm_colour_run{0}/chain.h5'.format(run)
+chain_file = path_to_proc + 'smhm_colour_run{0}/chain.h5'.format(run)
 
 if survey == 'eco':
-    catl_file = path_to_raw + 'eco/eco_all.csv'
+    catl_file = path_to_proc + "gal_group_eco_data_buffer_volh1_dr2.hdf5"
     path_to_mocks = path_to_data + 'mocks/m200b/eco/'
 elif survey == 'resolvea' or survey == 'resolveb':
     catl_file = path_to_raw + 'RESOLVE_liveJune2019.csv'
@@ -595,29 +621,49 @@ elif survey == 'resolvea' or survey == 'resolveb':
     else:
         path_to_mocks = path_to_external + 'RESOLVE_B_mvir_catls/'
 
-print('Reading chi-squared file')
-chi2 = read_chi2(chi2_file)
-print('Reading mcmc chain file')
+reader = emcee.backends.HDFBackend(chi2_file , read_only=True)
+chi2 = reader.get_blobs(flat=True)
+
 mcmc_table = read_mcmc(chain_file)
+
 print('Reading catalog')
-catl, volume, z_median = read_data_catl(catl_file, survey) #No mstar cut
+catl, volume, z_median = read_data_catl(catl_file, survey)
+
 print('Getting data in specific percentile')
-bf_params = get_paramvals_percentile(mcmc_table, 68, chi2)
+mcmc_table_pctl, bf_params, bf_chi2 = \
+    get_paramvals_percentile(mcmc_table, 68, chi2)
 
 model_init = halocat_init(halo_catalog, z_median)
-gals_df = populate_mock(bf_params, model_init) #mstar cut at 8.9 in h=1 (8.6)
-gals_df = assign_cen_sat_flag(gals_df)
+
+gals_df =  populate_mock(bf_params[:5], model_init) #mstar cut at 8.9 in h=1 (8.6)
+gals_df['cs_flag'] = np.where(gals_df['halo_hostid'] == \
+    gals_df['halo_id'], 1, 0)
 
 cen_halos_bf, sat_halos_bf = get_host_halo_mock(gals_df, 'vishnu')
 cen_gals_bf, sat_gals_bf = get_stellar_mock(gals_df, 'vishnu')
 
-x_bf,y_bf,x_std_bf,y_std_err_bf = Stats_one_arr(cen_halos_bf,
-    cen_gals_bf,base=0.4,bin_statval='center')
+bins = np.linspace(10, 15, 7)
+shmr = bs(cen_halos_bf, cen_gals_bf, statistic='mean', bins = bins)
+centers = 0.5 * (shmr[1][1:] + shmr[1][:-1])
+x_bf = centers
+y_bf = shmr[0]    
+
+H0 = 100
+cz_inner = 3000
+cz_outer = 12000
+dist_inner = kms_to_Mpc(H0,cz_inner) #Mpc/h
+dist_outer = kms_to_Mpc(H0,cz_outer) #Mpc/h
+
+v_inner = vol_sphere(dist_inner)
+v_outer = vol_sphere(dist_outer)
+
+v_sphere = v_outer-v_inner
+v_sim = v_sphere/8
 
 v_sim = 130**3
 mass_bf, phi_bf, err_tot_bf, bins_bf, counts_bf = \
     diff_smf(gals_df.stellar_mass.values, v_sim, True)
-bins = np.logspace(8.6, 11.2, 7)
+
 cumu_smf_result_bf = cumu_num_dens(gals_df.stellar_mass.values,bins,None,v_sim,False)
 
 ## catl_grpcz_cut and catl_cz_cut were initialized in the terminal so if this 
@@ -653,7 +699,7 @@ if survey == 'eco':
     max_cz = 7000
     mag_limit = -17.33
     mstar_limit = 8.9
-    volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
+    # volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
 elif survey == 'resolvea':
     mock_name = 'A'
     num_mocks = 59
@@ -661,7 +707,7 @@ elif survey == 'resolvea':
     max_cz = 7000
     mag_limit = -17.33
     mstar_limit = 8.9
-    volume = 13172.384  # Survey volume without buffer [Mpc/h]^3 
+    # volume = 13172.384  # Survey volume without buffer [Mpc/h]^3 
 elif survey == 'resolveb':
     mock_name = 'B'
     num_mocks = 104
@@ -669,11 +715,65 @@ elif survey == 'resolveb':
     max_cz = 7000
     mag_limit = -17
     mstar_limit = 8.7
-    volume = 4709.8373  # Survey volume without buffer [Mpc/h]^3
+    # volume = 4709.8373  # Survey volume without buffer [Mpc/h]^3
+
+import astropy.cosmology as astrocosmo
+import astropy.constants as ac
+import astropy.units     as u
+
+def get_survey_vol(ra_arr, dec_arr, rho_arr):
+    """
+    Computes the volume of a "sphere" with given limits for 
+    ra, dec, and distance
+    Parameters
+    ----------
+    ra_arr: list or numpy.ndarray, shape (N,2)
+        array with initial and final right ascension coordinates
+        Unit: degrees
+    dec_arr: list or numpy.ndarray, shape (N,2)
+        array with initial and final declination coordinates
+        Unit: degrees
+    rho_arr: list or numpy.ndarray, shape (N,2)
+        arrray with initial and final distance
+        Unit: distance units
+    
+    Returns
+    ----------
+    survey_vol: float
+        volume of the survey being analyzed
+        Unit: distance**(3)
+    """
+    # Right ascension - Radians  theta coordinate
+    theta_min_rad, theta_max_rad = np.radians(np.array(ra_arr))
+    # Declination - Radians - phi coordinate
+    phi_min_rad, phi_max_rad = np.radians(90.-np.array(dec_arr))[::-1]
+    # Distance
+    rho_min, rho_max = rho_arr
+    # Calculating volume
+    vol  = (1./3.)*(np.cos(phi_min_rad)-np.cos(phi_max_rad))
+    vol *= (theta_max_rad) - (theta_min_rad)
+    vol *= (rho_max**3) - rho_min**3
+    vol  = np.abs(vol)
+
+    return vol
+
+ra_min_real = 130.05
+ra_max_real = 237.45
+dec_min     = -1
+dec_max     = 49.85
+# Extras
+dec_range   = dec_max - dec_min
+ra_range    = ra_max_real - ra_min_real
+H0 = 100
+cosmo_model = astrocosmo.Planck15.clone(H0=H0)
+km_s       = u.km/u.s
+z_arr      = (np.array([min_cz, max_cz])*km_s/(ac.c.to(km_s))).value
+z_arr      = (np.array([min_cz, max_cz])*km_s/(3e5*km_s)).value
+r_arr      = cosmo_model.comoving_distance(z_arr).to(u.Mpc).value
+survey_vol_used = get_survey_vol( [0, ra_range], [dec_min, dec_max], r_arr)
 
 x_arr = []
 y_arr = []
-y_std_err_arr = []
 phi_arr = []
 mass_arr = []
 cumu_mass_arr = []
@@ -687,22 +787,27 @@ for box in box_id_arr:
         filename = temp_path + '{0}_cat_{1}_Planck_memb_cat.hdf5'.format(
             mock_name, num)
         mock_pd = reading_catls(filename) 
+        mock_pd = mock_add_grpcz(mock_pd, grpid_col='groupid', 
+            galtype_col='g_galtype', cen_cz_col='cz')
 
-        mock_pd = mock_pd.loc[(mock_pd.cz.values >= min_cz) & \
-            (mock_pd.cz.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
-            (mock_pd.logmstar.values >= mstar_limit)]
+        mock_pd = mock_pd.loc[(mock_pd.grpcz_new.values >= min_cz) & \
+            (mock_pd.grpcz_new.values <= max_cz) & \
+            (mock_pd.M_r.values <= mag_limit) &\
+            (mock_pd.logmstar.values >= mstar_limit)].reset_index(drop=True)
+
         cen_halos, sat_halos = get_host_halo_mock(mock_pd, 'other')
         cen_gals, sat_gals = get_stellar_mock(mock_pd, 'other')
-        cen_gals = np.log10((10**cen_gals)/ 2.041)
-        x,y,y_std,y_std_err = Stats_one_arr(cen_halos,
-            cen_gals,base=0.4,bin_statval='center')
-        smf_result = diff_smf(mock_pd.logmstar.values, volume, False)
-        bins = np.logspace(8.6, 11.2, 7)
+        
+        bins = np.linspace(10, 15, 7)
+
+        shmr = bs(cen_halos, cen_gals, statistic='mean', bins = bins)
+        centers = 0.5 * (shmr[1][1:] + shmr[1][:-1])
+
+        smf_result = diff_smf(mock_pd.logmstar.values, survey_vol_used, False)
         cumu_smf_result = cumu_num_dens(((10**mock_pd.logmstar.values)/2.041),bins,None,
-            volume,False)
-        x_arr.append(x)
-        y_arr.append(y)        
-        y_std_err_arr.append(y_std_err)
+            survey_vol_used,False)
+        x_arr.append(centers)
+        y_arr.append(shmr[0])        
         phi_arr.append(smf_result[1])
         mass_arr.append(smf_result[0])
         cumu_mass_arr.append(cumu_smf_result[0])
@@ -712,18 +817,17 @@ for box in box_id_arr:
 ## Plot of shmr comparison between mocks and behroozi best fit
 fig1 = plt.figure(figsize=(10,10))
 for i in range(len(y_arr)):
-    plt.errorbar(x_arr[i],y_arr[i],yerr=y_std_err_arr[i],
-        color='lightgray',fmt='-s', ecolor='lightgray', markersize=4, 
-        capsize=5, capthick=0.5, label=r'mocks',zorder=5)
-plt.errorbar(x_bf,y_bf,color='mediumorchid',fmt='-s',
+    plt.plot(centers,y_arr[i],
+        color='lightgray', ls='-', lw=2, label=r'mocks',zorder=5)
+plt.errorbar(centers,y_bf,color='mediumorchid',fmt='-s',
     ecolor='mediumorchid',markersize=5,capsize=5,capthick=0.5,\
         label=r'best-fit',zorder=20)
-plt.errorbar(x,y,
-    color='k',fmt='-s',ecolor='k',markersize=3,
-    capsize=5,capthick=0.5,label='data with grpcz cut',zorder=10)
-plt.errorbar(x2,y2,
-    color='k',fmt='--s',ecolor='k',markersize=3,
-    capsize=5,capthick=0.5,label='data with cz cut',zorder=10)
+# plt.errorbar(x,y,
+#     color='k',fmt='-s',ecolor='k',markersize=3,
+#     capsize=5,capthick=0.5,label='data with grpcz cut',zorder=10)
+# plt.errorbar(x2,y2,
+#     color='k',fmt='--s',ecolor='k',markersize=3,
+#     capsize=5,capthick=0.5,label='data with cz cut',zorder=10)
 plt.xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=20)
 if mf_type == 'smf':
     if survey == 'eco' or survey == 'resolvea':
