@@ -34,6 +34,13 @@ def mock_add_grpcz(df, grpid_col=None, galtype_col=None, cen_cz_col=None):
     zip_iterator = zip(list(cen_subset_df[grpid_col]), list(cen_cz))
     a_dictionary = dict(zip_iterator)
     df['grpcz_new'] = df['{0}'.format(grpid_col)].map(a_dictionary)
+
+    av_cz = df.groupby(['{0}'.format(grpid_col)])\
+        ['cz'].apply(np.average).values
+    zip_iterator = zip(list(cen_subset_df[grpid_col]), list(av_cz))
+    a_dictionary = dict(zip_iterator)
+    df['grpcz_av'] = df['{0}'.format(grpid_col)].map(a_dictionary)
+
     return df
 
 def reading_catls(filename, catl_format='.hdf5'):
@@ -411,6 +418,8 @@ def blue_frac(catl, h1_bool, data_bool, randint_logmstar=None):
     elif not data_bool and not h1_bool:
         mstar_total_arr = catl.logmstar.values
         censat_col = 'g_galtype'
+        #* To test fblue of centrals with halo centrals instead of group centrals
+        #* to see how group finder misclassification affects the measurement
         # censat_col = 'cs_flag'
         mstar_cen_arr = catl.logmstar.loc[catl[censat_col] == 1].values
         mstar_sat_arr = catl.logmstar.loc[catl[censat_col] == 0].values           
@@ -472,6 +481,26 @@ def blue_frac(catl, h1_bool, data_bool, randint_logmstar=None):
     f_blue_sat = result_sat[0]
 
     return maxis, f_blue_total, f_blue_cen, f_blue_sat
+
+def gapper(vel_arr):
+    n = len(vel_arr)
+    factor = np.sqrt(np.pi)/(n*(n-1))
+
+    summation = 0
+    sorted_vel = np.sort(vel_arr)
+    for i in range(len(sorted_vel)):
+        i += 1
+        if i == len(sorted_vel):
+            break
+        
+        deltav_i = sorted_vel[i] - sorted_vel[i-1]
+        weight_i = i*(n-i)
+        prod = deltav_i * weight_i
+        summation += prod
+
+    sigma_gapper = factor * summation
+
+    return sigma_gapper
 
 def get_velocity_dispersion(catl, catl_type, randint=None):
     """Calculating velocity dispersion of groups from real data, model or 
@@ -592,51 +621,30 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
     #     red_subset_df.groupid).keys() if Counter(
     #         red_subset_df.groupid)[key] > 1]
     #* Excluding N=1 groups
-    red_subset_ids = red_subset_df.groupby([id_col]).filter(lambda x: len(x) > 1)[id_col].unique()
+    red_subset_ids = red_subset_df.groupby([id_col]).filter\
+        (lambda x: len(x) > 1)[id_col].unique()
     red_subset_df = catl.loc[catl[id_col].isin(
         red_subset_ids)].sort_values(by='{0}'.format(id_col))
-    # red_cen_stellar_mass_arr_new = red_subset_df.logmstar.loc[\
-    #     red_subset_df.g_galtype == 1].values
     cen_red_subset_df = red_subset_df.loc[red_subset_df[galtype_col] == 1]
     red_cen_stellar_mass_arr = cen_red_subset_df.groupby(['{0}'.format(id_col),
         '{0}'.format(galtype_col)])[logmstar_col].apply(np.sum).values
-    if catl_type == 'data' or catl_type == 'mock':
-        red_subset_df['deltav'] = red_subset_df['cz'] - red_subset_df['grpcz_new']
-        #* Sigma measurement to exclude central
-        # red_subset_df = red_subset_df.loc[red_subset_df.deltav > 0]   
-    elif catl_type == 'model':     
-        red_subset_df['deltav'] = red_subset_df['cz'] - red_subset_df[cencz_col]  
-        # red_subset_df = red_subset_df.loc[red_subset_df.deltav > 0]    
-    red_sigma_arr = red_subset_df.groupby(id_col)['deltav'].apply(np.std).values
-    # end = time.time()
-    # time_taken = end - start
-    # print("New method took {0:.1f} seconds".format(time_taken))
-
-    # start = time.time()
+    red_subset_df['deltav'] = red_subset_df['cz'] - red_subset_df['grpcz_av']
+    #* The gapper method does not exclude the central 
+    red_sigma_arr = red_subset_df.groupby(['{0}'.format(id_col)])['deltav'].\
+        apply(lambda x: gapper(x)).values
+      
     blue_subset_df = catl.loc[catl[id_col].isin(blue_subset_ids)]
-    # red_subset_ids = [key for key in Counter(
-    #     red_subset_df.groupid).keys() if Counter(
-    #         red_subset_df.groupid)[key] > 1]
     #* Excluding N=1 groups
-    blue_subset_ids = blue_subset_df.groupby([id_col]).filter(lambda x: len(x) > 1)[id_col].unique()
+    blue_subset_ids = blue_subset_df.groupby([id_col]).filter\
+        (lambda x: len(x) > 1)[id_col].unique()
     blue_subset_df = catl.loc[catl[id_col].isin(
         blue_subset_ids)].sort_values(by='{0}'.format(id_col))
-    # red_cen_stellar_mass_arr_new = red_subset_df.logmstar.loc[\
-    #     red_subset_df.g_galtype == 1].values
     cen_blue_subset_df = blue_subset_df.loc[blue_subset_df[galtype_col] == 1]
     blue_cen_stellar_mass_arr = cen_blue_subset_df.groupby(['{0}'.format(id_col),
         '{0}'.format(galtype_col)])[logmstar_col].apply(np.sum).values
-    if catl_type == 'data' or catl_type == 'mock':
-        blue_subset_df['deltav'] = blue_subset_df['cz'] - blue_subset_df['grpcz_new']
-        #* Sigma measurement to exclude central
-        # blue_subset_df = red_subset_df.loc[red_subset_df.deltav > 0]       
-    elif catl_type == 'model':
-        blue_subset_df['deltav'] = blue_subset_df['cz'] - blue_subset_df[cencz_col] 
-        # blue_subset_df = red_subset_df.loc[red_subset_df.deltav > 0]            
-    blue_sigma_arr = blue_subset_df.groupby('{0}'.format(id_col))['deltav'].apply(np.std).values
-    # end = time.time()
-    # time_taken = end - start
-    # print("New method took {0:.1f} seconds".format(time_taken))
+    blue_subset_df['deltav'] = blue_subset_df['cz'] - blue_subset_df['grpcz_av']
+    blue_sigma_arr = blue_subset_df.groupby(['{0}'.format(id_col)])['deltav'].\
+        apply(lambda x: gapper(x)).values
 
     return red_sigma_arr, red_cen_stellar_mass_arr, blue_sigma_arr, \
         blue_cen_stellar_mass_arr
@@ -861,7 +869,7 @@ path_to_data = dict_of_paths['data_dir']
 path_to_mocks = path_to_data + 'mocks/m200b/eco/'
 path_to_proc = dict_of_paths['proc_dir']
 
-catl_file = path_to_proc + "gal_group_eco_data_buffer_volh1.hdf5"
+catl_file = path_to_proc + "gal_group_eco_data_buffer_volh1_dr2.hdf5"
 
 print('Reading catalog') #No Mstar cut needed as catl_file already has it
 catl, volume, z_median = read_data_catl(catl_file, survey)
@@ -882,10 +890,17 @@ red_sigma, red_cen_mstar_sigma, blue_sigma, \
 red_sigma = np.log10(red_sigma)
 blue_sigma = np.log10(blue_sigma)
 
-mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
-    statistic='mean', bins=np.linspace(-2,3,5))
-mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
-    statistic='mean', bins=np.linspace(-1,3,5))
+np.nan_to_num(red_sigma, copy=False, neginf=np.nan)
+
+# mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
+#     statistic=np.nanmean, bins=np.linspace(-2,3,5))
+# mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
+#     statistic=np.nanmean, bins=np.linspace(-1,3,5))
+
+mean_mstar_red_data = bs(red_cen_mstar_sigma, red_sigma,
+    statistic=np.nanmean, bins=np.linspace(8.6,11,5))
+mean_mstar_blue_data = bs( blue_cen_mstar_sigma, blue_sigma,
+    statistic=np.nanmean, bins=np.linspace(8.6,11,5))
 
 data_observables = np.array(
     [total_data[1][0], total_data[1][1], total_data[1][2], total_data[1][3],
@@ -1028,18 +1043,24 @@ for box in box_id_arr:
         red_sigma = np.log10(red_sigma)
         blue_sigma = np.log10(blue_sigma)
 
-        # mean_sigma_red = bs(red_cen_mstar_sigma, red_sigma,
-        #     statistic='mean', bins=np.linspace(8.6,11,5))
-        # mean_sigma_blue = bs( blue_cen_mstar_sigma, blue_sigma,
-        #     statistic='mean', bins=np.linspace(8.6,11,5))
+        np.nan_to_num(red_sigma, copy=False, neginf=np.nan)
 
-        mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
-            statistic='mean', bins=np.linspace(-2,3,5))
-        mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
-            statistic='mean', bins=np.linspace(-1,3,5))
+        mean_sigma_red = bs(red_cen_mstar_sigma, red_sigma,
+            statistic=np.nanmean, bins=np.linspace(8.6,11,5))
+        mean_sigma_blue = bs( blue_cen_mstar_sigma, blue_sigma,
+            statistic=np.nanmean, bins=np.linspace(8.6,11,5))
 
-        mean_mstar_red_arr.append(mean_mstar_red[0])
-        mean_mstar_blue_arr.append(mean_mstar_blue[0])
+        mean_mstar_red_arr.append(mean_sigma_red[0])
+        mean_mstar_blue_arr.append(mean_sigma_blue[0])
+
+        # mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
+        #     statistic=np.nanmean, bins=np.linspace(-2,3,5))
+        # mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
+        #     statistic=np.nanmean, bins=np.linspace(-1,3,5))
+
+        # mean_mstar_red_arr.append(mean_mstar_red[0])
+        # mean_mstar_blue_arr.append(mean_mstar_blue[0])
+
 
 phi_arr_total = np.array(phi_total_arr)
 # phi_arr_red = np.array(phi_arr_red)
@@ -1111,7 +1132,7 @@ for i in range(20):
             #is the top left cell of the matrix which has x=first bin of phi and 
             #y=last bin of last observable.
             ax[i][j].scatter(combined_df.iloc[:,j], combined_df.iloc[:,-(i+1)], 
-                c='k', s=2)
+                c='k', s=5)
             ax[i][j].scatter(data_observables[j], data_observables[-(i+1)], 
                 marker='+', c='w', s=60, lw=2)
         else:
