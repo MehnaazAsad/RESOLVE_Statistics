@@ -930,6 +930,8 @@ def get_host_halo_mock(df, mock):
         cen_halos = df.halo_mvir[df.cs_flag == 1].reset_index(drop=True)
         sat_halos = df.halo_mvir_host_halo[df.cs_flag == 0].reset_index(drop=True)
     else:
+        # Both cen and sat are the same mass for a halo i.e. the satellites
+        # are assigned a halo mass of the central. 
         cen_halos = 10**(df.loghalom[df.cs_flag == 1]).reset_index(drop=True)
         sat_halos = 10**(df.loghalom[df.cs_flag == 0]).reset_index(drop=True)
 
