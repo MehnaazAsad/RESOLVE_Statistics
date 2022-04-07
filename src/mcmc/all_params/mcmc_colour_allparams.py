@@ -1430,38 +1430,38 @@ def get_err_data(survey, path):
     # T = corr_mat_colour.dot(VT.T)
     # print(T)
 
-    from matplotlib.legend_handler import HandlerTuple
-    import matplotlib.pyplot as plt
-    from matplotlib import rc
-    from matplotlib import cm
+    # from matplotlib.legend_handler import HandlerTuple
+    # import matplotlib.pyplot as plt
+    # from matplotlib import rc
+    # from matplotlib import cm
 
-    rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=15)
-    rc('text', usetex=True)
-    rc('axes', linewidth=2)
-    rc('xtick.major', width=4, size=7)
-    rc('ytick.major', width=4, size=7)
-    rc('xtick.minor', width=2, size=7)
-    rc('ytick.minor', width=2, size=7)
+    # rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=15)
+    # rc('text', usetex=True)
+    # rc('axes', linewidth=2)
+    # rc('xtick.major', width=4, size=7)
+    # rc('ytick.major', width=4, size=7)
+    # rc('xtick.minor', width=2, size=7)
+    # rc('ytick.minor', width=2, size=7)
 
-    fig1 = plt.figure()
-    ax1 = fig1.add_subplot(111)
-    cmap = cm.get_cmap('Spectral_r')
-    cax = ax1.matshow(combined_df.corr(), cmap=cmap, vmin=-1, vmax=1)
-    tick_marks = [i for i in range(len(combined_df.columns))]
-    names = [
-    r'$\Phi_1$', r'$\Phi_2$', r'$\Phi_3$', r'$\Phi_4$',
-    r'$fblue\ cen_1$', r'$cen_2$', r'$cen_3$', r'$cen_4$',
-    r'$fblue\ sat_1$', r'$sat_2$', r'$sat_3$', r'$sat_4$',
-    r'$mstar\ red\ grpcen_1$', r'$grpcen_2$', r'$grpcen_3$', r'$grpcen_4$',
-    r'$mstar\ blue\ grpcen_1$', r'$grpcen_2$', r'$grpcen_3$', r'$grpcen_4$',]
+    # fig1 = plt.figure()
+    # ax1 = fig1.add_subplot(111)
+    # cmap = cm.get_cmap('Spectral_r')
+    # cax = ax1.matshow(combined_df.corr(), cmap=cmap, vmin=-1, vmax=1)
+    # tick_marks = [i for i in range(len(combined_df.columns))]
+    # names = [
+    # r'$\Phi_1$', r'$\Phi_2$', r'$\Phi_3$', r'$\Phi_4$',
+    # r'$fblue\ cen_1$', r'$cen_2$', r'$cen_3$', r'$cen_4$',
+    # r'$fblue\ sat_1$', r'$sat_2$', r'$sat_3$', r'$sat_4$',
+    # r'$mstar\ red\ grpcen_1$', r'$grpcen_2$', r'$grpcen_3$', r'$grpcen_4$',
+    # r'$mstar\ blue\ grpcen_1$', r'$grpcen_2$', r'$grpcen_3$', r'$grpcen_4$',]
 
-    plt.xticks(tick_marks, names, rotation='vertical')
-    plt.yticks(tick_marks, names)    
-    plt.gca().invert_yaxis() 
-    plt.gca().xaxis.tick_bottom()
-    plt.colorbar(cax)
-    plt.title('{0}'.format(quenching))
-    plt.show()
+    # plt.xticks(tick_marks, names, rotation='vertical')
+    # plt.yticks(tick_marks, names)    
+    # plt.gca().invert_yaxis() 
+    # plt.gca().xaxis.tick_bottom()
+    # plt.colorbar(cax)
+    # plt.title('{0}'.format(quenching))
+    # plt.show()
 
     # ## SMF from mocks and data
     # fig4 = plt.figure()
