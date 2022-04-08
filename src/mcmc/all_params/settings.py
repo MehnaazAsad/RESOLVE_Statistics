@@ -9,7 +9,7 @@ from cosmo_utils.utils import work_paths as cwpaths
 class Settings():
 
     def __init__(self) -> None:
-        self.quenching = 'hybrid'
+        self.quenching = 'halo'
         self.machine = 'mac'
         self.survey = 'eco'
         self.mf_type = 'smf'
@@ -37,9 +37,9 @@ class Settings():
             self.halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
 
         if self.quenching == 'halo':
-            self.run = 44
+            self.run = 46
         elif self.quenching == 'hybrid':
-            self.run = 43
+            self.run = 45
 
         if self.run >= 37:
             self.chi2_file = self.path_to_proc + \
