@@ -27,13 +27,13 @@ rc('xtick.major', width=2, size=7)
 rc('ytick.major', width=2, size=7)
 
 survey = 'eco'
-quenching = 'hybrid'
+quenching = 'halo'
 mf_type = 'smf'
 nwalkers = 100
 nsteps = 1000
 burnin = 300
 ndim = 9
-run = 43
+run = 46
     
 def get_samples(chain_file, nsteps, nwalkers, ndim, burnin):
     if quenching == 'hybrid':
@@ -123,13 +123,13 @@ nwalkers = 100
 nsteps = 1000
 burnin = 300
 ndim = 9
-run = 42
+run = 44
 
 if run >= 37:
     reader = emcee.backends.HDFBackend(
         path_to_proc + "smhm_colour_run{0}/chain.h5".format(run), 
         read_only=True)
-    samples_42 = reader.get_chain(flat=True, discard=burnin) 
+    samples_44 = reader.get_chain(flat=True, discard=burnin) 
 
 else:
     chain_fname = path_to_proc + 'smhm_colour_run{0}/mcmc_{1}_colour_raw.txt'.\
@@ -154,10 +154,12 @@ optimizer_best_fit_eco_smf_hybrid = [10.49, 14.03, 0.69, 0.148] # For hybrid mod
 zumandelbaum_param_vals_halo = [12.20, 0.38, 12.17, 0.15] # For halo model
 optimizer_best_fit_eco_smf_halo = [12.61, 13.5, 0.40, 0.148] # For halo model
 
-best_fit_hybrid = [12.16154153, 10.49436558,  0.40970844,  0.92746082,  0.37782192,
-       10.11652049, 13.86684472,  0.76086959,  0.04489465]
-best_fit_halo = [12.15533183, 10.50835579,  0.39131807,  0.58730261,  0.34483536,
-       11.68499777, 12.3832308 ,  1.41969021,  0.46442463]
+#45
+best_fit_hybrid = [12.29868808, 10.48771974,  0.41364778,  0.41375455,  0.30506659,
+       10.1679343 , 13.10135398,  0.81869216,  0.13844437]
+#46
+best_fit_halo = [12.37399415, 10.57683767,  0.42357192,  0.50163458,  0.31593679,
+       11.86645536, 12.54502723,  1.42736618,  0.5261119 ]
 # parameters=[r"${log_{10}\ M_{1}}$", 
 #         r"${log_{10}\ M_{*}}$", r"${\beta}$",
 #         r"${\delta}$", r"${\xi}$", 
@@ -171,7 +173,7 @@ if quenching == 'hybrid':
         r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
         r"$\mathbf{log_{10}\ M^{q}_{*}}$", r"$\mathbf{log_{10}\ M^{q}_{h}}$", 
         r"$\boldsymbol{\mu}$", r"$\boldsymbol{\nu}$"],
-        name=r"ECO hybrid (new data)", color="#663399", zorder=10)
+        name=r"ECO hybrid (45)", color="#663399", zorder=10)
 
     # for i in range(len(best_fit_hybrid)):
     #     for j in range(len(best_fit_hybrid)):
@@ -183,12 +185,12 @@ if quenching == 'hybrid':
     #             marker_size=100, color='#1f77b4')
         
 
-    c.add_chain(samples_42,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
+    c.add_chain(samples_43,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
         r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
         r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
         r"$\mathbf{log_{10}\ M^{q}_{*}}$", r"$\mathbf{log_{10}\ M^{q}_{h}}$", 
         r"$\boldsymbol{\mu}$", r"$\boldsymbol{\nu}$"],
-        name="ECO hybrid (old data)", color='#E766EA', 
+        name="ECO hybrid (43)", color='#E766EA', 
         zorder=13)
 
 elif quenching == 'halo':
@@ -197,15 +199,15 @@ elif quenching == 'halo':
         r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
         r"$\mathbf{log_{10}\ M^{qc}_{h}}$", r"$\mathbf{log_{10}\ M^{qs}_{h}}$", 
         r"$\boldsymbol{{\mu}_c}$", r"$\boldsymbol{{\mu}_s}$"],
-        name=r"ECO halo (new data)", color='#663399', zorder=13)
+        name=r"ECO halo (46)", color='#663399', zorder=13)
 
-    # c.add_chain(samples_39,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
-    #     r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
-    #     r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
-    #     r"$\mathbf{log_{10}\ M^{qc}_{h}}$", r"$\mathbf{log_{10}\ M^{qs}_{h}}$", 
-    #     r"$\boldsymbol{{\mu}_c}$", r"$\boldsymbol{{\mu}_s}$"],
-    #     name=r"ECO halo (old data)", color='#E766EA', 
-    #     zorder=10)
+    c.add_chain(samples_44,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
+        r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
+        r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
+        r"$\mathbf{log_{10}\ M^{qc}_{h}}$", r"$\mathbf{log_{10}\ M^{qs}_{h}}$", 
+        r"$\boldsymbol{{\mu}_c}$", r"$\boldsymbol{{\mu}_s}$"],
+        name=r"ECO halo (44)", color='#E766EA', 
+        zorder=10)
 
 
     # c.add_chain(samples_chain35,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
