@@ -25,6 +25,26 @@ class Experiments():
 
         return df
 
+    def gapper(self, vel_arr):
+        n = len(vel_arr)
+        factor = np.sqrt(np.pi)/(n*(n-1))
+
+        summation = 0
+        sorted_vel = np.sort(vel_arr)
+        for i in range(len(sorted_vel)):
+            i += 1
+            if i == len(sorted_vel):
+                break
+            
+            deltav_i = sorted_vel[i] - sorted_vel[i-1]
+            weight_i = i*(n-i)
+            prod = deltav_i * weight_i
+            summation += prod
+
+        sigma_gapper = factor * summation
+
+        return sigma_gapper
+
     def get_velocity_dispersion(self, catl, catl_type, randint=None):
         """Calculating velocity dispersion of groups from real data, model or 
             mock
@@ -172,7 +192,10 @@ class Experiments():
         #     red_subset_df['deltav'] = red_subset_df['cz'] - red_subset_df['grpcz_av']   
         # elif catl_type == 'model':     
             # red_subset_df['deltav'] = red_subset_df['cz'] - red_subset_df[cencz_col]   
-        red_sigma_arr = red_subset_df.groupby(id_col)['cz'].apply(np.std, ddof=1).values
+        red_subset_df['deltav'] = red_subset_df['cz'] - red_subset_df['grpcz_av']
+        #* The gapper method does not exclude the central 
+        red_sigma_arr = red_subset_df.groupby(['{0}'.format(id_col)])['deltav'].\
+            apply(lambda x: self.gapper(x)).values
         # end = time.time()
         # time_taken = end - start
         # print("New method took {0:.1f} seconds".format(time_taken))
@@ -195,7 +218,9 @@ class Experiments():
         #     blue_subset_df['deltav'] = blue_subset_df['cz'] - blue_subset_df['grpcz_new']    
         # elif catl_type == 'model':
         #     blue_subset_df['deltav'] = blue_subset_df['cz'] - blue_subset_df[cencz_col]            
-        blue_sigma_arr = blue_subset_df.groupby('{0}'.format(id_col))['cz'].apply(np.std, ddof=1).values
+        blue_subset_df['deltav'] = blue_subset_df['cz'] - blue_subset_df['grpcz_av']
+        blue_sigma_arr = blue_subset_df.groupby(['{0}'.format(id_col)])['deltav'].\
+            apply(lambda x: self.gapper(x)).values
 
         # red_singleton_counter = 0
         # red_sigma_arr = []
