@@ -10,7 +10,6 @@ from matplotlib.legend_handler import HandlerTuple
 from scipy.stats import binned_statistic as bs
 from scipy.interpolate import interp1d
 from matplotlib import pyplot as plt
-from sqlalchemy import all_
 from tqdm import tqdm
 import numpy as np
 import pandas as pd
@@ -5388,4 +5387,497 @@ plt.yscale('log')
 plt.ylabel(r'$\sigma$', fontsize=30)
 plt.xlabel(r'group richness', fontsize=30)
 plt.legend(loc='best', prop={'size':30})
+plt.show()
+
+################################################################################
+#* Ratio of stellar-to-halo-mass vs dispersion 
+################################################################################
+
+
+def mock_add_grpcz(df, grpid_col=None, galtype_col=None, cen_cz_col=None):
+    cen_subset_df = df.loc[df[galtype_col] == 1].sort_values(by=grpid_col)
+    # Sum doesn't actually add up anything here but I didn't know how to get
+    # each row as is so I used .apply
+    cen_cz = cen_subset_df.groupby(['{0}'.format(grpid_col),'{0}'.format(
+        galtype_col)])['{0}'.format(cen_cz_col)].apply(np.sum).values    
+    zip_iterator = zip(list(cen_subset_df[grpid_col]), list(cen_cz))
+    a_dictionary = dict(zip_iterator)
+    df['grpcz_new'] = df['{0}'.format(grpid_col)].map(a_dictionary)
+
+    av_cz = df.groupby(['{0}'.format(grpid_col)])\
+        ['cz'].apply(np.average).values
+    zip_iterator = zip(list(cen_subset_df[grpid_col]), list(av_cz))
+    a_dictionary = dict(zip_iterator)
+    df['grpcz_av'] = df['{0}'.format(grpid_col)].map(a_dictionary)
+
+    return df
+
+def reading_catls(filename, catl_format='.hdf5'):
+    """
+    Function to read ECO/RESOLVE catalogues.
+
+    Parameters
+    ----------
+    filename: string
+        path and name of the ECO/RESOLVE catalogue to read
+
+    catl_format: string, optional (default = '.hdf5')
+        type of file to read.
+        Options:
+            - '.hdf5': Reads in a catalogue in HDF5 format
+
+    Returns
+    -------
+    mock_pd: pandas DataFrame
+        DataFrame with galaxy/group information
+
+    Examples
+    --------
+    # Specifying `filename`
+    >>> filename = 'ECO_catl.hdf5'
+
+    # Reading in Catalogue
+    >>> mock_pd = reading_catls(filename, format='.hdf5')
+
+    >>> mock_pd.head()
+               x          y         z          vx          vy          vz  \
+    0  10.225435  24.778214  3.148386  356.112457 -318.894409  366.721832
+    1  20.945772  14.500367 -0.237940  168.731766   37.558834  447.436951
+    2  21.335835  14.808488  0.004653  967.204407 -701.556763 -388.055115
+    3  11.102760  21.782235  2.947002  611.646484 -179.032089  113.388794
+    4  13.217764  21.214905  2.113904  120.689598  -63.448833  400.766541
+
+       loghalom  cs_flag  haloid  halo_ngal    ...        cz_nodist      vel_tot  \
+    0    12.170        1  196005          1    ...      2704.599189   602.490355
+    1    11.079        1  197110          1    ...      2552.681697   479.667489
+    2    11.339        1  197131          1    ...      2602.377466  1256.285409
+    3    11.529        1  199056          1    ...      2467.277182   647.318259
+    4    10.642        1  199118          1    ...      2513.381124   423.326770
+
+           vel_tan     vel_pec     ra_orig  groupid    M_group g_ngal  g_galtype  \
+    0   591.399858 -115.068833  215.025116        0  11.702527      1          1
+    1   453.617221  155.924074  182.144134        1  11.524787      4          0
+    2  1192.742240  394.485714  182.213220        1  11.524787      4          0
+    3   633.928896  130.977416  210.441320        2  11.502205      1          1
+    4   421.064495   43.706352  205.525386        3  10.899680      1          1
+
+       halo_rvir
+    0   0.184839
+    1   0.079997
+    2   0.097636
+    3   0.113011
+    4   0.057210
+    """
+    ## Checking if file exists
+    if not os.path.exists(filename):
+        msg = '`filename`: {0} NOT FOUND! Exiting..'.format(filename)
+        raise ValueError(msg)
+    ## Reading file
+    if catl_format=='.hdf5':
+        mock_pd = pd.read_hdf(filename)
+    else:
+        msg = '`catl_format` ({0}) not supported! Exiting...'.format(catl_format)
+        raise ValueError(msg)
+
+    return mock_pd
+
+def read_data_catl(path_to_file, survey):
+    """
+    Reads survey catalog from file
+
+    Parameters
+    ----------
+    path_to_file: `string`
+        Path to survey catalog file
+
+    survey: `string`
+        Name of survey
+
+    Returns
+    ---------
+    catl: `pandas.DataFrame`
+        Survey catalog with grpcz, abs rmag and stellar mass limits
+    
+    volume: `float`
+        Volume of survey
+
+    z_median: `float`
+        Median redshift of survey
+    """
+    if survey == 'eco':
+        # columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
+        #             'logmstar', 'logmgas', 'grp', 'grpn', 'logmh', 'logmh_s', 
+        #             'fc', 'grpmb', 'grpms','modelu_rcorr']
+
+        # 13878 galaxies
+        # eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0, \
+        #     usecols=columns)
+
+        eco_buff = reading_catls(path_to_file)
+        #* Recommended to exclude this galaxy in erratum to Hood et. al 2018
+        eco_buff = eco_buff.loc[eco_buff.name != 'ECO13860']
+
+        eco_buff = mock_add_grpcz(eco_buff, grpid_col='groupid', 
+            galtype_col='g_galtype', cen_cz_col='cz')
+        
+        if mf_type == 'smf':
+            # 6456 galaxies                       
+            catl = eco_buff.loc[(eco_buff.grpcz_new.values >= 3000) & 
+                (eco_buff.grpcz_new.values <= 7000) & 
+                (eco_buff.absrmag.values <= -17.33)]
+        elif mf_type == 'bmf':
+            catl = eco_buff.loc[(eco_buff.grpcz_new.values >= 3000) & 
+                (eco_buff.grpcz_new.values <= 7000) & 
+                (eco_buff.absrmag.values <= -17.33)] 
+
+        volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
+        # cvar = 0.125
+        z_median = np.median(catl.grpcz_new.values) / (3 * 10**5)
+        
+    elif survey == 'resolvea' or survey == 'resolveb':
+        columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
+                    'logmstar', 'logmgas', 'grp', 'grpn', 'grpnassoc', 'logmh', 
+                    'logmh_s', 'fc', 'grpmb', 'grpms', 'f_a', 'f_b']
+        # 2286 galaxies
+        resolve_live18 = pd.read_csv(path_to_file, delimiter=",", header=0, \
+            usecols=columns)
+
+        if survey == 'resolvea':
+            if mf_type == 'smf':
+                catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
+                    (resolve_live18.grpcz.values >= 4500) & 
+                    (resolve_live18.grpcz.values <= 7000) & 
+                    (resolve_live18.absrmag.values <= -17.33)]
+            elif mf_type == 'bmf':
+                catl = resolve_live18.loc[(resolve_live18.f_a.values == 1) & 
+                    (resolve_live18.grpcz.values >= 4500) & 
+                    (resolve_live18.grpcz.values <= 7000) & 
+                    (resolve_live18.absrmag.values <= -17.33)]
+
+            volume = 13172.384  # Survey volume without buffer [Mpc/h]^3
+            # cvar = 0.30
+            z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
+        
+        elif survey == 'resolveb':
+            if mf_type == 'smf':
+                # 487 - cz, 369 - grpcz
+                catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
+                    (resolve_live18.grpcz.values >= 4500) & 
+                    (resolve_live18.grpcz.values <= 7000) & 
+                    (resolve_live18.absrmag.values <= -17)]
+            elif mf_type == 'bmf':
+                catl = resolve_live18.loc[(resolve_live18.f_b.values == 1) & 
+                    (resolve_live18.grpcz.values >= 4500) & 
+                    (resolve_live18.grpcz.values <= 7000) & 
+                    (resolve_live18.absrmag.values <= -17)]
+
+            volume = 4709.8373  # *2.915 #Survey volume without buffer [Mpc/h]^3
+            # cvar = 0.58
+            z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
+
+    return catl, volume, z_median
+
+def assign_colour_label_data(catl):
+    """
+    Assign colour label to data
+
+    Parameters
+    ----------
+    catl: pandas Dataframe 
+        Data catalog
+
+    Returns
+    ---------
+    catl: pandas Dataframe
+        Data catalog with colour label assigned as new column
+    """
+
+    logmstar_arr = catl.logmstar.values
+    u_r_arr = catl.modelu_rcorr.values
+
+    colour_label_arr = np.empty(len(catl), dtype='str')
+    for idx, value in enumerate(logmstar_arr):
+
+        # Divisions taken from Moffett et al. 2015 equation 1
+        if value <= 9.1:
+            if u_r_arr[idx] > 1.457:
+                colour_label = 'R'
+            else:
+                colour_label = 'B'
+
+        if value > 9.1 and value < 10.1:
+            divider = 0.24 * value - 0.7
+            if u_r_arr[idx] > divider:
+                colour_label = 'R'
+            else:
+                colour_label = 'B'
+
+        if value >= 10.1:
+            if u_r_arr[idx] > 1.7:
+                colour_label = 'R'
+            else:
+                colour_label = 'B'
+            
+        colour_label_arr[idx] = colour_label
+    
+    catl['colour_label'] = colour_label_arr
+
+    return catl
+
+def average_of_log(arr):
+    result = np.log10(np.nanmean(10**(arr)))
+    return result
+
+def gapper(vel_arr):
+    n = len(vel_arr)
+    factor = np.sqrt(np.pi)/(n*(n-1))
+
+    summation = 0
+    sorted_vel = np.sort(vel_arr)
+    for i in range(len(sorted_vel)):
+        i += 1
+        if i == len(sorted_vel):
+            break
+        
+        deltav_i = sorted_vel[i] - sorted_vel[i-1]
+        weight_i = i*(n-i)
+        prod = deltav_i * weight_i
+        summation += prod
+
+    sigma_gapper = factor * summation
+
+    return sigma_gapper
+
+survey = 'eco'
+level = 'group'
+quenching = 'hybrid'
+mf_type = 'smf'
+
+dict_of_paths = cwpaths.cookiecutter_paths()
+path_to_proc = dict_of_paths['proc_dir']
+path_to_data = dict_of_paths['data_dir']
+path_to_mocks = path_to_data + 'mocks/m200b/eco/'
+
+
+catl_file = path_to_proc + "gal_group_eco_data_buffer_volh1_dr2.hdf5"
+catl, volume, z_median = read_data_catl(catl_file, survey)
+catl = assign_colour_label_data(catl)
+
+all_groups = catl.groupby('groupid')
+
+red_subset_ids = np.unique(catl['groupid'].loc[(catl.\
+    colour_label == 'R') & (catl['g_galtype'] == 1)].values) 
+blue_subset_ids = np.unique(catl['groupid'].loc[(catl.\
+    colour_label == 'B') & (catl['g_galtype'] == 1)].values)
+
+red_mass_ratio_data = []
+blue_mass_ratio_data = []
+red_gapper_data = []
+blue_gapper_data = []
+for key in red_subset_ids:
+    group = all_groups.get_group(key)
+    if len(group) > 1:
+        grpcz_av = group.grpcz_av.values
+
+        deltav_av = group.cz.values - grpcz_av
+
+        sigma_gapper = gapper(deltav_av)
+
+        cen_stellar_mass = group.logmstar.loc[group.g_galtype == 1].values[0]
+        satellite_stellar_mass = group.logmstar.loc[group.g_galtype == 0].values
+
+        cen_halo_mass = group.M_group.loc[group.g_galtype == 1].values[0]
+        mass_ratio = np.log10((10**satellite_stellar_mass)/(10**cen_halo_mass))
+
+        for val in mass_ratio:
+            red_mass_ratio_data.append(val)
+            red_gapper_data.append(sigma_gapper)
+
+        # red_gapper_data.append(sigma_gapper)
+        # red_mass_ratio_data.append(mass_ratio)
+
+for key in blue_subset_ids:
+    group = all_groups.get_group(key)
+    if len(group) > 1:
+        grpcz_av = group.grpcz_av.values
+
+        deltav_av = group.cz.values - grpcz_av
+
+        sigma_gapper = gapper(deltav_av)
+
+        cen_stellar_mass = group.logmstar.loc[group.g_galtype == 1].values[0]
+        satellite_stellar_mass = group.logmstar.loc[group.g_galtype == 0].values
+        cen_halo_mass = group.M_group.loc[group.g_galtype == 1].values[0]
+        mass_ratio = np.log10((10**satellite_stellar_mass)/(10**cen_halo_mass))
+
+        for val in mass_ratio:
+            blue_mass_ratio_data.append(val)
+            blue_gapper_data.append(sigma_gapper)
+
+        # blue_gapper_data.append(sigma_gapper)
+        # blue_mass_ratio_data.append(mass_ratio)
+
+plt.scatter(red_mass_ratio_data, np.log10(red_gapper_data), marker='*', s=100, c='maroon')
+plt.scatter(blue_mass_ratio_data, np.log10(blue_gapper_data), marker='^', s=100, c='cornflowerblue')
+plt.ylabel(r'$\sigma_{gapper}$', fontsize=30)
+plt.xlabel(r'$M_* / M_h$', fontsize=30)
+plt.show()
+
+plt.scatter(np.log10(red_gapper_data), red_mass_ratio_data, marker='*', s=100, c='maroon')
+plt.scatter(np.log10(blue_gapper_data), blue_mass_ratio_data, marker='^', s=100, c='cornflowerblue')
+plt.xlabel(r'$\sigma_{gapper}$', fontsize=30)
+plt.ylabel(r'$M_* / M_h$', fontsize=30)
+plt.show()
+
+mock_name = 'ECO'
+num_mocks = 8
+min_cz = 3000
+max_cz = 7000
+mag_limit = -17.33
+mstar_limit = 8.9
+volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
+
+mean_stat_red_arr = []
+mean_stat_blue_arr = []
+box_id_arr = np.linspace(5001,5008,8)
+for box in box_id_arr:
+    box = int(box)
+    temp_path = path_to_mocks + '{0}/{1}_m200b_catls/'.format(box, 
+        mock_name) 
+    for num in range(num_mocks):
+        filename = temp_path + '{0}_cat_{1}_Planck_memb_cat.hdf5'.format(
+            mock_name, num)
+        print('Box {0} : Mock {1}'.format(box, num))
+        mock_pd = reading_catls(filename) 
+        mock_pd = mock_add_grpcz(mock_pd, grpid_col='groupid', 
+            galtype_col='g_galtype', cen_cz_col='cz')
+        # Using the same survey definition as in mcmc smf i.e excluding the 
+        # buffer
+        mock_pd = mock_pd.loc[(mock_pd.grpcz_new.values >= min_cz) & \
+            (mock_pd.grpcz_new.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
+            (mock_pd.logmstar.values >= mstar_limit)].reset_index(drop=True)
+
+        ## Using best-fit found for new ECO data using result from chain 45
+        ## i.e. hybrid quenching model
+        bf_from_last_chain = [10.1679343, 13.10135398, 0.81869216, 0.13844437]
+
+        Mstar_q = bf_from_last_chain[0] # Msun/h**2
+        Mh_q = bf_from_last_chain[1] # Msun/h
+        mu = bf_from_last_chain[2]
+        nu = bf_from_last_chain[3]
+
+        ## Using best-fit found for new ECO data using result from chain 46
+        ## i.e. halo quenching model
+        bf_from_last_chain = [11.86645536, 12.54502723, 1.42736618, 0.5261119]
+
+        Mh_qc = bf_from_last_chain[0] # Msun/h
+        Mh_qs = bf_from_last_chain[1] # Msun/h
+        mu_c = bf_from_last_chain[2]
+        mu_s = bf_from_last_chain[3]
+
+        if quenching == 'hybrid':
+            theta = [Mstar_q, Mh_q, mu, nu]
+            f_red_c, f_red_s = hybrid_quenching_model(theta, mock_pd, 
+                'nonvishnu')
+        elif quenching == 'halo':
+            theta = [Mh_qc, Mh_qs, mu_c, mu_s]
+            f_red_c, f_red_s = halo_quenching_model(theta, mock_pd, 
+                'nonvishnu')
+        mock_pd = assign_colour_label_mock(f_red_c, f_red_s, mock_pd)
+        logmstar_arr = mock_pd.logmstar.values
+
+        all_groups = mock_pd.groupby('groupid')
+
+        red_subset_ids = np.unique(mock_pd['groupid'].loc[(mock_pd.\
+            colour_label == 'R') & (mock_pd['g_galtype'] == 1)].values) 
+        blue_subset_ids = np.unique(mock_pd['groupid'].loc[(mock_pd.\
+            colour_label == 'B') & (mock_pd['g_galtype'] == 1)].values)
+
+        red_mass_ratio = []
+        blue_mass_ratio = []
+        red_gapper = []
+        blue_gapper = []
+        for key in red_subset_ids:
+            group = all_groups.get_group(key)
+            if len(group) > 1:
+                grpcz_av = group.grpcz_av.values
+
+                deltav_av = group.cz.values - grpcz_av
+
+                sigma_gapper = gapper(deltav_av)
+
+                cen_stellar_mass = group.logmstar.loc[group.g_galtype == 1].values[0]
+                satellite_stellar_mass = group.logmstar.loc[group.g_galtype == 0].values
+
+                cen_halo_mass = group.M_group.loc[group.g_galtype == 1].values[0]
+                mass_ratio = np.log10((10**satellite_stellar_mass)/(10**cen_halo_mass))
+
+                for val in mass_ratio:
+                    red_mass_ratio.append(val)
+                    red_gapper.append(sigma_gapper)
+
+                # red_gapper.append(sigma_gapper)
+                # red_mass_ratio.append(mass_ratio)
+
+        for key in blue_subset_ids:
+            group = all_groups.get_group(key)
+            if len(group) > 1:
+                grpcz_av = group.grpcz_av.values
+
+                deltav_av = group.cz.values - grpcz_av
+
+                sigma_gapper = gapper(deltav_av)
+
+                cen_stellar_mass = group.logmstar.loc[group.g_galtype == 1].values[0]
+                satellite_stellar_mass = group.logmstar.loc[group.g_galtype == 0].values
+                cen_halo_mass = group.M_group.loc[group.g_galtype == 1].values[0]
+                mass_ratio = np.log10((10**satellite_stellar_mass)/(10**cen_halo_mass))
+
+                for val in mass_ratio:
+                    blue_mass_ratio.append(val)
+                    blue_gapper.append(sigma_gapper)
+
+                # blue_gapper.append(sigma_gapper)
+                # blue_mass_ratio.append(mass_ratio)
+
+        mean_stat_red = bs(np.log10(red_gapper), red_mass_ratio, 
+            statistic=average_of_log, bins=np.linspace(0,3,5))
+        mean_stat_blue = bs(np.log10(blue_gapper), blue_mass_ratio, 
+            statistic=average_of_log, bins=np.linspace(0,3,5))
+
+        # mean_stat_red = bs(red_cen_stellar_mass_arr, red_deltav_arr,
+        #     statistic='mean', bins=np.linspace(8.6,11,6))
+        # mean_stat_blue = bs(blue_cen_stellar_mass_arr, blue_deltav_arr,
+        #     statistic='mean', bins=np.linspace(8.6,11,6))
+
+        mean_stat_red_arr.append(mean_stat_red[0])
+        mean_stat_blue_arr.append(mean_stat_blue[0])
+
+mean_stat_red_arr = np.array(mean_stat_red_arr)
+mean_stat_blue_arr = np.array(mean_stat_blue_arr)
+
+error_red = np.nanstd(mean_stat_red_arr, axis=0)
+error_blue = np.nanstd(mean_stat_blue_arr, axis=0)
+
+
+mean_stat_red_data = bs(np.log10(red_gapper_data), red_mass_ratio_data, 
+    statistic=average_of_log, bins=np.linspace(0,3,5))
+mean_stat_blue_data = bs(np.log10(blue_gapper_data), blue_mass_ratio_data, 
+    statistic=average_of_log, bins=np.linspace(0,3,5))
+
+
+mean_centers_red = 0.5 * (mean_stat_red_data[1][1:] + \
+    mean_stat_red_data[1][:-1])
+mean_centers_blue = 0.5 * (mean_stat_blue_data[1][1:] + \
+    mean_stat_blue_data[1][:-1])
+
+plt.errorbar(mean_centers_red, mean_stat_red_data[0], yerr=error_red, 
+    color='darkred',fmt='^',ecolor='darkred', 
+    markersize=12,capsize=10,capthick=1.0,zorder=10)
+plt.errorbar(mean_centers_blue, mean_stat_blue_data[0], yerr=error_blue, 
+    color='darkblue',fmt='^',ecolor='darkblue',
+    markersize=12,capsize=10,capthick=1.0,zorder=10)
+plt.xlabel(r'$\sigma_{gapper}$', fontsize=30)
+plt.ylabel(r'$M_* / M_h$', fontsize=30)
+plt.title('{0} quenching'.format(quenching))
 plt.show()
