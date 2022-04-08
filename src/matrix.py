@@ -43,6 +43,10 @@ def mock_add_grpcz(df, grpid_col=None, galtype_col=None, cen_cz_col=None):
 
     return df
 
+def average_of_log(arr):
+    result = np.log10(np.nanmean(10**(arr)))
+    return result
+
 def reading_catls(filename, catl_format='.hdf5'):
     """
     Function to read ECO/RESOLVE catalogues.
@@ -892,15 +896,15 @@ blue_sigma = np.log10(blue_sigma)
 
 np.nan_to_num(red_sigma, copy=False, neginf=np.nan)
 
-# mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
-#     statistic=np.nanmean, bins=np.linspace(-2,3,5))
-# mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
-#     statistic=np.nanmean, bins=np.linspace(-1,3,5))
+mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
+    statistic=average_of_log, bins=np.linspace(-2,3,5))
+mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
+    statistic=average_of_log, bins=np.linspace(-1,3,5))
 
-mean_mstar_red_data = bs(red_cen_mstar_sigma, red_sigma,
-    statistic=np.nanmean, bins=np.linspace(8.6,11,5))
-mean_mstar_blue_data = bs( blue_cen_mstar_sigma, blue_sigma,
-    statistic=np.nanmean, bins=np.linspace(8.6,11,5))
+# mean_mstar_red_data = bs(red_cen_mstar_sigma, red_sigma,
+#     statistic=np.nanmean, bins=np.linspace(8.6,11,5))
+# mean_mstar_blue_data = bs( blue_cen_mstar_sigma, blue_sigma,
+#     statistic=np.nanmean, bins=np.linspace(8.6,11,5))
 
 data_observables = np.array(
     [total_data[1][0], total_data[1][1], total_data[1][2], total_data[1][3],
@@ -976,10 +980,12 @@ for box in box_id_arr:
 
         ## Using best-fit found for new ECO data using result from chain 42
         ## i.e. hybrid quenching model
-        Mstar_q = 10.11652049 # Msun/h**2
-        Mh_q = 13.86684472 # Msun/h
-        mu = 0.76086959
-        nu = 0.04489465
+        bf_from_last_chain = [10.1679343, 13.10135398, 0.81869216, 0.13844437]
+        
+        Mstar_q = bf_from_last_chain[0] # Msun/h**2
+        Mh_q = bf_from_last_chain[1] # Msun/h
+        mu = bf_from_last_chain[2]
+        nu = bf_from_last_chain[3]
 
         # ## Using best-fit found for new ECO data using optimize_qm_eco.py 
         # ## for halo quenching model
@@ -990,10 +996,12 @@ for box in box_id_arr:
 
         ## Using best-fit found for new ECO data using result from chain 41
         ## i.e. halo quenching model
-        Mh_qc = 11.68499777 # Msun/h
-        Mh_qs = 12.3832308 # Msun/h
-        mu_c = 1.41969021
-        mu_s = 0.46442463
+        bf_from_last_chain = [11.86645536, 12.54502723, 1.42736618, 0.5261119]
+
+        Mh_qc = bf_from_last_chain[0] # Msun/h
+        Mh_qs = bf_from_last_chain[1] # Msun/h
+        mu_c = bf_from_last_chain[2]
+        mu_s = bf_from_last_chain[3]
 
         if quenching == 'hybrid':
             theta = [Mstar_q, Mh_q, mu, nu]
@@ -1045,21 +1053,21 @@ for box in box_id_arr:
 
         np.nan_to_num(red_sigma, copy=False, neginf=np.nan)
 
-        mean_sigma_red = bs(red_cen_mstar_sigma, red_sigma,
-            statistic=np.nanmean, bins=np.linspace(8.6,11,5))
-        mean_sigma_blue = bs( blue_cen_mstar_sigma, blue_sigma,
-            statistic=np.nanmean, bins=np.linspace(8.6,11,5))
+        # mean_sigma_red = bs(red_cen_mstar_sigma, red_sigma,
+        #     statistic=np.nanmean, bins=np.linspace(8.6,11,5))
+        # mean_sigma_blue = bs( blue_cen_mstar_sigma, blue_sigma,
+        #     statistic=np.nanmean, bins=np.linspace(8.6,11,5))
 
-        mean_mstar_red_arr.append(mean_sigma_red[0])
-        mean_mstar_blue_arr.append(mean_sigma_blue[0])
+        # mean_mstar_red_arr.append(mean_sigma_red[0])
+        # mean_mstar_blue_arr.append(mean_sigma_blue[0])
 
-        # mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
-        #     statistic=np.nanmean, bins=np.linspace(-2,3,5))
-        # mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
-        #     statistic=np.nanmean, bins=np.linspace(-1,3,5))
+        mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
+            statistic=average_of_log, bins=np.linspace(-2,3,5))
+        mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
+            statistic=average_of_log, bins=np.linspace(-1,3,5))
 
-        # mean_mstar_red_arr.append(mean_mstar_red[0])
-        # mean_mstar_blue_arr.append(mean_mstar_blue[0])
+        mean_mstar_red_arr.append(mean_mstar_red[0])
+        mean_mstar_blue_arr.append(mean_mstar_blue[0])
 
 
 phi_arr_total = np.array(phi_total_arr)
