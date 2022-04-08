@@ -653,6 +653,161 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
     return red_sigma_arr, red_cen_stellar_mass_arr, blue_sigma_arr, \
         blue_cen_stellar_mass_arr
 
+def get_stacked_velocity_dispersion(catl, catl_type, randint=None):
+    """Calculating velocity dispersion of groups from real data, model or 
+        mock
+
+    Args:
+        catl (pandas.DataFrame): Data catalogue 
+
+        catl_type (string): 'data', 'mock', 'model'
+
+        randint (optional): int
+            Mock number in case many Behroozi mocks were used. Defaults to None.
+
+    Returns:
+        red_sigma_arr (numpy array): Velocity dispersion of red galaxies
+
+        red_cen_stellar_mass_arr (numpy array): Group red central stellar mass
+
+        blue_sigma_arr (numpy array): Velocity dispersion of blue galaxies
+        
+        blue_cen_stellar_mass_arr (numpy array): Blue central stellar mass
+
+        red_nsat_arr (numpy array): Number of satellites around red centrals
+
+        blue_nsat_arr (numpy array): Number of satellites around blue centrals
+
+    """
+    if catl_type == 'data':
+        if survey == 'eco' or survey == 'resolvea':
+            catl = catl.loc[catl.logmstar >= 8.9]
+        elif survey == 'resolveb':
+            catl = catl.loc[catl.logmstar >= 8.7]
+
+    if catl_type == 'data' or catl_type == 'mock':
+        catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
+        logmstar_col = 'logmstar'
+        ## Use group level for data even when settings.level == halo
+        if catl_type == 'data' or level == 'group':
+            galtype_col = 'g_galtype'
+            id_col = 'groupid'
+        ## No halo level in data
+        if catl_type == 'mock':
+            if level == 'halo':
+                galtype_col = 'cs_flag'
+                ## Halo ID is equivalent to halo_hostid in vishnu mock
+                id_col = 'haloid'
+
+    if catl_type == 'model':
+        if survey == 'eco':
+            min_cz = 3000
+            max_cz = 12000
+            mstar_limit = 8.9
+        elif survey == 'resolvea':
+            min_cz = 4500
+            max_cz = 7000
+            mstar_limit = 8.9
+        elif survey == 'resolveb':
+            min_cz = 4500
+            max_cz = 7000
+            mstar_limit = 8.7
+
+        if randint is None:
+            logmstar_col = 'logmstar'
+            galtype_col = 'grp_censat'
+            id_col = 'groupid'
+            cencz_col = 'cen_cz'
+            # Using the same survey definition as in mcmc smf i.e excluding the 
+            # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
+            # and M* star cuts to mimic mocks and data.
+            # catl = mock_add_grpcz(catl, id_col, False, galtype_col)
+            catl = catl.loc[
+                (catl[cencz_col].values >= min_cz) & \
+                (catl[cencz_col].values <= max_cz) & \
+                (catl[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
+            # catl[logmstar_col] = np.log10(catl[logmstar_col])
+
+        elif isinstance(randint, int) and randint != 1:
+            logmstar_col = '{0}'.format(randint)
+            galtype_col = 'grp_censat_{0}'.format(randint)
+            cencz_col = 'cen_cz_{0}'.format(randint)
+            id_col = 'groupid_{0}'.format(randint)
+            # Using the same survey definition as in mcmc smf i.e excluding the 
+            # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
+            # and M* star cuts to mimic mocks and data.
+            # catl = mock_add_grpcz(catl, id_col, False, galtype_col, cencz_col)
+            catl = catl.loc[
+                (catl[cencz_col].values >= min_cz) & \
+                (catl[cencz_col].values <= max_cz) & \
+                (catl[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
+
+        elif isinstance(randint, int) and randint == 1:
+            logmstar_col = 'behroozi_bf'
+            galtype_col = 'grp_censat_{0}'.format(randint)
+            cencz_col = 'cen_cz_{0}'.format(randint)
+            id_col = 'groupid_{0}'.format(randint)
+            # Using the same survey definition as in mcmc smf i.e excluding the 
+            # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
+            # and M* star cuts to mimic mocks and data.
+            # catl = mock_add_grpcz(catl, id_col, False, galtype_col, cencz_col)
+            catl = catl.loc[
+                (catl[cencz_col].values >= min_cz) & \
+                (catl[cencz_col].values <= max_cz) & \
+                (catl[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
+
+        if level == 'halo':
+            galtype_col = 'cs_flag'
+            id_col = 'halo_hostid'
+
+        catl = models_add_avgrpcz(catl, id_col, galtype_col)
+
+    red_subset_ids = np.unique(catl[id_col].loc[(catl.\
+        colour_label == 'R') & (catl[galtype_col] == 1)].values) 
+    blue_subset_ids = np.unique(catl[id_col].loc[(catl.\
+        colour_label == 'B') & (catl[galtype_col] == 1)].values)
+
+
+    red_subset_df = catl.loc[catl[id_col].isin(red_subset_ids)]
+    #* Excluding N=1 groups
+    red_subset_ids = red_subset_df.groupby([id_col]).filter\
+        (lambda x: len(x) > 1)[id_col].unique()
+    red_subset_df = catl.loc[catl[id_col].isin(
+        red_subset_ids)].sort_values(by='{0}'.format(id_col))
+    # cen_red_subset_df = red_subset_df.loc[red_subset_df[galtype_col] == 1]
+    # red_cen_stellar_mass_arr = cen_red_subset_df.groupby(['{0}'.format(id_col),
+    #     '{0}'.format(galtype_col)])[logmstar_col].apply(np.sum).values
+    red_subset_df['deltav'] = red_subset_df['cz'] - red_subset_df['grpcz_av']
+    red_cen_stellar_mass_arr = red_subset_df[logmstar_col].loc[red_subset_df[galtype_col] == 1]
+    red_g_ngal_arr = red_subset_df.groupby([id_col]).size()
+    red_cen_stellar_mass_arr = np.repeat(red_cen_stellar_mass_arr, red_g_ngal_arr)
+    red_deltav_arr = np.hstack(red_subset_df.groupby([id_col])['deltav'].apply(np.array).values)
+
+    #* Using ddof = 1 means the denom in std is N-1 instead of N which is 
+    #* another way to exclude the central from the measurement of sigma 
+    #* We can no longer use deltav > 0 since deltav is wrt to average grpcz 
+    #* instead of central cz.
+    # red_sigma_arr = red_subset_df.groupby(id_col)['cz'].apply(np.std, ddof=1).values
+
+    blue_subset_df = catl.loc[catl[id_col].isin(blue_subset_ids)]
+    #* Excluding N=1 groups
+    blue_subset_ids = blue_subset_df.groupby([id_col]).filter\
+        (lambda x: len(x) > 1)[id_col].unique()
+    blue_subset_df = catl.loc[catl[id_col].isin(
+        blue_subset_ids)].sort_values(by='{0}'.format(id_col))
+    # cen_blue_subset_df = blue_subset_df.loc[blue_subset_df[galtype_col] == 1]
+    # blue_cen_stellar_mass_arr = cen_blue_subset_df.groupby(['{0}'.format(id_col),
+    #     '{0}'.format(galtype_col)])[logmstar_col].apply(np.sum).values
+    blue_subset_df['deltav'] = blue_subset_df['cz'] - blue_subset_df['grpcz_av']
+    blue_cen_stellar_mass_arr = blue_subset_df[logmstar_col].loc[blue_subset_df[galtype_col] == 1]
+    blue_g_ngal_arr = blue_subset_df.groupby([id_col]).size()
+    blue_cen_stellar_mass_arr = np.repeat(blue_cen_stellar_mass_arr, blue_g_ngal_arr)
+    blue_deltav_arr = np.hstack(blue_subset_df.groupby([id_col])['deltav'].apply(np.array).values)
+
+
+    return red_deltav_arr, red_cen_stellar_mass_arr, blue_deltav_arr, \
+        blue_cen_stellar_mass_arr
+
 def hybrid_quenching_model(theta, gals_df, mock, randint=None):
     """
     Apply hybrid quenching model from Zu and Mandelbaum 2015
@@ -861,12 +1016,13 @@ def get_stellar_mock(df, mock, randint=None):
 global survey
 global quenching
 global mf_type
-
+global stacked_stat
 
 survey = 'eco'
 quenching = 'hybrid'
 mf_type = 'smf'
 level = 'group'
+stacked_stat = False
 
 dict_of_paths = cwpaths.cookiecutter_paths()
 path_to_data = dict_of_paths['data_dir']
@@ -887,33 +1043,49 @@ total_data = measure_all_smf(catl, volume, True)
 print('Measuring blue fraction for data')
 f_blue_data = blue_frac(catl, False, True)
 
-print('Measuring velocity dispersion for data')
-red_sigma, red_cen_mstar_sigma, blue_sigma, \
-    blue_cen_mstar_sigma = get_velocity_dispersion(catl, 'data')
+if stacked_stat:
+    print('Measuring stacked velocity dispersion for data')
+    red_deltav, red_cen_mstar_sigma, blue_deltav, \
+        blue_cen_mstar_sigma = get_stacked_velocity_dispersion(catl, 'data')
 
-red_sigma = np.log10(red_sigma)
-blue_sigma = np.log10(blue_sigma)
+    sigma_red_data = bs(red_cen_mstar_sigma, red_deltav,
+        statistic='std', bins=np.linspace(8.6,11,5))
+    sigma_blue_data = bs( blue_cen_mstar_sigma, blue_deltav,
+        statistic='std', bins=np.linspace(8.6,11,5))
+    
+    sigma_red_data = np.log10(sigma_red_data[0])
+    sigma_blue_data = np.log10(sigma_blue_data[0])
 
-np.nan_to_num(red_sigma, copy=False, neginf=np.nan)
+    data_observables = np.array(
+        [total_data[1][0], total_data[1][1], total_data[1][2], total_data[1][3],
+        f_blue_data[2][0], f_blue_data[2][1], f_blue_data[2][2], f_blue_data[2][3],
+        f_blue_data[3][0], f_blue_data[3][0], f_blue_data[3][0], f_blue_data[3][0],
+        sigma_red_data[0], sigma_red_data[1], 
+        sigma_red_data[2], sigma_red_data[3],
+        sigma_blue_data[0], sigma_blue_data[1], 
+        sigma_blue_data[2], sigma_blue_data[3]])
 
-mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
-    statistic=average_of_log, bins=np.linspace(-2,3,5))
-mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
-    statistic=average_of_log, bins=np.linspace(-1,3,5))
+else:
+    print('Measuring velocity dispersion for data')
+    red_sigma, red_cen_mstar_sigma, blue_sigma, \
+        blue_cen_mstar_sigma = get_velocity_dispersion(catl, 'data')
 
-# mean_mstar_red_data = bs(red_cen_mstar_sigma, red_sigma,
-#     statistic=np.nanmean, bins=np.linspace(8.6,11,5))
-# mean_mstar_blue_data = bs( blue_cen_mstar_sigma, blue_sigma,
-#     statistic=np.nanmean, bins=np.linspace(8.6,11,5))
+    red_sigma = np.log10(red_sigma)
+    blue_sigma = np.log10(blue_sigma)
 
-data_observables = np.array(
-    [total_data[1][0], total_data[1][1], total_data[1][2], total_data[1][3],
-    f_blue_data[2][0], f_blue_data[2][1], f_blue_data[2][2], f_blue_data[2][3],
-    f_blue_data[3][0], f_blue_data[3][0], f_blue_data[3][0], f_blue_data[3][0],
-    mean_mstar_red_data[0][0], mean_mstar_red_data[0][1], 
-    mean_mstar_red_data[0][2], mean_mstar_red_data[0][3],
-    mean_mstar_blue_data[0][0], mean_mstar_blue_data[0][1], 
-    mean_mstar_blue_data[0][2], mean_mstar_blue_data[0][3]])
+    mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
+        statistic=average_of_log, bins=np.linspace(-2,3,5))
+    mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
+        statistic=average_of_log, bins=np.linspace(-1,3,5))
+
+    data_observables = np.array(
+        [total_data[1][0], total_data[1][1], total_data[1][2], total_data[1][3],
+        f_blue_data[2][0], f_blue_data[2][1], f_blue_data[2][2], f_blue_data[2][3],
+        f_blue_data[3][0], f_blue_data[3][0], f_blue_data[3][0], f_blue_data[3][0],
+        mean_mstar_red_data[0][0], mean_mstar_red_data[0][1], 
+        mean_mstar_red_data[0][2], mean_mstar_red_data[0][3],
+        mean_mstar_blue_data[0][0], mean_mstar_blue_data[0][1], 
+        mean_mstar_blue_data[0][2], mean_mstar_blue_data[0][3]])
 
 if survey == 'eco':
     mock_name = 'ECO'
@@ -978,10 +1150,14 @@ for box in box_id_arr:
         # mu = 0.69
         # nu = 0.148
 
-        ## Using best-fit found for new ECO data using result from chain 42
+        # ## Using best-fit found for new ECO data using result from chain 42
+        # ## i.e. hybrid quenching model
+        # bf_from_last_chain = [10.1679343, 13.10135398, 0.81869216, 0.13844437]
+
+        ## Using best-fit found for new ECO data using result from chain 45
         ## i.e. hybrid quenching model
         bf_from_last_chain = [10.1679343, 13.10135398, 0.81869216, 0.13844437]
-        
+
         Mstar_q = bf_from_last_chain[0] # Msun/h**2
         Mh_q = bf_from_last_chain[1] # Msun/h
         mu = bf_from_last_chain[2]
@@ -994,7 +1170,11 @@ for box in box_id_arr:
         # mu_c = 0.40
         # mu_s = 0.148
 
-        ## Using best-fit found for new ECO data using result from chain 41
+        # ## Using best-fit found for new ECO data using result from chain 41
+        # ## i.e. halo quenching model
+        # bf_from_last_chain = [11.86645536, 12.54502723, 1.42736618, 0.5261119]
+
+        ## Using best-fit found for new ECO data using result from chain 46
         ## i.e. halo quenching model
         bf_from_last_chain = [11.86645536, 12.54502723, 1.42736618, 0.5261119]
 
@@ -1045,29 +1225,36 @@ for box in box_id_arr:
         f_blue_cen_arr.append(f_blue[2])
         f_blue_sat_arr.append(f_blue[3])
 
-        red_sigma, red_cen_mstar_sigma, blue_sigma, \
-            blue_cen_mstar_sigma = get_velocity_dispersion(mock_pd, 'mock')
+        if stacked_stat:
+            red_deltav, red_cen_mstar_sigma, blue_deltav, \
+                blue_cen_mstar_sigma = get_stacked_velocity_dispersion(
+                    mock_pd, 'mock')
 
-        red_sigma = np.log10(red_sigma)
-        blue_sigma = np.log10(blue_sigma)
+            sigma_red = bs(red_cen_mstar_sigma, red_deltav,
+                statistic='std', bins=np.linspace(8.6,11,5))
+            sigma_blue = bs( blue_cen_mstar_sigma, blue_deltav,
+                statistic='std', bins=np.linspace(8.6,11,5))
+            
+            sigma_red = np.log10(sigma_red[0])
+            sigma_blue = np.log10(sigma_blue[0])
 
-        np.nan_to_num(red_sigma, copy=False, neginf=np.nan)
+            mean_mstar_red_arr.append(sigma_red)
+            mean_mstar_blue_arr.append(sigma_blue)
 
-        # mean_sigma_red = bs(red_cen_mstar_sigma, red_sigma,
-        #     statistic=np.nanmean, bins=np.linspace(8.6,11,5))
-        # mean_sigma_blue = bs( blue_cen_mstar_sigma, blue_sigma,
-        #     statistic=np.nanmean, bins=np.linspace(8.6,11,5))
+        else:
+            red_sigma, red_cen_mstar_sigma, blue_sigma, \
+                blue_cen_mstar_sigma = get_velocity_dispersion(mock_pd, 'mock')
 
-        # mean_mstar_red_arr.append(mean_sigma_red[0])
-        # mean_mstar_blue_arr.append(mean_sigma_blue[0])
+            red_sigma = np.log10(red_sigma)
+            blue_sigma = np.log10(blue_sigma)
 
-        mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
-            statistic=average_of_log, bins=np.linspace(-2,3,5))
-        mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
-            statistic=average_of_log, bins=np.linspace(-1,3,5))
+            mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
+                statistic=average_of_log, bins=np.linspace(-2,3,5))
+            mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
+                statistic=average_of_log, bins=np.linspace(-1,3,5))
 
-        mean_mstar_red_arr.append(mean_mstar_red[0])
-        mean_mstar_blue_arr.append(mean_mstar_blue[0])
+            mean_mstar_red_arr.append(mean_mstar_red[0])
+            mean_mstar_blue_arr.append(mean_mstar_blue[0])
 
 
 phi_arr_total = np.array(phi_total_arr)
@@ -1140,9 +1327,12 @@ for i in range(20):
             #is the top left cell of the matrix which has x=first bin of phi and 
             #y=last bin of last observable.
             ax[i][j].scatter(combined_df.iloc[:,j], combined_df.iloc[:,-(i+1)], 
-                c='k', s=5)
-            ax[i][j].scatter(data_observables[j], data_observables[-(i+1)], 
-                marker='+', c='w', s=60, lw=2)
+                c='k', s=2)
+            ## Don't plot white squares for cells where mock measurements are 
+            ## very different from ECO
+            if i not in [8, 9, 10] and j not in [9, 10, 11]:
+                ax[i][j].scatter(data_observables[j], data_observables[-(i+1)], 
+                    marker='+', c='w', s=60, lw=2)
         else:
             #Filtering out nans before fit
             (mu, sigma) = norm.fit(combined_df.iloc[:,j][~combined_df.iloc[:,j].isnull()])
