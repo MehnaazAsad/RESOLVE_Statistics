@@ -1227,9 +1227,9 @@ def get_err_data(survey, path):
             # mu = 0.69
             # nu = 0.148
 
-            ## Using best-fit found for new ECO data using result from chain 45
+            ## Using best-fit found for new ECO data using result from chain 47
             ## i.e. hybrid quenching model
-            bf_from_last_chain = [10.1679343, 13.10135398, 0.81869216, 0.13844437]
+            bf_from_last_chain = [10.14465572, 13.15954075, 0.75185297, 0.09162315]
             
             Mstar_q = bf_from_last_chain[0] # Msun/h**2
             Mh_q = bf_from_last_chain[1] # Msun/h
@@ -1243,9 +1243,9 @@ def get_err_data(survey, path):
             # mu_c = 0.40
             # mu_s = 0.148
 
-            ## Using best-fit found for new ECO data using result from chain 46
+            ## Using best-fit found for new ECO data using result from chain 48
             ## i.e. halo quenching model
-            bf_from_last_chain = [11.86645536, 12.54502723, 1.42736618, 0.5261119]
+            bf_from_last_chain = [11.87286668, 12.53166686, 1.44709507, 0.56506002]
 
             Mh_qc = bf_from_last_chain[0] # Msun/h
             Mh_qs = bf_from_last_chain[1] # Msun/h
@@ -2282,7 +2282,7 @@ def main(args):
     rseed = 12
     np.random.seed(rseed)
     level = "group"
-    stacked_stat = True
+    stacked_stat = False
 
     survey = args.survey
     machine = args.machine
