@@ -1019,10 +1019,10 @@ global mf_type
 global stacked_stat
 
 survey = 'eco'
-quenching = 'hybrid'
+quenching = 'halo'
 mf_type = 'smf'
 level = 'group'
-stacked_stat = False
+stacked_stat = True
 
 dict_of_paths = cwpaths.cookiecutter_paths()
 path_to_data = dict_of_paths['data_dir']
@@ -1154,10 +1154,10 @@ for box in box_id_arr:
         # ## i.e. hybrid quenching model
         # bf_from_last_chain = [10.1679343, 13.10135398, 0.81869216, 0.13844437]
 
-        ## Using best-fit found for new ECO data using result from chain 45
+        ## Using best-fit found for new ECO data using result from chain 47
         ## i.e. hybrid quenching model
-        bf_from_last_chain = [10.1679343, 13.10135398, 0.81869216, 0.13844437]
-
+        bf_from_last_chain = [10.14465572, 13.15954075, 0.75185297, 0.09162315]
+        
         Mstar_q = bf_from_last_chain[0] # Msun/h**2
         Mh_q = bf_from_last_chain[1] # Msun/h
         mu = bf_from_last_chain[2]
@@ -1174,9 +1174,9 @@ for box in box_id_arr:
         # ## i.e. halo quenching model
         # bf_from_last_chain = [11.86645536, 12.54502723, 1.42736618, 0.5261119]
 
-        ## Using best-fit found for new ECO data using result from chain 46
+        ## Using best-fit found for new ECO data using result from chain 48
         ## i.e. halo quenching model
-        bf_from_last_chain = [11.86645536, 12.54502723, 1.42736618, 0.5261119]
+        bf_from_last_chain = [11.87286668, 12.53166686, 1.44709507, 0.56506002]
 
         Mh_qc = bf_from_last_chain[0] # Msun/h
         Mh_qs = bf_from_last_chain[1] # Msun/h
