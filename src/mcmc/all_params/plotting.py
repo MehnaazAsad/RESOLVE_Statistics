@@ -1156,7 +1156,7 @@ class Plotting():
             plt.plot(x_bf, y_bf, c='mediumorchid', label='Best-fit', lw=10, solid_capstyle='round')
 
         if settings.quenching == 'hybrid':
-            antonio_data = pd.read_csv('/Users/asadm2/Desktop/fq_cen_SM_DS_TNG_Salim_z0.csv',
+            antonio_data = pd.read_csv('/Users/asadm2/Documents/Grad_School/Research/Repositories/resolve_statistics/data/external/fq_cen_SM_DS_TNG_Salim_z0.csv',
                 header=None, skiprows=1, usecols=[1,2,3,4], names=['fred_ds','fred_salim','fred_tng','logmstar'])
             plt.plot(antonio_data.logmstar.values, antonio_data.fred_ds.values, lw=5, c='k', ls='dashed', label='Dark Sage')
             plt.plot(antonio_data.logmstar.values, antonio_data.fred_salim.values, lw=5, c='k', ls='dotted', label='Salim+18')
@@ -1687,10 +1687,16 @@ class Plotting():
         """
         settings = self.settings
         quenching = settings.quenching
+        preprocess = self.preprocess
 
-        error_red = data[7]['vel_disp']['std_mean_sigma_red']
-        error_blue = data[7]['vel_disp']['std_mean_sigma_blue']
 
+        # error_red = data[7]['vel_disp']['std_mean_sigma_red']
+        # error_blue = data[7]['vel_disp']['std_mean_sigma_blue']
+
+        #* Using these instead of above since now this measurement is used in 
+        #* modeling
+        error_red = data[6][12:16]
+        error_blue = data[6][16:]
         dof = data[8]
 
         # x_sigma_red_data, y_sigma_red_data = data_experiments['vel_disp']['red_cen_mstar'],\
@@ -1732,11 +1738,11 @@ class Plotting():
                 blue_sigma_idx = models[chunk_counter][1]['vel_disp']['blue_sigma'][idx]
 
                 mean_stats_red = bs(grp_red_cen_gals_idx, red_sigma_idx,
-                    statistic='mean', bins=red_stellar_mass_bins)
+                    statistic='std', bins=red_stellar_mass_bins)
                 mean_stats_blue = bs(grp_blue_cen_gals_idx, blue_sigma_idx,
-                    statistic='mean', bins=blue_stellar_mass_bins)
-                mean_red_sigma_arr.append(mean_stats_red[0])
-                mean_blue_sigma_arr.append(mean_stats_blue[0])
+                    statistic='std', bins=blue_stellar_mass_bins)
+                mean_red_sigma_arr.append(np.log10(mean_stats_red[0]))
+                mean_blue_sigma_arr.append(np.log10(mean_stats_blue[0]))
                 grp_red_cen_gals_arr.append(mean_stats_red[1])
                 grp_blue_cen_gals_arr.append(mean_stats_blue[1])
 
@@ -1755,9 +1761,9 @@ class Plotting():
             mean_stats_blue[1][:-1])
 
         mean_stats_red_bf = bs(x_sigma_red_bf, y_sigma_red_bf, 
-            statistic='mean', bins=red_stellar_mass_bins)
+            statistic='std', bins=red_stellar_mass_bins)
         mean_stats_blue_bf = bs(x_sigma_blue_bf, y_sigma_blue_bf, 
-            statistic='mean', bins=blue_stellar_mass_bins)
+            statistic='std', bins=blue_stellar_mass_bins)
 
         #* One -inf in y_sigma_red_data
         inf_idx = np.where(y_sigma_red_data == -np.inf)
@@ -1766,9 +1772,9 @@ class Plotting():
             y_sigma_red_data = np.delete(y_sigma_red_data, idx)
 
         mean_stats_red_data = bs(x_sigma_red_data, y_sigma_red_data, 
-            statistic='mean', bins=red_stellar_mass_bins)
+            statistic='std', bins=red_stellar_mass_bins)
         mean_stats_blue_data = bs(x_sigma_blue_data, y_sigma_blue_data,
-            statistic='mean', bins=blue_stellar_mass_bins)
+            statistic='std', bins=blue_stellar_mass_bins)
 
         fig1= plt.figure(figsize=(10,10))
 
@@ -1777,16 +1783,16 @@ class Plotting():
         mb = plt.fill_between(x=mean_centers_blue, y1=blue_models_min, 
             y2=blue_models_max, color='cornflowerblue',alpha=0.4)
 
-        dr = plt.errorbar(mean_centers_red,mean_stats_red_data[0],
+        dr = plt.errorbar(mean_centers_red,np.log10(mean_stats_red_data[0]),
             yerr=error_red, color='darkred',fmt='^',ecolor='darkred', 
             markersize=12,capsize=10,capthick=1.0,zorder=10)
-        db = plt.errorbar(mean_centers_blue,mean_stats_blue_data[0],
+        db = plt.errorbar(mean_centers_blue,np.log10(mean_stats_blue_data[0]),
             yerr=error_blue, color='darkblue',fmt='^',ecolor='darkblue',
             markersize=12,capsize=10,capthick=1.0,zorder=10)
 
-        bfr, = plt.plot(mean_centers_red,mean_stats_red_bf[0],
+        bfr, = plt.plot(mean_centers_red,np.log10(mean_stats_red_bf[0]),
             color='maroon',ls='-',lw=3,zorder=10)
-        bfb, = plt.plot(mean_centers_blue,mean_stats_blue_bf[0],
+        bfb, = plt.plot(mean_centers_blue,np.log10(mean_stats_blue_bf[0]),
             color='mediumblue',ls='-',lw=3,zorder=10)
 
         plt.xlabel(r'\boldmath$\log_{10}\ M_{* , group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=25)
@@ -1797,15 +1803,25 @@ class Plotting():
             handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, markerscale=1.5, 
             loc='upper left')
 
-        chi_squared_red = np.nansum((mean_stats_red_data[0] - 
-            mean_stats_red_bf[0])**2 / (error_red**2))
-        chi_squared_blue = np.nansum((mean_stats_blue_data[0] - 
-            mean_stats_blue_bf[0])**2 / (error_blue**2))
+        # chi_squared_red = np.nansum((mean_stats_red_data[0] - 
+        #     mean_stats_red_bf[0])**2 / (error_red**2))
+        # chi_squared_blue = np.nansum((mean_stats_blue_data[0] - 
+        #     mean_stats_blue_bf[0])**2 / (error_blue**2))
 
-        plt.annotate(r'$\boldsymbol\chi ^2_{{red}} \approx$ {0}''\n'\
-            r'$\boldsymbol\chi ^2_{{blue}} \approx$ {1}'.format(np.round(\
-            chi_squared_red,2),np.round(chi_squared_blue,2)), 
-            xy=(0.015, 0.65), xycoords='axes fraction', bbox=dict(boxstyle="square", 
+        # plt.annotate(r'$\boldsymbol\chi ^2_{{red}} \approx$ {0}''\n'\
+        #     r'$\boldsymbol\chi ^2_{{blue}} \approx$ {1}'.format(np.round(\
+        #     chi_squared_red,2),np.round(chi_squared_blue,2)), 
+        #     xy=(0.015, 0.65), xycoords='axes fraction', bbox=dict(boxstyle="square", 
+        #     ec='k', fc='lightgray', alpha=0.5), size=25)
+
+        plt.annotate(r'$\boldsymbol\chi ^2 / dof \approx$ {0}'.
+            format(np.round(preprocess.bf_chi2/dof,2)),
+            xy=(0.17, 0.11), xycoords='axes fraction', bbox=dict(boxstyle="square", 
+            ec='k', fc='lightgray', alpha=0.5), size=25)
+
+        plt.annotate(r'$ p \approx$ {0}'.format(
+            np.round((1 - chi2.cdf(preprocess.bf_chi2, dof)),2)),
+            xy=(0.17, 0.05), xycoords='axes fraction', bbox=dict(boxstyle="square", 
             ec='k', fc='lightgray', alpha=0.5), size=25)
 
         # plt.annotate(r'$ p \approx$ {0}''\n'\
@@ -2798,9 +2814,12 @@ class Plotting():
         self.plot_zumand_fig4(models, data, best_fit)
 
     def Plot_Experiments(self, data, data_experiments, models, best_fit):
-        self.plot_mean_grpcen_vs_sigma(models, data, data_experiments, best_fit)
-
-        self.plot_mean_sigma_vs_grpcen(models, data, data_experiments, best_fit)
+        if self.settings.stacked_stat:
+            self.plot_mean_sigma_vs_grpcen(models, data, data_experiments, 
+                best_fit)
+        else:
+            self.plot_mean_grpcen_vs_sigma(models, data, data_experiments, 
+                best_fit)
 
         # self.plot_sigma_host_halo_mass_vishnu(models, best_fit)
 
