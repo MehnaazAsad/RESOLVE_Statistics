@@ -7,6 +7,7 @@
 # Built-in/Generic Imports
 import multiprocessing
 import time
+from turtle import color
 # import cProfile
 # import pstats
 # import io
@@ -1289,107 +1290,93 @@ def get_err_data(survey, path):
             # phi_arr_blue.append(phi_blue)
 
 
-            #Measure blue fraction of galaxies
-            f_blue = blue_frac(mock_pd, False, False)
-            f_blue_cen_arr.append(f_blue[2])
-            f_blue_sat_arr.append(f_blue[3])
+            # #Measure blue fraction of galaxies
+            # f_blue = blue_frac(mock_pd, False, False)
+            # f_blue_cen_arr.append(f_blue[2])
+            # f_blue_sat_arr.append(f_blue[3])
     
-            if stacked_stat:
-                red_deltav, red_cen_mstar_sigma, blue_deltav, \
-                    blue_cen_mstar_sigma = get_stacked_velocity_dispersion(
-                        mock_pd, 'mock')
+            # if stacked_stat:
+            #     red_deltav, red_cen_mstar_sigma, blue_deltav, \
+            #         blue_cen_mstar_sigma = get_stacked_velocity_dispersion(
+            #             mock_pd, 'mock')
 
-                sigma_red = bs(red_cen_mstar_sigma, red_deltav,
-                    statistic='std', bins=np.linspace(8.6,11,5))
-                sigma_blue = bs( blue_cen_mstar_sigma, blue_deltav,
-                    statistic='std', bins=np.linspace(8.6,11,5))
+            #     sigma_red = bs(red_cen_mstar_sigma, red_deltav,
+            #         statistic='std', bins=np.linspace(8.6,11,5))
+            #     sigma_blue = bs( blue_cen_mstar_sigma, blue_deltav,
+            #         statistic='std', bins=np.linspace(8.6,11,5))
                 
-                sigma_red = np.log10(sigma_red[0])
-                sigma_blue = np.log10(sigma_blue[0])
+            #     sigma_red = np.log10(sigma_red[0])
+            #     sigma_blue = np.log10(sigma_blue[0])
 
-                mean_mstar_red_arr.append(sigma_red)
-                mean_mstar_blue_arr.append(sigma_blue)
+            #     mean_mstar_red_arr.append(sigma_red)
+            #     mean_mstar_blue_arr.append(sigma_blue)
 
-            else:
-                red_sigma, red_cen_mstar_sigma, blue_sigma, \
-                    blue_cen_mstar_sigma = get_velocity_dispersion(mock_pd, 'mock')
+            # else:
+            #     red_sigma, red_cen_mstar_sigma, blue_sigma, \
+            #         blue_cen_mstar_sigma = get_velocity_dispersion(mock_pd, 'mock')
 
-                red_sigma = np.log10(red_sigma)
-                blue_sigma = np.log10(blue_sigma)
+            #     red_sigma = np.log10(red_sigma)
+            #     blue_sigma = np.log10(blue_sigma)
 
-                mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
-                    statistic=average_of_log, bins=np.linspace(-2,3,5))
-                mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
-                    statistic=average_of_log, bins=np.linspace(-1,3,5))
+            #     mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
+            #         statistic=average_of_log, bins=np.linspace(-2,3,5))
+            #     mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
+            #         statistic=average_of_log, bins=np.linspace(-1,3,5))
 
-                mean_mstar_red_arr.append(mean_mstar_red[0])
-                mean_mstar_blue_arr.append(mean_mstar_blue[0])
+            #     mean_mstar_red_arr.append(mean_mstar_red[0])
+            #     mean_mstar_blue_arr.append(mean_mstar_blue[0])
 
     phi_arr_total = np.array(phi_total_arr)
     # phi_arr_red = np.array(phi_arr_red)
     # phi_arr_blue = np.array(phi_arr_blue)
-    f_blue_cen_arr = np.array(f_blue_cen_arr)
-    f_blue_sat_arr = np.array(f_blue_sat_arr)
 
-    mean_mstar_red_arr = np.array(mean_mstar_red_arr)
-    mean_mstar_blue_arr = np.array(mean_mstar_blue_arr)
+    #* Uncomment these next 4 lines later
+    # f_blue_cen_arr = np.array(f_blue_cen_arr)
+    # f_blue_sat_arr = np.array(f_blue_sat_arr)
 
-    # print('Measuring velocity dispersion for data')
-    # red_sigma, red_cen_mstar_sigma, blue_sigma, \
-    # blue_cen_mstar_sigma = \
-    # get_velocity_dispersion(catl, 'data')
-
-    # red_sigma = np.log10(red_sigma)
-    # blue_sigma = np.log10(blue_sigma)
-
-    # mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
-    #     statistic='mean', bins=np.linspace(-2,3,5))
-    # mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
-    #     statistic='mean', bins=np.linspace(-1,3,5))
-
+    # mean_mstar_red_arr = np.array(mean_mstar_red_arr)
+    # mean_mstar_blue_arr = np.array(mean_mstar_blue_arr)
 
     phi_total_0 = phi_arr_total[:,0]
     phi_total_1 = phi_arr_total[:,1]
     phi_total_2 = phi_arr_total[:,2]
     phi_total_3 = phi_arr_total[:,3]
-    # phi_total_4 = phi_arr_total[:,4]
-    # phi_total_5 = phi_arr_total[:,5]
-
-    f_blue_cen_0 = f_blue_cen_arr[:,0]
-    f_blue_cen_1 = f_blue_cen_arr[:,1]
-    f_blue_cen_2 = f_blue_cen_arr[:,2]
-    f_blue_cen_3 = f_blue_cen_arr[:,3]
-    # f_blue_cen_4 = f_blue_cen_arr[:,4]
-    # f_blue_cen_5 = f_blue_cen_arr[:,5]
-
-    f_blue_sat_0 = f_blue_sat_arr[:,0]
-    f_blue_sat_1 = f_blue_sat_arr[:,1]
-    f_blue_sat_2 = f_blue_sat_arr[:,2]
-    f_blue_sat_3 = f_blue_sat_arr[:,3]
-    # f_blue_sat_4 = f_blue_sat_arr[:,4]
-    # f_blue_sat_5 = f_blue_sat_arr[:,5]
-
-    mstar_red_cen_0 = mean_mstar_red_arr[:,0]
-    mstar_red_cen_1 = mean_mstar_red_arr[:,1]
-    mstar_red_cen_2 = mean_mstar_red_arr[:,2]
-    mstar_red_cen_3 = mean_mstar_red_arr[:,3]
-
-    mstar_blue_cen_0 = mean_mstar_blue_arr[:,0]
-    mstar_blue_cen_1 = mean_mstar_blue_arr[:,1]
-    mstar_blue_cen_2 = mean_mstar_blue_arr[:,2]
-    mstar_blue_cen_3 = mean_mstar_blue_arr[:,3]
 
     combined_df = pd.DataFrame({
         'phi_tot_0':phi_total_0, 'phi_tot_1':phi_total_1, 
-        'phi_tot_2':phi_total_2, 'phi_tot_3':phi_total_3,
-        'f_blue_cen_0':f_blue_cen_0, 'f_blue_cen_1':f_blue_cen_1, 
-        'f_blue_cen_2':f_blue_cen_2, 'f_blue_cen_3':f_blue_cen_3,
-        'f_blue_sat_0':f_blue_sat_0, 'f_blue_sat_1':f_blue_sat_1, 
-        'f_blue_sat_2':f_blue_sat_2, 'f_blue_sat_3':f_blue_sat_3,
-        'mstar_red_cen_0':mstar_red_cen_0, 'mstar_red_cen_1':mstar_red_cen_1, 
-        'mstar_red_cen_2':mstar_red_cen_2, 'mstar_red_cen_3':mstar_red_cen_3,
-        'mstar_blue_cen_0':mstar_blue_cen_0, 'mstar_blue_cen_1':mstar_blue_cen_1, 
-        'mstar_blue_cen_2':mstar_blue_cen_2, 'mstar_blue_cen_3':mstar_blue_cen_3})
+        'phi_tot_2':phi_total_2, 'phi_tot_3':phi_total_3})
+
+    # f_blue_cen_0 = f_blue_cen_arr[:,0]
+    # f_blue_cen_1 = f_blue_cen_arr[:,1]
+    # f_blue_cen_2 = f_blue_cen_arr[:,2]
+    # f_blue_cen_3 = f_blue_cen_arr[:,3]
+
+    # f_blue_sat_0 = f_blue_sat_arr[:,0]
+    # f_blue_sat_1 = f_blue_sat_arr[:,1]
+    # f_blue_sat_2 = f_blue_sat_arr[:,2]
+    # f_blue_sat_3 = f_blue_sat_arr[:,3]
+
+    # mstar_red_cen_0 = mean_mstar_red_arr[:,0]
+    # mstar_red_cen_1 = mean_mstar_red_arr[:,1]
+    # mstar_red_cen_2 = mean_mstar_red_arr[:,2]
+    # mstar_red_cen_3 = mean_mstar_red_arr[:,3]
+
+    # mstar_blue_cen_0 = mean_mstar_blue_arr[:,0]
+    # mstar_blue_cen_1 = mean_mstar_blue_arr[:,1]
+    # mstar_blue_cen_2 = mean_mstar_blue_arr[:,2]
+    # mstar_blue_cen_3 = mean_mstar_blue_arr[:,3]
+
+    # combined_df = pd.DataFrame({
+    #     'phi_tot_0':phi_total_0, 'phi_tot_1':phi_total_1, 
+    #     'phi_tot_2':phi_total_2, 'phi_tot_3':phi_total_3,
+    #     'f_blue_cen_0':f_blue_cen_0, 'f_blue_cen_1':f_blue_cen_1, 
+    #     'f_blue_cen_2':f_blue_cen_2, 'f_blue_cen_3':f_blue_cen_3,
+    #     'f_blue_sat_0':f_blue_sat_0, 'f_blue_sat_1':f_blue_sat_1, 
+    #     'f_blue_sat_2':f_blue_sat_2, 'f_blue_sat_3':f_blue_sat_3,
+    #     'mstar_red_cen_0':mstar_red_cen_0, 'mstar_red_cen_1':mstar_red_cen_1, 
+    #     'mstar_red_cen_2':mstar_red_cen_2, 'mstar_red_cen_3':mstar_red_cen_3,
+    #     'mstar_blue_cen_0':mstar_blue_cen_0, 'mstar_blue_cen_1':mstar_blue_cen_1, 
+    #     'mstar_blue_cen_2':mstar_blue_cen_2, 'mstar_blue_cen_3':mstar_blue_cen_3})
 
 
     # Correlation matrix of phi and deltav colour measurements combined
@@ -1398,7 +1385,6 @@ def get_err_data(survey, path):
     err_colour = np.sqrt(np.diag(combined_df.cov()))
 
     # #* Testing SVD
-    # from numpy import array
     # from scipy.linalg import svd
     # from numpy import zeros
     # from numpy import diag
@@ -1416,7 +1402,9 @@ def get_err_data(survey, path):
     # # LHS is actually eigenvalue**2 so need to take the sqrt two more times 
     # # to be able to compare directly to values in Sigma 
     # max_eigen = np.sqrt(np.sqrt(np.sqrt(2/(num_mocks*len(box_id_arr)))))
-
+    # #! This max_eigen calculation might not be correct since for a symmetric
+    # #! matrix, the singular values are absolute values of the eigenvalues
+    # #! which means max_eigen = np.sqrt(np.sqrt(2/(num_mocks*len(box_id_arr))))
     # n_elements = len(s[s>max_eigen])
     # Sigma = Sigma[:, :n_elements]
     # VT = VT[:n_elements, :]
@@ -1443,10 +1431,22 @@ def get_err_data(survey, path):
     # rc('xtick.minor', width=2, size=7)
     # rc('ytick.minor', width=2, size=7)
 
+    # #* Reduced feature space
     # fig1 = plt.figure()
     # ax1 = fig1.add_subplot(111)
     # cmap = cm.get_cmap('Spectral_r')
-    # cax = ax1.matshow(combined_df.corr(), cmap=cmap, vmin=-1, vmax=1)
+    # cax = ax1.matshow(T.corr(), cmap=cmap)
+    # plt.gca().invert_yaxis() 
+    # plt.gca().xaxis.tick_bottom()
+    # plt.colorbar(cax)
+    # plt.title('{0}'.format(quenching))
+    # plt.show()
+
+    # #* Reconstructed post-SVD (sub corr_mat_colour for original matrix)
+    # fig1 = plt.figure()
+    # ax1 = fig1.add_subplot(111)
+    # cmap = cm.get_cmap('Spectral_r')
+    # cax = ax1.matshow(B, cmap=cmap, vmin=-1, vmax=1)
     # tick_marks = [i for i in range(len(combined_df.columns))]
     # names = [
     # r'$\Phi_1$', r'$\Phi_2$', r'$\Phi_3$', r'$\Phi_4$',
@@ -1461,6 +1461,28 @@ def get_err_data(survey, path):
     # plt.gca().xaxis.tick_bottom()
     # plt.colorbar(cax)
     # plt.title('{0}'.format(quenching))
+    # plt.show()
+
+    # #* Scree plot
+
+    # percentage_variance = []
+    # for val in s:
+    #     sum_of_eigenvalues = np.sum(s)
+    #     percentage_variance.append((val/sum_of_eigenvalues)*100)
+
+    # fig, ax1 = plt.subplots()
+    # ax2 = ax1.twinx()
+    # ax2.bar(np.arange(1, len(s)+1, 1), percentage_variance, color='#663399',
+    #     zorder=5)
+    # ax1.scatter(np.arange(1, len(s)+1, 1), s, c='orange', s=50, zorder=10)
+    # ax1.plot(np.arange(1, len(s)+1, 1), s, 'k--', zorder=10)
+    # ax1.hlines(max_eigen, 0, 20, colors='orange', zorder=10, lw=2)
+    # ax1.set_xlabel('Component number')
+    # ax1.set_ylabel('Singular values')
+    # ax2.set_ylabel('Percentage of variance')
+    # ax1.set_zorder(ax2.get_zorder()+1)
+    # ax1.set_frame_on(False)
+    # ax1.set_xticks(np.arange(1, len(s)+1, 1))
     # plt.show()
 
     # ## SMF from mocks and data
@@ -1663,8 +1685,7 @@ def get_err_data(survey, path):
 
     return err_colour, corr_mat_inv_colour
 
-def mcmc(nproc, nwalkers, nsteps, phi_total_data, f_blue_cen_data, 
-    f_blue_sat_data, vdisp_red_data, vdisp_blue_data, err, corr_mat_inv):
+def mcmc(nproc, nwalkers, nsteps, phi_total_data, err, corr_mat_inv):
     """
     MCMC analysis
 
@@ -1727,8 +1748,7 @@ def mcmc(nproc, nwalkers, nsteps, phi_total_data, f_blue_cen_data,
     backend = emcee.backends.HDFBackend(filename)
     with Pool(processes=nproc) as pool:
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, backend=backend,
-            args=(phi_total_data, f_blue_cen_data, f_blue_sat_data, 
-                vdisp_red_data, vdisp_blue_data, err, corr_mat_inv), pool=pool)
+            args=(phi_total_data, err, corr_mat_inv), pool=pool)
         start = time.time()
         sampler.run_mcmc(p0, nsteps, progress=True)
         end = time.time()
@@ -1986,8 +2006,7 @@ def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
 
     return mockgal_pd_merged
 
-def lnprob(theta, phi_total_data, f_blue_cen_data, f_blue_sat_data,
-    vdisp_red_data, vdisp_blue_data, err, corr_mat_inv):
+def lnprob(theta, phi_total_data, err, corr_mat_inv):
     """
     Calculates log probability for emcee
 
@@ -2138,50 +2157,50 @@ def lnprob(theta, phi_total_data, f_blue_cen_data, f_blue_sat_data,
 
         ## Observable #1 - Total SMF
         total_model = measure_all_smf(gal_group_df, survey_vol, False)  
-        ## Observable #2 - Blue fraction
-        f_blue = blue_frac(gal_group_df, True, False)
-        ## Observable #3 
-        if stacked_stat:
-            red_deltav, red_cen_mstar_sigma, blue_deltav, \
-                blue_cen_mstar_sigma = get_stacked_velocity_dispersion(
-                    gal_group_df, 'model')
+        # ## Observable #2 - Blue fraction
+        # f_blue = blue_frac(gal_group_df, True, False)
+        # ## Observable #3 
+        # if stacked_stat:
+        #     red_deltav, red_cen_mstar_sigma, blue_deltav, \
+        #         blue_cen_mstar_sigma = get_stacked_velocity_dispersion(
+        #             gal_group_df, 'model')
 
-            sigma_red = bs(red_cen_mstar_sigma, red_deltav,
-                statistic='std', bins=np.linspace(8.6,11,5))
-            sigma_blue = bs( blue_cen_mstar_sigma, blue_deltav,
-                statistic='std', bins=np.linspace(8.6,11,5))
+        #     sigma_red = bs(red_cen_mstar_sigma, red_deltav,
+        #         statistic='std', bins=np.linspace(8.6,11,5))
+        #     sigma_blue = bs( blue_cen_mstar_sigma, blue_deltav,
+        #         statistic='std', bins=np.linspace(8.6,11,5))
             
-            sigma_red = np.log10(sigma_red[0])
-            sigma_blue = np.log10(sigma_blue[0])
-        else:
-            red_sigma, red_cen_mstar_sigma, blue_sigma, \
-                blue_cen_mstar_sigma = get_velocity_dispersion(
-                    gal_group_df, 'model')
+        #     sigma_red = np.log10(sigma_red[0])
+        #     sigma_blue = np.log10(sigma_blue[0])
+        # else:
+        #     red_sigma, red_cen_mstar_sigma, blue_sigma, \
+        #         blue_cen_mstar_sigma = get_velocity_dispersion(
+        #             gal_group_df, 'model')
 
-            red_sigma = np.log10(red_sigma)
-            blue_sigma = np.log10(blue_sigma)
+        #     red_sigma = np.log10(red_sigma)
+        #     blue_sigma = np.log10(blue_sigma)
 
-            mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
-                statistic=average_of_log, bins=np.linspace(-2,3,5))
-            mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
-                statistic=average_of_log, bins=np.linspace(-1,3,5))
+        #     mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
+        #         statistic=average_of_log, bins=np.linspace(-2,3,5))
+        #     mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
+        #         statistic=average_of_log, bins=np.linspace(-1,3,5))
 
         data_arr = []
         data_arr.append(phi_total_data)
-        data_arr.append(f_blue_cen_data)
-        data_arr.append(f_blue_sat_data)
-        data_arr.append(vdisp_red_data)
-        data_arr.append(vdisp_blue_data)
+        # data_arr.append(f_blue_cen_data)
+        # data_arr.append(f_blue_sat_data)
+        # data_arr.append(vdisp_red_data)
+        # data_arr.append(vdisp_blue_data)
         model_arr = []
         model_arr.append(total_model[1])
-        model_arr.append(f_blue[2])   
-        model_arr.append(f_blue[3])
-        if stacked_stat:
-            model_arr.append(sigma_red)
-            model_arr.append(sigma_blue)
-        else:
-            model_arr.append(mean_mstar_red[0])
-            model_arr.append(mean_mstar_blue[0])
+        # model_arr.append(f_blue[2])   
+        # model_arr.append(f_blue[3])
+        # if stacked_stat:
+        #     model_arr.append(sigma_red)
+        #     model_arr.append(sigma_blue)
+        # else:
+        #     model_arr.append(mean_mstar_red[0])
+        #     model_arr.append(mean_mstar_blue[0])
         err_arr = err
 
         data_arr, model_arr = np.array(data_arr), np.array(model_arr)
@@ -2277,12 +2296,12 @@ def main(args):
     global quenching
     global path_to_data
     global level
-    global stacked_stat
+    # global stacked_stat
 
     rseed = 12
     np.random.seed(rseed)
     level = "group"
-    stacked_stat = False
+    # stacked_stat = True
 
     survey = args.survey
     machine = args.machine
@@ -2325,34 +2344,34 @@ def main(args):
     print('Measuring SMF for data')
     total_data = measure_all_smf(catl, volume, True)
 
-    print('Measuring blue fraction for data')
-    f_blue_data = blue_frac(catl, False, True)
+    # print('Measuring blue fraction for data')
+    # f_blue_data = blue_frac(catl, False, True)
 
-    if stacked_stat:
-        print('Measuring stacked velocity dispersion for data')
-        red_deltav, red_cen_mstar_sigma, blue_deltav, \
-            blue_cen_mstar_sigma = get_stacked_velocity_dispersion(catl, 'data')
+    # if stacked_stat:
+    #     print('Measuring stacked velocity dispersion for data')
+    #     red_deltav, red_cen_mstar_sigma, blue_deltav, \
+    #         blue_cen_mstar_sigma = get_stacked_velocity_dispersion(catl, 'data')
 
-        sigma_red_data = bs(red_cen_mstar_sigma, red_deltav,
-            statistic='std', bins=np.linspace(8.6,11,5))
-        sigma_blue_data = bs( blue_cen_mstar_sigma, blue_deltav,
-            statistic='std', bins=np.linspace(8.6,11,5))
+    #     sigma_red_data = bs(red_cen_mstar_sigma, red_deltav,
+    #         statistic='std', bins=np.linspace(8.6,11,5))
+    #     sigma_blue_data = bs( blue_cen_mstar_sigma, blue_deltav,
+    #         statistic='std', bins=np.linspace(8.6,11,5))
         
-        sigma_red_data = np.log10(sigma_red_data[0])
-        sigma_blue_data = np.log10(sigma_blue_data[0])
+    #     sigma_red_data = np.log10(sigma_red_data[0])
+    #     sigma_blue_data = np.log10(sigma_blue_data[0])
 
-    else:
-        print('Measuring velocity dispersion for data')
-        red_sigma, red_cen_mstar_sigma, blue_sigma, \
-            blue_cen_mstar_sigma = get_velocity_dispersion(catl, 'data')
+    # else:
+    #     print('Measuring velocity dispersion for data')
+    #     red_sigma, red_cen_mstar_sigma, blue_sigma, \
+    #         blue_cen_mstar_sigma = get_velocity_dispersion(catl, 'data')
 
-        red_sigma = np.log10(red_sigma)
-        blue_sigma = np.log10(blue_sigma)
+    #     red_sigma = np.log10(red_sigma)
+    #     blue_sigma = np.log10(blue_sigma)
 
-        mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
-            statistic=average_of_log, bins=np.linspace(-2,3,5))
-        mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
-            statistic=average_of_log, bins=np.linspace(-1,3,5))
+    #     mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
+    #         statistic=average_of_log, bins=np.linspace(-2,3,5))
+    #     mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
+    #         statistic=average_of_log, bins=np.linspace(-1,3,5))
 
     print('Initial population of halo catalog')
     model_init = halocat_init(halo_catalog, z_median)
@@ -2366,27 +2385,30 @@ def main(args):
     print('------------- \n')
     print('SMF total data: \n', total_data[1])
     print('------------- \n')
-    print('Blue frac cen data: \n', f_blue_data[2])
-    print('Blue frac sat data: \n', f_blue_data[3])
-    print('------------- \n')
-    if stacked_stat:
-        print('Dispersion red data: \n', sigma_red_data)
-        print('Dispersion blue data: \n', sigma_blue_data)
-    else:
-        print('Dispersion red data: \n', mean_mstar_red_data[0])
-        print('Dispersion blue data: \n', mean_mstar_blue_data[0])
-    print('------------- \n')
+    # print('Blue frac cen data: \n', f_blue_data[2])
+    # print('Blue frac sat data: \n', f_blue_data[3])
+    # print('------------- \n')
+    # if stacked_stat:
+    #     print('Dispersion red data: \n', sigma_red_data)
+    #     print('Dispersion blue data: \n', sigma_blue_data)
+    # else:
+    #     print('Dispersion red data: \n', mean_mstar_red_data[0])
+    #     print('Dispersion blue data: \n', mean_mstar_blue_data[0])
+    # print('------------- \n')
 
-    print('Running MCMC')
-    if stacked_stat:
-        sampler = mcmc(nproc, nwalkers, nsteps, total_data[1],
-            f_blue_data[2], f_blue_data[3], sigma_red_data,
-            sigma_blue_data, sigma, corr_mat_inv)
+    # print('Running MCMC')
+    # if stacked_stat:
+    #     sampler = mcmc(nproc, nwalkers, nsteps, total_data[1],
+    #         f_blue_data[2], f_blue_data[3], sigma_red_data,
+    #         sigma_blue_data, sigma, corr_mat_inv)
 
-    else:
-        sampler = mcmc(nproc, nwalkers, nsteps, total_data[1],
-            f_blue_data[2], f_blue_data[3], mean_mstar_red_data[0],
-            mean_mstar_blue_data[0], sigma, corr_mat_inv)
+    # else:
+    #     sampler = mcmc(nproc, nwalkers, nsteps, total_data[1],
+    #         f_blue_data[2], f_blue_data[3], mean_mstar_red_data[0],
+    #         mean_mstar_blue_data[0], sigma, corr_mat_inv)
+
+    sampler = mcmc(nproc, nwalkers, nsteps, total_data[1],
+        sigma, corr_mat_inv)
 
     print("Mean acceptance fraction: {0:.3f}".format(
         np.mean(sampler.acceptance_fraction)))
