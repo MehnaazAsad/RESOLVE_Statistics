@@ -17,7 +17,7 @@ class Preprocess():
         self.z_median = None
         self.bf_params = None
         self.bf_chi2 = None
-        # self.mcmc_table_pctl_subset = None
+        self.mcmc_table_pctl_subset = None
         self.mcmc_table_pctl = None
         self.settings = settings
 
