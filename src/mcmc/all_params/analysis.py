@@ -896,13 +896,28 @@ class Analysis():
         ## Observable #2 - Blue fraction
         f_blue = self.blue_frac(gals_df, True, False, randint_logmstar)
 
-        ## Observable #3 - Mstar of central-velocity dispersion
-        red_sigma, red_cen_mstar_sigma, blue_sigma, \
-            blue_cen_mstar_sigma = experiments.get_velocity_dispersion(
+        ## Observable #3 - sigma-M* or M*-sigma
+        if settings.stacked_stat:
+            red_deltav, red_cen_mstar_sigma, blue_deltav, \
+            blue_cen_mstar_sigma = experiments.get_stacked_velocity_dispersion(
                 gals_df, 'model', randint_logmstar)
 
-        red_sigma = np.log10(red_sigma)
-        blue_sigma = np.log10(blue_sigma)
+            best_fit_experimentals["vel_disp"] = {'red_sigma':red_deltav,
+                'red_cen_mstar':red_cen_mstar_sigma,
+                'blue_sigma':blue_deltav, 'blue_cen_mstar':blue_cen_mstar_sigma}
+
+        else:
+            red_sigma, red_cen_mstar_sigma, blue_sigma, \
+                blue_cen_mstar_sigma = experiments.get_velocity_dispersion(
+                    gals_df, 'model', randint_logmstar)
+
+            red_sigma = np.log10(red_sigma)
+            blue_sigma = np.log10(blue_sigma)
+
+            best_fit_experimentals["vel_disp"] = {'red_sigma':red_sigma,
+                'red_cen_mstar':red_cen_mstar_sigma,
+                'blue_sigma':blue_sigma, 'blue_cen_mstar':blue_cen_mstar_sigma}
+
 
         # mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
         #     statistic='mean', bins=np.linspace(-2,3,5))
@@ -930,8 +945,14 @@ class Analysis():
             experiments.get_richness(gals_df, 'model', randint_logmstar)
 
         # v_sim = 890641.5172927063 
-        x_vdf, phi_vdf, error, bins, counts = experiments.get_vdf(
-            red_sigma, blue_sigma, v_sim)
+        if not settings.stacked_stat:
+            x_vdf, phi_vdf, error, bins, counts = experiments.get_vdf(
+                red_sigma, blue_sigma, v_sim)
+
+            best_fit_experimentals["vdf"] = {'x_vdf':x_vdf,
+                'phi_vdf':phi_vdf,
+                'error':error, 'bins':bins,
+                'counts':counts}
 
         best_fit_results["smf_total"] = {'max_total':total_model[0],
                                         'phi_total':total_model[1]}
@@ -960,9 +981,6 @@ class Analysis():
                                     'sat_red':f_red_sat_red,
                                     'sat_blue':f_red_sat_blue}
 
-        best_fit_experimentals["vel_disp"] = {'red_sigma':red_sigma,
-            'red_cen_mstar':red_cen_mstar_sigma,
-            'blue_sigma':blue_sigma, 'blue_cen_mstar':blue_cen_mstar_sigma}
 
         # best_fit_experimentals["vel_disp"] = {'red_sigma':mean_mstar_red[1],
         #     'red_cen_mstar':mean_mstar_red[0],
@@ -976,10 +994,10 @@ class Analysis():
             'blue_cen_mstar':blue_cen_mstar_richness, 
             'red_hosthalo':red_host_halo_mass, 'blue_hosthalo':blue_host_halo_mass}
 
-        best_fit_experimentals["vdf"] = {'x_vdf':x_vdf,
-            'phi_vdf':phi_vdf,
-            'error':error, 'bins':bins,
-            'counts':counts}
+        # best_fit_experimentals["vdf"] = {'x_vdf':x_vdf,
+        #     'phi_vdf':phi_vdf,
+        #     'error':error, 'bins':bins,
+        #     'counts':counts}
 
         return best_fit_results, best_fit_experimentals, gals_df
 
@@ -1121,20 +1139,38 @@ class Analysis():
                 f_blue_cen_arr.append(f_blue_cen)
                 f_blue_sat_arr.append(f_blue_sat)
 
-                red_sigma, red_cen_mstar_sigma, blue_sigma, \
-                    blue_cen_mstar_sigma = \
-                    experiments.get_velocity_dispersion(mock_pd, 'mock')
+                if settings.stacked_stat:
+                    red_deltav, red_cen_mstar_sigma, blue_deltav, \
+                        blue_cen_mstar_sigma = \
+                        experiments.get_stacked_velocity_dispersion(
+                        mock_pd, 'mock')
 
-                red_sigma = np.log10(red_sigma)
-                blue_sigma = np.log10(blue_sigma)
+                    sigma_red = bs(red_cen_mstar_sigma, red_deltav,
+                        statistic='std', bins=np.linspace(8.6,11,5))
+                    sigma_blue = bs( blue_cen_mstar_sigma, blue_deltav,
+                        statistic='std', bins=np.linspace(8.6,11,5))
+                    
+                    sigma_red = np.log10(sigma_red[0])
+                    sigma_blue = np.log10(sigma_blue[0])
 
-                mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
-                    statistic='mean', bins=np.linspace(-2,3,5))
-                mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
-                    statistic='mean', bins=np.linspace(-1,3,5))
+                    mean_mstar_red_arr.append(sigma_red)
+                    mean_mstar_blue_arr.append(sigma_blue)
 
-                mean_mstar_red_arr.append(mean_mstar_red[0])
-                mean_mstar_blue_arr.append(mean_mstar_blue[0])
+                else:
+                    red_sigma, red_cen_mstar_sigma, blue_sigma, \
+                        blue_cen_mstar_sigma = \
+                        experiments.get_velocity_dispersion(mock_pd, 'mock')
+
+                    red_sigma = np.log10(red_sigma)
+                    blue_sigma = np.log10(blue_sigma)
+
+                    mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
+                        statistic='mean', bins=np.linspace(-2,3,5))
+                    mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
+                        statistic='mean', bins=np.linspace(-1,3,5))
+
+                    mean_mstar_red_arr.append(mean_mstar_red[0])
+                    mean_mstar_blue_arr.append(mean_mstar_blue[0])
 
                 ### Statistics for measuring std. dev. to plot error bars
                 phi_red, phi_blue = \
@@ -1158,29 +1194,21 @@ class Analysis():
                 # mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
                 #     statistic='mean', bins=np.linspace(0,250,6))
 
-
-                mean_sigma_red = bs(red_cen_mstar_sigma, red_sigma,
-                    statistic='mean', bins=np.linspace(8.6,11,5))
-                mean_sigma_blue = bs( blue_cen_mstar_sigma, blue_sigma,
-                    statistic='mean', bins=np.linspace(8.6,11,5))
-
-                mean_sigma_red_arr.append(mean_sigma_red[0])
-                mean_sigma_blue_arr.append(mean_sigma_blue[0])
-
                 red_cen_mstar_richness_arr.append(red_cen_mstar_richness)
                 red_num_arr.append(red_num)
                 blue_cen_mstar_richness_arr.append(blue_cen_mstar_richness)
                 blue_num_arr.append(blue_num)
 
-                x_vdf, phi_vdf, error, bins, counts = experiments.\
-                    get_vdf(red_sigma, blue_sigma, volume)
+                if not settings.stacked_stat:
+                    x_vdf, phi_vdf, error, bins, counts = experiments.\
+                        get_vdf(red_sigma, blue_sigma, volume)
 
-                x_vdf_arr.append(x_vdf)
-                red_phi_vdf_arr.append(phi_vdf[0])
+                    x_vdf_arr.append(x_vdf)
+                    red_phi_vdf_arr.append(phi_vdf[0])
 
-                ## Converting -inf to nan due to log(counts=0) for some blue bins
-                phi_vdf[1][phi_vdf[1] == -np.inf] = np.nan
-                blue_phi_vdf_arr.append(phi_vdf[1])
+                    ## Converting -inf to nan due to log(counts=0) for some blue bins
+                    phi_vdf[1][phi_vdf[1] == -np.inf] = np.nan
+                    blue_phi_vdf_arr.append(phi_vdf[1])
                 
         phi_total_arr = np.array(phi_total_arr)
 
@@ -1216,12 +1244,16 @@ class Analysis():
         std_mean_sigma_red_arr = np.nanstd(mean_sigma_red_arr, axis=0)
         std_mean_sigma_blue_arr = np.nanstd(mean_sigma_blue_arr, axis=0)
         
-        ## Velocity dispersion function
-        red_phi_vdf_arr = np.array(red_phi_vdf_arr)
-        blue_phi_vdf_arr = np.array(blue_phi_vdf_arr)
+        if not settings.stacked_stat:
+            ## Velocity dispersion function
+            red_phi_vdf_arr = np.array(red_phi_vdf_arr)
+            blue_phi_vdf_arr = np.array(blue_phi_vdf_arr)
 
-        std_phi_vdf_red_arr = np.nanstd(red_phi_vdf_arr, axis=0)
-        std_phi_vdf_blue_arr = np.nanstd(blue_phi_vdf_arr, axis=0)
+            std_phi_vdf_red_arr = np.nanstd(red_phi_vdf_arr, axis=0)
+            std_phi_vdf_blue_arr = np.nanstd(blue_phi_vdf_arr, axis=0)
+
+            mocks_experimentals["vdf"] = {'std_phi_red':std_phi_vdf_red_arr,
+                'std_phi_blue':std_phi_vdf_blue_arr}
 
         mocks_experimentals["std_fblue"] = {'std_fblue': std_fblue,
                                             'std_fblue_cen':std_fblue_cen,
@@ -1239,8 +1271,6 @@ class Analysis():
             'red_cen_mstar':red_cen_mstar_richness_arr, 'blue_num':blue_num_arr,
             'blue_cen_mstar':blue_cen_mstar_richness_arr}
 
-        mocks_experimentals["vdf"] = {'std_phi_red':std_phi_vdf_red_arr,
-            'std_phi_blue':std_phi_vdf_blue_arr}
 
         phi_total_0 = phi_total_arr[:,0]
         phi_total_1 = phi_total_arr[:,1]
@@ -1542,12 +1572,29 @@ class Analysis():
             # print(type(randint_logmstar))
             f_blue = self.blue_frac(gals_df, True, False, randint_logmstar)
 
-            ## Observable #3 - Mstar of central-velocity dispersion
-            red_sigma, red_cen_mstar_sigma, blue_sigma, \
-                blue_cen_mstar_sigma = experiments.get_velocity_dispersion(gals_df, 'model', randint_logmstar)
+            ## Observable #3 - sigma-M* or M*-sigma
+            if settings.stacked_stat:
+                red_deltav, red_cen_mstar_sigma, blue_deltav, \
+                blue_cen_mstar_sigma = experiments.get_stacked_velocity_dispersion(
+                    gals_df, 'model', randint_logmstar)
 
-            red_sigma = np.log10(red_sigma)
-            blue_sigma = np.log10(blue_sigma)
+                model_experimentals["vel_disp"]["red_sigma"].append(red_deltav)
+                model_experimentals["vel_disp"]["red_cen_mstar"].append(red_cen_mstar_sigma)
+                model_experimentals["vel_disp"]["blue_sigma"].append(blue_deltav)
+                model_experimentals["vel_disp"]["blue_cen_mstar"].append(blue_cen_mstar_sigma)
+
+            else:
+                red_sigma, red_cen_mstar_sigma, blue_sigma, \
+                    blue_cen_mstar_sigma = experiments.get_velocity_dispersion(
+                    gals_df, 'model', randint_logmstar)
+
+                red_sigma = np.log10(red_sigma)
+                blue_sigma = np.log10(blue_sigma)
+
+                model_experimentals["vel_disp"]["red_sigma"].append(red_sigma)
+                model_experimentals["vel_disp"]["red_cen_mstar"].append(red_cen_mstar_sigma)
+                model_experimentals["vel_disp"]["blue_sigma"].append(blue_sigma)
+                model_experimentals["vel_disp"]["blue_cen_mstar"].append(blue_cen_mstar_sigma)
 
             # mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
             #     statistic='mean', bins=np.linspace(-2,3,5))
@@ -1575,9 +1622,14 @@ class Analysis():
                 blue_cen_mstar_richness, red_host_halo_mass, \
                 blue_host_halo_mass = \
                 experiments.get_richness(gals_df, 'model', randint_logmstar)
+
             # v_sim = 890641.5172927063 
-            x_vdf, phi_vdf, error, bins, counts = experiments.\
-                get_vdf(red_sigma, blue_sigma, v_sim)
+            if not settings.stacked_stat:
+                x_vdf, phi_vdf, error, bins, counts = experiments.\
+                    get_vdf(red_sigma, blue_sigma, v_sim)
+
+                model_experimentals["vdf"]["phi_red"].append(phi_vdf[0])
+                model_experimentals["vdf"]["phi_blue"].append(phi_vdf[1])
 
             model_results["smf_total"]["max_total"].append(total_model[0])
             model_results["smf_total"]["phi_total"].append(total_model[1])
@@ -1607,11 +1659,6 @@ class Analysis():
             model_results["f_red"]["cen_blue"].append(f_red_cen_blue)
             model_results["f_red"]["sat_blue"].append(f_red_sat_blue)
 
-            model_experimentals["vel_disp"]["red_sigma"].append(red_sigma)
-            model_experimentals["vel_disp"]["red_cen_mstar"].append(red_cen_mstar_sigma)
-            model_experimentals["vel_disp"]["blue_sigma"].append(blue_sigma)
-            model_experimentals["vel_disp"]["blue_cen_mstar"].append(blue_cen_mstar_sigma)
-
             # model_experimentals["vel_disp"]["red_sigma"].append(mean_mstar_red[1])
             # model_experimentals["vel_disp"]["red_cen_mstar"].append(mean_mstar_red[0])
             # model_experimentals["vel_disp"]["blue_sigma"].append(mean_mstar_blue[1])
@@ -1627,9 +1674,6 @@ class Analysis():
             model_experimentals["richness"]["blue_cen_mstar"].append(blue_cen_mstar_richness)
             model_experimentals["richness"]["red_hosthalo"].append(red_host_halo_mass)
             model_experimentals["richness"]["blue_hosthalo"].append(blue_host_halo_mass)
-
-            model_experimentals["vdf"]["phi_red"].append(phi_vdf[0])
-            model_experimentals["vdf"]["phi_blue"].append(phi_vdf[1])
 
         return [model_results, model_experimentals]
 
@@ -1647,19 +1691,53 @@ class Analysis():
         self.f_blue = self.blue_frac(self.catl, False, True)
 
         print('Measuring velocity dispersion for data')
-        red_sigma, red_cen_mstar_sigma, blue_sigma, \
-            blue_cen_mstar_sigma = experiments.get_velocity_dispersion(self.catl, 'data')
+        if settings.stacked_stat:
+            red_deltav, red_cen_mstar_sigma, blue_deltav, \
+            blue_cen_mstar_sigma = experiments.get_stacked_velocity_dispersion(
+                self.catl, 'data')
 
-        red_sigma = np.log10(red_sigma)
-        blue_sigma = np.log10(blue_sigma)
+            # red_sigma_stat = bs(red_cen_mstar_sigma, red_deltav,
+            #     statistic='std', bins=np.linspace(8.6,11,5))
+            # blue_sigma_stat = bs( blue_cen_mstar_sigma, blue_deltav,
+            #     statistic='std', bins=np.linspace(8.6,11,5))
+            
+            # red_sigma = np.log10(red_sigma_stat[0])
+            # blue_sigma = np.log10(blue_sigma_stat[0])
 
-        # self.mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
-        #     statistic='mean', bins=np.linspace(-2,3,5))
-        # self.mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
-        #     statistic='mean', bins=np.linspace(-1,3,5))
+            self.vdisp_red_data = [red_deltav, red_cen_mstar_sigma]
+            self.vdisp_blue_data = [blue_deltav, blue_cen_mstar_sigma]
 
-        self.vdisp_red_data = [red_sigma, red_cen_mstar_sigma]
-        self.vdisp_blue_data = [blue_sigma, blue_cen_mstar_sigma]
+        else:
+            red_sigma, red_cen_mstar_sigma, blue_sigma, \
+                blue_cen_mstar_sigma = \
+                experiments.get_velocity_dispersion(self.catl, 'data')
+
+            red_sigma = np.log10(red_sigma)
+            blue_sigma = np.log10(blue_sigma)
+
+            # #! Implement average of log function for next chains (49 onwards)
+            # mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
+            #     statistic='mean', bins=np.linspace(-2,3,5))
+            # mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
+            #     statistic='mean', bins=np.linspace(-1,3,5))
+
+            self.vdisp_red_data = [red_sigma, red_cen_mstar_sigma]
+            self.vdisp_blue_data = [blue_sigma, blue_cen_mstar_sigma]
+
+
+        # red_sigma, red_cen_mstar_sigma, blue_sigma, \
+        #     blue_cen_mstar_sigma = experiments.get_velocity_dispersion(self.catl, 'data')
+
+        # red_sigma = np.log10(red_sigma)
+        # blue_sigma = np.log10(blue_sigma)
+
+        # # self.mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
+        # #     statistic='mean', bins=np.linspace(-2,3,5))
+        # # self.mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
+        # #     statistic='mean', bins=np.linspace(-1,3,5))
+
+        # self.vdisp_red_data = [red_sigma, red_cen_mstar_sigma]
+        # self.vdisp_blue_data = [blue_sigma, blue_cen_mstar_sigma]
 
         print('Measuring reconstructed red and blue SMF for data')
         self.phi_red_data, self.phi_blue_data = self.get_colour_smf_from_fblue(self.catl, self.f_blue[1], 
