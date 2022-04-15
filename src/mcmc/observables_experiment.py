@@ -2673,7 +2673,7 @@ eco = {
 # be accessed
 param_dict = vars()[survey]
 
-path_to_hmf = '/Users/asadm2/Desktop/Planck_H0_100.0_HMF_warren.csv'
+path_to_hmf = path_to_data + 'external/Planck_H0_100.0_HMF_warren.csv'
 
 hmf_pd = pd.read_csv(path_to_hmf, sep=',')
 
@@ -5650,7 +5650,7 @@ def gapper(vel_arr):
 
 survey = 'eco'
 level = 'group'
-quenching = 'hybrid'
+quenching = 'halo'
 mf_type = 'smf'
 
 dict_of_paths = cwpaths.cookiecutter_paths()
@@ -5687,14 +5687,14 @@ for key in red_subset_ids:
         satellite_stellar_mass = group.logmstar.loc[group.g_galtype == 0].values
 
         cen_halo_mass = group.M_group.loc[group.g_galtype == 1].values[0]
-        mass_ratio = np.log10((10**satellite_stellar_mass)/(10**cen_halo_mass))
+        mass_ratio = np.log10((10**cen_stellar_mass)/(10**cen_halo_mass))
 
-        for val in mass_ratio:
-            red_mass_ratio_data.append(val)
-            red_gapper_data.append(sigma_gapper)
+        # for val in mass_ratio:
+        #     red_mass_ratio_data.append(val)
+        #     red_gapper_data.append(sigma_gapper)
 
-        # red_gapper_data.append(sigma_gapper)
-        # red_mass_ratio_data.append(mass_ratio)
+        red_gapper_data.append(sigma_gapper)
+        red_mass_ratio_data.append(mass_ratio)
 
 for key in blue_subset_ids:
     group = all_groups.get_group(key)
@@ -5708,14 +5708,14 @@ for key in blue_subset_ids:
         cen_stellar_mass = group.logmstar.loc[group.g_galtype == 1].values[0]
         satellite_stellar_mass = group.logmstar.loc[group.g_galtype == 0].values
         cen_halo_mass = group.M_group.loc[group.g_galtype == 1].values[0]
-        mass_ratio = np.log10((10**satellite_stellar_mass)/(10**cen_halo_mass))
+        mass_ratio = np.log10((10**cen_stellar_mass)/(10**cen_halo_mass))
 
-        for val in mass_ratio:
-            blue_mass_ratio_data.append(val)
-            blue_gapper_data.append(sigma_gapper)
+        # for val in mass_ratio:
+        #     blue_mass_ratio_data.append(val)
+        #     blue_gapper_data.append(sigma_gapper)
 
-        # blue_gapper_data.append(sigma_gapper)
-        # blue_mass_ratio_data.append(mass_ratio)
+        blue_gapper_data.append(sigma_gapper)
+        blue_mass_ratio_data.append(mass_ratio)
 
 plt.scatter(red_mass_ratio_data, np.log10(red_gapper_data), marker='*', s=100, c='maroon')
 plt.scatter(blue_mass_ratio_data, np.log10(blue_gapper_data), marker='^', s=100, c='cornflowerblue')
@@ -5810,14 +5810,14 @@ for box in box_id_arr:
                 satellite_stellar_mass = group.logmstar.loc[group.g_galtype == 0].values
 
                 cen_halo_mass = group.M_group.loc[group.g_galtype == 1].values[0]
-                mass_ratio = np.log10((10**satellite_stellar_mass)/(10**cen_halo_mass))
+                mass_ratio = np.log10((10**cen_stellar_mass)/(10**cen_halo_mass))
 
-                for val in mass_ratio:
-                    red_mass_ratio.append(val)
-                    red_gapper.append(sigma_gapper)
+                # for val in mass_ratio:
+                #     red_mass_ratio.append(val)
+                #     red_gapper.append(sigma_gapper)
 
-                # red_gapper.append(sigma_gapper)
-                # red_mass_ratio.append(mass_ratio)
+                red_gapper.append(sigma_gapper)
+                red_mass_ratio.append(mass_ratio)
 
         for key in blue_subset_ids:
             group = all_groups.get_group(key)
@@ -5831,14 +5831,14 @@ for box in box_id_arr:
                 cen_stellar_mass = group.logmstar.loc[group.g_galtype == 1].values[0]
                 satellite_stellar_mass = group.logmstar.loc[group.g_galtype == 0].values
                 cen_halo_mass = group.M_group.loc[group.g_galtype == 1].values[0]
-                mass_ratio = np.log10((10**satellite_stellar_mass)/(10**cen_halo_mass))
+                mass_ratio = np.log10((10**cen_stellar_mass)/(10**cen_halo_mass))
 
-                for val in mass_ratio:
-                    blue_mass_ratio.append(val)
-                    blue_gapper.append(sigma_gapper)
+                # for val in mass_ratio:
+                #     blue_mass_ratio.append(val)
+                #     blue_gapper.append(sigma_gapper)
 
-                # blue_gapper.append(sigma_gapper)
-                # blue_mass_ratio.append(mass_ratio)
+                blue_gapper.append(sigma_gapper)
+                blue_mass_ratio.append(mass_ratio)
 
         mean_stat_red = bs(np.log10(red_gapper), red_mass_ratio, 
             statistic=average_of_log, bins=np.linspace(0,3,5))
@@ -5870,6 +5870,86 @@ mean_centers_red = 0.5 * (mean_stat_red_data[1][1:] + \
     mean_stat_red_data[1][:-1])
 mean_centers_blue = 0.5 * (mean_stat_blue_data[1][1:] + \
     mean_stat_blue_data[1][:-1])
+
+randint = 1
+logmstar_col = 'behroozi_bf'
+galtype_col = 'grp_censat_{0}'.format(randint)
+cencz_col = 'cen_cz_{0}'.format(randint)
+id_col = 'groupid_{0}'.format(randint)
+
+
+min_cz = 3000
+max_cz = 7000
+mstar_limit = 8.9
+
+
+gals_df_subset = gals_df.loc[
+    (gals_df[cencz_col].values >= min_cz) & \
+    (gals_df[cencz_col].values <= max_cz) & \
+    (gals_df[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
+
+all_groups = gals_df_subset.groupby(id_col)
+
+red_subset_ids = np.unique(gals_df_subset[id_col].loc[(gals_df_subset.\
+    colour_label == 'R') & (gals_df_subset[galtype_col] == 1)].values) 
+blue_subset_ids = np.unique(gals_df_subset[id_col].loc[(gals_df_subset.\
+    colour_label == 'B') & (gals_df_subset[galtype_col] == 1)].values)
+
+red_mass_ratio_bf = []
+blue_mass_ratio_bf = []
+red_gapper_bf = []
+blue_gapper_bf = []
+for key in red_subset_ids:
+    group = all_groups.get_group(key)
+    if len(group) > 1:
+        grpcz_av = np.mean(group.cz.values)
+
+        deltav_av = group.cz.values - grpcz_av
+
+        sigma_gapper = gapper(deltav_av)
+
+        cen_stellar_mass = group[logmstar_col].loc[group[galtype_col] == 1].values[0]
+        satellite_stellar_mass = group[logmstar_col].loc[group[galtype_col] == 0].values
+
+        cen_halo_mass = group.M_group.loc[group[galtype_col] == 1].values[0]
+        mass_ratio = np.log10((10**cen_stellar_mass)/(10**cen_halo_mass))
+
+        # for val in mass_ratio:
+        #     red_mass_ratio_bf.append(val)
+        #     red_gapper_bf.append(sigma_gapper)
+
+        red_gapper_bf.append(sigma_gapper)
+        red_mass_ratio_bf.append(mass_ratio)
+
+for key in blue_subset_ids:
+    group = all_groups.get_group(key)
+    if len(group) > 1:
+        grpcz_av = np.mean(group.cz.values)
+
+        deltav_av = group.cz.values - grpcz_av
+
+        sigma_gapper = gapper(deltav_av)
+
+        cen_stellar_mass = group[logmstar_col].loc[group[galtype_col] == 1].values[0]
+        satellite_stellar_mass = group[logmstar_col].loc[group[galtype_col] == 0].values
+
+        cen_halo_mass = group.M_group.loc[group[galtype_col] == 1].values[0]
+        mass_ratio = np.log10((10**cen_stellar_mass)/(10**cen_halo_mass))
+
+        # for val in mass_ratio:
+        #     blue_mass_ratio_bf.append(val)
+        #     blue_gapper_bf.append(sigma_gapper)
+
+        blue_gapper_bf.append(sigma_gapper)
+        blue_mass_ratio_bf.append(mass_ratio)
+
+mean_stat_red_bf = bs(np.log10(red_gapper_bf), red_mass_ratio_bf, 
+    statistic=average_of_log, bins=np.linspace(0,3,5))
+mean_stat_blue_bf = bs(np.log10(blue_gapper_bf), blue_mass_ratio_bf, 
+    statistic=average_of_log, bins=np.linspace(0,3,5))
+
+plt.plot(mean_centers_red, mean_stat_red_bf[0], 'r--', lw=2)
+plt.plot(mean_centers_blue, mean_stat_blue_bf[0], 'b--', lw=2)
 
 plt.errorbar(mean_centers_red, mean_stat_red_data[0], yerr=error_red, 
     color='darkred',fmt='^',ecolor='darkred', 
