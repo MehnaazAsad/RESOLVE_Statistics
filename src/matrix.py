@@ -421,10 +421,12 @@ def blue_frac(catl, h1_bool, data_bool, randint_logmstar=None):
     ## Mocks case different than data because of censat_col
     elif not data_bool and not h1_bool:
         mstar_total_arr = catl.logmstar.values
-        censat_col = 'g_galtype'
-        #* To test fblue of centrals with halo centrals instead of group centrals
-        #* to see how group finder misclassification affects the measurement
-        # censat_col = 'cs_flag'
+        if level == 'group':
+            censat_col = 'g_galtype'
+        elif level == 'halo':
+            #* To test fblue of centrals with halo centrals instead of group centrals
+            #* to see how group finder misclassification affects the measurement
+            censat_col = 'cs_flag'
         mstar_cen_arr = catl.logmstar.loc[catl[censat_col] == 1].values
         mstar_sat_arr = catl.logmstar.loc[catl[censat_col] == 0].values           
     # elif randint_logmstar != 1 and randint_logmstar is not None:
@@ -1017,12 +1019,13 @@ global survey
 global quenching
 global mf_type
 global stacked_stat
+global level
 
 survey = 'eco'
-quenching = 'halo'
+quenching = 'hybrid'
 mf_type = 'smf'
 level = 'group'
-stacked_stat = True
+stacked_stat = False
 
 dict_of_paths = cwpaths.cookiecutter_paths()
 path_to_data = dict_of_paths['data_dir']
@@ -1136,7 +1139,7 @@ for box in box_id_arr:
         mock_pd = mock_pd.loc[(mock_pd.grpcz_new.values >= min_cz) & \
             (mock_pd.grpcz_new.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
             (mock_pd.logmstar.values >= mstar_limit)].reset_index(drop=True)
-
+        
         # ## Using best-fit found for old ECO data using optimize_hybridqm_eco,py
         # Mstar_q = 10.39 # Msun/h
         # Mh_q = 14.85 # Msun/h
@@ -1154,9 +1157,9 @@ for box in box_id_arr:
         # ## i.e. hybrid quenching model
         # bf_from_last_chain = [10.1679343, 13.10135398, 0.81869216, 0.13844437]
 
-        ## Using best-fit found for new ECO data using result from chain 47
+        ## Using best-fit found for new ECO data using result from chain 50
         ## i.e. hybrid quenching model
-        bf_from_last_chain = [10.14465572, 13.15954075, 0.75185297, 0.09162315]
+        bf_from_last_chain = [10.11453861, 13.69516435, 0.7229029 , 0.05319513]
         
         Mstar_q = bf_from_last_chain[0] # Msun/h**2
         Mh_q = bf_from_last_chain[1] # Msun/h
@@ -1174,9 +1177,9 @@ for box in box_id_arr:
         # ## i.e. halo quenching model
         # bf_from_last_chain = [11.86645536, 12.54502723, 1.42736618, 0.5261119]
 
-        ## Using best-fit found for new ECO data using result from chain 48
+        ## Using best-fit found for new ECO data using result from chain 49
         ## i.e. halo quenching model
-        bf_from_last_chain = [11.87286668, 12.53166686, 1.44709507, 0.56506002]
+        bf_from_last_chain = [12.00859308, 12.62730517, 1.48669053, 0.66870568]
 
         Mh_qc = bf_from_last_chain[0] # Msun/h
         Mh_qs = bf_from_last_chain[1] # Msun/h
@@ -1628,6 +1631,6 @@ plt.annotate("", xy=(0.065, 0.83), xytext=(0.065, 0.88),
     xycoords="figure fraction", textcoords="figure fraction", 
     arrowprops=dict(arrowstyle="<-", facecolor='k', linewidth=2))
 
-# plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/matrix_hybrid.pdf')
+plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/matrix_hybrid.pdf')
 
-plt.show()
+# plt.show()
