@@ -1228,10 +1228,10 @@ def get_err_data(survey, path):
             # mu = 0.69
             # nu = 0.148
 
-            ## Using best-fit found for new ECO data using result from chain 47
+            ## Using best-fit found for new ECO data using result from chain 50
             ## i.e. hybrid quenching model
-            bf_from_last_chain = [10.14465572, 13.15954075, 0.75185297, 0.09162315]
-            
+            bf_from_last_chain = [10.11453861, 13.69516435, 0.7229029 , 0.05319513]
+
             Mstar_q = bf_from_last_chain[0] # Msun/h**2
             Mh_q = bf_from_last_chain[1] # Msun/h
             mu = bf_from_last_chain[2]
@@ -1244,9 +1244,9 @@ def get_err_data(survey, path):
             # mu_c = 0.40
             # mu_s = 0.148
 
-            ## Using best-fit found for new ECO data using result from chain 48
+            ## Using best-fit found for new ECO data using result from chain 49
             ## i.e. halo quenching model
-            bf_from_last_chain = [11.87286668, 12.53166686, 1.44709507, 0.56506002]
+            bf_from_last_chain = [12.00859308, 12.62730517, 1.48669053, 0.66870568]
 
             Mh_qc = bf_from_last_chain[0] # Msun/h
             Mh_qs = bf_from_last_chain[1] # Msun/h
@@ -1290,10 +1290,10 @@ def get_err_data(survey, path):
             # phi_arr_blue.append(phi_blue)
 
 
-            #Measure blue fraction of galaxies
-            f_blue = blue_frac(mock_pd, False, False)
-            f_blue_cen_arr.append(f_blue[2])
-            f_blue_sat_arr.append(f_blue[3])
+            # #Measure blue fraction of galaxies
+            # f_blue = blue_frac(mock_pd, False, False)
+            # f_blue_cen_arr.append(f_blue[2])
+            # f_blue_sat_arr.append(f_blue[3])
     
             # if stacked_stat:
             #     red_deltav, red_cen_mstar_sigma, blue_deltav, \
@@ -1330,10 +1330,12 @@ def get_err_data(survey, path):
     # phi_arr_red = np.array(phi_arr_red)
     # phi_arr_blue = np.array(phi_arr_blue)
 
-    f_blue_cen_arr = np.array(f_blue_cen_arr)
-    f_blue_sat_arr = np.array(f_blue_sat_arr)
 
-    #* Uncomment these next 2 lines later
+    #* Uncomment these next 4 lines later
+
+    # f_blue_cen_arr = np.array(f_blue_cen_arr)
+    # f_blue_sat_arr = np.array(f_blue_sat_arr)
+
     # mean_mstar_red_arr = np.array(mean_mstar_red_arr)
     # mean_mstar_blue_arr = np.array(mean_mstar_blue_arr)
 
@@ -1342,23 +1344,19 @@ def get_err_data(survey, path):
     phi_total_2 = phi_arr_total[:,2]
     phi_total_3 = phi_arr_total[:,3]
 
-    f_blue_cen_0 = f_blue_cen_arr[:,0]
-    f_blue_cen_1 = f_blue_cen_arr[:,1]
-    f_blue_cen_2 = f_blue_cen_arr[:,2]
-    f_blue_cen_3 = f_blue_cen_arr[:,3]
+    # f_blue_cen_0 = f_blue_cen_arr[:,0]
+    # f_blue_cen_1 = f_blue_cen_arr[:,1]
+    # f_blue_cen_2 = f_blue_cen_arr[:,2]
+    # f_blue_cen_3 = f_blue_cen_arr[:,3]
 
-    f_blue_sat_0 = f_blue_sat_arr[:,0]
-    f_blue_sat_1 = f_blue_sat_arr[:,1]
-    f_blue_sat_2 = f_blue_sat_arr[:,2]
-    f_blue_sat_3 = f_blue_sat_arr[:,3]
+    # f_blue_sat_0 = f_blue_sat_arr[:,0]
+    # f_blue_sat_1 = f_blue_sat_arr[:,1]
+    # f_blue_sat_2 = f_blue_sat_arr[:,2]
+    # f_blue_sat_3 = f_blue_sat_arr[:,3]
 
     combined_df = pd.DataFrame({
         'phi_tot_0':phi_total_0, 'phi_tot_1':phi_total_1, 
-        'phi_tot_2':phi_total_2, 'phi_tot_3':phi_total_3, 
-        'f_blue_cen_0':f_blue_cen_0, 'f_blue_cen_1':f_blue_cen_1, 
-        'f_blue_cen_2':f_blue_cen_2, 'f_blue_cen_3':f_blue_cen_3,
-        'f_blue_sat_0':f_blue_sat_0, 'f_blue_sat_1':f_blue_sat_1, 
-        'f_blue_sat_2':f_blue_sat_2, 'f_blue_sat_3':f_blue_sat_3})
+        'phi_tot_2':phi_total_2, 'phi_tot_3':phi_total_3})
 
     # mstar_red_cen_0 = mean_mstar_red_arr[:,0]
     # mstar_red_cen_1 = mean_mstar_red_arr[:,1]
@@ -1689,8 +1687,7 @@ def get_err_data(survey, path):
 
     return err_colour, corr_mat_inv_colour
 
-def mcmc(nproc, nwalkers, nsteps, phi_total_data, f_blue_cen_data, 
-    f_blue_sat_data, err, corr_mat_inv):
+def mcmc(nproc, nwalkers, nsteps, phi_total_data, err, corr_mat_inv):
     """
     MCMC analysis
 
@@ -1753,8 +1750,7 @@ def mcmc(nproc, nwalkers, nsteps, phi_total_data, f_blue_cen_data,
     backend = emcee.backends.HDFBackend(filename)
     with Pool(processes=nproc) as pool:
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, backend=backend,
-            args=(phi_total_data, f_blue_cen_data, 
-                f_blue_sat_data, err, corr_mat_inv), pool=pool)
+            args=(phi_total_data, err, corr_mat_inv), pool=pool)
         start = time.time()
         sampler.run_mcmc(p0, nsteps, progress=True)
         end = time.time()
@@ -2012,7 +2008,7 @@ def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
 
     return mockgal_pd_merged
 
-def lnprob(theta, phi_total_data, f_blue_cen_data, f_blue_sat_data, err, 
+def lnprob(theta, phi_total_data, err, 
     corr_mat_inv):
     """
     Calculates log probability for emcee
@@ -2164,8 +2160,8 @@ def lnprob(theta, phi_total_data, f_blue_cen_data, f_blue_sat_data, err,
 
         ## Observable #1 - Total SMF
         total_model = measure_all_smf(gal_group_df, survey_vol, False)  
-        ## Observable #2 - Blue fraction
-        f_blue = blue_frac(gal_group_df, True, False)
+        # ## Observable #2 - Blue fraction
+        # f_blue = blue_frac(gal_group_df, True, False)
         # ## Observable #3 
         # if stacked_stat:
         #     red_deltav, red_cen_mstar_sigma, blue_deltav, \
@@ -2194,14 +2190,14 @@ def lnprob(theta, phi_total_data, f_blue_cen_data, f_blue_sat_data, err,
 
         data_arr = []
         data_arr.append(phi_total_data)
-        data_arr.append(f_blue_cen_data)
-        data_arr.append(f_blue_sat_data)
+        # data_arr.append(f_blue_cen_data)
+        # data_arr.append(f_blue_sat_data)
         # data_arr.append(vdisp_red_data)
         # data_arr.append(vdisp_blue_data)
         model_arr = []
         model_arr.append(total_model[1])
-        model_arr.append(f_blue[2])   
-        model_arr.append(f_blue[3])
+        # model_arr.append(f_blue[2])   
+        # model_arr.append(f_blue[3])
         # if stacked_stat:
         #     model_arr.append(sigma_red)
         #     model_arr.append(sigma_blue)
@@ -2351,8 +2347,8 @@ def main(args):
     print('Measuring SMF for data')
     total_data = measure_all_smf(catl, volume, True)
 
-    print('Measuring blue fraction for data')
-    f_blue_data = blue_frac(catl, False, True)
+    # print('Measuring blue fraction for data')
+    # f_blue_data = blue_frac(catl, False, True)
 
     # if stacked_stat:
     #     print('Measuring stacked velocity dispersion for data')
@@ -2392,9 +2388,9 @@ def main(args):
     print('------------- \n')
     print('SMF total data: \n', total_data[1])
     print('------------- \n')
-    print('Blue frac cen data: \n', f_blue_data[2])
-    print('Blue frac sat data: \n', f_blue_data[3])
-    print('------------- \n')
+    # print('Blue frac cen data: \n', f_blue_data[2])
+    # print('Blue frac sat data: \n', f_blue_data[3])
+    # print('------------- \n')
     # if stacked_stat:
     #     print('Dispersion red data: \n', sigma_red_data)
     #     print('Dispersion blue data: \n', sigma_blue_data)
@@ -2414,8 +2410,7 @@ def main(args):
     #         f_blue_data[2], f_blue_data[3], mean_mstar_red_data[0],
     #         mean_mstar_blue_data[0], sigma, corr_mat_inv)
 
-    sampler = mcmc(nproc, nwalkers, nsteps, total_data[1], f_blue_data[2], 
-        f_blue_data[3], sigma, corr_mat_inv)
+    sampler = mcmc(nproc, nwalkers, nsteps, total_data[1], sigma, corr_mat_inv)
 
     print("Mean acceptance fraction: {0:.3f}".format(
         np.mean(sampler.acceptance_fraction)))
