@@ -1413,18 +1413,18 @@ def get_err_data(survey, path):
     # T = corr_mat_colour.dot(VT.T)
     # print(T)
 
-    from matplotlib.legend_handler import HandlerTuple
-    import matplotlib.pyplot as plt
-    from matplotlib import rc
-    from matplotlib import cm
+    # from matplotlib.legend_handler import HandlerTuple
+    # import matplotlib.pyplot as plt
+    # from matplotlib import rc
+    # from matplotlib import cm
 
-    rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=20)
-    rc('text', usetex=True)
-    rc('axes', linewidth=2)
-    rc('xtick.major', width=4, size=7)
-    rc('ytick.major', width=4, size=7)
-    rc('xtick.minor', width=2, size=7)
-    rc('ytick.minor', width=2, size=7)
+    # rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=20)
+    # rc('text', usetex=True)
+    # rc('axes', linewidth=2)
+    # rc('xtick.major', width=4, size=7)
+    # rc('ytick.major', width=4, size=7)
+    # rc('xtick.minor', width=2, size=7)
+    # rc('ytick.minor', width=2, size=7)
 
     # #* Reduced feature space
     # fig1 = plt.figure()
@@ -1492,102 +1492,102 @@ def get_err_data(survey, path):
     # plt.legend(loc='best', prop={'size':25})
     # plt.show()
 
-    ## Total SMFs from mocks and data for paper
-    tot_phi_max = np.amax(combined_df.values[:,:4], axis=0)
-    tot_phi_min = np.amin(combined_df.values[:,:4], axis=0)
-    error = np.nanstd(combined_df.values[:,:4], axis=0)
+    # ## Total SMFs from mocks and data for paper
+    # tot_phi_max = np.amax(combined_df.values[:,:4], axis=0)
+    # tot_phi_min = np.amin(combined_df.values[:,:4], axis=0)
+    # error = np.nanstd(combined_df.values[:,:4], axis=0)
 
-    fig2 = plt.figure()
-    mt = plt.fill_between(x=max_total, y1=tot_phi_max, 
-        y2=tot_phi_min, color='silver', alpha=0.4)
-    dt = plt.errorbar(total_data[0], total_data[1], yerr=error,
-        color='k', fmt='s', ecolor='k', markersize=12, capsize=7,
-        capthick=1.5, zorder=10, marker='^')
-    # plt.ylim(-4,-1)
+    # fig2 = plt.figure()
+    # mt = plt.fill_between(x=max_total, y1=tot_phi_max, 
+    #     y2=tot_phi_min, color='silver', alpha=0.4)
+    # dt = plt.errorbar(total_data[0], total_data[1], yerr=error,
+    #     color='k', fmt='s', ecolor='k', markersize=12, capsize=7,
+    #     capthick=1.5, zorder=10, marker='^')
+    # # plt.ylim(-4,-1)
 
-    plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=20)
-    plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dlogM}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=20)
+    # plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=20)
+    # plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dlogM}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=20)
 
-    plt.legend([(dt), (mt)], ['ECO','Mocks'],
-        handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='lower left', prop={'size':20})
-    plt.minorticks_on()
-    # plt.title(r'SMFs from mocks')
-    plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_smf_total.pdf', 
-        bbox_inches="tight", dpi=1200)
-    plt.show()
+    # plt.legend([(dt), (mt)], ['ECO','Mocks'],
+    #     handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='lower left', prop={'size':20})
+    # plt.minorticks_on()
+    # # plt.title(r'SMFs from mocks')
+    # plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_smf_total.pdf', 
+    #     bbox_inches="tight", dpi=1200)
+    # plt.show()
 
-    ## Blue fraction from mocks and data for paper
-    fig3 = plt.figure()
-    fblue_cen_max = np.amax(combined_df.values[:,4:8], axis=0)
-    fblue_cen_min = np.amin(combined_df.values[:,4:8], axis=0)
-    fblue_sat_max = np.amax(combined_df.values[:,8:12], axis=0)
-    fblue_sat_min = np.amin(combined_df.values[:,8:12], axis=0)
+    # ## Blue fraction from mocks and data for paper
+    # fig3 = plt.figure()
+    # fblue_cen_max = np.amax(combined_df.values[:,4:8], axis=0)
+    # fblue_cen_min = np.amin(combined_df.values[:,4:8], axis=0)
+    # fblue_sat_max = np.amax(combined_df.values[:,8:12], axis=0)
+    # fblue_sat_min = np.amin(combined_df.values[:,8:12], axis=0)
 
-    error = np.nanstd(combined_df.values[:,4:12], axis=0)
+    # error = np.nanstd(combined_df.values[:,4:12], axis=0)
 
-    mt_cen = plt.fill_between(x=f_blue_data[0], y1=fblue_cen_max, 
-        y2=fblue_cen_min, color='rebeccapurple', alpha=0.4)
-    mt_sat = plt.fill_between(x=f_blue_data[0], y1=fblue_sat_max, 
-        y2=fblue_sat_min, color='goldenrod', alpha=0.4)
+    # mt_cen = plt.fill_between(x=f_blue_data[0], y1=fblue_cen_max, 
+    #     y2=fblue_cen_min, color='rebeccapurple', alpha=0.4)
+    # mt_sat = plt.fill_between(x=f_blue_data[0], y1=fblue_sat_max, 
+    #     y2=fblue_sat_min, color='goldenrod', alpha=0.4)
 
-    dt_cen = plt.errorbar(f_blue_data[0], f_blue_data[2], yerr=error[:4],
-        color='rebeccapurple', fmt='s', ecolor='rebeccapurple', markersize=5, capsize=3,
-        capthick=1.5, zorder=10, marker='^')
-    dt_sat = plt.errorbar(f_blue_data[0], f_blue_data[3], yerr=error[4:8],
-        color='goldenrod', fmt='s', ecolor='goldenrod', markersize=5, capsize=3,
-        capthick=1.5, zorder=10, marker='^')
+    # dt_cen = plt.errorbar(f_blue_data[0], f_blue_data[2], yerr=error[:4],
+    #     color='rebeccapurple', fmt='s', ecolor='rebeccapurple', markersize=5, capsize=3,
+    #     capthick=1.5, zorder=10, marker='^')
+    # dt_sat = plt.errorbar(f_blue_data[0], f_blue_data[3], yerr=error[4:8],
+    #     color='goldenrod', fmt='s', ecolor='goldenrod', markersize=5, capsize=3,
+    #     capthick=1.5, zorder=10, marker='^')
 
-    plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=20)
-    plt.ylabel(r'\boldmath$f_{blue}$', fontsize=20)
-    # plt.title(r'Blue fractions from mocks and data')
-    plt.legend([(dt_cen, dt_sat), (mt_cen, mt_sat)], 
-        ['ECO', 'Mocks'],
-        handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='lower left', prop={'size':20})
-    plt.minorticks_on()
-    plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_fblue.pdf', 
-        bbox_inches="tight", dpi=1200)
-    plt.show()
-
-
-    ## Velocity dispersion from mocks and data for paper
-    bins_red=np.linspace(-2,3,5)
-    bins_blue=np.linspace(-1,3,5)
-    bins_red = 0.5 * (bins_red[1:] + bins_red[:-1])
-    bins_blue = 0.5 * (bins_blue[1:] + bins_blue[:-1])
-
-    mean_mstar_red_max = np.nanmax(combined_df.values[:,12:16], axis=0)
-    mean_mstar_red_min = np.nanmin(combined_df.values[:,12:16], axis=0)
-    mean_mstar_blue_max = np.nanmax(combined_df.values[:,16:20], axis=0)
-    mean_mstar_blue_min = np.nanmin(combined_df.values[:,16:20], axis=0)
-
-    error = np.nanstd(combined_df.values[:,12:], axis=0)
-
-    fig2 = plt.figure()
-
-    mt_red = plt.fill_between(x=bins_red, y1=mean_mstar_red_max, 
-        y2=mean_mstar_red_min, color='indianred', alpha=0.4)
-    mt_blue = plt.fill_between(x=bins_blue, y1=mean_mstar_blue_max, 
-        y2=mean_mstar_blue_min, color='cornflowerblue', alpha=0.4)
-
-    dt_red = plt.errorbar(bins_red, mean_mstar_red_data[0], yerr=error[:4],
-        color='indianred', fmt='s', ecolor='indianred', markersize=5, capsize=3,
-        capthick=1.5, zorder=10, marker='^')
-    dt_blue = plt.errorbar(bins_blue, mean_mstar_blue_data[0], yerr=error[4:8],
-        color='cornflowerblue', fmt='s', ecolor='cornflowerblue', markersize=5, capsize=3,
-        capthick=1.5, zorder=10, marker='^')
+    # plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=20)
+    # plt.ylabel(r'\boldmath$f_{blue}$', fontsize=20)
+    # # plt.title(r'Blue fractions from mocks and data')
+    # plt.legend([(dt_cen, dt_sat), (mt_cen, mt_sat)], 
+    #     ['ECO', 'Mocks'],
+    #     handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='lower left', prop={'size':20})
+    # plt.minorticks_on()
+    # plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_fblue.pdf', 
+    #     bbox_inches="tight", dpi=1200)
+    # plt.show()
 
 
-    plt.xlabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km/s} \right]$', fontsize=20)
-    plt.ylabel(r'\boldmath$\overline{\log_{10}\ M_{*, group\ cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=20)
-    # plt.title(r'Velocity dispersion from mocks and data')
-    plt.legend([(dt_red, dt_blue), (mt_red, mt_blue)], 
-        ['ECO','Mocks'],
-        handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='lower right', prop={'size':20})
-    plt.minorticks_on()
-    plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_vdisp.pdf', 
-        bbox_inches="tight", dpi=1200)
+    # ## Velocity dispersion from mocks and data for paper
+    # bins_red=np.linspace(-2,3,5)
+    # bins_blue=np.linspace(-1,3,5)
+    # bins_red = 0.5 * (bins_red[1:] + bins_red[:-1])
+    # bins_blue = 0.5 * (bins_blue[1:] + bins_blue[:-1])
 
-    plt.show()
+    # mean_mstar_red_max = np.nanmax(combined_df.values[:,12:16], axis=0)
+    # mean_mstar_red_min = np.nanmin(combined_df.values[:,12:16], axis=0)
+    # mean_mstar_blue_max = np.nanmax(combined_df.values[:,16:20], axis=0)
+    # mean_mstar_blue_min = np.nanmin(combined_df.values[:,16:20], axis=0)
+
+    # error = np.nanstd(combined_df.values[:,12:], axis=0)
+
+    # fig2 = plt.figure()
+
+    # mt_red = plt.fill_between(x=bins_red, y1=mean_mstar_red_max, 
+    #     y2=mean_mstar_red_min, color='indianred', alpha=0.4)
+    # mt_blue = plt.fill_between(x=bins_blue, y1=mean_mstar_blue_max, 
+    #     y2=mean_mstar_blue_min, color='cornflowerblue', alpha=0.4)
+
+    # dt_red = plt.errorbar(bins_red, mean_mstar_red_data[0], yerr=error[:4],
+    #     color='indianred', fmt='s', ecolor='indianred', markersize=5, capsize=3,
+    #     capthick=1.5, zorder=10, marker='^')
+    # dt_blue = plt.errorbar(bins_blue, mean_mstar_blue_data[0], yerr=error[4:8],
+    #     color='cornflowerblue', fmt='s', ecolor='cornflowerblue', markersize=5, capsize=3,
+    #     capthick=1.5, zorder=10, marker='^')
+
+
+    # plt.xlabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km/s} \right]$', fontsize=20)
+    # plt.ylabel(r'\boldmath$\overline{\log_{10}\ M_{*, group\ cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=20)
+    # # plt.title(r'Velocity dispersion from mocks and data')
+    # plt.legend([(dt_red, dt_blue), (mt_red, mt_blue)], 
+    #     ['ECO','Mocks'],
+    #     handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='lower right', prop={'size':20})
+    # plt.minorticks_on()
+    # plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_vdisp.pdf', 
+    #     bbox_inches="tight", dpi=1200)
+
+    # plt.show()
 
     # ## Stacked sigma from mocks and data for paper
     # bins_red=np.linspace(8.6,11,5)
