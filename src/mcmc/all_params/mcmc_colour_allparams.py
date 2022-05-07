@@ -1480,30 +1480,31 @@ def get_err_data(survey, path):
     # ax1.set_xticks(np.arange(1, len(s)+1, 1))
     # plt.show()
 
-    # ## SMF from mocks and data
-    # fig4 = plt.figure()
-    # for idx in range(len(combined_df.values[:,:4])):
-    #     plt.plot(max_total, combined_df.values[:,:4][idx], '-')
-    # plt.plot(total_data[0], total_data[1], 'k--', lw=3, label='data')
+    ############################################################################
+    #* Observable plots for paper
+    #* Total SMFs from mocks and data for paper
 
-    # plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$')
-    # plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$')
-    # plt.title(r'SMFs from mocks and data')
-    # plt.legend(loc='best', prop={'size':25})
-    # plt.show()
+    # data = combined_df.values[:,:4]
 
-    # ## Total SMFs from mocks and data for paper
-    # tot_phi_max = np.amax(combined_df.values[:,:4], axis=0)
-    # tot_phi_min = np.amin(combined_df.values[:,:4], axis=0)
-    # error = np.nanstd(combined_df.values[:,:4], axis=0)
+    # upper_bound = np.nanmean(data, axis=0) + \
+    #     np.nanstd(data, axis=0)
+    # lower_bound = np.nanmean(data, axis=0) - \
+    #     np.nanstd(data, axis=0)
 
-    # fig2 = plt.figure()
-    # mt = plt.fill_between(x=max_total, y1=tot_phi_max, 
-    #     y2=tot_phi_min, color='silver', alpha=0.4)
-    # dt = plt.errorbar(total_data[0], total_data[1], yerr=error,
-    #     color='k', fmt='s', ecolor='k', markersize=12, capsize=7,
-    #     capthick=1.5, zorder=10, marker='^')
-    # # plt.ylim(-4,-1)
+    # phi_max = []
+    # phi_min = []
+    # for idx in range(len(upper_bound)):
+    #     idxs = np.where(np.logical_and(data.T[idx]
+    #         >=lower_bound[idx], data.T[idx]<=upper_bound[idx]))
+    #     nums = data.T[idx][idxs]
+    #     phi_min.append(min(nums))
+    #     phi_max.append(max(nums))
+
+    # fig1 = plt.figure()
+    # mt = plt.fill_between(x=max_total, y1=phi_max, 
+    #     y2=phi_min, color='silver', alpha=0.4)
+    # dt = plt.scatter(total_data[0], total_data[1],
+    #     color='k', s=150, zorder=10, marker='^')
 
     # plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=20)
     # plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dlogM}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=20)
@@ -1516,68 +1517,114 @@ def get_err_data(survey, path):
     #     bbox_inches="tight", dpi=1200)
     # plt.show()
 
-    # ## Blue fraction from mocks and data for paper
-    # fig3 = plt.figure()
-    # fblue_cen_max = np.amax(combined_df.values[:,4:8], axis=0)
-    # fblue_cen_min = np.amin(combined_df.values[:,4:8], axis=0)
-    # fblue_sat_max = np.amax(combined_df.values[:,8:12], axis=0)
-    # fblue_sat_min = np.amin(combined_df.values[:,8:12], axis=0)
+    # #* Blue fraction from mocks and data for paper
 
-    # error = np.nanstd(combined_df.values[:,4:12], axis=0)
+    # data_cen = combined_df.values[:,4:8]
+    # data_sat = combined_df.values[:,8:12]
 
-    # mt_cen = plt.fill_between(x=f_blue_data[0], y1=fblue_cen_max, 
-    #     y2=fblue_cen_min, color='rebeccapurple', alpha=0.4)
-    # mt_sat = plt.fill_between(x=f_blue_data[0], y1=fblue_sat_max, 
-    #     y2=fblue_sat_min, color='goldenrod', alpha=0.4)
+    # upper_bound = np.nanmean(data_cen, axis=0) + \
+    #     np.nanstd(data_cen, axis=0)
+    # lower_bound = np.nanmean(data_cen, axis=0) - \
+    #     np.nanstd(data_cen, axis=0)
 
-    # dt_cen = plt.errorbar(f_blue_data[0], f_blue_data[2], yerr=error[:4],
-    #     color='rebeccapurple', fmt='s', ecolor='rebeccapurple', markersize=5, capsize=3,
-    #     capthick=1.5, zorder=10, marker='^')
-    # dt_sat = plt.errorbar(f_blue_data[0], f_blue_data[3], yerr=error[4:8],
-    #     color='goldenrod', fmt='s', ecolor='goldenrod', markersize=5, capsize=3,
-    #     capthick=1.5, zorder=10, marker='^')
+    # cen_max = []
+    # cen_min = []
+    # for idx in range(len(upper_bound)):
+    #     idxs = np.where(np.logical_and(data_cen.T[idx]
+    #         >=lower_bound[idx], data_cen.T[idx]<=upper_bound[idx]))
+    #     nums = data_cen.T[idx][idxs]
+    #     cen_min.append(min(nums))
+    #     cen_max.append(max(nums))
+
+    # upper_bound = np.nanmean(data_sat, axis=0) + \
+    #     np.nanstd(data_sat, axis=0)
+    # lower_bound = np.nanmean(data_sat, axis=0) - \
+    #     np.nanstd(data_sat, axis=0)
+
+    # sat_max = []
+    # sat_min = []
+    # for idx in range(len(upper_bound)):
+    #     idxs = np.where(np.logical_and(data_sat.T[idx]
+    #         >=lower_bound[idx], data_sat.T[idx]<=upper_bound[idx]))
+    #     nums = data_sat.T[idx][idxs]
+    #     sat_min.append(min(nums))
+    #     sat_max.append(max(nums))
+
+    # fig2 = plt.figure()
+
+    # mt_cen = plt.fill_between(x=f_blue_data[0], y1=cen_max, 
+    #     y2=cen_min, color='rebeccapurple', alpha=0.4)
+    # mt_sat = plt.fill_between(x=f_blue_data[0], y1=sat_max, 
+    #     y2=sat_min, color='goldenrod', alpha=0.4)
+
+    # dt_cen = plt.scatter(f_blue_data[0], f_blue_data[2],
+    #     color='rebeccapurple', s=150, zorder=10, marker='^')
+    # dt_sat = plt.scatter(f_blue_data[0], f_blue_data[3],
+    #     color='goldenrod', s=150, zorder=10, marker='^')
 
     # plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=20)
     # plt.ylabel(r'\boldmath$f_{blue}$', fontsize=20)
+    # plt.ylim(0,1)
     # # plt.title(r'Blue fractions from mocks and data')
     # plt.legend([(dt_cen, dt_sat), (mt_cen, mt_sat)], 
     #     ['ECO', 'Mocks'],
-    #     handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='lower left', prop={'size':20})
+    #     handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='upper right', prop={'size':20})
     # plt.minorticks_on()
     # plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_fblue.pdf', 
     #     bbox_inches="tight", dpi=1200)
     # plt.show()
 
 
-    # ## Velocity dispersion from mocks and data for paper
+    # #* Velocity dispersion from mocks and data for paper
+
     # bins_red=np.linspace(-2,3,5)
     # bins_blue=np.linspace(-1,3,5)
     # bins_red = 0.5 * (bins_red[1:] + bins_red[:-1])
     # bins_blue = 0.5 * (bins_blue[1:] + bins_blue[:-1])
 
-    # mean_mstar_red_max = np.nanmax(combined_df.values[:,12:16], axis=0)
-    # mean_mstar_red_min = np.nanmin(combined_df.values[:,12:16], axis=0)
-    # mean_mstar_blue_max = np.nanmax(combined_df.values[:,16:20], axis=0)
-    # mean_mstar_blue_min = np.nanmin(combined_df.values[:,16:20], axis=0)
+    # data_red = combined_df.values[:,12:16]
+    # data_blue = combined_df.values[:,16:20]
 
-    # error = np.nanstd(combined_df.values[:,12:], axis=0)
+    # upper_bound = np.nanmean(data_red, axis=0) + \
+    #     np.nanstd(data_red, axis=0)
+    # lower_bound = np.nanmean(data_red, axis=0) - \
+    #     np.nanstd(data_red, axis=0)
 
-    # fig2 = plt.figure()
+    # red_max = []
+    # red_min = []
+    # for idx in range(len(upper_bound)):
+    #     idxs = np.where(np.logical_and(data_red.T[idx]
+    #         >=lower_bound[idx], data_red.T[idx]<=upper_bound[idx]))
+    #     nums = data_red.T[idx][idxs]
+    #     red_min.append(min(nums))
+    #     red_max.append(max(nums))
 
-    # mt_red = plt.fill_between(x=bins_red, y1=mean_mstar_red_max, 
-    #     y2=mean_mstar_red_min, color='indianred', alpha=0.4)
-    # mt_blue = plt.fill_between(x=bins_blue, y1=mean_mstar_blue_max, 
-    #     y2=mean_mstar_blue_min, color='cornflowerblue', alpha=0.4)
+    # upper_bound = np.nanmean(data_blue, axis=0) + \
+    #     np.nanstd(data_blue, axis=0)
+    # lower_bound = np.nanmean(data_blue, axis=0) - \
+    #     np.nanstd(data_blue, axis=0)
 
-    # dt_red = plt.errorbar(bins_red, mean_mstar_red_data[0], yerr=error[:4],
-    #     color='indianred', fmt='s', ecolor='indianred', markersize=5, capsize=3,
-    #     capthick=1.5, zorder=10, marker='^')
-    # dt_blue = plt.errorbar(bins_blue, mean_mstar_blue_data[0], yerr=error[4:8],
-    #     color='cornflowerblue', fmt='s', ecolor='cornflowerblue', markersize=5, capsize=3,
-    #     capthick=1.5, zorder=10, marker='^')
+    # blue_max = []
+    # blue_min = []
+    # for idx in range(len(upper_bound)):
+    #     idxs = np.where(np.logical_and(data_blue.T[idx]
+    #         >=lower_bound[idx], data_blue.T[idx]<=upper_bound[idx]))
+    #     nums = data_blue.T[idx][idxs]
+    #     blue_min.append(min(nums))
+    #     blue_max.append(max(nums))
 
+    # fig3 = plt.figure()
+    # mt_red = plt.fill_between(x=bins_red, y1=red_min, 
+    #     y2=red_max, color='indianred', alpha=0.4)
+    # mt_blue = plt.fill_between(x=bins_blue, y1=blue_min, 
+    #     y2=blue_max, color='cornflowerblue', alpha=0.4)
 
-    # plt.xlabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km/s} \right]$', fontsize=20)
+    # dt_red = plt.scatter(bins_red, mean_mstar_red_data[0], 
+    #     color='indianred', s=150, zorder=10, marker='^')
+    # dt_blue = plt.scatter(bins_blue, mean_mstar_blue_data[0],
+    #     color='cornflowerblue', s=150, zorder=10, marker='^')
+
+    # plt.xlabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km\ s^{-1}} \right]$', fontsize=20)
     # plt.ylabel(r'\boldmath$\overline{\log_{10}\ M_{*, group\ cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=20)
     # # plt.title(r'Velocity dispersion from mocks and data')
     # plt.legend([(dt_red, dt_blue), (mt_red, mt_blue)], 
@@ -1588,7 +1635,7 @@ def get_err_data(survey, path):
     #     bbox_inches="tight", dpi=1200)
 
     # plt.show()
-
+    ############################################################################
     # ## Stacked sigma from mocks and data for paper
     # bins_red=np.linspace(8.6,11,5)
     # bins_blue=np.linspace(8.6,11,5)
@@ -1670,6 +1717,8 @@ def mcmc(nproc, nwalkers, nsteps, phi_total_data, f_blue_cen_data,
     mu_c = 0.40
     mu_s = 0.148
 
+    ## Starting at best-fit parameters from middle column of table 2
+    ## https://arxiv.org/pdf/1001.0015.pdf
     Mhalo_c = 12.35
     Mstar_c = 10.72
     mlow_slope = 0.44
@@ -2250,7 +2299,7 @@ def main(args):
     rseed = 12
     np.random.seed(rseed)
     level = "group"
-    stacked_stat = True
+    stacked_stat = False
 
     survey = args.survey
     machine = args.machine
