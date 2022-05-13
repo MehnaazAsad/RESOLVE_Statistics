@@ -657,9 +657,9 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
     cen_red_subset_df = red_subset_df.loc[red_subset_df[galtype_col] == 1]
     red_cen_stellar_mass_arr = cen_red_subset_df.groupby(['{0}'.format(id_col),
         '{0}'.format(galtype_col)])[logmstar_col].apply(np.sum).values
-    red_subset_df['deltav'] = red_subset_df['cz'] - red_subset_df['grpcz_av']
+    # red_subset_df['deltav'] = red_subset_df['cz'] - red_subset_df['grpcz_av']
     #* The gapper method does not exclude the central 
-    red_sigma_arr = red_subset_df.groupby(['{0}'.format(id_col)])['deltav'].\
+    red_sigma_arr = red_subset_df.groupby(['{0}'.format(id_col)])['cz'].\
         apply(lambda x: gapper(x)).values
     # red_sigma_arr = gapper(red_subset_df['deltav'])
 
@@ -678,8 +678,8 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
     cen_blue_subset_df = blue_subset_df.loc[blue_subset_df[galtype_col] == 1]
     blue_cen_stellar_mass_arr = cen_blue_subset_df.groupby(['{0}'.format(id_col),
         '{0}'.format(galtype_col)])[logmstar_col].apply(np.sum).values
-    blue_subset_df['deltav'] = blue_subset_df['cz'] - blue_subset_df['grpcz_av']
-    blue_sigma_arr = blue_subset_df.groupby(['{0}'.format(id_col)])['deltav'].\
+    # blue_subset_df['deltav'] = blue_subset_df['cz'] - blue_subset_df['grpcz_av']
+    blue_sigma_arr = blue_subset_df.groupby(['{0}'.format(id_col)])['cz'].\
         apply(lambda x: gapper(x)).values
     # blue_sigma_arr = gapper(blue_subset_df['deltav'])
 
