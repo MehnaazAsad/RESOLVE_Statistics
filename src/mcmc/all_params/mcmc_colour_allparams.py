@@ -1566,9 +1566,9 @@ def get_err_data(survey, path):
     # plt.ylabel(r'\boldmath$f_{blue}$', fontsize=20)
     # plt.ylim(0,1)
     # # plt.title(r'Blue fractions from mocks and data')
-    # plt.legend([(dt_cen, dt_sat), (mt_cen, mt_sat)], 
-    #     ['ECO', 'Mocks'],
-    #     handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='upper right', prop={'size':20})
+    # plt.legend([dt_cen, dt_sat, mt_cen, mt_sat], 
+    #     ['ECO cen', 'ECO sat', 'Mocks cen', 'Mocks sat'],
+    #     handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='upper right', prop={'size':17})
     # plt.minorticks_on()
     # plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_fblue.pdf', 
     #     bbox_inches="tight", dpi=1200)
