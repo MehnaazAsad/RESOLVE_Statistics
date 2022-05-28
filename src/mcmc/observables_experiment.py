@@ -5961,3 +5961,114 @@ plt.xlabel(r'$\sigma_{gapper}$', fontsize=30)
 plt.ylabel(r'$M_* / M_h$', fontsize=30)
 plt.title('{0} quenching'.format(quenching))
 plt.show()
+
+################################################################################
+#* Distribution of M* of satellites and centrals in bins of host halo mass 
+#* between best-fit and one mock
+################################################################################
+
+gals_df_susbet = gals_df[['halo_mvir_host_halo','cs_flag','behroozi_bf']]
+mock_pd_subset = mock_pd[['loghalom','cs_flag','logmstar']]
+halo_bins = np.arange(10.5, 15, 0.5)
+
+mock_sat_mstar_arr = []
+mock_cen_mstar_arr = []
+
+for bin_idx in range(len(halo_bins)):
+    if bin_idx == 6:
+        break
+    sat_mstar = []
+    cen_mstar = []
+    for index,value in enumerate(mock_pd_subset.loghalom.values):
+        if bin_idx == 5:
+            if value >= halo_bins[bin_idx] and value <= halo_bins[bin_idx+1]:
+                if mock_pd_subset.cs_flag.values[index] == 1:
+                    cen_mstar.append(mock_pd_subset.logmstar.values[index])
+                elif mock_pd_subset.cs_flag.values[index] == 0:
+                    sat_mstar.append(mock_pd_subset.logmstar.values[index])
+        else:
+            if value >= halo_bins[bin_idx] and value < halo_bins[bin_idx+1]:
+                if mock_pd_subset.cs_flag.values[index] == 1:
+                    cen_mstar.append(mock_pd_subset.logmstar.values[index])
+                elif mock_pd_subset.cs_flag.values[index] == 0:
+                    sat_mstar.append(mock_pd_subset.logmstar.values[index])
+    mock_cen_mstar_arr.append(cen_mstar)
+    mock_sat_mstar_arr.append(sat_mstar)
+    if index == 8151:
+        sat_mstar = []
+        cen_mstar = []
+   
+
+
+bf_sat_mstar_arr = []
+bf_cen_mstar_arr = []
+
+for bin_idx in range(len(halo_bins)):
+    if bin_idx == 6:
+        break
+    sat_mstar = []
+    cen_mstar = []
+    for index,value in enumerate(gals_df_subset.halo_mvir_host_halo.values):
+        if bin_idx == 5:
+            if value >= halo_bins[bin_idx] and value <= halo_bins[bin_idx+1]:
+                if gals_df_subset.cs_flag.values[index] == 1:
+                    cen_mstar.append(gals_df_subset.behroozi_bf.values[index])
+                elif gals_df_subset.cs_flag.values[index] == 0:
+                    sat_mstar.append(gals_df_subset.behroozi_bf.values[index])
+        else:
+            if value >= halo_bins[bin_idx] and value < halo_bins[bin_idx+1]:
+                if gals_df_subset.cs_flag.values[index] == 1:
+                    cen_mstar.append(gals_df_subset.behroozi_bf.values[index])
+                elif gals_df_subset.cs_flag.values[index] == 0:
+                    sat_mstar.append(gals_df_subset.behroozi_bf.values[index])
+    bf_cen_mstar_arr.append(cen_mstar)
+    bf_sat_mstar_arr.append(sat_mstar)
+    if index == 43890:
+        sat_mstar = []
+        cen_mstar = []
+
+import matplotlib.pyplot as plt
+from matplotlib import rc
+
+rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=25)
+rc('text', usetex=True)
+rc('text.latex', preamble=r"\usepackage{amsmath}")
+rc('axes', linewidth=1, labelsize=5)
+rc('xtick.major', width=2, size=4)
+rc('ytick.major', width=2, size=4)
+rc('xtick.minor', width=2, size=4)
+rc('ytick.minor', width=2, size=4)
+
+fig, ax = plt.subplots(2, 3)
+for idx in range(len(halo_bins)):
+    if idx == 6:
+        break
+    if idx <= 2:
+        row = 0
+        ax[row, idx].hist(mock_cen_mstar_arr[idx], histtype='step', lw=2, ls='-', 
+            color='cornflowerblue', label='mock cen', density=True)
+        ax[row, idx].hist(bf_cen_mstar_arr[idx], histtype='step', lw=2, ls='-', 
+            color='darkorange', label='best-fit cen', density=True)
+        ax[row, idx].hist(mock_sat_mstar_arr[idx], histtype='step', lw=2, ls='--', 
+            color='cornflowerblue', label='mock sat', density=True)
+        ax[row, idx].hist(bf_sat_mstar_arr[idx], histtype='step', lw=2, ls='--', 
+            color='darkorange', label='best-fit sat', density=True)
+        ax[row, idx].set_title('Host halo mass bin {0} - {1}'.format(np.round(halo_bins[idx],2), 
+            np.round(halo_bins[idx+1],2)))
+
+    elif idx > 2:
+        row = 1
+        ax[row, idx-3].hist(mock_cen_mstar_arr[idx], histtype='step', lw=2, ls='-', 
+            color='cornflowerblue', label='mock cen', density=True)
+        ax[row, idx-3].hist(bf_cen_mstar_arr[idx], histtype='step', lw=2, ls='-', 
+            color='darkorange', label='best-fit cen', density=True)
+        ax[row, idx-3].hist(mock_sat_mstar_arr[idx], histtype='step', lw=2, ls='--', 
+            color='cornflowerblue', label='mock sat', density=True)
+        ax[row, idx-3].hist(bf_sat_mstar_arr[idx], histtype='step', lw=2, ls='--', 
+            color='darkorange', label='best-fit sat', density=True)
+        ax[row, idx-3].set_title('Host halo mass bin {0} - {1}'.format(np.round(halo_bins[idx],2), 
+            np.round(halo_bins[idx+1],2)))
+ax[0,0].legend(loc='best', prop={'size':25})
+ax[1,1].set_xlabel('Stellar Mass', fontsize=25)
+plt.show()
+
