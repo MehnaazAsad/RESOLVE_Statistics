@@ -1137,7 +1137,8 @@ for box in box_id_arr:
         # Using the same survey definition as in mcmc smf i.e excluding the 
         # buffer
         mock_pd = mock_pd.loc[(mock_pd.grpcz_new.values >= min_cz) & \
-            (mock_pd.grpcz_new.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
+            (mock_pd.grpcz_new.values <= max_cz) &\
+            (mock_pd.M_r.values <= mag_limit) &\
             (mock_pd.logmstar.values >= mstar_limit)].reset_index(drop=True)
         
         # ## Using best-fit found for old ECO data using optimize_hybridqm_eco,py
@@ -1338,17 +1339,20 @@ for i in range(20):
                     marker='+', c='w', s=60, lw=2)
         else:
             #Filtering out nans before fit
-            (mu, sigma) = norm.fit(combined_df.iloc[:,j][~combined_df.iloc[:,j].isnull()])
-            n, bins, patches = ax[i][j].hist(combined_df.iloc[:,j][~combined_df.iloc[:,j].isnull()], 
-                histtype='step', color='k')
+            (mu, sigma) = norm.fit(combined_df.iloc[:,j][~combined_df.iloc[:,j].
+            isnull()])
+            n, bins, patches = ax[i][j].hist(combined_df.iloc[:,j][~combined_df.
+            iloc[:,j].isnull()], histtype='step', color='k')
             #Plotting gaussian fit to histogram
             ax01 = ax[i][j].twinx() 
             ax01.plot(bins, norm.pdf(bins, mu, sigma), 'w-', lw=2)
-            ax01.scatter(data_observables[j], 
-                norm.pdf(data_observables[j], mu, sigma), marker='+', 
-                c='w', s=60, lw=2)
-            ax01.tick_params(left=False, labelleft=False, top=False, labeltop=False,
-                            right=False, labelright=False, bottom=False, labelbottom=False)
+            if i not in [8, 9, 10] and j not in [9, 10, 11]:
+                ax01.scatter(data_observables[j], 
+                    norm.pdf(data_observables[j], mu, sigma), marker='+', 
+                    c='w', s=60, lw=2)
+            ax01.tick_params(left=False, labelleft=False, top=False, 
+                labeltop=False, right=False, labelright=False, bottom=False, 
+                labelbottom=False)
             ax01.spines['top'].set_linewidth(0)
             ax01.spines['bottom'].set_linewidth(0)
             ax01.spines['left'].set_linewidth(0)
@@ -1567,21 +1571,27 @@ plt.annotate("", xy=(0.53, 0.06), xytext=(0.593, 0.06),
     xycoords="figure fraction", textcoords="figure fraction", 
     arrowprops=dict(arrowstyle="<-", facecolor='k', linewidth=2))
 
-plt.annotate(r"$\boldsymbol{\sigma_{red}}$", (0.55, -44.8), fontsize=20, 
-    annotation_clip=False)
+# plt.annotate(r"$\boldsymbol{\sigma_{red}}$", (0.55, -44.8), fontsize=20, 
+#     annotation_clip=False)
+plt.annotate(r"$\boldsymbol{\overline{M_{*,red}^{c}}}$", (0.55, -44.8), 
+    fontsize=20, annotation_clip=False)
+
 plt.annotate("", xy=(0.594, 0.06), xytext=(0.65, 0.06), 
     xycoords="figure fraction", textcoords="figure fraction", 
     arrowprops=dict(arrowstyle="->", facecolor='k', linewidth=2))
-plt.annotate("", xy=(0.7, 0.06), xytext=(0.748, 0.06), 
+plt.annotate("", xy=(0.72, 0.06), xytext=(0.748, 0.06), 
     xycoords="figure fraction", textcoords="figure fraction", 
     arrowprops=dict(arrowstyle="<-", facecolor='k', linewidth=2))
     
-plt.annotate(r"$\boldsymbol{\sigma_{blue}}$", (1.14, -44.8), fontsize=20, 
-    annotation_clip=False)
+# plt.annotate(r"$\boldsymbol{\sigma_{blue}}$", (1.14, -44.8), fontsize=20, 
+#     annotation_clip=False)
+plt.annotate(r"$\boldsymbol{\overline{M_{*,blue}^{c}}}$", (1.14, -44.8), 
+    fontsize=20, annotation_clip=False)
+
 plt.annotate("", xy=(0.75, 0.06), xytext=(0.80, 0.06), 
     xycoords="figure fraction", textcoords="figure fraction", 
     arrowprops=dict(arrowstyle="->", facecolor='k', linewidth=2))
-plt.annotate("", xy=(0.85, 0.06), xytext=(0.90, 0.06), 
+plt.annotate("", xy=(0.875, 0.06), xytext=(0.90, 0.06), 
     xycoords="figure fraction", textcoords="figure fraction", 
     arrowprops=dict(arrowstyle="<-", facecolor='k', linewidth=2))
 
@@ -1613,24 +1623,29 @@ plt.annotate("", xy=(0.065, 0.52), xytext=(0.065, 0.575),
     xycoords="figure fraction", textcoords="figure fraction", 
     arrowprops=dict(arrowstyle="<-", facecolor='k', linewidth=2))
 
-plt.annotate(r"$\boldsymbol{\sigma_{red}}$", (-1.85, -15.6), fontsize=20, 
-    rotation=90, annotation_clip=False)
+# plt.annotate(r"$\boldsymbol{\sigma_{red}}$", (-1.85, -15.6), fontsize=20, 
+#     rotation=90, annotation_clip=False)
+plt.annotate(r"$\boldsymbol{\overline{M_{*,red}^{c}}}$", (-1.85, -15.6), 
+    fontsize=20, rotation=90, annotation_clip=False)
+
 plt.annotate("", xy=(0.065, 0.577), xytext=(0.065, 0.63), 
     xycoords="figure fraction", textcoords="figure fraction", 
     arrowprops=dict(arrowstyle="->", facecolor='k', linewidth=2)) 
-plt.annotate("", xy=(0.065, 0.677), xytext=(0.065, 0.728), 
+plt.annotate("", xy=(0.065, 0.695), xytext=(0.065, 0.728), 
     xycoords="figure fraction", textcoords="figure fraction", 
     arrowprops=dict(arrowstyle="<-", facecolor='k', linewidth=2))
 
-plt.annotate(r"$\boldsymbol{\sigma_{blue}}$", (-1.85, -8.1), fontsize=20, 
+# plt.annotate(r"$\boldsymbol{\sigma_{blue}}$", (-1.85, -8.1), fontsize=20, 
+#     rotation=90, annotation_clip=False)
+plt.annotate(r"$\boldsymbol{\overline{M_{*,blue}^{c}}}$", (-1.85, -8.1), fontsize=20, 
     rotation=90, annotation_clip=False)
 plt.annotate("", xy=(0.065, 0.73), xytext=(0.065, 0.78), 
     xycoords="figure fraction", textcoords="figure fraction", 
     arrowprops=dict(arrowstyle="->", facecolor='k', linewidth=2)) 
-plt.annotate("", xy=(0.065, 0.83), xytext=(0.065, 0.88), 
+plt.annotate("", xy=(0.065, 0.85), xytext=(0.065, 0.88), 
     xycoords="figure fraction", textcoords="figure fraction", 
     arrowprops=dict(arrowstyle="<-", facecolor='k', linewidth=2))
 
 plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/matrix_hybrid.pdf')
 
-# plt.show()
+plt.show()
