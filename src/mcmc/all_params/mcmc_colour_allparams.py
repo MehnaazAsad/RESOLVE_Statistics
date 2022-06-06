@@ -2352,7 +2352,7 @@ def main(args):
     pca = True
 
     survey = 'eco'
-    machine = 'mac'
+    machine = 'bender'
     nproc = 2
     nwalkers = 20
     nsteps = 2
