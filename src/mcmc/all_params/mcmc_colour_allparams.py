@@ -2350,21 +2350,13 @@ def main(args):
     stacked_stat = False
     pca = True
 
-    survey = 'eco'
-    machine = 'bender'
-    nproc = 2
-    nwalkers = 20
-    nsteps = 2
-    mf_type = 'smf'
-    quenching = 'hybrid'
-
-    # survey = args.survey
-    # machine = args.machine
-    # nproc = args.nproc
-    # nwalkers = args.nwalkers
-    # nsteps = args.nsteps
-    # mf_type = args.mf_type
-    # quenching = args.quenching
+    survey = args.survey
+    machine = args.machine
+    nproc = args.nproc
+    nwalkers = args.nwalkers
+    nsteps = args.nsteps
+    mf_type = args.mf_type
+    quenching = args.quenching
     
     dict_of_paths = cwpaths.cookiecutter_paths()
     path_to_raw = dict_of_paths['raw_dir']
