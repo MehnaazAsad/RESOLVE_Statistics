@@ -1379,39 +1379,42 @@ def get_err_data(survey, path):
     corr_mat_inv_colour = np.linalg.inv(corr_mat_colour.values)  
     err_colour = np.sqrt(np.diag(combined_df.cov()))
 
-    # #* Testing SVD
-    # from scipy.linalg import svd
-    # from numpy import zeros
-    # from numpy import diag
-    # # Singular-value decomposition
-    # U, s, VT = svd(corr_mat_colour)
-    # # create m x n Sigma matrix
-    # Sigma = zeros((corr_mat_colour.shape[0], corr_mat_colour.shape[1]))
-    # # populate Sigma with n x n diagonal matrix
-    # Sigma[:corr_mat_colour.shape[0], :corr_mat_colour.shape[0]] = diag(s)
+    if pca:
+        #* Testing SVD
+        from scipy.linalg import svd
+        from numpy import zeros
+        from numpy import diag
+        # Singular-value decomposition
+        U, s, VT = svd(corr_mat_colour)
+        # create m x n Sigma matrix
+        sigma_mat = zeros((corr_mat_colour.shape[0], corr_mat_colour.shape[1]))
+        # populate Sigma with n x n diagonal matrix
+        sigma_mat[:corr_mat_colour.shape[0], :corr_mat_colour.shape[0]] = diag(s)
 
-    # ## values in s are singular values. Corresponding (possibly non-zero) 
-    # ## eigenvalues are given by s**2.
+        ## values in s are singular values. Corresponding (possibly non-zero) 
+        ## eigenvalues are given by s**2.
 
-    # # Equation 10 from Sinha et. al 
-    # # LHS is actually eigenvalue**2 so need to take the sqrt two more times 
-    # # to be able to compare directly to values in Sigma 
-    # max_eigen = np.sqrt(np.sqrt(np.sqrt(2/(num_mocks*len(box_id_arr)))))
-    # #! This max_eigen calculation might not be correct since for a symmetric
-    # #! matrix, the singular values are absolute values of the eigenvalues
-    # #! which means max_eigen = np.sqrt(np.sqrt(2/(num_mocks*len(box_id_arr))))
-    # n_elements = len(s[s>max_eigen])
-    # Sigma = Sigma[:, :n_elements]
-    # VT = VT[:n_elements, :]
-    # # reconstruct
-    # B = U.dot(Sigma.dot(VT))
-    # print(B)
-    # # transform 2 ways (this is how you would transform data, model and sigma
-    # # i.e. new_data = data.dot(Sigma) etc.)
-    # T = U.dot(Sigma)
-    # print(T)
-    # T = corr_mat_colour.dot(VT.T)
-    # print(T)
+        # Equation 10 from Sinha et. al 
+        # LHS is actually eigenvalue**2 so need to take the sqrt two more times 
+        # to be able to compare directly to values in Sigma 
+        max_eigen = np.sqrt(np.sqrt(np.sqrt(2/(num_mocks*len(box_id_arr)))))
+        #* Note: for a symmetric matrix, the singular values are absolute values of 
+        #* the eigenvalues which means 
+        #* max_eigen = np.sqrt(np.sqrt(2/(num_mocks*len(box_id_arr))))
+        n_elements = len(s[s>max_eigen])
+        sigma_mat = sigma_mat[:, :n_elements]
+        # VT = VT[:n_elements, :]
+        # reconstruct
+        # B = U.dot(sigma_mat.dot(VT))
+        # print(B)
+        # transform 2 ways (this is how you would transform data, model and sigma
+        # i.e. new_data = data.dot(Sigma) etc.)
+        # T = U.dot(sigma_mat)
+        # print(T)
+        # T = corr_mat_colour.dot(VT.T)
+        # print(T)
+
+        err_colour_pca = err_colour.dot(sigma_mat)
 
     # from matplotlib.legend_handler import HandlerTuple
     # import matplotlib.pyplot as plt
@@ -1676,7 +1679,10 @@ def get_err_data(survey, path):
 
     # plt.show()
 
-    return err_colour, corr_mat_inv_colour
+    if pca:
+        return err_colour_pca, sigma_mat
+    else:
+        return err_colour, corr_mat_inv_colour
 
 def mcmc(nproc, nwalkers, nsteps, phi_total_data, f_blue_cen_data, 
     f_blue_sat_data, vdisp_red_data, vdisp_blue_data, err, corr_mat_inv):
@@ -2202,7 +2208,12 @@ def lnprob(theta, phi_total_data, f_blue_cen_data, f_blue_sat_data,
         err_arr = err
 
         data_arr, model_arr = np.array(data_arr), np.array(model_arr)
-        chi2 = chi_squared(data_arr, model_arr, err_arr, corr_mat_inv)
+        
+        if pca:
+            chi2 = chi_squared_pca(data_arr, model_arr, err_arr, corr_mat_inv)
+        else:
+            chi2 = chi_squared(data_arr, model_arr, err_arr, corr_mat_inv)
+    
         lnp = -chi2 / 2
 
         if math.isnan(lnp):
@@ -2251,6 +2262,43 @@ def chi_squared(data, model, err_data, inv_corr_mat):
 
     return chi_squared[0][0]
 
+def chi_squared_pca(data, model, err_data, mat):
+    """
+    Calculates chi squared
+
+    Parameters
+    ----------
+    data: array
+        Array of data values
+    
+    model: array
+        Array of model values
+    
+    err_data: array
+        Array of error in data values
+
+    Returns
+    ---------
+    chi_squared: float
+        Value of chi-squared given a model 
+
+    """
+    data = data.flatten() # from (2,5) to (1,10)
+    model = model.flatten() # same as above
+
+    # print('data: \n', data)
+    # print('model: \n', model)
+
+    data_pca = data.dot(mat)
+    model_pca = model.dot(mat)
+
+    #Error is already transformed in get_err_data()
+    chi_squared_arr = (data_pca - model_pca)**2 / (err_data**2)
+    chi_squared = np.sum(chi_squared_arr)
+    print("chi-squared: {0}".format(chi_squared))
+    
+    return chi_squared[0][0]
+
 def args_parser():
     """
     Parsing arguments passed to script
@@ -2295,19 +2343,29 @@ def main(args):
     global path_to_data
     global level
     global stacked_stat
+    global pca
 
     rseed = 12
     np.random.seed(rseed)
     level = "group"
     stacked_stat = False
+    pca = True
 
-    survey = args.survey
-    machine = args.machine
-    nproc = args.nproc
-    nwalkers = args.nwalkers
-    nsteps = args.nsteps
-    mf_type = args.mf_type
-    quenching = args.quenching
+    survey = 'eco'
+    machine = 'mac'
+    nproc = 2
+    nwalkers = 20
+    nsteps = 2
+    mf_type = 'smf'
+    quenching = 'hybrid'
+
+    # survey = args.survey
+    # machine = args.machine
+    # nproc = args.nproc
+    # nwalkers = args.nwalkers
+    # nsteps = args.nsteps
+    # mf_type = args.mf_type
+    # quenching = args.quenching
     
     dict_of_paths = cwpaths.cookiecutter_paths()
     path_to_raw = dict_of_paths['raw_dir']
@@ -2375,11 +2433,11 @@ def main(args):
     model_init = halocat_init(halo_catalog, z_median)
 
     print('Measuring error in data from mocks')
-    sigma, corr_mat_inv = get_err_data(survey, path_to_mocks)
+    sigma, mat = get_err_data(survey, path_to_mocks)
 
     print('Error in data: \n', sigma)
     print('------------- \n')
-    print('Inverse of covariance matrix: \n', corr_mat_inv)
+    print('Matrix: \n', mat)
     print('------------- \n')
     print('SMF total data: \n', total_data[1])
     print('------------- \n')
@@ -2398,12 +2456,12 @@ def main(args):
     if stacked_stat:
         sampler = mcmc(nproc, nwalkers, nsteps, total_data[1],
             f_blue_data[2], f_blue_data[3], sigma_red_data,
-            sigma_blue_data, sigma, corr_mat_inv)
+            sigma_blue_data, sigma, mat)
 
     else:
         sampler = mcmc(nproc, nwalkers, nsteps, total_data[1],
             f_blue_data[2], f_blue_data[3], mean_mstar_red_data[0],
-            mean_mstar_blue_data[0], sigma, corr_mat_inv)
+            mean_mstar_blue_data[0], sigma, mat)
 
     # sampler = mcmc(nproc, nwalkers, nsteps, total_data[1], f_blue_data[2], 
     #     f_blue_data[3], sigma, corr_mat_inv)
