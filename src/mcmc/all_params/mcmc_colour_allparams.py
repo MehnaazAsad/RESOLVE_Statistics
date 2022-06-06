@@ -2295,9 +2295,8 @@ def chi_squared_pca(data, model, err_data, mat):
     #Error is already transformed in get_err_data()
     chi_squared_arr = (data_pca - model_pca)**2 / (err_data**2)
     chi_squared = np.sum(chi_squared_arr)
-    print("chi-squared: {0}".format(chi_squared))
     
-    return chi_squared[0][0]
+    return chi_squared
 
 def args_parser():
     """
