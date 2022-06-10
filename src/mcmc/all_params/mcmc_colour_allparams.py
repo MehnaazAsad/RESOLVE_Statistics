@@ -2273,10 +2273,10 @@ def chi_squared_pca(data, model, err_data, mat):
         Value of chi-squared given a model 
 
     """
-    model = model.flatten() # flatten from (5,4) to (1,9)
+    model = model.flatten() # flatten from (5,4) to (1,20)
 
-    print('data: \n', data)
-    print('model: \n', model)
+    # print('data: \n', data)
+    # print('model: \n', model)
 
     model_pca = model.dot(mat)
 
@@ -2284,7 +2284,7 @@ def chi_squared_pca(data, model, err_data, mat):
     #transformed in main()
     chi_squared_arr = (data - model_pca)**2 / (err_data**2)
     chi_squared = np.sum(chi_squared_arr)
-    print("chi-squared: ", chi_squared)
+    # print("chi-squared: ", chi_squared)
     
     return chi_squared
 
@@ -2448,7 +2448,7 @@ def main(args):
         data_arr.append(vdisp_red_data)
         data_arr.append(vdisp_blue_data)
         data_arr = np.array(data_arr)
-        data_arr = data_arr.flatten() # flatten from (5,4) to (1,9)
+        data_arr = data_arr.flatten() # flatten from (5,4) to (1,20)
 
         if pca:
             data_arr = data_arr.dot(mat)
