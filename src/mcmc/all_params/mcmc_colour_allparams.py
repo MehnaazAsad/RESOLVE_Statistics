@@ -1684,8 +1684,7 @@ def get_err_data(survey, path):
     else:
         return err_colour, corr_mat_inv_colour
 
-def mcmc(nproc, nwalkers, nsteps, phi_total_data, f_blue_cen_data, 
-    f_blue_sat_data, vdisp_red_data, vdisp_blue_data, err, corr_mat_inv):
+def mcmc(nproc, nwalkers, nsteps, data, err, corr_mat_inv):
     """
     MCMC analysis
 
@@ -1750,8 +1749,7 @@ def mcmc(nproc, nwalkers, nsteps, phi_total_data, f_blue_cen_data,
     backend = emcee.backends.HDFBackend(filename)
     with Pool(processes=nproc) as pool:
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, backend=backend,
-            args=(phi_total_data, f_blue_cen_data, f_blue_sat_data, 
-            vdisp_red_data, vdisp_blue_data, err, corr_mat_inv), pool=pool)
+            args=(data, err, corr_mat_inv), pool=pool)
         start = time.time()
         sampler.run_mcmc(p0, nsteps, progress=True)
         end = time.time()
@@ -2009,8 +2007,7 @@ def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
 
     return mockgal_pd_merged
 
-def lnprob(theta, phi_total_data, f_blue_cen_data, f_blue_sat_data, 
-    vdisp_red_data, vdisp_blue_data, err, corr_mat_inv):
+def lnprob(theta, data, err, corr_mat_inv):
     """
     Calculates log probability for emcee
 
@@ -2189,12 +2186,6 @@ def lnprob(theta, phi_total_data, f_blue_cen_data, f_blue_sat_data,
             mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
                 statistic=average_of_log, bins=np.linspace(-1,3,5))
 
-        data_arr = []
-        data_arr.append(phi_total_data)
-        data_arr.append(f_blue_cen_data)
-        data_arr.append(f_blue_sat_data)
-        data_arr.append(vdisp_red_data)
-        data_arr.append(vdisp_blue_data)
         model_arr = []
         model_arr.append(total_model[1])
         model_arr.append(f_blue[2])   
@@ -2205,14 +2196,13 @@ def lnprob(theta, phi_total_data, f_blue_cen_data, f_blue_sat_data,
         else:
             model_arr.append(mean_mstar_red[0])
             model_arr.append(mean_mstar_blue[0])
-        err_arr = err
 
-        data_arr, model_arr = np.array(data_arr), np.array(model_arr)
+        model_arr = np.array(model_arr)
         
         if pca:
-            chi2 = chi_squared_pca(data_arr, model_arr, err_arr, corr_mat_inv)
+            chi2 = chi_squared_pca(data, model_arr, err, corr_mat_inv)
         else:
-            chi2 = chi_squared(data_arr, model_arr, err_arr, corr_mat_inv)
+            chi2 = chi_squared(data, model_arr, err, corr_mat_inv)
     
         lnp = -chi2 / 2
 
@@ -2286,15 +2276,16 @@ def chi_squared_pca(data, model, err_data, mat):
     data = data.flatten() # from (2,5) to (1,10)
     model = model.flatten() # same as above
 
-    # print('data: \n', data)
-    # print('model: \n', model)
+    print('data: \n', data)
+    print('model: \n', model)
 
-    data_pca = data.dot(mat)
     model_pca = model.dot(mat)
 
-    #Error is already transformed in get_err_data()
-    chi_squared_arr = (data_pca - model_pca)**2 / (err_data**2)
+    #Error is already transformed in get_err_data() and data is already 
+    #transformed in main()
+    chi_squared_arr = (data - model_pca)**2 / (err_data**2)
     chi_squared = np.sum(chi_squared_arr)
+    print("chi-squared: ", chi_squared)
     
     return chi_squared
 
@@ -2435,6 +2426,7 @@ def main(args):
     print('Blue frac cen data: \n', f_blue_data[2])
     print('Blue frac sat data: \n', f_blue_data[3])
     print('------------- \n')
+
     if stacked_stat:
         print('Dispersion red data: \n', sigma_red_data)
         print('Dispersion blue data: \n', sigma_blue_data)
@@ -2445,14 +2437,42 @@ def main(args):
 
     print('Running MCMC')
     if stacked_stat:
-        sampler = mcmc(nproc, nwalkers, nsteps, total_data[1],
-            f_blue_data[2], f_blue_data[3], sigma_red_data,
-            sigma_blue_data, sigma, mat)
+
+        phi_total_data, f_blue_cen_data, f_blue_sat_data, vdisp_red_data, \
+            vdisp_blue_data = total_data[1], f_blue_data[2], f_blue_data[3], \
+            sigma_red_data, sigma_blue_data
+
+        data_arr = []
+        data_arr.append(phi_total_data)
+        data_arr.append(f_blue_cen_data)
+        data_arr.append(f_blue_sat_data)
+        data_arr.append(vdisp_red_data)
+        data_arr.append(vdisp_blue_data)
+        data_arr = np.array(data_arr)
+
+        if pca:
+            data_arr = data_arr.dot(mat)
+
+        sampler = mcmc(nproc, nwalkers, nsteps, data_arr, sigma, mat)
 
     else:
-        sampler = mcmc(nproc, nwalkers, nsteps, total_data[1],
-            f_blue_data[2], f_blue_data[3], mean_mstar_red_data[0],
-            mean_mstar_blue_data[0], sigma, mat)
+
+        phi_total_data, f_blue_cen_data, f_blue_sat_data, vdisp_red_data, \
+            vdisp_blue_data = total_data[1], f_blue_data[2], f_blue_data[3], \
+            mean_mstar_red_data[0], mean_mstar_blue_data[0]
+
+        data_arr = []
+        data_arr.append(phi_total_data)
+        data_arr.append(f_blue_cen_data)
+        data_arr.append(f_blue_sat_data)
+        data_arr.append(vdisp_red_data)
+        data_arr.append(vdisp_blue_data)
+        data_arr = np.array(data_arr)
+
+        if pca:
+            data_arr = data_arr.dot(mat)
+
+        sampler = mcmc(nproc, nwalkers, nsteps, data_arr, sigma, mat)
 
     # sampler = mcmc(nproc, nwalkers, nsteps, total_data[1], f_blue_data[2], 
     #     f_blue_data[3], sigma, corr_mat_inv)
