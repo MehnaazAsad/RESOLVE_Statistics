@@ -1753,7 +1753,7 @@ def mcmc(nproc, nwalkers, nsteps, data, err, corr_mat_inv):
             new_sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, 
                 backend=new_backend, args=(data, err, corr_mat_inv), pool=pool)
             start = time.time()
-            new_sampler.run_mcmc(None, 500, progress=True)
+            new_sampler.run_mcmc(None, nsteps, progress=True)
             end = time.time()
             multi_time = end - start
             print("Multiprocessing took {0:.1f} seconds".format(multi_time))
