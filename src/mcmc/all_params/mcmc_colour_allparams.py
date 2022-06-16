@@ -1332,7 +1332,6 @@ def get_err_data(survey, path):
     f_blue_cen_arr = np.array(f_blue_cen_arr)
     f_blue_sat_arr = np.array(f_blue_sat_arr)
 
-    #* Uncomment these next 2 lines later
     mean_mstar_red_arr = np.array(mean_mstar_red_arr)
     mean_mstar_blue_arr = np.array(mean_mstar_blue_arr)
 
@@ -1746,15 +1745,30 @@ def mcmc(nproc, nwalkers, nsteps, data, err, corr_mat_inv):
         reshape((nwalkers, ndim))
 
     filename = "chain_{0}.h5".format(quenching)
-    backend = emcee.backends.HDFBackend(filename)
-    with Pool(processes=nproc) as pool:
-        sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, backend=backend,
-            args=(data, err, corr_mat_inv), pool=pool)
-        start = time.time()
-        sampler.run_mcmc(p0, nsteps, progress=True)
-        end = time.time()
-        multi_time = end - start
-        print("Multiprocessing took {0:.1f} seconds".format(multi_time))
+
+    if not new_chain:
+        print("Resuming chain...")
+        new_backend = emcee.backends.HDFBackend(filename)
+        with Pool(processes=nproc) as pool:
+            new_sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, 
+                backend=new_backend, args=(data, err, corr_mat_inv), pool=pool)
+            start = time.time()
+            new_sampler.run_mcmc(None, 500, progress=True)
+            end = time.time()
+            multi_time = end - start
+            print("Multiprocessing took {0:.1f} seconds".format(multi_time))
+
+    else:
+        print("Starting new chain...")
+        backend = emcee.backends.HDFBackend(filename)
+        with Pool(processes=nproc) as pool:
+            sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, backend=backend,
+                args=(data, err, corr_mat_inv), pool=pool)
+            start = time.time()
+            sampler.run_mcmc(p0, nsteps, progress=True)
+            end = time.time()
+            multi_time = end - start
+            print("Multiprocessing took {0:.1f} seconds".format(multi_time))
 
     return sampler
 
@@ -2333,12 +2347,14 @@ def main(args):
     global level
     global stacked_stat
     global pca
+    global new_chain
 
     rseed = 12
     np.random.seed(rseed)
     level = "group"
     stacked_stat = False
     pca = True
+    new_chain = False
 
     survey = args.survey
     machine = args.machine
@@ -2453,8 +2469,6 @@ def main(args):
         if pca:
             data_arr = data_arr.dot(mat)
 
-        sampler = mcmc(nproc, nwalkers, nsteps, data_arr, sigma, mat)
-
     else:
 
         phi_total_data, f_blue_cen_data, f_blue_sat_data, vdisp_red_data, \
@@ -2473,7 +2487,7 @@ def main(args):
         if pca:
             data_arr = data_arr.dot(mat)
 
-        sampler = mcmc(nproc, nwalkers, nsteps, data_arr, sigma, mat)
+    sampler = mcmc(nproc, nwalkers, nsteps, data_arr, sigma, mat)
 
     # sampler = mcmc(nproc, nwalkers, nsteps, total_data[1], f_blue_data[2], 
     #     f_blue_data[3], sigma, corr_mat_inv)
