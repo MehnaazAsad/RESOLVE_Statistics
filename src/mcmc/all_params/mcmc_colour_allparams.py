@@ -1745,7 +1745,8 @@ def mcmc(nproc, nwalkers, nsteps, data, err, corr_mat_inv):
     p0 = all_param_vals + 0.1*np.random.rand(ndim*nwalkers).\
         reshape((nwalkers, ndim))
 
-    filename = "chain_{0}.h5".format(quenching)
+    # filename = "chain_{0}.h5".format(quenching)
+    filename = "memtest.h5"
 
     if not new_chain:
         print("Resuming chain...")
@@ -2377,7 +2378,7 @@ def main(args):
     level = "group"
     stacked_stat = False
     pca = True
-    new_chain = False
+    new_chain = True
 
     survey = args.survey
     machine = args.machine
