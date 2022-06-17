@@ -2121,6 +2121,7 @@ def lnprob(theta, data, err, corr_mat_inv):
 
     warnings.simplefilter("error", (UserWarning, RuntimeWarning))
     try: 
+        print("Populating")
         gals_df = populate_mock(theta[:5], model_init)
         gals_df = gals_df.loc[gals_df['stellar_mass'] >= 10**8.6].reset_index(drop=True)
         gals_df = apply_rsd(gals_df)
@@ -2140,6 +2141,8 @@ def lnprob(theta, data, err, corr_mat_inv):
 
         gals_df['logmstar'] = np.log10(gals_df['logmstar'])
 
+        print("Applying quenching models")
+
         if quenching == 'hybrid':
             f_red_cen, f_red_sat = hybrid_quenching_model(theta[5:], gals_df, \
                 'vishnu')
@@ -2148,10 +2151,12 @@ def lnprob(theta, data, err, corr_mat_inv):
                 'vishnu')
         gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, \
             gals_df)
+        print("Group finding")
 
         gal_group_df = group_finding(gals_df,
             path_to_data + 'interim/', param_dict)
 
+        print("RSD")
         ## Making a similar cz cut as in data which is based on grpcz being 
         ## defined as cz of the central of the group "grpcz_new"
         cz_inner_mod = 3000
@@ -2171,11 +2176,17 @@ def lnprob(theta, data, err, corr_mat_inv):
         # v_sim = 130**3
         # v_sim = 890641.5172927063 #survey volume used in group_finder.py
 
+        print("Observable No. 1")
+
         ## Observable #1 - Total SMF
         total_model = measure_all_smf(gal_group_df, survey_vol, False)  
         ## Observable #2 - Blue fraction
+        print("Observable No. 2")
+
         f_blue = blue_frac(gal_group_df, True, False)
         ## Observable #3 
+        print("Observable No. 3")
+
         if stacked_stat:
             red_deltav, red_cen_mstar_sigma, blue_deltav, \
                 blue_cen_mstar_sigma = get_stacked_velocity_dispersion(
@@ -2201,6 +2212,8 @@ def lnprob(theta, data, err, corr_mat_inv):
             mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
                 statistic=average_of_log, bins=np.linspace(-1,3,5))
 
+        print("Creating model array")
+
         model_arr = []
         model_arr.append(total_model[1])
         model_arr.append(f_blue[2])   
@@ -2213,17 +2226,23 @@ def lnprob(theta, data, err, corr_mat_inv):
             model_arr.append(mean_mstar_blue[0])
 
         model_arr = np.array(model_arr)
-        
+
+        print("Chi-squared")
+
         if pca:
             chi2 = chi_squared_pca(data, model_arr, err, corr_mat_inv)
         else:
             chi2 = chi_squared(data, model_arr, err, corr_mat_inv)
     
+        print("Calculating log prob")
+
         lnp = -chi2 / 2
 
         if math.isnan(lnp):
             raise ValueError
     except (ValueError, RuntimeWarning, UserWarning):
+        print("Except clause")
+
         lnp = -np.inf
         chi2 = np.inf
 
