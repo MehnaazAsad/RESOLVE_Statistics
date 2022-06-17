@@ -2154,7 +2154,7 @@ def lnprob(theta, data, err, corr_mat_inv):
         gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, \
             gals_df)
         # print("Group finding")
-
+        """
         gal_group_df = group_finding(gals_df,
             path_to_data + 'interim/', param_dict)
 
@@ -2237,7 +2237,8 @@ def lnprob(theta, data, err, corr_mat_inv):
             chi2 = chi_squared(data, model_arr, err, corr_mat_inv)
     
         # print("Calculating log prob")
-
+        """
+        chi2=np.random.uniform()
         lnp = -chi2 / 2
 
         if math.isnan(lnp):
