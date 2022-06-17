@@ -38,7 +38,7 @@ def vol_sphere(r):
     return volume
 
 def average_of_log(arr):
-    result = np.log10(np.mean(10**(arr)))
+    result = np.log10(np.mean(np.power(10, arr)))
     return result
 
 def mock_add_grpcz(df, grpid_col=None, galtype_col=None, cen_cz_col=None):
@@ -1413,7 +1413,8 @@ def get_err_data(survey, path):
         # T = corr_mat_colour.dot(VT.T)
         # print(T)
 
-        err_colour_pca = err_colour.dot(sigma_mat)
+        #* Same as err_colour.dot(sigma_mat)
+        err_colour = err_colour[:n_elements]*sigma_mat.diagonal()
 
     # from matplotlib.legend_handler import HandlerTuple
     # import matplotlib.pyplot as plt
@@ -1679,7 +1680,7 @@ def get_err_data(survey, path):
     # plt.show()
 
     if pca:
-        return err_colour_pca, sigma_mat
+        return err_colour, sigma_mat, n_elements
     else:
         return err_colour, corr_mat_inv_colour
 
@@ -1762,8 +1763,8 @@ def mcmc(nproc, nwalkers, nsteps, data, err, corr_mat_inv):
         print("Starting new chain...")
         backend = emcee.backends.HDFBackend(filename)
         with Pool(processes=nproc) as pool:
-            sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, backend=backend,
-                args=(data, err, corr_mat_inv), pool=pool)
+            sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, 
+                backend=backend, args=(data, err, corr_mat_inv), pool=pool)
             start = time.time()
             sampler.run_mcmc(p0, nsteps, progress=True)
             end = time.time()
@@ -2292,11 +2293,12 @@ def chi_squared_pca(data, model, err_data, mat):
     # print('data: \n', data)
     # print('model: \n', model)
 
-    model_pca = model.dot(mat)
+    #* Same as model_pca = model.dot(mat)
+    model = model[:n_eigen]*mat.diagonal()
 
     #Error is already transformed in get_err_data() and data is already 
     #transformed in main()
-    chi_squared_arr = (data - model_pca)**2 / (err_data**2)
+    chi_squared_arr = (data - model)**2 / (err_data**2)
     chi_squared = np.sum(chi_squared_arr)
     # print("chi-squared: ", chi_squared)
     
@@ -2348,6 +2350,7 @@ def main(args):
     global stacked_stat
     global pca
     global new_chain
+    global n_eigen
 
     rseed = 12
     np.random.seed(rseed)
@@ -2430,7 +2433,10 @@ def main(args):
     model_init = halocat_init(halo_catalog, z_median)
 
     print('Measuring error in data from mocks')
-    sigma, mat = get_err_data(survey, path_to_mocks)
+    if pca:
+        sigma, mat, n_eigen = get_err_data(survey, path_to_mocks)
+    else:
+        sigma, mat = get_err_data(survey, path_to_mocks)
 
     print('Error in data: \n', sigma)
     print('------------- \n')
@@ -2467,7 +2473,8 @@ def main(args):
         data_arr = data_arr.flatten() # flatten from (5,4) to (1,20)
 
         if pca:
-            data_arr = data_arr.dot(mat)
+            #* Same as data_arr = data_arr.dot(mat)
+            data_arr = data_arr[:n_eigen]*mat.diagonal()
 
     else:
 
@@ -2485,7 +2492,8 @@ def main(args):
         data_arr = data_arr.flatten()
 
         if pca:
-            data_arr = data_arr.dot(mat)
+            #* Same as data_arr = data_arr.dot(mat)
+            data_arr = data_arr[:n_eigen]*mat.diagonal()
 
     sampler = mcmc(nproc, nwalkers, nsteps, data_arr, sigma, mat)
 
