@@ -1762,11 +1762,11 @@ def mcmc(nproc, nwalkers, nsteps, data, err, corr_mat_inv):
 
     else:
         print("Starting new chain...")
-        backend = emcee.backends.HDFBackend(filename)
-        backend.reset(nwalkers, ndim)
+        # backend = emcee.backends.HDFBackend(filename)
+        # backend.reset(nwalkers, ndim)
         with Pool(processes=nproc) as pool:
             sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, 
-                backend=backend, args=(data, err, corr_mat_inv), pool=pool)
+                args=(data, err, corr_mat_inv), pool=pool)
             start = time.time()
             sampler.run_mcmc(p0, nsteps, progress=True)
             end = time.time()
