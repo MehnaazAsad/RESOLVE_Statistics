@@ -2113,7 +2113,7 @@ def lnprob(theta, data, err, corr_mat_inv):
         'l_perp': 0.07,
         'l_para': 1.1,
         'nmin': 1,
-        'verbose': True,
+        'verbose': False,
         'catl_type': 'mstar'
     }
 
