@@ -1953,7 +1953,7 @@ def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
     ## RA-DEC-CZ file
     mock_coord_pd = mock_pd[['ra','dec','cz','logmstar']].to_csv(mock_coord_path,
                         sep=' ', header=None, index=False)
-    """
+
     # cu.File_Exists(mock_coord_path)
     ## Creating `FoF` command and executing it
     # fof_exe = '/fs1/caldervf/custom_utilities_c/group_finder_fof/fof9_ascii'
@@ -1975,6 +1975,7 @@ def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
     if param_dict['verbose']:
         print(fof_cmd)
     subprocess.call(fof_cmd, shell=True)
+    """
     ##
     ## Parsing `fof_file` - Galaxy and Group files
     gal_cmd   = 'grep G -v {0} > {1}'.format(fof_file, grep_file)
