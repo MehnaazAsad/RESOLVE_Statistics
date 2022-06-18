@@ -2158,9 +2158,10 @@ def lnprob(theta, data, err, corr_mat_inv):
         gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, \
             gals_df)
         npmax = 1e5
-        if len(gals_df) > npmax:
-            print("(test) WARNING! Increasing memory allocation")
-
+        if len(gals_df) >= npmax:
+            print("size of df, {0}, is >= npmax {1}\n".format(len(gals_df), npmax))
+            print("(test) WARNING! Increasing memory allocation\n")
+            npmax*=1.2
         # print("Group finding")
 
         gal_group_df = group_finding(gals_df,
