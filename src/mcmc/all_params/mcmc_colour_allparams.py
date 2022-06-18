@@ -2519,10 +2519,9 @@ def main(args):
         data_arr = np.array(data_arr)
         data_arr = data_arr.flatten()
 
-        if pca:
-            #* Same as data_arr = data_arr.dot(mat)
+        # if pca:
+        #     #* Same as data_arr = data_arr.dot(mat)
             # data_arr = data_arr[:n_eigen]*mat.diagonal()
-            data_arr = data_arr[:n_eigen]*mat_test.diagonal()
 
     sampler = mcmc(nproc, nwalkers, nsteps, data_arr, sigma_test, mat_test)
 
