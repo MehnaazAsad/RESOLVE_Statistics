@@ -2026,7 +2026,7 @@ def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
     return mockgal_pd_merged
     """
     return mock_coord_pd
-    
+
 def lnprob(theta, data, err, corr_mat_inv):
     """
     Calculates log probability for emcee
@@ -2458,7 +2458,7 @@ def main(args):
     model_init = halocat_init(halo_catalog, z_median)
 
     sigma_test = np.ones(20)
-    mat_test = np.ones(5,5)
+    mat_test = np.ones((5,5))
 
     # print('Measuring error in data from mocks')
     # if pca:
