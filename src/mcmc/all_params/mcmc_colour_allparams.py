@@ -1953,6 +1953,7 @@ def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
     ## RA-DEC-CZ file
     mock_coord_pd = mock_pd[['ra','dec','cz','logmstar']].to_csv(mock_coord_path,
                         sep=' ', header=None, index=False)
+    """
     # cu.File_Exists(mock_coord_path)
     ## Creating `FoF` command and executing it
     # fof_exe = '/fs1/caldervf/custom_utilities_c/group_finder_fof/fof9_ascii'
@@ -2023,7 +2024,9 @@ def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
         print('Group Finding ....Done')
 
     return mockgal_pd_merged
-
+    """
+    return mock_coord_pd
+    
 def lnprob(theta, data, err, corr_mat_inv):
     """
     Calculates log probability for emcee
@@ -2154,10 +2157,10 @@ def lnprob(theta, data, err, corr_mat_inv):
         gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, \
             gals_df)
         # print("Group finding")
-        """
+
         gal_group_df = group_finding(gals_df,
             path_to_data + 'interim/', param_dict)
-
+        """
         # print("RSD")
         ## Making a similar cz cut as in data which is based on grpcz being 
         ## defined as cz of the central of the group "grpcz_new"
@@ -2454,16 +2457,19 @@ def main(args):
     print('Initial population of halo catalog')
     model_init = halocat_init(halo_catalog, z_median)
 
-    print('Measuring error in data from mocks')
-    if pca:
-        sigma, mat, n_eigen = get_err_data(survey, path_to_mocks)
-    else:
-        sigma, mat = get_err_data(survey, path_to_mocks)
+    sigma_test = np.ones(20)
+    mat_test = np.ones(5,5)
 
-    print('Error in data: \n', sigma)
-    print('------------- \n')
-    print('Matrix: \n', mat)
-    print('------------- \n')
+    # print('Measuring error in data from mocks')
+    # if pca:
+    #     sigma, mat, n_eigen = get_err_data(survey, path_to_mocks)
+    # else:
+    #     sigma, mat = get_err_data(survey, path_to_mocks)
+
+    # print('Error in data: \n', sigma)
+    # print('------------- \n')
+    # print('Matrix: \n', mat)
+    # print('------------- \n')
     print('SMF total data: \n', total_data[1])
     print('------------- \n')
     print('Blue frac cen data: \n', f_blue_data[2])
@@ -2515,9 +2521,10 @@ def main(args):
 
         if pca:
             #* Same as data_arr = data_arr.dot(mat)
-            data_arr = data_arr[:n_eigen]*mat.diagonal()
+            # data_arr = data_arr[:n_eigen]*mat.diagonal()
+            data_arr = data_arr[:n_eigen]*mat_test.diagonal()
 
-    sampler = mcmc(nproc, nwalkers, nsteps, data_arr, sigma, mat)
+    sampler = mcmc(nproc, nwalkers, nsteps, data_arr, sigma_test, mat_test)
 
     # sampler = mcmc(nproc, nwalkers, nsteps, total_data[1], f_blue_data[2], 
     #     f_blue_data[3], sigma, corr_mat_inv)
