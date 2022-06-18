@@ -1974,7 +1974,7 @@ def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
     # Executing command
     if param_dict['verbose']:
         print(fof_cmd)
-    subprocess.call(fof_cmd, shell=True)
+    subprocess.call(fof_cmd, shell=False)
     """
     ##
     ## Parsing `fof_file` - Galaxy and Group files
