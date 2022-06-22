@@ -2725,7 +2725,10 @@ def main(args):
     print('------------- \n')
     print('Matrix: \n', mat)
     print('------------- \n')
-    print('SMF total data: \n', total_data[1])
+    if mf_type == 'smf':
+        print('SMF total data: \n', total_data[1])
+    elif mf_type == 'bmf':
+        print('BMF total data: \n', total_data[1])       
     print('------------- \n')
     print('Blue frac cen data: \n', f_blue_data[2])
     print('Blue frac sat data: \n', f_blue_data[3])
