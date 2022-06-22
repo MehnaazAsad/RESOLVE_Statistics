@@ -379,6 +379,7 @@ def pandas_df_to_hdf5_file(data, hdf5_file, key=None, mode='w',
 
 
 survey = 'eco'
+mf_type = 'bmf'
 ## Running group-finding on data including the buffer
 cz_inner = 2530
 cz_outer = 7470
@@ -408,12 +409,17 @@ path_to_processed = dict_of_paths['proc_dir']
 
 catl_file = path_to_raw + "eco/ecodr2.csv"
 
-eco_buff = pd.read_csv(catl_file,delimiter=",", header=0) 
+eco_buff = pd.read_csv(catl_file, delimiter=",", header=0) 
 
-eco_subset_df = eco_buff.loc[(eco_buff.cz >= cz_inner) & \
-    (eco_buff.cz <= cz_outer) & (eco_buff.logmstar >= 8.9)].\
-    reset_index(drop=True)
-
+if mf_type == 'smf':
+    eco_subset_df = eco_buff.loc[(eco_buff.cz >= cz_inner) & \
+        (eco_buff.cz <= cz_outer) & (eco_buff.logmstar >= 8.9)].\
+        reset_index(drop=True)
+elif mf_type == 'bmf':
+    eco_subset_df = eco_buff.loc[(eco_buff.cz >= cz_inner) & \
+        (eco_buff.cz <= cz_outer) & (eco_buff.logmbary >= 9.4)].\
+        reset_index(drop=True)
+  
 ## Testing without M* cut
 # eco_subset_df = eco_buff.loc[(eco_buff.cz >= cz_inner) & \
 #     (eco_buff.cz <= cz_outer)].\
@@ -430,5 +436,5 @@ gal_group_df_new, group_df_new = \
 
 print('Writing to output files')
 pandas_df_to_hdf5_file(data=gal_group_df_new,
-    hdf5_file=path_to_processed + 'gal_group_eco_data_buffer_volh1_dr2.hdf5', 
+    hdf5_file=path_to_processed + 'gal_group_eco_bary_data_buffer_volh1_dr2.hdf5', 
     key='gal_group_df')
