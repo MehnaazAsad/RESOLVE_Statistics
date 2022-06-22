@@ -473,6 +473,7 @@ def blue_frac(catl, h1_bool, data_bool, randint_logmstar=None):
             logmbary_arr = calc_bary(logmstar_arr, logmgas_arr)
             catl["logmbary"] = logmbary_arr
 
+            mass_total_arr = catl.logmbary.values
             mass_cen_arr = catl.logmbary.loc[catl[censat_col] == 1].values
             mass_sat_arr = catl.logmbary.loc[catl[censat_col] == 0].values
 
@@ -528,9 +529,12 @@ def blue_frac(catl, h1_bool, data_bool, randint_logmstar=None):
         bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
         bins = np.linspace(bin_min, bin_max, 7)
 
-    result_total = bs(logmass_total_arr, colour_label_total_arr, blue_frac_helper, bins=bins)
-    result_cen = bs(logmass_cen_arr, colour_label_cen_arr, blue_frac_helper, bins=bins)
-    result_sat = bs(logmass_sat_arr, colour_label_sat_arr, blue_frac_helper, bins=bins)
+    result_total = bs(logmass_total_arr, colour_label_total_arr, 
+        blue_frac_helper, bins=bins)
+    result_cen = bs(logmass_cen_arr, colour_label_cen_arr, blue_frac_helper, 
+        bins=bins)
+    result_sat = bs(logmass_sat_arr, colour_label_sat_arr, blue_frac_helper, 
+        bins=bins)
     edges = result_total[1]
     dm = edges[1] - edges[0]  # Bin width
     maxis = 0.5 * (edges[1:] + edges[:-1])  # Mass axis i.e. bin centers
@@ -598,32 +602,47 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
         elif survey == 'resolveb':
             catl = catl.loc[catl.logmstar >= 8.7]
 
-    if catl_type == 'data' or catl_type == 'mock':
-        #todo continue from here
         catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
         catl.logmbary = np.log10((10**catl.logmbary) / 2.041)
-        logmstar_col = 'logmstar'
-        mhi_arr = catl.mhi.values
-        logmgas_arr = np.log10(1.4 * mhi_arr)
-        logmbary_arr = calc_bary(logmstar_arr, logmgas_arr)
 
-        logmbary_col = 'logmbary' #! check for mock
+        logmstar_col = 'logmstar'
+        logmbary_col = 'logmbary'
+
         ## Use group level for data even when settings.level == halo
-        if catl_type == 'data' or level == 'group':
+        galtype_col = 'g_galtype'
+        id_col = 'groupid'
+
+    if catl_type == 'mock':
+        catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
+        mhi_arr = catl.mhi.values
+        logmgas_arr = np.log10((1.4 * mhi_arr) / 2.041)
+        logmbary_arr = calc_bary(catl.logmstar.values, logmgas_arr)
+        catl["logmbary"] = logmbary_arr
+
+        if mf_type == 'smf':
+            catl = catl.loc[catl.logmstar >= np.log10((10**mstar_limit)/2.041)]
+        elif mf_type == 'bmf':
+            catl = catl.loc[catl.logmbary >= np.log10((10**mbary_limit)/2.041)]
+
+        logmstar_col = 'logmstar'
+        logmbary_col = 'logmbary'
+
+        if level == 'group':
             galtype_col = 'g_galtype'
             id_col = 'groupid'
-        ## No halo level in data
-        if catl_type == 'mock':
-            if level == 'halo':
-                galtype_col = 'cs_flag'
-                ## Halo ID is equivalent to halo_hostid in vishnu mock
-                id_col = 'haloid'
+        if level == 'halo':
+            galtype_col = 'cs_flag'
+            ## Halo ID is equivalent to halo_hostid in vishnu mock
+            id_col = 'haloid'
 
     if catl_type == 'model':
         if survey == 'eco':
             min_cz = 3000
             max_cz = 12000
-            mstar_limit = 8.9
+            if mf_type == 'smf':
+                mstar_limit = 8.9
+            elif mf_type == 'bmf':
+                mstar_limit = 9.4
         elif survey == 'resolvea':
             min_cz = 4500
             max_cz = 7000
@@ -635,6 +654,7 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
 
         if randint is None:
             logmstar_col = 'logmstar'
+            logmbary_col = 'logmstar'
             galtype_col = 'grp_censat'
             id_col = 'groupid'
             cencz_col = 'cen_cz'
@@ -777,28 +797,47 @@ def get_stacked_velocity_dispersion(catl, catl_type, randint=None):
         elif survey == 'resolveb':
             catl = catl.loc[catl.logmstar >= 8.7]
 
-
-    if catl_type == 'data' or catl_type == 'mock':
         catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
         catl.logmbary = np.log10((10**catl.logmbary) / 2.041)
+
         logmstar_col = 'logmstar'
-        logmbary_col = 'logmbary' #! check for mock
+        logmbary_col = 'logmbary'
+
         ## Use group level for data even when settings.level == halo
-        if catl_type == 'data' or level == 'group':
+        galtype_col = 'g_galtype'
+        id_col = 'groupid'
+
+    if catl_type == 'mock':
+        catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
+        mhi_arr = catl.mhi.values
+        logmgas_arr = np.log10((1.4 * mhi_arr) / 2.041)
+        logmbary_arr = calc_bary(catl.logmstar.values, logmgas_arr)
+        catl["logmbary"] = logmbary_arr
+
+        if mf_type == 'smf':
+            catl = catl.loc[catl.logmstar >= np.log10((10**mstar_limit)/2.041)]
+        elif mf_type == 'bmf':
+            catl = catl.loc[catl.logmbary >= np.log10((10**mbary_limit)/2.041)]
+
+        logmstar_col = 'logmstar'
+        logmbary_col = 'logmbary'
+
+        if level == 'group':
             galtype_col = 'g_galtype'
             id_col = 'groupid'
-        ## No halo level in data
-        if catl_type == 'mock':
-            if level == 'halo':
-                galtype_col = 'cs_flag'
-                ## Halo ID is equivalent to halo_hostid in vishnu mock
-                id_col = 'haloid'
+        if level == 'halo':
+            galtype_col = 'cs_flag'
+            ## Halo ID is equivalent to halo_hostid in vishnu mock
+            id_col = 'haloid'
 
     if catl_type == 'model':
         if survey == 'eco':
             min_cz = 3000
             max_cz = 12000
-            mstar_limit = 8.9
+            if mf_type == 'smf':
+                mstar_limit = 8.9
+            elif mf_type == 'bmf':
+                mstar_limit = 9.4
         elif survey == 'resolvea':
             min_cz = 4500
             max_cz = 7000
@@ -810,6 +849,7 @@ def get_stacked_velocity_dispersion(catl, catl_type, randint=None):
 
         if randint is None:
             logmstar_col = 'logmstar'
+            logmbary_col = 'logmstar'
             galtype_col = 'grp_censat'
             id_col = 'groupid'
             cencz_col = 'cen_cz'
@@ -1296,9 +1336,15 @@ def get_err_data(survey, path):
                 galtype_col='g_galtype', cen_cz_col='cz')
             # Using the same survey definition as in mcmc smf i.e excluding the 
             # buffer
-            mock_pd = mock_pd.loc[(mock_pd.grpcz_new.values >= min_cz) & \
-                (mock_pd.grpcz_new.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
-                (mock_pd.logmstar.values >= mstar_limit)].reset_index(drop=True)
+            if mf_type == 'smf':
+                mock_pd = mock_pd.loc[(mock_pd.grpcz_new.values >= min_cz) & \
+                    (mock_pd.grpcz_new.values <= max_cz) & \
+                    (mock_pd.M_r.values <= mag_limit) & \
+                    (mock_pd.logmstar.values >= mstar_limit)].reset_index(drop=True)
+            elif mf_type == 'bmf':
+                mock_pd = mock_pd.loc[(mock_pd.grpcz_new.values >= min_cz) & \
+                    (mock_pd.grpcz_new.values <= max_cz) & \
+                    (mock_pd.M_r.values <= mag_limit)].reset_index(drop=True)
 
             # ## Using best-fit found for old ECO data using optimize_hybridqm_eco,py
             # Mstar_q = 10.39 # Msun/h
@@ -1390,9 +1436,9 @@ def get_err_data(survey, path):
                         blue_cen_mstar_sigma = get_stacked_velocity_dispersion(mock_pd, 'mock')
 
                     sigma_red = bs(red_cen_mstar_sigma, red_deltav,
-                        statistic='std', bins=np.linspace(8.6,11.2,5))
+                        statistic='std', bins=np.linspace(8.6,11,5))
                     sigma_blue = bs( blue_cen_mstar_sigma, blue_deltav,
-                        statistic='std', bins=np.linspace(8.6,11.2,5))
+                        statistic='std', bins=np.linspace(8.6,11,5))
                     
                     sigma_red = np.log10(sigma_red[0])
                     sigma_blue = np.log10(sigma_blue[0])
@@ -1402,9 +1448,9 @@ def get_err_data(survey, path):
                         blue_cen_mbary_sigma = get_stacked_velocity_dispersion(mock_pd, 'mock')
 
                     sigma_red = bs(red_cen_mbary_sigma, red_deltav,
-                        statistic='std', bins=np.linspace(9.1,11.2,5))
+                        statistic='std', bins=np.linspace(9.1,11,5))
                     sigma_blue = bs( blue_cen_mbary_sigma, blue_deltav,
-                        statistic='std', bins=np.linspace(9.1,11.2,5))
+                        statistic='std', bins=np.linspace(9.1,11,5))
                     
                     sigma_red = np.log10(sigma_red[0])
                     sigma_blue = np.log10(sigma_blue[0])
@@ -1559,7 +1605,8 @@ def get_err_data(survey, path):
     # fig1 = plt.figure()
     # ax1 = fig1.add_subplot(111)
     # cmap = cm.get_cmap('Spectral_r')
-    # cax = ax1.matshow(B, cmap=cmap, vmin=-1, vmax=1)
+    # cax = ax1.matshow(corr_mat_colour, cmap=cmap, vmin=-1, vmax=1)
+    # # cax = ax1.matshow(B, cmap=cmap, vmin=-1, vmax=1)
     # tick_marks = [i for i in range(len(combined_df.columns))]
     # names = [
     # r'$\Phi_1$', r'$\Phi_2$', r'$\Phi_3$', r'$\Phi_4$',
@@ -1624,15 +1671,23 @@ def get_err_data(survey, path):
     # dt = plt.scatter(total_data[0], total_data[1],
     #     color='k', s=150, zorder=10, marker='^')
 
-    # plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=20)
+    # if mf_type == 'smf':
+    #     plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=20)
+    # elif mf_type == 'bmf':
+    #     plt.xlabel(r'\boldmath$\log_{10}\ M_b \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=20)
+
     # plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dlogM}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=20)
 
     # plt.legend([(dt), (mt)], ['ECO','Mocks'],
     #     handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='lower left', prop={'size':20})
     # plt.minorticks_on()
     # # plt.title(r'SMFs from mocks')
-    # plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_smf_total.pdf', 
-    #     bbox_inches="tight", dpi=1200)
+    # if mf_type == 'smf':
+    #     plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_smf_total.pdf', 
+    #         bbox_inches="tight", dpi=1200)
+    # elif mf_type == 'bmf':
+    #     plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_bmf_total.pdf', 
+    #         bbox_inches="tight", dpi=1200)
     # plt.show()
 
     # #* Blue fraction from mocks and data for paper
@@ -1680,7 +1735,10 @@ def get_err_data(survey, path):
     # dt_sat = plt.scatter(f_blue_data[0], f_blue_data[3],
     #     color='goldenrod', s=150, zorder=10, marker='^')
 
-    # plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=20)
+    # if mf_type == 'smf':
+    #     plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=20)
+    # elif mf_type == 'bmf':
+    #     plt.xlabel(r'\boldmath$\log_{10}\ M_b \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=20)
     # plt.ylabel(r'\boldmath$f_{blue}$', fontsize=20)
     # plt.ylim(0,1)
     # # plt.title(r'Blue fractions from mocks and data')
@@ -1688,8 +1746,12 @@ def get_err_data(survey, path):
     #     ['ECO cen', 'ECO sat', 'Mocks cen', 'Mocks sat'],
     #     handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='upper right', prop={'size':17})
     # plt.minorticks_on()
-    # plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_fblue.pdf', 
-    #     bbox_inches="tight", dpi=1200)
+    # if mf_type == 'smf':
+    #     plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_fblue.pdf', 
+    #         bbox_inches="tight", dpi=1200)
+    # elif mf_type == 'bmf':
+    #     plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_fblue_bary.pdf', 
+    #         bbox_inches="tight", dpi=1200)
     # plt.show()
 
 
@@ -1743,20 +1805,31 @@ def get_err_data(survey, path):
     #     color='cornflowerblue', s=150, zorder=10, marker='^')
 
     # plt.xlabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km\ s^{-1}} \right]$', fontsize=20)
-    # plt.ylabel(r'\boldmath$\overline{\log_{10}\ M_{*, group\ cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=20)
+    # if mf_type == 'smf':
+    #     plt.ylabel(r'\boldmath$\overline{\log_{10}\ M_{*, group\ cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=20)
+    # elif mf_type == 'bmf':
+    #     plt.ylabel(r'\boldmath$\overline{\log_{10}\ M_{b, group\ cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=20)
     # # plt.title(r'Velocity dispersion from mocks and data')
     # plt.legend([(dt_red, dt_blue), (mt_red, mt_blue)], 
     #     ['ECO','Mocks'],
     #     handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='lower right', prop={'size':20})
     # plt.minorticks_on()
-    # plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_vdisp.pdf', 
-    #     bbox_inches="tight", dpi=1200)
+    # if mf_type == 'smf':
+    #     plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_vdisp.pdf', 
+    #         bbox_inches="tight", dpi=1200)
+    # elif mf_type == 'bmf':
+    #     plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_vdisp_bary.pdf', 
+    #         bbox_inches="tight", dpi=1200)
 
     # plt.show()
     ############################################################################
     # ## Stacked sigma from mocks and data for paper
-    # bins_red=np.linspace(8.6,11,5)
-    # bins_blue=np.linspace(8.6,11,5)
+    # if mf_type == 'smf':
+    #     bin_min = 8.6
+    # elif mf_type == 'bmf':
+    #     bin_min = 9.1
+    # bins_red=np.linspace(bin_min,11.2,5)
+    # bins_blue=np.linspace(bin_min,11.2,5)
     # bins_red = 0.5 * (bins_red[1:] + bins_red[:-1])
     # bins_blue = 0.5 * (bins_blue[1:] + bins_blue[:-1])
 
@@ -1783,7 +1856,10 @@ def get_err_data(survey, path):
 
 
     # plt.ylabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km/s} \right]$', fontsize=20)
-    # plt.xlabel(r'\boldmath$\log_{10}\ M_{*, group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=20)
+    # if mf_type == 'smf':
+    #     plt.xlabel(r'\boldmath$\log_{10}\ M_{*, group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=20)
+    # elif mf_type == 'bmf':
+    #     plt.xlabel(r'\boldmath$\log_{10}\ M_{b, group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=20)       
     # # plt.title(r'Velocity dispersion from mocks and data')
     # plt.legend([(dt_red, dt_blue), (mt_red, mt_blue)], 
     #     ['ECO','Mocks'],
@@ -1860,8 +1936,8 @@ def mcmc(nproc, nwalkers, nsteps, data, err, corr_mat_inv):
     p0 = all_param_vals + 0.1*np.random.rand(ndim*nwalkers).\
         reshape((nwalkers, ndim))
 
-    # filename = "chain_{0}.h5".format(quenching)
-    filename = "memtest.h5"
+    filename = "chain_{0}.h5".format(quenching)
+    # filename = "memtest.h5"
 
     if not new_chain:
         print("Resuming chain...")
@@ -1877,11 +1953,11 @@ def mcmc(nproc, nwalkers, nsteps, data, err, corr_mat_inv):
 
     else:
         print("Starting new chain...")
-        # backend = emcee.backends.HDFBackend(filename)
-        # backend.reset(nwalkers, ndim)
+        backend = emcee.backends.HDFBackend(filename)
+        backend.reset(nwalkers, ndim)
         with Pool(processes=nproc) as pool:
             sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, 
-                args=(data, err, corr_mat_inv), pool=pool)
+                backend=backend, args=(data, err, corr_mat_inv), pool=pool)
             start = time.time()
             sampler.run_mcmc(p0, nsteps, progress=True)
             end = time.time()
@@ -2241,7 +2317,10 @@ def lnprob(theta, data, err, corr_mat_inv):
     warnings.simplefilter("error", (UserWarning, RuntimeWarning))
     try: 
         gals_df = populate_mock(theta[:5], model_init)
-        gals_df = gals_df.loc[gals_df['stellar_mass'] >= 10**8.6].reset_index(drop=True)
+        if mf_type == 'smf':
+            gals_df = gals_df.loc[gals_df['stellar_mass'] >= 10**8.6].reset_index(drop=True)
+        elif mf_type == 'bmf':
+            gals_df = gals_df.loc[gals_df['stellar_mass'] >= 10**9.1].reset_index(drop=True)
         gals_df = apply_rsd(gals_df)
 
         gals_df = gals_df.loc[\
@@ -2298,37 +2377,71 @@ def lnprob(theta, data, err, corr_mat_inv):
         # v_sim = 890641.5172927063 #survey volume used in group_finder.py
 
         ## Observable #1 - Total SMF
-        total_model = measure_all_smf(gal_group_df, survey_vol, False) 
+        if mf_type == 'smf':
+            total_model = measure_all_smf(gal_group_df, survey_vol, False) 
 
-        ## Observable #2 - Blue fraction
-        f_blue = blue_frac(gal_group_df, True, False)
+            ## Observable #2 - Blue fraction
+            f_blue = blue_frac(gal_group_df, True, False)
         
-        ## Observable #3 
-        if stacked_stat:
-            red_deltav, red_cen_mstar_sigma, blue_deltav, \
-                blue_cen_mstar_sigma = get_stacked_velocity_dispersion(
-                    gal_group_df, 'model')
+            ## Observable #3 
+            if stacked_stat:
+                red_deltav, red_cen_mstar_sigma, blue_deltav, \
+                    blue_cen_mstar_sigma = get_stacked_velocity_dispersion(
+                        gal_group_df, 'model')
 
-            sigma_red = bs(red_cen_mstar_sigma, red_deltav,
-                statistic='std', bins=np.linspace(8.6,11,5))
-            sigma_blue = bs( blue_cen_mstar_sigma, blue_deltav,
-                statistic='std', bins=np.linspace(8.6,11,5))
-            
-            sigma_red = np.log10(sigma_red[0])
-            sigma_blue = np.log10(sigma_blue[0])
-        else:
-            red_sigma, red_cen_mstar_sigma, blue_sigma, \
-                blue_cen_mstar_sigma = get_velocity_dispersion(
-                    gal_group_df, 'model')
+                sigma_red = bs(red_cen_mstar_sigma, red_deltav,
+                    statistic='std', bins=np.linspace(8.6,11,5))
+                sigma_blue = bs( blue_cen_mstar_sigma, blue_deltav,
+                    statistic='std', bins=np.linspace(8.6,11,5))
+                
+                sigma_red = np.log10(sigma_red[0])
+                sigma_blue = np.log10(sigma_blue[0])
+            else:
+                red_sigma, red_cen_mstar_sigma, blue_sigma, \
+                    blue_cen_mstar_sigma = get_velocity_dispersion(
+                        gal_group_df, 'model')
 
-            red_sigma = np.log10(red_sigma)
-            blue_sigma = np.log10(blue_sigma)
+                red_sigma = np.log10(red_sigma)
+                blue_sigma = np.log10(blue_sigma)
 
-            mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
-                statistic=average_of_log, bins=np.linspace(-2,3,5))
-            mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
-                statistic=average_of_log, bins=np.linspace(-1,3,5))
+                mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
+                    statistic=average_of_log, bins=np.linspace(-2,3,5))
+                mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
+                    statistic=average_of_log, bins=np.linspace(-1,3,5))
+        elif mf_type == 'bmf':
+            logmstar_col = 'logmstar'
+            total_model = diff_bmf(10**(gal_group_df[logmstar_col]), 
+                survey_vol, True) 
 
+            ## Observable #2 - Blue fraction
+            f_blue = blue_frac(gal_group_df, True, False)
+        
+            ## Observable #3 
+            if stacked_stat:
+                red_deltav, red_cen_mstar_sigma, blue_deltav, \
+                    blue_cen_mstar_sigma = get_stacked_velocity_dispersion(
+                        gal_group_df, 'model')
+                #! Max bin not the same as in obs 1&2
+                sigma_red = bs(red_cen_mstar_sigma, red_deltav,
+                    statistic='std', bins=np.linspace(9.1,11,5))
+                sigma_blue = bs( blue_cen_mstar_sigma, blue_deltav,
+                    statistic='std', bins=np.linspace(9.1,11,5))
+                
+                sigma_red = np.log10(sigma_red[0])
+                sigma_blue = np.log10(sigma_blue[0])
+            else:
+                red_sigma, red_cen_mstar_sigma, blue_sigma, \
+                    blue_cen_mstar_sigma = get_velocity_dispersion(
+                        gal_group_df, 'model')
+
+                red_sigma = np.log10(red_sigma)
+                blue_sigma = np.log10(blue_sigma)
+
+                mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
+                    statistic=average_of_log, bins=np.linspace(-2,3,5))
+                mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
+                    statistic=average_of_log, bins=np.linspace(-1,3,5))
+ 
         model_arr = []
         model_arr.append(total_model[1])
         model_arr.append(f_blue[2])   
@@ -2509,7 +2622,13 @@ def main(args):
         halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
 
     if survey == 'eco':
-        catl_file = path_to_proc + "gal_group_eco_data_buffer_volh1_dr2.hdf5"
+        if mf_type == 'smf':
+            catl_file = path_to_proc + "gal_group_eco_data_buffer_volh1_dr2.hdf5"
+        elif mf_type == 'bmf':
+            catl_file = path_to_proc + \
+            "gal_group_eco_bary_data_buffer_volh1_dr2.hdf5"    
+        else:
+            print("Incorrect mass function chosen")
     elif survey == 'resolvea' or survey == 'resolveb':
         catl_file = path_to_raw + "resolve/RESOLVE_liveJune2018.csv"
     
@@ -2533,8 +2652,6 @@ def main(args):
         print('Measuring BMF for data')
         logmbary = catl.logmbary.values
         total_data = diff_bmf(logmbary, volume, False)
-    else:
-        print("Incorrect mass function chosen")
 
     print('Measuring blue fraction for data')
     f_blue_data = blue_frac(catl, False, True)
@@ -2546,9 +2663,9 @@ def main(args):
                 blue_cen_mstar_sigma = get_stacked_velocity_dispersion(catl, 'data')
 
             sigma_red_data = bs(red_cen_mstar_sigma, red_deltav,
-                statistic='std', bins=np.linspace(8.6,11.2,5))
+                statistic='std', bins=np.linspace(8.6,11,5))
             sigma_blue_data = bs( blue_cen_mstar_sigma, blue_deltav,
-                statistic='std', bins=np.linspace(8.6,11.2,5))
+                statistic='std', bins=np.linspace(8.6,11,5))
             
             sigma_red_data = np.log10(sigma_red_data[0])
             sigma_blue_data = np.log10(sigma_blue_data[0])
@@ -2558,9 +2675,9 @@ def main(args):
                 blue_cen_mbary_sigma = get_stacked_velocity_dispersion(catl, 'data')
 
             sigma_red_data = bs(red_cen_mbary_sigma, red_deltav,
-                statistic='std', bins=np.linspace(9.1,11.2,5))
+                statistic='std', bins=np.linspace(9.1,11,5))
             sigma_blue_data = bs( blue_cen_mbary_sigma, blue_deltav,
-                statistic='std', bins=np.linspace(9.1,11.2,5))
+                statistic='std', bins=np.linspace(9.1,11,5))
             
             sigma_red_data = np.log10(sigma_red_data[0])
             sigma_blue_data = np.log10(sigma_blue_data[0])
