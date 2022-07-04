@@ -196,6 +196,11 @@ class Experiments():
         #* The gapper method does not exclude the central 
         red_sigma_arr = red_subset_df.groupby(['{0}'.format(id_col)])['deltav'].\
             apply(lambda x: self.gapper(x)).values
+
+        # if settings.level == 'halo':
+        #     red_hosthalo_arr = red_subset_df.groupby(['{0}'.format(id_col)])\
+        #         ['halo_mvir_host_halo'].apply(lambda x: np.unique(x)[0]).values
+
         # end = time.time()
         # time_taken = end - start
         # print("New method took {0:.1f} seconds".format(time_taken))
@@ -221,6 +226,11 @@ class Experiments():
         blue_subset_df['deltav'] = blue_subset_df['cz'] - blue_subset_df['grpcz_av']
         blue_sigma_arr = blue_subset_df.groupby(['{0}'.format(id_col)])['deltav'].\
             apply(lambda x: self.gapper(x)).values
+
+        # if settings.level == 'halo':
+        #     blue_hosthalo_arr = blue_subset_df.groupby(['{0}'.format(id_col)])\
+        #         ['halo_mvir_host_halo'].apply(lambda x: np.unique(x)[0]).values
+
 
         # red_singleton_counter = 0
         # red_sigma_arr = []
@@ -653,11 +663,10 @@ class Experiments():
             red_sigma = np.log10(red_sigma)
             blue_sigma = np.log10(blue_sigma)
 
-            #! Implement average of log function for next chains (49 onwards)
             mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
-                statistic='mean', bins=np.linspace(-2,3,5))
+                statistic=analysis.average_of_log, bins=np.linspace(-2,3,5))
             mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
-                statistic='mean', bins=np.linspace(-1,3,5))
+                statistic=analysis.average_of_log , bins=np.linspace(-1,3,5))
 
             self.data_experimentals["vel_disp"] = {'red_sigma':mean_mstar_red_data[1],
             'red_cen_mstar':mean_mstar_red_data[0],
@@ -1299,3 +1308,40 @@ def get_mstar_sigma_halomassbins(gals_df, catl, randint_logmstar):
     plt.ylabel(r'\boldmath$\log_{10}\ M_{*, group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
     plt.title('{0} quenching'.format(quenching), pad=40.5)
     plt.show()
+
+
+#* Busy days presentation plot of scatter in halo mass at fixed sigma
+# fig1 = plt.figure(figsize=(10,8))
+# plt.scatter(red_sigma_arr, np.log10(red_hosthalo_arr), 
+#     s=80, c='indianred', marker='o')
+# plt.scatter(blue_sigma_arr, np.log10(blue_hosthalo_arr), 
+#     s=80, c='cornflowerblue', marker='o')
+# plt.xlabel(r'\boldmath$\sigma \left[\mathrm{km/s}\right]$',fontsize=30)
+# plt.ylabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\,'\
+#             r' \mathrm{h}^{-1} \right]$',fontsize=30)
+# plt.savefig('/Users/asadm2/Desktop/sigma_mhalo_scatter_v1.pdf', 
+#     bbox_inches="tight", dpi=1200)
+# plt.show()
+
+# bins=np.linspace(0, 300, 5)
+# red_scatter = bs(red_sigma_arr, np.log10(red_hosthalo_arr), 
+#     statistic='std', bins=bins)
+# red_counts = bs(red_sigma_arr, np.log10(red_hosthalo_arr), 
+#     statistic='count', bins=bins)
+# blue_scatter = bs(blue_sigma_arr, np.log10(blue_hosthalo_arr), 
+#     statistic='std', bins=bins)
+# blue_counts = bs(blue_sigma_arr, np.log10(blue_hosthalo_arr), 
+#     statistic='count', bins=bins)
+
+# bin_cen = 0.5 * (bins[1:] + bins[:-1])
+
+# fig2 = plt.figure(figsize=(10,8))
+# plt.plot(bin_cen, red_scatter[0], lw=4, ls='--', c='indianred')
+# plt.plot(bin_cen, blue_scatter[0], lw=4, ls='--', c='cornflowerblue')
+# plt.scatter(bin_cen, red_scatter[0], s=240, marker='^', c='indianred')
+# plt.scatter(bin_cen, blue_scatter[0], s=240, marker='^', c='cornflowerblue')
+# plt.xlabel(r'\boldmath$\sigma \left[\mathrm{km/s}\right]$',fontsize=30)
+# plt.ylabel(r'\boldmath$\sigma [\log_{10}\ M_h | \sigma]$', fontsize=30)
+# plt.savefig('/Users/asadm2/Desktop/sigma_mhalo_scatter_v2.pdf', 
+#     bbox_inches="tight", dpi=1200)
+# plt.show()
