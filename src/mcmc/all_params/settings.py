@@ -14,7 +14,7 @@ class Settings():
         self.survey = 'eco'
         self.mf_type = 'smf'
         self.level = 'group'
-        self.stacked_stat = True
+        self.stacked_stat = False
         self.nproc = 2
         self.run = 0
         self.many_behroozi_mocks = False
@@ -38,9 +38,9 @@ class Settings():
             self.halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
 
         if self.quenching == 'halo':
-            self.run = 48
+            self.run = 62
         elif self.quenching == 'hybrid':
-            self.run = 47
+            self.run = 61
 
         if self.run >= 37:
             self.chi2_file = self.path_to_proc + \
