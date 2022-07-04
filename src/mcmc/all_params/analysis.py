@@ -37,6 +37,10 @@ class Analysis():
         self.vdisp_red_data = None
         self.vdisp_blue_data = None
 
+    def average_of_log(self, arr):
+        result = np.log10(np.mean(10**(arr)))
+        return result
+
     def assign_colour_label_data(self, catl):
         """
         Assign colour label to data
@@ -1099,19 +1103,23 @@ class Analysis():
                     (mock_pd.grpcz_new.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
                     (mock_pd.logmstar.values >= mstar_limit)].reset_index(drop=True)
 
-                ## Using best-fit found for new ECO data using result from chain 42
+                ## Using best-fit found for new ECO data using result from chain 50
                 ## i.e. hybrid quenching model
-                Mstar_q = 10.11652049 # Msun/h**2
-                Mh_q = 13.86684472 # Msun/h
-                mu = 0.76086959
-                nu = 0.04489465
+                bf_from_last_chain = [10.11453861, 13.69516435, 0.7229029 , 0.05319513]
 
-                ## Using best-fit found for new ECO data using result from chain 43
+                Mstar_q = bf_from_last_chain[0] # Msun/h**2
+                Mh_q = bf_from_last_chain[1] # Msun/h
+                mu = bf_from_last_chain[2]
+                nu = bf_from_last_chain[3]
+
+                ## Using best-fit found for new ECO data using result from chain 49
                 ## i.e. halo quenching model
-                Mh_qc = 11.68499777 # Msun/h
-                Mh_qs = 12.3832308 # Msun/h
-                mu_c = 1.41969021
-                mu_s = 0.46442463
+                bf_from_last_chain = [12.00859308, 12.62730517, 1.48669053, 0.66870568]
+
+                Mh_qc = bf_from_last_chain[0] # Msun/h
+                Mh_qs = bf_from_last_chain[1] # Msun/h
+                mu_c = bf_from_last_chain[2]
+                mu_s = bf_from_last_chain[3]
 
                 if settings.quenching == 'hybrid':
                     theta = [Mstar_q, Mh_q, mu, nu]
@@ -1165,9 +1173,9 @@ class Analysis():
                     blue_sigma = np.log10(blue_sigma)
 
                     mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
-                        statistic='mean', bins=np.linspace(-2,3,5))
+                        statistic=self.average_of_log, bins=np.linspace(-2,3,5))
                     mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
-                        statistic='mean', bins=np.linspace(-1,3,5))
+                        statistic=self.average_of_log, bins=np.linspace(-1,3,5))
 
                     mean_mstar_red_arr.append(mean_mstar_red[0])
                     mean_mstar_blue_arr.append(mean_mstar_blue[0])
@@ -1696,13 +1704,13 @@ class Analysis():
             blue_cen_mstar_sigma = experiments.get_stacked_velocity_dispersion(
                 self.catl, 'data')
 
-            # red_sigma_stat = bs(red_cen_mstar_sigma, red_deltav,
-            #     statistic='std', bins=np.linspace(8.6,11,5))
-            # blue_sigma_stat = bs( blue_cen_mstar_sigma, blue_deltav,
-            #     statistic='std', bins=np.linspace(8.6,11,5))
+            red_sigma_stat = bs(red_cen_mstar_sigma, red_deltav,
+                statistic='std', bins=np.linspace(8.6,11,5))
+            blue_sigma_stat = bs( blue_cen_mstar_sigma, blue_deltav,
+                statistic='std', bins=np.linspace(8.6,11,5))
             
-            # red_sigma = np.log10(red_sigma_stat[0])
-            # blue_sigma = np.log10(blue_sigma_stat[0])
+            red_sigma = np.log10(red_sigma_stat[0])
+            blue_sigma = np.log10(blue_sigma_stat[0])
 
             self.vdisp_red_data = [red_deltav, red_cen_mstar_sigma]
             self.vdisp_blue_data = [blue_deltav, blue_cen_mstar_sigma]
@@ -1715,29 +1723,13 @@ class Analysis():
             red_sigma = np.log10(red_sigma)
             blue_sigma = np.log10(blue_sigma)
 
-            # #! Implement average of log function for next chains (49 onwards)
-            # mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
-            #     statistic='mean', bins=np.linspace(-2,3,5))
-            # mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
-            #     statistic='mean', bins=np.linspace(-1,3,5))
+            mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
+                statistic=self.average_of_log, bins=np.linspace(-2,3,5))
+            mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
+                statistic=self.average_of_log, bins=np.linspace(-1,3,5))
 
             self.vdisp_red_data = [red_sigma, red_cen_mstar_sigma]
             self.vdisp_blue_data = [blue_sigma, blue_cen_mstar_sigma]
-
-
-        # red_sigma, red_cen_mstar_sigma, blue_sigma, \
-        #     blue_cen_mstar_sigma = experiments.get_velocity_dispersion(self.catl, 'data')
-
-        # red_sigma = np.log10(red_sigma)
-        # blue_sigma = np.log10(blue_sigma)
-
-        # # self.mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
-        # #     statistic='mean', bins=np.linspace(-2,3,5))
-        # # self.mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
-        # #     statistic='mean', bins=np.linspace(-1,3,5))
-
-        # self.vdisp_red_data = [red_sigma, red_cen_mstar_sigma]
-        # self.vdisp_blue_data = [blue_sigma, blue_cen_mstar_sigma]
 
         print('Measuring reconstructed red and blue SMF for data')
         self.phi_red_data, self.phi_blue_data = self.get_colour_smf_from_fblue(self.catl, self.f_blue[1], 
