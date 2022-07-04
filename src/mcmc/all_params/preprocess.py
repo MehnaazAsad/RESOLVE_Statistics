@@ -361,10 +361,10 @@ class Preprocess():
         if randints_df is not None:
             bf_randint = mcmc_table_pctl.drop_duplicates().reset_index(drop=True).\
                 values[0][5].astype(int)
-            mcmc_table_pctl = mcmc_table_pctl.drop_duplicates().sample(100)
+            mcmc_table_pctl = mcmc_table_pctl.drop_duplicates().sample(500)
             return mcmc_table_pctl, bf_params, bf_chi2, bf_randint
         # Randomly sample 100 lowest chi2 
-        mcmc_table_pctl = mcmc_table_pctl.drop_duplicates().sample(100)
+        mcmc_table_pctl = mcmc_table_pctl.drop_duplicates().sample(500)
 
         return mcmc_table_pctl, bf_params, bf_chi2
 
@@ -384,10 +384,6 @@ class Preprocess():
         ## Group finder run on subset after applying M* cut 8.6 and cz cut 3000-12000
         gal_group = self.read_mock_catl(settings.path_to_proc + \
             "gal_group_run{0}.hdf5".format(settings.run)) 
-
-        # #! Change this if testing with different cz limit
-        # gal_group = self.read_mock_catl(settings.path_to_proc + \
-        #     "gal_group_run{0}.hdf5".format(settings.run)) 
 
         idx_arr = np.insert(np.linspace(0,20,21), len(np.linspace(0,20,21)), \
             (22, 123, 124, 125, 126, 127, 128, 129)).\
