@@ -141,6 +141,7 @@ def get_sigma_error(eco_keys):
 ###Formatting for plots and animation
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']}, size=20)
 rc('text', usetex=True)
+rc('text.latex', preamble=r"\usepackage{amsmath}")
 rc('axes', linewidth=2)
 rc('xtick.major', width=4, size=7)
 rc('ytick.major', width=4, size=7)
@@ -644,19 +645,20 @@ def get_stacked_velocity_dispersion(catl, catl_type, randint=None):
     return red_deltav_arr, red_cen_stellar_mass_arr, blue_deltav_arr, \
         blue_cen_stellar_mass_arr
 
+
 red_deltav, red_cen_mstar_sigma, blue_deltav, \
     blue_cen_mstar_sigma = get_stacked_velocity_dispersion(eco_nobuff, 'data')
 
 sigma_red_data = bs(red_cen_mstar_sigma, red_deltav,
-    statistic='std', bins=np.linspace(8.9,12,5))
+    statistic='std', bins=np.linspace(8.9,11.5,5))
 sigma_blue_data = bs( blue_cen_mstar_sigma, blue_deltav,
-    statistic='std', bins=np.linspace(8.9,12,5))
+    statistic='std', bins=np.linspace(8.9,11.5,5))
 
-counter = Counter(sigma_red_data[2]).most_common()
-red_poisson_error = np.log10(np.sqrt(np.flip(np.array(list(counter)))[:,0]))
+# counter = Counter(sigma_red_data[2]).most_common()
+# red_poisson_error = np.log10(np.sqrt(np.flip(np.array(list(counter)))[:,0]))
 
-counter = Counter(sigma_blue_data[2]).most_common()
-blue_poisson_error = np.log10(np.sqrt(np.flip(np.array(list(counter)))[:,0]))
+# counter = Counter(sigma_blue_data[2]).most_common()
+# blue_poisson_error = np.log10(np.sqrt(np.flip(np.array(list(counter)))[:,0]))
 
 sigma_red_data = np.log10(sigma_red_data[0])
 sigma_blue_data = np.log10(sigma_blue_data[0])
@@ -672,29 +674,87 @@ mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma,
 mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
     statistic=average_of_log, bins=np.linspace(-1,3,5))
 
+#* Bootstrap errors
+from tqdm import tqdm
+iterations = 100
+sigma_red_data_global = []
+sigma_blue_data_global = []
+mean_mstar_red_data_global = []
+mean_mstar_blue_data_global = []
+for i in tqdm(range(iterations)):       
+    galtype_col = 'fc_e16'
+    id_col = 'grp_e16'
 
-include_error = False
+    all_group_ids = np.unique(eco_nobuff[id_col].loc[eco_nobuff[galtype_col] == 1].values) 
+    n_group_samples = len(all_group_ids)
+
+    sample = np.array(random.choices(all_group_ids, k=n_group_samples))
+    df = eco_nobuff.loc[eco_nobuff[id_col].isin(sample)]
+    
+    red_deltav, red_cen_mstar_sigma, blue_deltav, \
+        blue_cen_mstar_sigma = get_stacked_velocity_dispersion(df, 'data')
+
+    sigma_red = bs(red_cen_mstar_sigma, red_deltav,
+        statistic='std', bins=np.linspace(8.9,11.5,5))
+    sigma_blue = bs( blue_cen_mstar_sigma, blue_deltav,
+        statistic='std', bins=np.linspace(8.9,11.5,5))
+
+    sigma_red = np.log10(sigma_red[0])
+    sigma_blue = np.log10(sigma_blue[0])
+
+    sigma_red_data_global.append(sigma_red)
+    sigma_blue_data_global.append(sigma_blue)
+
+    red_sigma, red_cen_mstar_sigma, blue_sigma, \
+        blue_cen_mstar_sigma = get_velocity_dispersion(df, 'data')
+
+    red_sigma = np.log10(red_sigma)
+    blue_sigma = np.log10(blue_sigma)
+
+    mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
+        statistic=average_of_log, bins=np.linspace(-2,3,5))
+    mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
+        statistic=average_of_log, bins=np.linspace(-1,3,5))
+
+    mean_mstar_red_counts = bs(red_sigma, red_cen_mstar_sigma, 
+        statistic='count', bins=np.linspace(0,3,5))
+    mean_mstar_blue_counts = bs(blue_sigma, blue_cen_mstar_sigma, 
+        statistic='count', bins=np.linspace(0,3,5))
+
+    mean_mstar_red_data_global.append(mean_mstar_red[0])
+    mean_mstar_blue_data_global.append(mean_mstar_blue[0])
+
+mean_mstar_red_err = np.nanstd(mean_mstar_red_data_global, axis=0)
+mean_mstar_blue_err = np.nanstd(mean_mstar_blue_data_global, axis=0)
+
+sigma_red_err = np.nanstd(sigma_red_data_global, axis=0)
+sigma_blue_err = np.nanstd(sigma_blue_data_global, axis=0)
+
+##Plot
+
 rc('axes', linewidth=4)
-
 fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
     gridspec_kw={'wspace':0.25})
 
-bins = np.linspace(8.9,12,5)
+bins = np.linspace(8.9,11.5,5)
 bin_centers = 0.5 * (bins[1:] + bins[:-1])
 
-if include_error:
-    vdisp_red = ax[0].errorbar(bin_centers, sigma_red_data, yerr=red_poisson_error,
-        color='indianred', fmt='s-', ecolor='indianred', markersize=12, capsize=7,
-        capthick=1.5, zorder=10, marker='^', ls='--', lw=7)
-    vdisp_blue = ax[0].errorbar(bin_centers, sigma_blue_data, yerr=blue_poisson_error,
-        color='cornflowerblue', fmt='s-', ecolor='cornflowerblue', markersize=12, 
-        capsize=7, capthick=1.5, zorder=10, marker='^', ls='--', lw=7)
 
-else:
-    vdisp_red, = ax[0].plot(bin_centers, sigma_red_data,
-        color='indianred', zorder=10, ls='--', lw=7)
-    vdisp_blue, = ax[0].plot(bin_centers, sigma_blue_data,
-        color='cornflowerblue', zorder=10, ls='--', lw=7)
+ax[0].errorbar(bin_centers, sigma_red_data, yerr=sigma_red_err,
+    color='indianred', fmt='s-', ecolor='indianred', markersize=12, capsize=7,
+    capthick=1.5, zorder=10, marker='s', ls='--', lw=7)
+ax[0].errorbar(bin_centers, sigma_blue_data, yerr=sigma_blue_err,
+    color='cornflowerblue', fmt='s-', ecolor='cornflowerblue', markersize=12, 
+    capsize=7, capthick=1.5, zorder=10, marker='s', ls='--', lw=7)
+
+# ax[0].plot(bin_centers, sigma_red_data,
+#     color='indianred', zorder=10, ls='--', lw=7)
+# ax[0].plot(bin_centers, sigma_blue_data,
+#     color='cornflowerblue', zorder=10, ls='--', lw=7)
+# ax[0].scatter(bin_centers, sigma_red_data,
+#     color='indianred', marker='s', s=400)
+# ax[0].scatter(bin_centers, sigma_blue_data,
+#     color='cornflowerblue', marker='s', s=400)
 
 bins_red = mean_mstar_red_data[1]
 bin_centers_red = 0.5 * (bins_red[1:] + bins_red[:-1])
@@ -702,28 +762,31 @@ bin_centers_red = 0.5 * (bins_red[1:] + bins_red[:-1])
 bins_blue = mean_mstar_blue_data[1]
 bin_centers_blue = 0.5 * (bins_blue[1:] + bins_blue[:-1])
 
-if include_error:
-    counter = Counter(mean_mstar_red_data[2]).most_common()
-    red_poisson_error = np.log10(np.sqrt(np.flip(np.array(list(counter)))[:,0]))
+# counter = Counter(mean_mstar_red_data[2]).most_common()
+# red_poisson_error = np.log10(np.sqrt(np.flip(np.array(list(counter)))[:,0]))
 
-    #skipping the last one in the Counter where bin idx = 0 because that is 
-    #where sigma blue is below the left most bin's left edge. (Only one galaxy too)
-    counter = Counter(mean_mstar_blue_data[2]).most_common()[:-1]
-    blue_poisson_error = np.log10(np.sqrt(np.flip(np.array(list(counter)))[:,0]))
+# #skipping the last one in the Counter where bin idx = 0 because that is 
+# #where sigma blue is below the left most bin's left edge. (Only one galaxy too)
+# counter = Counter(mean_mstar_blue_data[2]).most_common()[:-1]
+# blue_poisson_error = np.log10(np.sqrt(np.flip(np.array(list(counter)))[:,0]))
 
-    avmstar_red = ax[1].errorbar(bin_centers_red, mean_mstar_red_data[0], 
-        yerr=red_poisson_error, color='indianred', fmt='s-', ecolor='indianred', 
-        markersize=12, capsize=7, capthick=1.5, zorder=10, marker='^', ls='--', 
-        lw=7)
-    avmstar_blue = ax[1].errorbar(bin_centers_blue, mean_mstar_blue_data[0],
-        yerr=blue_poisson_error, color='cornflowerblue', fmt='s-', 
-        ecolor='cornflowerblue', markersize=12, capsize=7, capthick=1.5, zorder=10, 
-        marker='^', ls='--', lw=7)
-else:
-    avmstar_red, = ax[1].plot(bin_centers_red, mean_mstar_red_data[0], 
-        color='indianred', zorder=10, ls='--', lw=7)
-    avmstar_blue, = ax[1].plot(bin_centers_blue, mean_mstar_blue_data[0],
-        color='cornflowerblue', zorder=10, ls='--', lw=7)
+ax[1].errorbar(bin_centers_red, mean_mstar_red_data[0], 
+    yerr=mean_mstar_red_err, color='indianred', fmt='s-', ecolor='indianred', 
+    markersize=12, capsize=7, capthick=1.5, zorder=10, marker='^', ls='--', 
+    lw=7)
+ax[1].errorbar(bin_centers_blue, mean_mstar_blue_data[0],
+    yerr=mean_mstar_blue_err, color='cornflowerblue', fmt='s-', 
+    ecolor='cornflowerblue', markersize=12, capsize=7, capthick=1.5, zorder=10, 
+    marker='^', ls='--', lw=7)
+
+# avmstar_red, = ax[1].plot(bin_centers_red, mean_mstar_red_data[0], 
+#     color='indianred', zorder=10, ls='--', lw=7)
+# avmstar_blue, = ax[1].plot(bin_centers_blue, mean_mstar_blue_data[0],
+#     color='cornflowerblue', zorder=10, ls='--', lw=7)
+# ax[1].scatter(bin_centers_red, mean_mstar_red_data[0], 
+#     color='indianred', marker='s', s=400)
+# ax[1].scatter(bin_centers_blue, mean_mstar_blue_data[0],
+#     color='cornflowerblue', marker='s', s=400)
 
 ax[0].set_xlabel(r'\boldmath$\log_{10}\ M_{*, group\ cen} \left[\mathrm{M_\odot}\ \right]$', fontsize=35, labelpad=15)
 ax[1].set_xlabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km\ s^{-1}} \right]$', fontsize=35, labelpad=15)
@@ -731,7 +794,15 @@ ax[1].set_xlabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km\ s^{-1}} \right]
 ax[0].set_ylabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km/s} \right]$', fontsize=35, labelpad=15)
 ax[1].set_ylabel(r'\boldmath$\overline{\log_{10}\ M_{*, group\ cen}} \left[\mathrm{M_\odot}\ \right]$', fontsize=35, labelpad=15)
 
-plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_sigma_mstar_panel.pdf', 
+# plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_sigma_mstar_panel.pdf', 
+#     bbox_inches="tight", dpi=1200)
+
+plt.savefig('/Users/asadm2/Desktop/eco_sigma_mstar_panel_origbin.pdf', 
     bbox_inches="tight", dpi=1200)
 
 plt.show()
+
+
+
+
+
