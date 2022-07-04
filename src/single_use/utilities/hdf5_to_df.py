@@ -76,3 +76,4 @@ def read_mock_catl(filename, catl_format='.hdf5'):
         raise ValueError(msg)
 
     return mock_pd
+    
