@@ -591,6 +591,7 @@ eco_subset_df = eco_subset_df.rename(columns={'dedeg':'dec'})
 gal_group_df, group_df = group_finding(eco_subset_df,
     path_to_data + 'interim/', param_dict)
 
+# Pair splitting
 psgrpid = split_false_pairs(
     np.array(gal_group_df.ra),
     np.array(gal_group_df.dec),
@@ -599,6 +600,52 @@ psgrpid = split_false_pairs(
 
 #! Need to also update group_df
 gal_group_df["ps_groupid"] = psgrpid
+
+# Getting original groupids for groups where they are now different 
+# groupid_or = [] 
+# for idx, row in gal_group_df.iterrows(): 
+#     if row["ps_groupid"] != row["groupid"]: 
+#         groupid_or.append(row["groupid"]) 
+# groupid_or = np.array(groupid_or)
+
+group_df_dict = dict()
+for k, v in enumerate(gal_group_df.groupby('ps_groupid')):
+    #v here is a tuple with 2 elements - index and a groupby group
+    group_df_dict[k] = (v[0] , v[1].shape[0])
+
+group_df_new = pd.DataFrame.from_dict(group_df_dict, orient='index', 
+    columns=["ps_groupid","ngals"])
+
+# Merge gal_group and group information based on groupid so that 
+# gal_group_df now has the only columns from group_df that are 
+# actually needed. Ngals needs to be fixed however, so that it 
+# corresponds to ps_groupid instead of groupid (according to which 
+# it was initially calculated)
+temp_df = pd.merge(gal_group_df, group_df[["groupid","ngals"]], how='left', 
+    left_on='groupid', right_index=True) 
+temp_df.loc[temp_df.ps_groupid!=temp_df.groupid_x, 'ngals'] = 1 
+
+# Creating a new group_df that corresponds to ps_groupid instead 
+# of groupid. Need to use groupby since we only want the unique 
+# group entries i.e. one entry per group and not one entry per
+# galaxy in group
+group_df_dict = dict()
+for k, v in enumerate(temp_df.groupby('ps_groupid')):
+    #v here is a tuple with 2 elements - index and a groupby group
+    group_df_dict[k] = (k , np.unique(v[1].ngals)[0])
+
+group_df_new = pd.DataFrame.from_dict(group_df_dict, orient='index', 
+    columns=["ps_groupid","ngals"])
+
+#* Checking if N>2 group's ngals have been preserved - YES
+groupid_check = []
+for idx, row in group_df.iterrows(): 
+    ngals_or = row["ngals"]
+    if ngals_or > 2: 
+        groupid = row["groupid"]
+        ngals_new = group_df_new.ngals.loc[group_df_new.ps_groupid == groupid].values[0]
+        if ngals_or != ngals_new: 
+            groupid_check.append(groupid)
 
 #! Change all uses of 'groupid' column to 'ps_groupid' in this function
 gal_group_df_new, group_df_new = \
