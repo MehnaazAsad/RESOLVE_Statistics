@@ -377,14 +377,172 @@ def pandas_df_to_hdf5_file(data, hdf5_file, key=None, mode='w',
             msg = 'Could not create HDF5 file'
             raise ValueError(msg)
 
+def group_skycoords(galaxyra, galaxydec, galaxycz, galaxygrpid):
+    """
+    -----
+    Obtain a list of group centers (RA/Dec/cz) given a list of galaxy coordinates (equatorial)
+    and their corresponding group ID numbers.
+    
+    Inputs (all same length)
+       galaxyra : 1D iterable,  list of galaxy RA values in decimal degrees
+       galaxydec : 1D iterable, list of galaxy dec values in decimal degrees
+       galaxycz : 1D iterable, list of galaxy cz values in km/s
+       galaxygrpid : 1D iterable, group ID number for every galaxy in previous arguments.
+    
+    Outputs (all shape match `galaxyra`)
+       groupra : RA in decimal degrees of galaxy i's group center.
+       groupdec : Declination in decimal degrees of galaxy i's group center.
+       groupcz : Redshift velocity in km/s of galaxy i's group center.
+    
+    Note: the FoF code of AA Berlind uses theta_i = declination, with theta_cen = 
+    the central declination. This version uses theta_i = pi/2-dec, with some trig functions
+    changed so that the output *matches* that of Berlind's FoF code (my "deccen" is the same as
+    his "thetacen", to be exact.)
+    -----
+    """
+    # Prepare cartesian coordinates of input galaxies
+    ngalaxies = len(galaxyra)
+    galaxyphi = galaxyra * np.pi/180.
+    galaxytheta = np.pi/2. - galaxydec*np.pi/180.
+    galaxyx = np.sin(galaxytheta)*np.cos(galaxyphi)
+    galaxyy = np.sin(galaxytheta)*np.sin(galaxyphi)
+    galaxyz = np.cos(galaxytheta)
+    # Prepare output arrays
+    uniqidnumbers = np.unique(galaxygrpid)
+    groupra = np.zeros(ngalaxies)
+    groupdec = np.zeros(ngalaxies)
+    groupcz = np.zeros(ngalaxies)
+    for i,uid in enumerate(uniqidnumbers):
+        sel=np.where(galaxygrpid==uid)
+        nmembers = len(galaxygrpid[sel])
+        xcen=np.sum(galaxycz[sel]*galaxyx[sel])/nmembers
+        ycen=np.sum(galaxycz[sel]*galaxyy[sel])/nmembers
+        zcen=np.sum(galaxycz[sel]*galaxyz[sel])/nmembers
+        czcen = np.sqrt(xcen**2 + ycen**2 + zcen**2)
+        deccen = np.arcsin(zcen/czcen)*180.0/np.pi # degrees
+        if (ycen >=0 and xcen >=0):
+            phicor = 0.0
+        elif (ycen < 0 and xcen < 0):
+            phicor = 180.0
+        elif (ycen >= 0 and xcen < 0):
+            phicor = 180.0
+        elif (ycen < 0 and xcen >=0):
+            phicor = 360.0
+        elif (xcen==0 and ycen==0):
+            print("Warning: xcen=0 and ycen=0 for group {}".format(galaxygrpid[i]))
+        # set up phicorrection and return phicen.
+        racen=np.arctan(ycen/xcen)*(180/np.pi)+phicor # in degrees
+        # set values at each element in the array that belongs to the group under iteration
+        groupra[sel] = racen # in degrees
+        groupdec[sel] = deccen # in degrees
+        groupcz[sel] = czcen
+    return groupra, groupdec, groupcz
+
+def multiplicity_function(grpids, return_by_galaxy=False):
+    """
+    Return counts for binning based on group ID numbers.
+    Parameters
+    ----------
+    grpids : iterable
+        List of group ID numbers. Length must match # galaxies.
+    Returns
+    -------
+    occurences : list
+        Number of galaxies in each galaxy group (length matches # groups).
+    """
+    grpids=np.asarray(grpids)
+    uniqid = np.unique(grpids)
+    if return_by_galaxy:
+        grpn_by_gal=np.zeros(len(grpids)).astype(int)
+        for idv in grpids:
+            sel = np.where(grpids==idv)
+            grpn_by_gal[sel]=len(sel[0])
+        return grpn_by_gal
+    else:
+        occurences=[]
+        for uid in uniqid:
+            sel = np.where(grpids==uid)
+            occurences.append(len(grpids[sel]))
+        return occurences
+
+def angular_separation(ra1,dec1,ra2,dec2):
+    """
+    Compute the angular separation bewteen two lists of galaxies using the Haversine formula.
+    
+    Parameters
+    ------------
+    ra1, dec1, ra2, dec2 : array-like
+       Lists of right-ascension and declination values for input targets, in decimal degrees. 
+    
+    Returns
+    ------------
+    angle : np.array
+       Array containing the angular separations between coordinates in list #1 and list #2, as above.
+       Return value expressed in radians, NOT decimal degrees.
+    """
+    phi1 = ra1*np.pi/180.
+    phi2 = ra2*np.pi/180.
+    theta1 = np.pi/2. - dec1*np.pi/180.
+    theta2 = np.pi/2. - dec2*np.pi/180.
+    return 2*np.arcsin(np.sqrt(np.sin((theta2-theta1)/2.0)**2.0 + np.sin(theta1)*np.sin(theta2)*np.sin((phi2 - phi1)/2.0)**2.0))
+
+def split_false_pairs(galra, galde, galcz, galgroupid):
+    """
+    Split false-pairs of FoF groups following the algorithm
+    of Eckert et al. (2017), Appendix A.
+    https://ui.adsabs.harvard.edu/abs/2017ApJ...849...20E/abstract
+    Parameters
+    ---------------------
+    galra : array_like
+        Array containing galaxy RA.
+        Units: decimal degrees.
+    galde : array_like
+        Array containing containing galaxy DEC.
+        Units: degrees.
+    galcz : array_like
+        Array containing cz of galaxies.
+        Units: km/s
+    galid : array_like
+        Array containing group ID number for each galaxy.
+    
+    Returns
+    ---------------------
+    newgroupid : np.array
+        Updated group ID numbers.
+    """
+    galra = np.array(galra)
+    galde = np.array(galde)
+    galcz = np.array(galcz)
+    galgroupid = np.array(galgroupid)
+    groupra,groupde,groupcz=group_skycoords(galra,galde,galcz,galgroupid)
+    groupn = multiplicity_function(galgroupid, return_by_galaxy=True)
+    newgroupid = np.copy(galgroupid)
+    brokenupids = np.arange(len(newgroupid))+np.max(galgroupid)+100
+    r75func = lambda r1,r2: 0.75*(r2-r1)+r1
+    n2grps = np.unique(galgroupid[np.where(groupn==2)])
+    bb=360.
+    mm = (bb-0.0)/(0.0-0.12)
+    for ii,gg in enumerate(n2grps):
+        galsel = np.where(galgroupid==gg)
+        deltacz = np.abs(np.diff(galcz[galsel])) 
+        theta = angular_separation(galra[galsel],galde[galsel],groupra[galsel],\
+            groupde[galsel])
+        rproj = theta*groupcz[galsel][0]/70.
+        grprproj = r75func(np.min(rproj),np.max(rproj))
+        keepN2 = bool((deltacz<(mm*grprproj+bb)))
+        if (not keepN2):
+            newgroupid[galsel]=brokenupids[galsel]
+        else:
+            pass
+    return newgroupid 
 
 survey = 'eco'
-mf_type = 'bmf'
+mf_type = 'smf'
 ## Running group-finding on data including the buffer
 cz_inner = 2530
 cz_outer = 7470
 #* Should have the same units as Warren (h=1.0)
-volume = 192351.36 # survey volume with buffer in h=0.7
+volume = 192351.36 # survey volume with buffer in h=1.0
 
 eco = {
     'c': 3*10**5,
@@ -407,6 +565,7 @@ path_to_raw = dict_of_paths['raw_dir']
 path_to_data = dict_of_paths['data_dir']
 path_to_processed = dict_of_paths['proc_dir']
 
+#! Change to ecodr3
 catl_file = path_to_raw + "eco/ecodr2.csv"
 
 eco_buff = pd.read_csv(catl_file, delimiter=",", header=0) 
@@ -431,6 +590,17 @@ eco_subset_df = eco_subset_df.rename(columns={'dedeg':'dec'})
 # * Make sure that df that group finding is run on has its indices reset
 gal_group_df, group_df = group_finding(eco_subset_df,
     path_to_data + 'interim/', param_dict)
+
+psgrpid = split_false_pairs(
+    np.array(gal_group_df.ra),
+    np.array(gal_group_df.dec),
+    np.array(gal_group_df.cz), 
+    np.array(gal_group_df.groupid))
+
+#! Need to also update group_df
+gal_group_df["ps_groupid"] = psgrpid
+
+#! Change all uses of 'groupid' column to 'ps_groupid' in this function
 gal_group_df_new, group_df_new = \
     group_mass_assignment(gal_group_df, group_df, param_dict)
 
