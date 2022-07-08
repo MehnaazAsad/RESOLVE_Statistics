@@ -618,6 +618,7 @@ arr2_unq = np.arange(len(np.unique(gal_group_df.ps_groupid)))
 mapping = dict(zip(arr1_unq, arr2_unq))   
 new_values = arr1.map(mapping)
 gal_group_df['ps_groupid'] = new_values  
+
 # Getting original groupids for groups where they are now different 
 # groupid_or = [] 
 # for idx, row in gal_group_df.iterrows(): 
@@ -654,7 +655,7 @@ gal_group_df_new, group_df_new = \
 print('Writing to output files')
 if mf_type == 'smf':
     pandas_df_to_hdf5_file(data=gal_group_df_new,
-        hdf5_file=path_to_processed + 'gal_group_eco_data_buffer_volh1_dr2.hdf5', 
+        hdf5_file=path_to_processed + 'gal_group_eco_dr2_pairsplitting.hdf5', 
         key='gal_group_df')
 elif mf_type == 'bmf':
     pandas_df_to_hdf5_file(data=gal_group_df_new,
