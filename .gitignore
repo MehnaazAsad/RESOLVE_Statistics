@@ -80,7 +80,7 @@ target/
 reports/figures/
 src/debug
 src/tutorials
-data/
+/data/
 src/single_use/figures
 .vscode
 
