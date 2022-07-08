@@ -8,6 +8,7 @@ from tqdm import tqdm
 import pandas as pd
 import numpy as np
 import subprocess
+import sys
 import os
 
 __author__ = '{Mehnaaz Asad}'
@@ -258,7 +259,7 @@ def group_mass_assignment(mockgal_pd, mockgroup_pd, param_dict):
     ##
     ## Selecting only a `few` columns
     # Galaxies
-    gal_pd = gal_pd.loc[:,[prop_gal, 'groupid']]
+    gal_pd = gal_pd.loc[:,[prop_gal, 'ps_groupid']]
     # Groups
     group_pd = group_pd[['ngals']]
     ##
@@ -269,7 +270,7 @@ def group_mass_assignment(mockgal_pd, mockgroup_pd, param_dict):
     if param_dict['catl_type'] == 'mstar':
         for group_zz in tqdm(range(n_groups)):
             ## Stellar mass
-            group_prop = gal_pd.loc[gal_pd['groupid']==group_zz, prop_gal]
+            group_prop = gal_pd.loc[gal_pd['ps_groupid']==group_zz, prop_gal]
             group_log_prop_tot = np.log10(np.sum(10**group_prop))
             ## Saving to array
             group_prop_arr[group_zz] = group_log_prop_tot
@@ -308,7 +309,7 @@ def group_mass_assignment(mockgal_pd, mockgroup_pd, param_dict):
     ### ---- Galaxies ---- ###
     # Adding `M_group` to galaxy catalogue
     gal_pd = pd.merge(gal_pd, group_pd[['M_group', 'ngals']],
-                        how='left', left_on='groupid', right_index=True)
+                        how='left', left_on='ps_groupid', right_index=True)
     # Renaming `ngals` column
     gal_pd = gal_pd.rename(columns={'ngals':'g_ngal'})
     #
@@ -319,7 +320,7 @@ def group_mass_assignment(mockgal_pd, mockgroup_pd, param_dict):
     ##
     ## Looping over galaxy groups
     for zz in tqdm(range(n_groups)):
-        gals_g = gal_pd.loc[gal_pd['groupid']==zz]
+        gals_g = gal_pd.loc[gal_pd['ps_groupid']==zz]
         ## Determining group galaxy type
         gals_g_max = gals_g.loc[gals_g[prop_gal_abs]==gals_g[prop_gal_abs].max()]
         g_galtype_groups[zz] = int(np.random.choice(gals_g_max.index.values))
@@ -329,7 +330,7 @@ def group_mass_assignment(mockgal_pd, mockgroup_pd, param_dict):
     ##
     ## Dropping columns
     # Galaxies
-    gal_col_arr = [prop_gal, prop_gal_abs, 'groupid']
+    gal_col_arr = [prop_gal, prop_gal_abs, 'ps_groupid']
     gal_pd      = gal_pd.drop(gal_col_arr, axis=1)
     # Groups
     group_col_arr = ['ngals']
@@ -510,19 +511,19 @@ def split_false_pairs(galra, galde, galcz, galgroupid):
     newgroupid : np.array
         Updated group ID numbers.
     """
-    galra = np.array(galra)
-    galde = np.array(galde)
-    galcz = np.array(galcz)
-    galgroupid = np.array(galgroupid)
     groupra,groupde,groupcz=group_skycoords(galra,galde,galcz,galgroupid)
     groupn = multiplicity_function(galgroupid, return_by_galaxy=True)
     newgroupid = np.copy(galgroupid)
     brokenupids = np.arange(len(newgroupid))+np.max(galgroupid)+100
+    # brokenupids_start = np.max(galgroupid)+1
     r75func = lambda r1,r2: 0.75*(r2-r1)+r1
     n2grps = np.unique(galgroupid[np.where(groupn==2)])
+    ## parameters corresponding to Katie's dividing line in cz-rproj space
     bb=360.
     mm = (bb-0.0)/(0.0-0.12)
+
     for ii,gg in enumerate(n2grps):
+        # pair of indices where group's ngal == 2
         galsel = np.where(galgroupid==gg)
         deltacz = np.abs(np.diff(galcz[galsel])) 
         theta = angular_separation(galra[galsel],galde[galsel],groupra[galsel],\
@@ -531,7 +532,10 @@ def split_false_pairs(galra, galde, galcz, galgroupid):
         grprproj = r75func(np.min(rproj),np.max(rproj))
         keepN2 = bool((deltacz<(mm*grprproj+bb)))
         if (not keepN2):
+            # break
             newgroupid[galsel]=brokenupids[galsel]
+            # newgroupid[galsel] = np.array([brokenupids_start, brokenupids_start+1])
+            # brokenupids_start+=2
         else:
             pass
     return newgroupid 
@@ -588,7 +592,7 @@ eco_subset_df = eco_subset_df.rename(columns={'radeg':'ra'})
 eco_subset_df = eco_subset_df.rename(columns={'dedeg':'dec'})
 
 # * Make sure that df that group finding is run on has its indices reset
-gal_group_df, group_df = group_finding(eco_subset_df,
+gal_group_df, group_df_or = group_finding(eco_subset_df,
     path_to_data + 'interim/', param_dict)
 
 # Pair splitting
@@ -598,9 +602,22 @@ psgrpid = split_false_pairs(
     np.array(gal_group_df.cz), 
     np.array(gal_group_df.groupid))
 
-#! Need to also update group_df
 gal_group_df["ps_groupid"] = psgrpid
 
+# Group_mass_assignment function assumes that groupids that 
+# are assigned are all in consecutive order. With pair splitting
+# since random different IDs were assigned, there were some 
+# numbers that were missing. This is why without this chunk 
+# index of group_df doesn't match the groupid column when it should
+# since each row is a unique group. To account for the missing
+# numbers, I map the ps_groupids to new groupids where the new 
+# numbers are chosen from an array of consecutive numbers (arr2_unq)
+arr1 = gal_group_df.ps_groupid
+arr1_unq = gal_group_df.ps_groupid.drop_duplicates()  
+arr2_unq = np.arange(len(np.unique(gal_group_df.ps_groupid))) 
+mapping = dict(zip(arr1_unq, arr2_unq))   
+new_values = arr1.map(mapping)
+gal_group_df['ps_groupid'] = new_values  
 # Getting original groupids for groups where they are now different 
 # groupid_or = [] 
 # for idx, row in gal_group_df.iterrows(): 
@@ -608,50 +625,38 @@ gal_group_df["ps_groupid"] = psgrpid
 #         groupid_or.append(row["groupid"]) 
 # groupid_or = np.array(groupid_or)
 
+# Creating dictionary of unique groupids and ngals in each group
 group_df_dict = dict()
 for k, v in enumerate(gal_group_df.groupby('ps_groupid')):
-    #v here is a tuple with 2 elements - index and a groupby group
+    # v here is a tuple with 2 elements - groupid and a groupby group
+    # k is not groupid but an index from 0-number of groups
     group_df_dict[k] = (v[0] , v[1].shape[0])
 
-group_df_new = pd.DataFrame.from_dict(group_df_dict, orient='index', 
-    columns=["ps_groupid","ngals"])
-
-# Merge gal_group and group information based on groupid so that 
-# gal_group_df now has the only columns from group_df that are 
-# actually needed. Ngals needs to be fixed however, so that it 
-# corresponds to ps_groupid instead of groupid (according to which 
-# it was initially calculated)
-temp_df = pd.merge(gal_group_df, group_df[["groupid","ngals"]], how='left', 
-    left_on='groupid', right_index=True) 
-temp_df.loc[temp_df.ps_groupid!=temp_df.groupid_x, 'ngals'] = 1 
-
-# Creating a new group_df that corresponds to ps_groupid instead 
-# of groupid. Need to use groupby since we only want the unique 
-# group entries i.e. one entry per group and not one entry per
-# galaxy in group
-group_df_dict = dict()
-for k, v in enumerate(temp_df.groupby('ps_groupid')):
-    #v here is a tuple with 2 elements - index and a groupby group
-    group_df_dict[k] = (k , np.unique(v[1].ngals)[0])
-
-group_df_new = pd.DataFrame.from_dict(group_df_dict, orient='index', 
+group_df = pd.DataFrame.from_dict(group_df_dict, orient='index', 
     columns=["ps_groupid","ngals"])
 
 #* Checking if N>2 group's ngals have been preserved - YES
 groupid_check = []
-for idx, row in group_df.iterrows(): 
+for idx, row in group_df_or.iterrows(): 
     ngals_or = row["ngals"]
     if ngals_or > 2: 
         groupid = row["groupid"]
-        ngals_new = group_df_new.ngals.loc[group_df_new.ps_groupid == groupid].values[0]
+        ngals_new = group_df.ngals.loc[group_df.ps_groupid == groupid].values[0]
         if ngals_or != ngals_new: 
             groupid_check.append(groupid)
 
-#! Change all uses of 'groupid' column to 'ps_groupid' in this function
+if len(groupid_check) > 0:
+    sys.exit("N>2 groups have not been preserved!")
+
 gal_group_df_new, group_df_new = \
     group_mass_assignment(gal_group_df, group_df, param_dict)
 
 print('Writing to output files')
-pandas_df_to_hdf5_file(data=gal_group_df_new,
-    hdf5_file=path_to_processed + 'gal_group_eco_bary_data_buffer_volh1_dr2.hdf5', 
-    key='gal_group_df')
+if mf_type == 'smf':
+    pandas_df_to_hdf5_file(data=gal_group_df_new,
+        hdf5_file=path_to_processed + 'gal_group_eco_data_buffer_volh1_dr2.hdf5', 
+        key='gal_group_df')
+elif mf_type == 'bmf':
+    pandas_df_to_hdf5_file(data=gal_group_df_new,
+        hdf5_file=path_to_processed + 'gal_group_eco_bary_data_buffer_volh1_dr2.hdf5', 
+        key='gal_group_df')
