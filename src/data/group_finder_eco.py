@@ -636,18 +636,19 @@ for k, v in enumerate(gal_group_df.groupby('ps_groupid')):
 group_df = pd.DataFrame.from_dict(group_df_dict, orient='index', 
     columns=["ps_groupid","ngals"])
 
-#* Checking if N>2 group's ngals have been preserved - YES
-groupid_check = []
-for idx, row in group_df_or.iterrows(): 
-    ngals_or = row["ngals"]
-    if ngals_or > 2: 
-        groupid = row["groupid"]
-        ngals_new = group_df.ngals.loc[group_df.ps_groupid == groupid].values[0]
-        if ngals_or != ngals_new: 
-            groupid_check.append(groupid)
+# Not going to work since mapping IDs will not conserve this info
+# #* Checking if N>2 group's ngals have been preserved - YES
+# groupid_check = []
+# for idx, row in group_df_or.iterrows(): 
+#     ngals_or = row["ngals"]
+#     if ngals_or > 2: 
+#         groupid = row["groupid"]
+#         ngals_new = group_df.ngals.loc[group_df.ps_groupid == groupid].values[0]
+#         if ngals_or != ngals_new: 
+#             groupid_check.append(groupid)
 
-if len(groupid_check) > 0:
-    sys.exit("N>2 groups have not been preserved!")
+# if len(groupid_check) > 0:
+#     sys.exit("N>2 groups have not been preserved!")
 
 gal_group_df_new, group_df_new = \
     group_mass_assignment(gal_group_df, group_df, param_dict)
