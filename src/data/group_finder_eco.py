@@ -569,10 +569,21 @@ path_to_raw = dict_of_paths['raw_dir']
 path_to_data = dict_of_paths['data_dir']
 path_to_processed = dict_of_paths['proc_dir']
 
-#! Change to ecodr3
-catl_file = path_to_raw + "eco/ecodr2.csv"
+catl_file = path_to_raw + "eco/ecodr3.csv"
+duplicate_file = path_to_raw + "ECO_duplicate_classification.csv"
+catl_colours_file = path_to_raw + "eco_dr3_colours.csv"
 
 eco_buff = pd.read_csv(catl_file, delimiter=",", header=0) 
+eco_duplicates = pd.read_csv(duplicate_file, header=0)
+eco_colours = pd.read_csv(catl_colours_file, header=0, index_col=0) 
+
+# Removing duplicate entries
+duplicate_names = eco_duplicates.NAME.loc[eco_duplicates.DUP > 0]
+eco_buff = eco_buff[~eco_buff.name.isin(duplicate_names)].reset_index(drop=True)
+
+# Combining colour information
+eco_buff = pd.merge(eco_buff, eco_colours, left_on='name', right_on='galname')\
+    .drop(columns=["galname"])
 
 if mf_type == 'smf':
     eco_subset_df = eco_buff.loc[(eco_buff.cz >= cz_inner) & \
@@ -656,7 +667,7 @@ gal_group_df_new, group_df_new = \
 print('Writing to output files')
 if mf_type == 'smf':
     pandas_df_to_hdf5_file(data=gal_group_df_new,
-        hdf5_file=path_to_processed + 'gal_group_eco_dr2_pairsplitting.hdf5', 
+        hdf5_file=path_to_processed + 'gal_group_eco_stellar_buffer_volh1_dr3.hdf5', 
         key='gal_group_df')
 elif mf_type == 'bmf':
     pandas_df_to_hdf5_file(data=gal_group_df_new,
