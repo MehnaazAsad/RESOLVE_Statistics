@@ -175,7 +175,7 @@ def read_data_catl(path_to_file, survey):
         #* Recommended to exclude this galaxy in erratum to Hood et. al 2018
         eco_buff = eco_buff.loc[eco_buff.name != 'ECO13860']
 
-        eco_buff = mock_add_grpcz(eco_buff, grpid_col='groupid', 
+        eco_buff = mock_add_grpcz(eco_buff, grpid_col='ps_groupid', 
             galtype_col='g_galtype', cen_cz_col='cz')
         
         if mf_type == 'smf':
@@ -308,7 +308,7 @@ def measure_all_smf(table, volume, data_bool, randint_logmstar=None):
 
     if data_bool:
         logmstar_col = 'logmstar'
-        max_total, phi_total, err_total, bins_total, counts_total = \
+        max_total, phi_total, err_total, counts_total = \
             diff_smf(table[logmstar_col], volume, False)
         # max_red, phi_red, err_red, bins_red, counts_red = \
         #     diff_smf(table[logmstar_col].loc[table[colour_col] == 'R'], 
@@ -322,7 +322,7 @@ def measure_all_smf(table, volume, data_bool, randint_logmstar=None):
         else:
             logmstar_col = 'logmstar'
         ## Changed to 10**X because Behroozi mocks now have M* values in log
-        max_total, phi_total, err_total, bins_total, counts_total = \
+        max_total, phi_total, err_total, counts_total = \
             diff_smf(10**(table[logmstar_col]), volume, True)
         # max_red, phi_red, err_red, bins_red, counts_red = \
         #     diff_smf(10**(table[logmstar_col].loc[table[colour_col] == 'R']), 
@@ -610,7 +610,7 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
 
         ## Use group level for data even when settings.level == halo
         galtype_col = 'g_galtype'
-        id_col = 'groupid'
+        id_col = 'ps_groupid'
 
     if catl_type == 'mock':
         catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
@@ -805,7 +805,7 @@ def get_stacked_velocity_dispersion(catl, catl_type, randint=None):
 
         ## Use group level for data even when settings.level == halo
         galtype_col = 'g_galtype'
-        id_col = 'groupid'
+        id_col = 'ps_groupid'
 
     if catl_type == 'mock':
         catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
@@ -1467,9 +1467,9 @@ def get_err_data(survey, path):
                     blue_sigma = np.log10(blue_sigma)
 
                     mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
-                        statistic=average_of_log, bins=np.linspace(-2,3,5))
+                        statistic=average_of_log, bins=np.linspace(0,3,5))
                     mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
-                        statistic=average_of_log, bins=np.linspace(-1,3,5))
+                        statistic=average_of_log, bins=np.linspace(0,3,5))
                 
                 elif mf_type == 'bmf':
                     red_sigma, red_cen_mbary_sigma, blue_sigma, \
@@ -1479,9 +1479,9 @@ def get_err_data(survey, path):
                     blue_sigma = np.log10(blue_sigma)
 
                     mean_mstar_red = bs(red_sigma, red_cen_mbary_sigma, 
-                        statistic=average_of_log, bins=np.linspace(-2,3,5))
+                        statistic=average_of_log, bins=np.linspace(0,3,5))
                     mean_mstar_blue = bs(blue_sigma, blue_cen_mbary_sigma, 
-                        statistic=average_of_log, bins=np.linspace(-1,3,5))
+                        statistic=average_of_log, bins=np.linspace(0,3,5))
                 
                 mean_mstar_red_arr.append(mean_mstar_red[0])
                 mean_mstar_blue_arr.append(mean_mstar_blue[0])
@@ -1584,6 +1584,7 @@ def get_err_data(survey, path):
 
     # rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=20)
     # rc('text', usetex=True)
+    # rc('text.latex', preamble=r"\usepackage{amsmath}")
     # rc('axes', linewidth=2)
     # rc('xtick.major', width=4, size=7)
     # rc('ytick.major', width=4, size=7)
@@ -1606,7 +1607,7 @@ def get_err_data(survey, path):
     # ax1 = fig1.add_subplot(111)
     # cmap = cm.get_cmap('Spectral_r')
     # cax = ax1.matshow(corr_mat_colour, cmap=cmap, vmin=-1, vmax=1)
-    # # cax = ax1.matshow(B, cmap=cmap, vmin=-1, vmax=1)
+    # cax = ax1.matshow(B, cmap=cmap, vmin=-1, vmax=1)
     # tick_marks = [i for i in range(len(combined_df.columns))]
     # names = [
     # r'$\Phi_1$', r'$\Phi_2$', r'$\Phi_3$', r'$\Phi_4$',
@@ -1614,14 +1615,24 @@ def get_err_data(survey, path):
     # r'$fblue\ sat_1$', r'$sat_2$', r'$sat_3$', r'$sat_4$',
     # r'$mstar\ red\ grpcen_1$', r'$grpcen_2$', r'$grpcen_3$', r'$grpcen_4$',
     # r'$mstar\ blue\ grpcen_1$', r'$grpcen_2$', r'$grpcen_3$', r'$grpcen_4$',]
+    
+    # tick_marks=[0, 4, 8, 12, 16]
+    # names = [
+    #     r"$\boldsymbol\phi$",
+    #     r"$\boldsymbol{f_{blue}^{c}}$",
+    #     r"$\boldsymbol{f_{blue}^{s}}$",
+    #     r"$\boldsymbol{\overline{M_{*,red}^{c}}}$",
+    #     r"$\boldsymbol{\overline{M_{*,blue}^{c}}}$"]
 
-    # plt.xticks(tick_marks, names, rotation='vertical')
-    # plt.yticks(tick_marks, names)    
+    # plt.xticks(tick_marks, names, fontsize=10)#, rotation='vertical')
+    # plt.yticks(tick_marks, names, fontsize=10)    
     # plt.gca().invert_yaxis() 
     # plt.gca().xaxis.tick_bottom()
     # plt.colorbar(cax)
     # plt.title('{0}'.format(quenching))
     # plt.show()
+    # plt.savefig('/Users/asadm2/Desktop/matrix_eco_smf.pdf')
+
 
     # #* Scree plot
 
@@ -1665,9 +1676,19 @@ def get_err_data(survey, path):
     #     phi_min.append(min(nums))
     #     phi_max.append(max(nums))
 
+    # phi_max = np.array(phi_max)
+    # phi_min = np.array(phi_min)
+
+    # midpoint_phi_err = -((phi_max * phi_min) ** 0.5)
+    # phi_data_midpoint_diff = 10**total_data[1] - 10**midpoint_phi_err 
+
     # fig1 = plt.figure()
-    # mt = plt.fill_between(x=max_total, y1=phi_max, 
-    #     y2=phi_min, color='silver', alpha=0.4)
+
+    # mt = plt.fill_between(x=max_total, y1=np.log10(10**phi_min + phi_data_midpoint_diff), 
+    #     y2=np.log10(10**phi_max + phi_data_midpoint_diff), color='silver', alpha=0.4)
+
+    # # mt = plt.fill_between(x=max_total, y1=phi_max, 
+    # #     y2=phi_min, color='silver', alpha=0.4)
     # dt = plt.scatter(total_data[0], total_data[1],
     #     color='k', s=150, zorder=10, marker='^')
 
@@ -1683,14 +1704,14 @@ def get_err_data(survey, path):
     # plt.minorticks_on()
     # # plt.title(r'SMFs from mocks')
     # if mf_type == 'smf':
-    #     plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_smf_total.pdf', 
+    #     plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_smf_total_offsetmocks.pdf', 
     #         bbox_inches="tight", dpi=1200)
     # elif mf_type == 'bmf':
     #     plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_bmf_total.pdf', 
     #         bbox_inches="tight", dpi=1200)
     # plt.show()
 
-    # #* Blue fraction from mocks and data for paper
+    # # #* Blue fraction from mocks and data for paper
 
     # data_cen = combined_df.values[:,4:8]
     # data_sat = combined_df.values[:,8:12]
@@ -1723,12 +1744,28 @@ def get_err_data(survey, path):
     #     sat_min.append(min(nums))
     #     sat_max.append(max(nums))
 
+    # cen_max = np.array(cen_max)
+    # cen_min = np.array(cen_min)
+    # sat_max = np.array(sat_max)
+    # sat_min = np.array(sat_min)
+
+    # midpoint_cen_err = (cen_max * cen_min) ** 0.5
+    # midpoint_sat_err = (sat_max * sat_min) ** 0.5
+    # cen_data_midpoint_diff = f_blue_data[2] - midpoint_cen_err 
+    # sat_data_midpoint_diff = f_blue_data[3] - midpoint_sat_err
+
     # fig2 = plt.figure()
 
-    # mt_cen = plt.fill_between(x=f_blue_data[0], y1=cen_max, 
-    #     y2=cen_min, color='rebeccapurple', alpha=0.4)
-    # mt_sat = plt.fill_between(x=f_blue_data[0], y1=sat_max, 
-    #     y2=sat_min, color='goldenrod', alpha=0.4)
+    # #* Points not truly in the middle like in next figure. They're just shifted.
+    # # mt_cen = plt.fill_between(x=f_blue_data[0], y1=cen_max + (f_blue_data[2] - cen_max), 
+    # #     y2=cen_min + (f_blue_data[2] - cen_min) - (np.array(cen_max) - np.array(cen_min)), color='rebeccapurple', alpha=0.4)
+    # # mt_sat = plt.fill_between(x=f_blue_data[0], y1=sat_max + (f_blue_data[3] - sat_max), 
+    # #     y2=sat_min + (f_blue_data[3] - sat_min) - (np.array(sat_max) - np.array(sat_min)), color='goldenrod', alpha=0.4)
+
+    # mt_cen = plt.fill_between(x=f_blue_data[0], y1=cen_max + cen_data_midpoint_diff, 
+    #     y2=cen_min + cen_data_midpoint_diff, color='rebeccapurple', alpha=0.4)
+    # mt_sat = plt.fill_between(x=f_blue_data[0], y1=sat_max + sat_data_midpoint_diff, 
+    #     y2=sat_min + sat_data_midpoint_diff, color='goldenrod', alpha=0.4)
 
     # dt_cen = plt.scatter(f_blue_data[0], f_blue_data[2],
     #     color='rebeccapurple', s=150, zorder=10, marker='^')
@@ -1747,7 +1784,7 @@ def get_err_data(survey, path):
     #     handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='upper right', prop={'size':17})
     # plt.minorticks_on()
     # if mf_type == 'smf':
-    #     plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_fblue.pdf', 
+    #     plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_fblue_offsetmocks.pdf', 
     #         bbox_inches="tight", dpi=1200)
     # elif mf_type == 'bmf':
     #     plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_fblue_bary.pdf', 
@@ -1755,7 +1792,7 @@ def get_err_data(survey, path):
     # plt.show()
 
 
-    # #* Velocity dispersion from mocks and data for paper
+    # # #* Velocity dispersion from mocks and data for paper
 
     # bins_red=np.linspace(-2,3,5)
     # bins_blue=np.linspace(-1,3,5)
@@ -1793,11 +1830,21 @@ def get_err_data(survey, path):
     #     blue_min.append(min(nums))
     #     blue_max.append(max(nums))
 
+    # red_max = np.array(red_max)
+    # red_min = np.array(red_min)
+    # blue_max = np.array(blue_max)
+    # blue_min = np.array(blue_min)
+
+    # midpoint_red_err = (red_max * red_min) ** 0.5
+    # midpoint_blue_err = (blue_max * blue_min) ** 0.5
+    # red_data_midpoint_diff = 10**mean_mstar_red_data[0] - 10**midpoint_red_err 
+    # blue_data_midpoint_diff = 10**mean_mstar_blue_data[0] - 10**midpoint_blue_err
+
     # fig3 = plt.figure()
-    # mt_red = plt.fill_between(x=bins_red, y1=red_min, 
-    #     y2=red_max, color='indianred', alpha=0.4)
-    # mt_blue = plt.fill_between(x=bins_blue, y1=blue_min, 
-    #     y2=blue_max, color='cornflowerblue', alpha=0.4)
+    # mt_red = plt.fill_between(x=bins_red, y1=np.log10(np.abs(10**red_min + red_data_midpoint_diff)), 
+    #     y2=np.log10(10**red_max + red_data_midpoint_diff), color='indianred', alpha=0.4)
+    # mt_blue = plt.fill_between(x=bins_blue, y1=np.log10(10**blue_min + blue_data_midpoint_diff), 
+    #     y2=np.log10(10**blue_max + blue_data_midpoint_diff), color='cornflowerblue', alpha=0.4)
 
     # dt_red = plt.scatter(bins_red, mean_mstar_red_data[0], 
     #     color='indianred', s=150, zorder=10, marker='^')
@@ -1815,7 +1862,7 @@ def get_err_data(survey, path):
     #     handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='lower right', prop={'size':20})
     # plt.minorticks_on()
     # if mf_type == 'smf':
-    #     plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_vdisp.pdf', 
+    #     plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_vdisp_offsetmocks.pdf', 
     #         bbox_inches="tight", dpi=1200)
     # elif mf_type == 'bmf':
     #     plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_vdisp_bary.pdf', 
@@ -2405,9 +2452,9 @@ def lnprob(theta, data, err, corr_mat_inv):
                 blue_sigma = np.log10(blue_sigma)
 
                 mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
-                    statistic=average_of_log, bins=np.linspace(-2,3,5))
+                    statistic=average_of_log, bins=np.linspace(0,3,5))
                 mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
-                    statistic=average_of_log, bins=np.linspace(-1,3,5))
+                    statistic=average_of_log, bins=np.linspace(0,3,5))
         elif mf_type == 'bmf':
             logmstar_col = 'logmstar'
             total_model = diff_bmf(10**(gal_group_df[logmstar_col]), 
@@ -2438,9 +2485,9 @@ def lnprob(theta, data, err, corr_mat_inv):
                 blue_sigma = np.log10(blue_sigma)
 
                 mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
-                    statistic=average_of_log, bins=np.linspace(-2,3,5))
+                    statistic=average_of_log, bins=np.linspace(0,3,5))
                 mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
-                    statistic=average_of_log, bins=np.linspace(-1,3,5))
+                    statistic=average_of_log, bins=np.linspace(0,3,5))
  
         model_arr = []
         model_arr.append(total_model[1])
@@ -2623,7 +2670,7 @@ def main(args):
 
     if survey == 'eco':
         if mf_type == 'smf':
-            catl_file = path_to_proc + "gal_group_eco_data_buffer_volh1_dr2.hdf5"
+            catl_file = path_to_proc + "gal_group_eco_stellar_buffer_volh1_dr3.hdf5"
         elif mf_type == 'bmf':
             catl_file = path_to_proc + \
             "gal_group_eco_bary_data_buffer_volh1_dr2.hdf5"    
@@ -2692,9 +2739,9 @@ def main(args):
             blue_sigma = np.log10(blue_sigma)
 
             mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
-                statistic=average_of_log, bins=np.linspace(-2,3,5))
+                statistic=average_of_log, bins=np.linspace(0,3,5))
             mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
-                statistic=average_of_log, bins=np.linspace(-1,3,5))
+                statistic=average_of_log, bins=np.linspace(0,3,5))
         elif mf_type == 'bmf':
             print('Measuring velocity dispersion for data')
             red_sigma, red_cen_mbary_sigma, blue_sigma, \
@@ -2704,9 +2751,9 @@ def main(args):
             blue_sigma = np.log10(blue_sigma)
 
             mean_mstar_red_data = bs(red_sigma, red_cen_mbary_sigma, 
-                statistic=average_of_log, bins=np.linspace(-2,3,5))
+                statistic=average_of_log, bins=np.linspace(0,3,5))
             mean_mstar_blue_data = bs(blue_sigma, blue_cen_mbary_sigma, 
-                statistic=average_of_log, bins=np.linspace(-1,3,5))
+                statistic=average_of_log, bins=np.linspace(0,3,5))
 
 
     print('Initial population of halo catalog')
