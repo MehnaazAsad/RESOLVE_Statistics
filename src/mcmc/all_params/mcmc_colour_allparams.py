@@ -49,7 +49,7 @@ def mock_add_grpcz(df, grpid_col=None, galtype_col=None, cen_cz_col=None):
         galtype_col)])['{0}'.format(cen_cz_col)].apply(np.sum).values    
     zip_iterator = zip(list(cen_subset_df[grpid_col]), list(cen_cz))
     a_dictionary = dict(zip_iterator)
-    df['grpcz_new'] = df['{0}'.format(grpid_col)].map(a_dictionary)
+    df['grpcz_cen'] = df['{0}'.format(grpid_col)].map(a_dictionary)
 
     av_cz = df.groupby(['{0}'.format(grpid_col)])\
         ['cz'].apply(np.average).values
@@ -67,6 +67,18 @@ def models_add_avgrpcz(df, grpid_col=None, galtype_col=None):
     zip_iterator = zip(list(cen_subset_df[grpid_col]), list(av_cz))
     a_dictionary = dict(zip_iterator)
     df['grpcz_av'] = df['{0}'.format(grpid_col)].map(a_dictionary)
+
+    return df
+
+def models_add_cengrpcz(df, grpid_col=None, galtype_col=None, cen_cz_col=None):
+    cen_subset_df = df.loc[df[galtype_col] == 1].sort_values(by=grpid_col)
+    # Sum doesn't actually add up anything here but I didn't know how to get
+    # each row as is so I used .apply
+    cen_cz = cen_subset_df.groupby(['{0}'.format(grpid_col),'{0}'.format(
+        galtype_col)])['{0}'.format(cen_cz_col)].apply(np.sum).values    
+    zip_iterator = zip(list(cen_subset_df[grpid_col]), list(cen_cz))
+    a_dictionary = dict(zip_iterator)
+    df['ps_cen_cz'] = df['{0}'.format(grpid_col)].map(a_dictionary)
 
     return df
 
@@ -180,17 +192,17 @@ def read_data_catl(path_to_file, survey):
         
         if mf_type == 'smf':
             # 6456 galaxies                       
-            catl = eco_buff.loc[(eco_buff.grpcz_new.values >= 3000) & 
-                (eco_buff.grpcz_new.values <= 7000) & 
+            catl = eco_buff.loc[(eco_buff.grpcz_cen.values >= 3000) & 
+                (eco_buff.grpcz_cen.values <= 7000) & 
                 (eco_buff.absrmag.values <= -17.33)]
         elif mf_type == 'bmf':
-            catl = eco_buff.loc[(eco_buff.grpcz_new.values >= 3000) & 
-                (eco_buff.grpcz_new.values <= 7000) & 
+            catl = eco_buff.loc[(eco_buff.grpcz_cen.values >= 3000) & 
+                (eco_buff.grpcz_cen.values <= 7000) & 
                 (eco_buff.absrmag.values <= -17.33)] 
 
         volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
         # cvar = 0.125
-        z_median = np.median(catl.grpcz_new.values) / (3 * 10**5)
+        z_median = np.median(catl.grpcz_cen.values) / (3 * 10**5)
         
     elif survey == 'resolvea' or survey == 'resolveb':
         columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag', 
@@ -235,7 +247,7 @@ def read_data_catl(path_to_file, survey):
 
     return catl, volume, z_median
 
-def assign_colour_label_data(catl):
+def assign_colour_label_data_legacy(catl):
     """
     Assign colour label to data
 
@@ -278,6 +290,26 @@ def assign_colour_label_data(catl):
             
         colour_label_arr[idx] = colour_label
     
+    catl['colour_label'] = colour_label_arr
+
+    return catl
+
+def assign_colour_label_data(catl):
+    """
+    Assign colour label to data
+
+    Parameters
+    ----------
+    catl: pandas Dataframe 
+        Data catalog
+
+    Returns
+    ---------
+    catl: pandas Dataframe
+        Data catalog with colour label assigned as new column
+    """
+
+    colour_label_arr = np.array(['R' if x==1 else 'B' for x in catl.red.values])    
     catl['colour_label'] = colour_label_arr
 
     return catl
@@ -492,7 +524,7 @@ def blue_frac(catl, h1_bool, data_bool, randint_logmstar=None):
     # mcmc framework
     elif randint_logmstar is None:
         mass_total_arr = catl['logmstar'].values
-        censat_col = 'grp_censat'
+        censat_col = 'ps_grp_censat'
         mass_cen_arr = catl['logmstar'].loc[catl[censat_col] == 1].values
         mass_sat_arr = catl['logmstar'].loc[catl[censat_col] == 0].values
     
@@ -655,9 +687,9 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
         if randint is None:
             logmstar_col = 'logmstar'
             logmbary_col = 'logmstar'
-            galtype_col = 'grp_censat'
-            id_col = 'groupid'
-            cencz_col = 'cen_cz'
+            galtype_col = 'ps_grp_censat'
+            id_col = 'ps_groupid'
+            cencz_col = 'ps_cen_cz'
             # Using the same survey definition as in mcmc smf i.e excluding the 
             # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
             # and M* star cuts to mimic mocks and data.
@@ -850,9 +882,9 @@ def get_stacked_velocity_dispersion(catl, catl_type, randint=None):
         if randint is None:
             logmstar_col = 'logmstar'
             logmbary_col = 'logmstar'
-            galtype_col = 'grp_censat'
-            id_col = 'groupid'
-            cencz_col = 'cen_cz'
+            galtype_col = 'ps_grp_censat'
+            id_col = 'ps_groupid'
+            cencz_col = 'ps_cen_cz'
             # Using the same survey definition as in mcmc smf i.e excluding the 
             # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
             # and M* star cuts to mimic mocks and data.
@@ -1337,13 +1369,13 @@ def get_err_data(survey, path):
             # Using the same survey definition as in mcmc smf i.e excluding the 
             # buffer
             if mf_type == 'smf':
-                mock_pd = mock_pd.loc[(mock_pd.grpcz_new.values >= min_cz) & \
-                    (mock_pd.grpcz_new.values <= max_cz) & \
+                mock_pd = mock_pd.loc[(mock_pd.grpcz_cen.values >= min_cz) & \
+                    (mock_pd.grpcz_cen.values <= max_cz) & \
                     (mock_pd.M_r.values <= mag_limit) & \
                     (mock_pd.logmstar.values >= mstar_limit)].reset_index(drop=True)
             elif mf_type == 'bmf':
-                mock_pd = mock_pd.loc[(mock_pd.grpcz_new.values >= min_cz) & \
-                    (mock_pd.grpcz_new.values <= max_cz) & \
+                mock_pd = mock_pd.loc[(mock_pd.grpcz_cen.values >= min_cz) & \
+                    (mock_pd.grpcz_cen.values <= max_cz) & \
                     (mock_pd.M_r.values <= mag_limit)].reset_index(drop=True)
 
             # ## Using best-fit found for old ECO data using optimize_hybridqm_eco,py
@@ -2264,6 +2296,168 @@ def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
 
     return mockgal_pd_merged
     
+def group_skycoords(galaxyra, galaxydec, galaxycz, galaxygrpid):
+    """
+    -----
+    Obtain a list of group centers (RA/Dec/cz) given a list of galaxy coordinates (equatorial)
+    and their corresponding group ID numbers.
+    
+    Inputs (all same length)
+       galaxyra : 1D iterable,  list of galaxy RA values in decimal degrees
+       galaxydec : 1D iterable, list of galaxy dec values in decimal degrees
+       galaxycz : 1D iterable, list of galaxy cz values in km/s
+       galaxygrpid : 1D iterable, group ID number for every galaxy in previous arguments.
+    
+    Outputs (all shape match `galaxyra`)
+       groupra : RA in decimal degrees of galaxy i's group center.
+       groupdec : Declination in decimal degrees of galaxy i's group center.
+       groupcz : Redshift velocity in km/s of galaxy i's group center.
+    
+    Note: the FoF code of AA Berlind uses theta_i = declination, with theta_cen = 
+    the central declination. This version uses theta_i = pi/2-dec, with some trig functions
+    changed so that the output *matches* that of Berlind's FoF code (my "deccen" is the same as
+    his "thetacen", to be exact.)
+    -----
+    """
+    # Prepare cartesian coordinates of input galaxies
+    ngalaxies = len(galaxyra)
+    galaxyphi = galaxyra * np.pi/180.
+    galaxytheta = np.pi/2. - galaxydec*np.pi/180.
+    galaxyx = np.sin(galaxytheta)*np.cos(galaxyphi)
+    galaxyy = np.sin(galaxytheta)*np.sin(galaxyphi)
+    galaxyz = np.cos(galaxytheta)
+    # Prepare output arrays
+    uniqidnumbers = np.unique(galaxygrpid)
+    groupra = np.zeros(ngalaxies)
+    groupdec = np.zeros(ngalaxies)
+    groupcz = np.zeros(ngalaxies)
+    for i,uid in enumerate(uniqidnumbers):
+        sel=np.where(galaxygrpid==uid)
+        nmembers = len(galaxygrpid[sel])
+        xcen=np.sum(galaxycz[sel]*galaxyx[sel])/nmembers
+        ycen=np.sum(galaxycz[sel]*galaxyy[sel])/nmembers
+        zcen=np.sum(galaxycz[sel]*galaxyz[sel])/nmembers
+        czcen = np.sqrt(xcen**2 + ycen**2 + zcen**2)
+        deccen = np.arcsin(zcen/czcen)*180.0/np.pi # degrees
+        if (ycen >=0 and xcen >=0):
+            phicor = 0.0
+        elif (ycen < 0 and xcen < 0):
+            phicor = 180.0
+        elif (ycen >= 0 and xcen < 0):
+            phicor = 180.0
+        elif (ycen < 0 and xcen >=0):
+            phicor = 360.0
+        elif (xcen==0 and ycen==0):
+            print("Warning: xcen=0 and ycen=0 for group {}".format(galaxygrpid[i]))
+        # set up phicorrection and return phicen.
+        racen=np.arctan(ycen/xcen)*(180/np.pi)+phicor # in degrees
+        # set values at each element in the array that belongs to the group under iteration
+        groupra[sel] = racen # in degrees
+        groupdec[sel] = deccen # in degrees
+        groupcz[sel] = czcen
+    return groupra, groupdec, groupcz
+
+def multiplicity_function(grpids, return_by_galaxy=False):
+    """
+    Return counts for binning based on group ID numbers.
+    Parameters
+    ----------
+    grpids : iterable
+        List of group ID numbers. Length must match # galaxies.
+    Returns
+    -------
+    occurences : list
+        Number of galaxies in each galaxy group (length matches # groups).
+    """
+    grpids=np.asarray(grpids)
+    uniqid = np.unique(grpids)
+    if return_by_galaxy:
+        grpn_by_gal=np.zeros(len(grpids)).astype(int)
+        for idv in grpids:
+            sel = np.where(grpids==idv)
+            grpn_by_gal[sel]=len(sel[0])
+        return grpn_by_gal
+    else:
+        occurences=[]
+        for uid in uniqid:
+            sel = np.where(grpids==uid)
+            occurences.append(len(grpids[sel]))
+        return occurences
+
+def angular_separation(ra1,dec1,ra2,dec2):
+    """
+    Compute the angular separation bewteen two lists of galaxies using the Haversine formula.
+    
+    Parameters
+    ------------
+    ra1, dec1, ra2, dec2 : array-like
+       Lists of right-ascension and declination values for input targets, in decimal degrees. 
+    
+    Returns
+    ------------
+    angle : np.array
+       Array containing the angular separations between coordinates in list #1 and list #2, as above.
+       Return value expressed in radians, NOT decimal degrees.
+    """
+    phi1 = ra1*np.pi/180.
+    phi2 = ra2*np.pi/180.
+    theta1 = np.pi/2. - dec1*np.pi/180.
+    theta2 = np.pi/2. - dec2*np.pi/180.
+    return 2*np.arcsin(np.sqrt(np.sin((theta2-theta1)/2.0)**2.0 + np.sin(theta1)*np.sin(theta2)*np.sin((phi2 - phi1)/2.0)**2.0))
+
+def split_false_pairs(galra, galde, galcz, galgroupid):
+    """
+    Split false-pairs of FoF groups following the algorithm
+    of Eckert et al. (2017), Appendix A.
+    https://ui.adsabs.harvard.edu/abs/2017ApJ...849...20E/abstract
+    Parameters
+    ---------------------
+    galra : array_like
+        Array containing galaxy RA.
+        Units: decimal degrees.
+    galde : array_like
+        Array containing containing galaxy DEC.
+        Units: degrees.
+    galcz : array_like
+        Array containing cz of galaxies.
+        Units: km/s
+    galid : array_like
+        Array containing group ID number for each galaxy.
+    
+    Returns
+    ---------------------
+    newgroupid : np.array
+        Updated group ID numbers.
+    """
+    groupra,groupde,groupcz=group_skycoords(galra,galde,galcz,galgroupid)
+    groupn = multiplicity_function(galgroupid, return_by_galaxy=True)
+    newgroupid = np.copy(galgroupid)
+    brokenupids = np.arange(len(newgroupid))+np.max(galgroupid)+100
+    # brokenupids_start = np.max(galgroupid)+1
+    r75func = lambda r1,r2: 0.75*(r2-r1)+r1
+    n2grps = np.unique(galgroupid[np.where(groupn==2)])
+    ## parameters corresponding to Katie's dividing line in cz-rproj space
+    bb=360.
+    mm = (bb-0.0)/(0.0-0.12)
+
+    for ii,gg in enumerate(n2grps):
+        # pair of indices where group's ngal == 2
+        galsel = np.where(galgroupid==gg)
+        deltacz = np.abs(np.diff(galcz[galsel])) 
+        theta = angular_separation(galra[galsel],galde[galsel],groupra[galsel],\
+            groupde[galsel])
+        rproj = theta*groupcz[galsel][0]/70.
+        grprproj = r75func(np.min(rproj),np.max(rproj))
+        keepN2 = bool((deltacz<(mm*grprproj+bb)))
+        if (not keepN2):
+            # break
+            newgroupid[galsel]=brokenupids[galsel]
+            # newgroupid[galsel] = np.array([brokenupids_start, brokenupids_start+1])
+            # brokenupids_start+=2
+        else:
+            pass
+    return newgroupid 
+
 def lnprob(theta, data, err, corr_mat_inv):
     """
     Calculates log probability for emcee
@@ -2404,12 +2598,36 @@ def lnprob(theta, data, err, corr_mat_inv):
         gal_group_df = group_finding(gals_df,
             path_to_data + 'interim/', param_dict)
 
+        ## Pair splitting
+        psgrpid = split_false_pairs(
+            np.array(gal_group_df.ra),
+            np.array(gal_group_df.dec),
+            np.array(gal_group_df.cz), 
+            np.array(gal_group_df.groupid))
+
+        gal_group_df["ps_groupid"] = psgrpid
+
+        arr1 = gal_group_df.ps_groupid
+        arr1_unq = gal_group_df.ps_groupid.drop_duplicates()  
+        arr2_unq = np.arange(len(np.unique(gal_group_df.ps_groupid))) 
+        mapping = dict(zip(arr1_unq, arr2_unq))   
+        new_values = arr1.map(mapping)
+        gal_group_df['ps_groupid'] = new_values  
+
+        most_massive_gal_idxs = gal_group_df.groupby(['ps_groupid'])['logmstar']\
+            .transform(max) == gal_group_df['logmstar']        
+        grp_censat_new = most_massive_gal_idxs.astype(int)
+        gal_group_df["ps_grp_censat"] = grp_censat_new
+
+        gal_group_df = models_add_cengrpcz(gal_group_df, grpid_col='ps_groupid', 
+            galtype_col='ps_grp_censat', cen_cz_col='cz')
+
         ## Making a similar cz cut as in data which is based on grpcz being 
-        ## defined as cz of the central of the group "grpcz_new"
+        ## defined as cz of the central of the group "grpcz_cen"
         cz_inner_mod = 3000
         gal_group_df = gal_group_df.loc[\
-            (gal_group_df['cen_cz'] >= cz_inner_mod) &
-            (gal_group_df['cen_cz'] <= cz_outer)].reset_index(drop=True)
+            (gal_group_df['ps_cen_cz'] >= cz_inner_mod) &
+            (gal_group_df['ps_cen_cz'] <= cz_outer)].reset_index(drop=True)
 
         dist_inner = kms_to_Mpc(H0,cz_inner_mod) #Mpc/h
         dist_outer = kms_to_Mpc(H0,cz_outer) #Mpc/h
@@ -2689,7 +2907,7 @@ def main(args):
     print('Reading catalog') #No Mstar cut needed as catl_file already has it
     catl, volume, z_median = read_data_catl(catl_file, survey)
 
-    print('Assigning colour to data using u-r colours')
+    print('Assigning colour label to data')
     catl = assign_colour_label_data(catl)
 
     if mf_type == 'smf':
