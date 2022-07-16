@@ -135,7 +135,19 @@ def mock_add_grpcz(df, grpid_col=None, galtype_col=None, cen_cz_col=None):
         galtype_col)])['{0}'.format(cen_cz_col)].apply(np.sum).values    
     zip_iterator = zip(list(cen_subset_df[grpid_col]), list(cen_cz))
     a_dictionary = dict(zip_iterator)
-    df['grpcz_new'] = df['{0}'.format(grpid_col)].map(a_dictionary)
+    df['grpcz_cen'] = df['{0}'.format(grpid_col)].map(a_dictionary)
+    return df
+
+def models_add_cengrpcz(df, col_id, grpid_col=None, galtype_col=None, cen_cz_col=None):
+    cen_subset_df = df.loc[df[galtype_col] == 1].sort_values(by=grpid_col)
+    # Sum doesn't actually add up anything here but I didn't know how to get
+    # each row as is so I used .apply
+    cen_cz = cen_subset_df.groupby(['{0}'.format(grpid_col),'{0}'.format(
+        galtype_col)])['{0}'.format(cen_cz_col)].apply(np.sum).values    
+    zip_iterator = zip(list(cen_subset_df[grpid_col]), list(cen_cz))
+    a_dictionary = dict(zip_iterator)
+    df['ps_cen_cz_{0}'.format(col_id)] = df['{0}'.format(grpid_col)].map(a_dictionary)
+
     return df
 
 def read_data_catl(path_to_file, survey):
@@ -170,22 +182,22 @@ def read_data_catl(path_to_file, survey):
         # eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0)
 
         eco_buff = read_mock_catl(path_to_file)
-        eco_buff = mock_add_grpcz(eco_buff, grpid_col='groupid', 
+        eco_buff = mock_add_grpcz(eco_buff, grpid_col='ps_groupid', 
             galtype_col='g_galtype', cen_cz_col='cz')
 
         if mf_type == 'smf':
             # 6456 galaxies
-            catl = eco_buff.loc[(eco_buff.grpcz_new.values >= 3000) &
-                (eco_buff.grpcz_new.values <= 7000) &
+            catl = eco_buff.loc[(eco_buff.grpcz_cen.values >= 3000) &
+                (eco_buff.grpcz_cen.values <= 7000) &
                 (eco_buff.absrmag.values <= -17.33)]
         elif mf_type == 'bmf':
-            catl = eco_buff.loc[(eco_buff.grpcz.values >= 3000) &
-                (eco_buff.grpcz_new.values <= 7000) &
+            catl = eco_buff.loc[(eco_buff.grpcz_cen.values >= 3000) &
+                (eco_buff.grpcz_cen.values <= 7000) &
                 (eco_buff.absrmag.values <= -17.33)]
 
         volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
         cvar = 0.125
-        z_median = np.median(catl.grpcz_new.values) / (3 * 10**5)
+        z_median = np.median(catl.grpcz_cen.values) / (3 * 10**5)
 
     elif survey == 'resolvea' or survey == 'resolveb':
         # 2286 galaxies
@@ -226,112 +238,6 @@ def read_data_catl(path_to_file, survey):
 
     return catl,volume,cvar,z_median
 
-def read_chi2(path_to_file):
-    """
-    Reads chi-squared values from file
-
-    Parameters
-    ----------
-    path_to_file: string
-        Path to chi-squared values file
-
-    Returns
-    ---------
-    chi2: array
-        Array of reshaped chi^2 values to match chain values
-    """
-    chi2_df = pd.read_csv(path_to_file,header=None,names=['chisquared'])
-
-    # Applies to runs prior to run 5?
-    if mf_type == 'smf' and survey == 'eco' and ver==1.0:
-        # Needed to reshape since flattened along wrong axis, 
-        # didn't correspond to chain
-        test_reshape = chi2_df.chisquared.values.reshape((1000,250))
-        chi2 = np.ndarray.flatten(np.array(test_reshape),'F')
-    
-    else:
-        chi2 = chi2_df.chisquared.values
-
-    return chi2
-
-def read_mcmc(path_to_file):
-    """
-    Reads mcmc chain from file
-
-    Parameters
-    ----------
-    path_to_file: string
-        Path to mcmc chain file
-
-    Returns
-    ---------
-    emcee_table: pandas dataframe
-        Dataframe of mcmc chain values with NANs removed
-    """
-    # colnames = ['mhalo_c','mstellar_c','lowmass_slope','highmass_slope',\
-    #     'scatter']
-    
-    # if mf_type == 'smf' and survey == 'eco' and ver==1.0:
-    #     emcee_table = pd.read_csv(path_to_file,names=colnames,sep='\s+',\
-    #         dtype=np.float64)
-
-    # else:
-    #     emcee_table = pd.read_csv(path_to_file, names=colnames, 
-    #         delim_whitespace=True, header=None)
-
-    #     emcee_table = emcee_table[emcee_table.mhalo_c.values != '#']
-    #     emcee_table.mhalo_c = emcee_table.mhalo_c.astype(np.float64)
-    #     emcee_table.mstellar_c = emcee_table.mstellar_c.astype(np.float64)
-    #     emcee_table.lowmass_slope = emcee_table.lowmass_slope.astype(np.float64)
-
-    # # Cases where last parameter was a NaN and its value was being written to 
-    # # the first element of the next line followed by 4 NaNs for the other 
-    # # parameters
-    # for idx,row in enumerate(emcee_table.values):
-    #     if np.isnan(row)[4] == True and np.isnan(row)[3] == False:
-    #         scatter_val = emcee_table.values[idx+1][0]
-    #         row[4] = scatter_val
-    
-    # # Cases where rows of NANs appear
-    # emcee_table = emcee_table.dropna(axis='index', how='any').\
-    #     reset_index(drop=True)
-    
-    colnames = ['mhalo_c', 'mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter',
-        'mstar_q','mh_q','mu','nu']
-
-    emcee_table = pd.read_csv(path_to_file, names=colnames, comment='#',
-        header=None, sep='\s+')
-
-    for idx,row in enumerate(emcee_table.values):
-
-        ## For cases where 5 params on one line and 3 on the next
-        if np.isnan(row)[6] == True and np.isnan(row)[5] == False:
-            mhalo_q_val = emcee_table.values[idx+1][0]
-            mu_val = emcee_table.values[idx+1][1]
-            nu_val = emcee_table.values[idx+1][2]
-            row[6] = mhalo_q_val
-            row[7] = mu_val
-            row[8] = nu_val 
-
-        ## For cases where 4 params on one line, 4 on the next and 1 on the 
-        ## third line (numbers in scientific notation unlike case above)
-        elif np.isnan(row)[4] == True and np.isnan(row)[3] == False:
-            scatter_val = emcee_table.values[idx+1][0]
-            mstar_q_val = emcee_table.values[idx+1][1]
-            mhalo_q_val = emcee_table.values[idx+1][2]
-            mu_val = emcee_table.values[idx+1][3]
-            nu_val = emcee_table.values[idx+2][0]
-            row[4] = scatter_val
-            row[5] = mstar_q_val
-            row[6] = mhalo_q_val
-            row[7] = mu_val
-            row[8] = nu_val 
-
-    emcee_table = emcee_table.dropna(axis='index', how='any').\
-        reset_index(drop=True)
-
-    return emcee_table
-
 def get_paramvals_percentile(table, percentile, chi2_arr):
     """
     Isolates 68th percentile lowest chi^2 values and takes random 1000 sample
@@ -361,7 +267,7 @@ def get_paramvals_percentile(table, percentile, chi2_arr):
     bf_params = mcmc_table_pctl.drop_duplicates().reset_index(drop=True).\
         values[0][:9]
     # subset = mcmc_table_pctl.drop_duplicates().sample(100).values[:,:5] 
-    subset = mcmc_table_pctl.drop_duplicates().sample(100).values[:,:9]
+    subset = mcmc_table_pctl.drop_duplicates().sample(500).values[:,:9]
     subset = np.insert(subset, 0, bf_params, axis=0)
 
     return subset
@@ -424,32 +330,6 @@ def populate_mock(theta, model, remove_cols=False):
     if remove_cols:
         gals_df = gals_df[['halo_mvir_host_halo','stellar_mass']]
 
-    return gals_df
-
-def assign_cen_sat_flag(gals_df):
-    """
-    Assign centrals and satellites flag to dataframe
-
-    Parameters
-    ----------
-    gals_df: pandas dataframe
-        Mock catalog
-
-    Returns
-    ---------
-    gals_df: pandas dataframe
-        Mock catalog with centrals/satellites flag as new column
-    """
-
-    C_S = []
-    for idx in range(len(gals_df)):
-        if gals_df['halo_hostid'][idx] == gals_df['halo_id'][idx]:
-            C_S.append(1)
-        else:
-            C_S.append(0)
-
-    C_S = np.array(C_S)
-    gals_df['cs_flag'] = C_S
     return gals_df
 
 def cart_to_spherical_coords(cart_arr, dist_arr):
@@ -993,74 +873,167 @@ def group_mass_assignment_rev(mockgal_pd, mockgroup_pd, param_dict, mock_num):
 
     return gal_pd, group_pd
 
-def diff_smf_mod(mstar_arr, volume, h1_bool, colour_flag=False):
+def group_skycoords(galaxyra, galaxydec, galaxycz, galaxygrpid):
     """
-    Calculates differential stellar mass function in units of h=1.0
+    -----
+    Obtain a list of group centers (RA/Dec/cz) given a list of galaxy coordinates (equatorial)
+    and their corresponding group ID numbers.
+    
+    Inputs (all same length)
+       galaxyra : 1D iterable,  list of galaxy RA values in decimal degrees
+       galaxydec : 1D iterable, list of galaxy dec values in decimal degrees
+       galaxycz : 1D iterable, list of galaxy cz values in km/s
+       galaxygrpid : 1D iterable, group ID number for every galaxy in previous arguments.
+    
+    Outputs (all shape match `galaxyra`)
+       groupra : RA in decimal degrees of galaxy i's group center.
+       groupdec : Declination in decimal degrees of galaxy i's group center.
+       groupcz : Redshift velocity in km/s of galaxy i's group center.
+    
+    Note: the FoF code of AA Berlind uses theta_i = declination, with theta_cen = 
+    the central declination. This version uses theta_i = pi/2-dec, with some trig functions
+    changed so that the output *matches* that of Berlind's FoF code (my "deccen" is the same as
+    his "thetacen", to be exact.)
+    -----
+    """
+    # Prepare cartesian coordinates of input galaxies
+    ngalaxies = len(galaxyra)
+    galaxyphi = galaxyra * np.pi/180.
+    galaxytheta = np.pi/2. - galaxydec*np.pi/180.
+    galaxyx = np.sin(galaxytheta)*np.cos(galaxyphi)
+    galaxyy = np.sin(galaxytheta)*np.sin(galaxyphi)
+    galaxyz = np.cos(galaxytheta)
+    # Prepare output arrays
+    uniqidnumbers = np.unique(galaxygrpid)
+    groupra = np.zeros(ngalaxies)
+    groupdec = np.zeros(ngalaxies)
+    groupcz = np.zeros(ngalaxies)
+    for i,uid in enumerate(uniqidnumbers):
+        sel=np.where(galaxygrpid==uid)
+        nmembers = len(galaxygrpid[sel])
+        xcen=np.sum(galaxycz[sel]*galaxyx[sel])/nmembers
+        ycen=np.sum(galaxycz[sel]*galaxyy[sel])/nmembers
+        zcen=np.sum(galaxycz[sel]*galaxyz[sel])/nmembers
+        czcen = np.sqrt(xcen**2 + ycen**2 + zcen**2)
+        deccen = np.arcsin(zcen/czcen)*180.0/np.pi # degrees
+        if (ycen >=0 and xcen >=0):
+            phicor = 0.0
+        elif (ycen < 0 and xcen < 0):
+            phicor = 180.0
+        elif (ycen >= 0 and xcen < 0):
+            phicor = 180.0
+        elif (ycen < 0 and xcen >=0):
+            phicor = 360.0
+        elif (xcen==0 and ycen==0):
+            print("Warning: xcen=0 and ycen=0 for group {}".format(galaxygrpid[i]))
+        # set up phicorrection and return phicen.
+        racen=np.arctan(ycen/xcen)*(180/np.pi)+phicor # in degrees
+        # set values at each element in the array that belongs to the group under iteration
+        groupra[sel] = racen # in degrees
+        groupdec[sel] = deccen # in degrees
+        groupcz[sel] = czcen
+    return groupra, groupdec, groupcz
 
+def multiplicity_function(grpids, return_by_galaxy=False):
+    """
+    Return counts for binning based on group ID numbers.
     Parameters
     ----------
-    mstar_arr: numpy array
-        Array of stellar masses
-
-    volume: float
-        Volume of survey or simulation
-
-    h1_bool: boolean
-        True if units of masses are h=1, False if units of masses are not h=1
-
+    grpids : iterable
+        List of group ID numbers. Length must match # galaxies.
     Returns
-    ---------
-    maxis: array
-        Array of x-axis mass values
-
-    phi: array
-        Array of y-axis values
-
-    err_tot: array
-        Array of error values per bin
-    
-    bins: array
-        Array of bin edge values
+    -------
+    occurences : list
+        Number of galaxies in each galaxy group (length matches # groups).
     """
-    if not h1_bool:
-        # changing from h=0.7 to h=1 assuming h^-2 dependence
-        logmstar_arr = np.log10((10**mstar_arr) / 2.041)
+    grpids=np.asarray(grpids)
+    uniqid = np.unique(grpids)
+    if return_by_galaxy:
+        grpn_by_gal=np.zeros(len(grpids)).astype(int)
+        for idv in grpids:
+            sel = np.where(grpids==idv)
+            grpn_by_gal[sel]=len(sel[0])
+        return grpn_by_gal
     else:
-        logmstar_arr = np.log10(mstar_arr)
+        occurences=[]
+        for uid in uniqid:
+            sel = np.where(grpids==uid)
+            occurences.append(len(grpids[sel]))
+        return occurences
 
-    if survey == 'eco' or survey == 'resolvea':
-        bin_min = np.round(np.log10((10**8.9) / 2.041), 1)
-        if survey == 'eco' and colour_flag == 'R':
-            bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
-            bin_num = 6
-        elif survey == 'eco' and colour_flag == 'B':
-            bin_max = np.round(np.log10((10**11) / 2.041), 1)
-            bin_num = 6
-        elif survey == 'resolvea':
-            # different to avoid nan in inverse corr mat
-            bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
-            bin_num = 7
+def angular_separation(ra1,dec1,ra2,dec2):
+    """
+    Compute the angular separation bewteen two lists of galaxies using the Haversine formula.
+    
+    Parameters
+    ------------
+    ra1, dec1, ra2, dec2 : array-like
+       Lists of right-ascension and declination values for input targets, in decimal degrees. 
+    
+    Returns
+    ------------
+    angle : np.array
+       Array containing the angular separations between coordinates in list #1 and list #2, as above.
+       Return value expressed in radians, NOT decimal degrees.
+    """
+    phi1 = ra1*np.pi/180.
+    phi2 = ra2*np.pi/180.
+    theta1 = np.pi/2. - dec1*np.pi/180.
+    theta2 = np.pi/2. - dec2*np.pi/180.
+    return 2*np.arcsin(np.sqrt(np.sin((theta2-theta1)/2.0)**2.0 + np.sin(theta1)*np.sin(theta2)*np.sin((phi2 - phi1)/2.0)**2.0))
+
+def split_false_pairs(galra, galde, galcz, galgroupid):
+    """
+    Split false-pairs of FoF groups following the algorithm
+    of Eckert et al. (2017), Appendix A.
+    https://ui.adsabs.harvard.edu/abs/2017ApJ...849...20E/abstract
+    Parameters
+    ---------------------
+    galra : array_like
+        Array containing galaxy RA.
+        Units: decimal degrees.
+    galde : array_like
+        Array containing containing galaxy DEC.
+        Units: degrees.
+    galcz : array_like
+        Array containing cz of galaxies.
+        Units: km/s
+    galid : array_like
+        Array containing group ID number for each galaxy.
+    
+    Returns
+    ---------------------
+    newgroupid : np.array
+        Updated group ID numbers.
+    """
+    groupra,groupde,groupcz=group_skycoords(galra,galde,galcz,galgroupid)
+    groupn = multiplicity_function(galgroupid, return_by_galaxy=True)
+    newgroupid = np.copy(galgroupid)
+    brokenupids = np.arange(len(newgroupid))+np.max(galgroupid)+100
+    # brokenupids_start = np.max(galgroupid)+1
+    r75func = lambda r1,r2: 0.75*(r2-r1)+r1
+    n2grps = np.unique(galgroupid[np.where(groupn==2)])
+    ## parameters corresponding to Katie's dividing line in cz-rproj space
+    bb=360.
+    mm = (bb-0.0)/(0.0-0.12)
+
+    for ii,gg in enumerate(n2grps):
+        # pair of indices where group's ngal == 2
+        galsel = np.where(galgroupid==gg)
+        deltacz = np.abs(np.diff(galcz[galsel])) 
+        theta = angular_separation(galra[galsel],galde[galsel],groupra[galsel],\
+            groupde[galsel])
+        rproj = theta*groupcz[galsel][0]/70.
+        grprproj = r75func(np.min(rproj),np.max(rproj))
+        keepN2 = bool((deltacz<(mm*grprproj+bb)))
+        if (not keepN2):
+            # break
+            newgroupid[galsel]=brokenupids[galsel]
+            # newgroupid[galsel] = np.array([brokenupids_start, brokenupids_start+1])
+            # brokenupids_start+=2
         else:
-            bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
-            bin_num = 7
-        bins = np.linspace(bin_min, bin_max, bin_num)
-    elif survey == 'resolveb':
-        bin_min = np.round(np.log10((10**8.7) / 2.041), 1)
-        bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
-        bins = np.linspace(bin_min, bin_max, 7)
-    # Unnormalized histogram and bin edges
-    counts, edg = np.histogram(logmstar_arr[~np.isnan(logmstar_arr)], bins=bins)
-    # counts, edg = np.histogram(logmstar_arr, bins=bins)  # paper used 17 bins
-    dm = edg[1] - edg[0]  # Bin width
-    maxis = 0.5 * (edg[1:] + edg[:-1])  # Mass axis i.e. bin centers
-    # Normalized to volume and bin width
-    err_poiss = np.sqrt(counts) / (volume * dm)
-    err_tot = err_poiss
-    phi = counts / (volume * dm)  # not a log quantity
-
-    phi = np.log10(phi)
-
-    return maxis, phi, err_tot, bins, counts
+            pass
+    return newgroupid 
 
 def args_parser():
     """
@@ -1132,30 +1105,20 @@ def main(args):
         halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
 
     if survey == 'eco':
-        # catl_file = path_to_raw + "eco/eco_all.csv"
-        catl_file = path_to_processed + "gal_group_eco_data_buffer_volh1_dr2.hdf5"
-
-    # chi2_file = path_to_processed + 'smhm_colour_run35/{0}_colour_chi2.txt'.format(survey)
-    # if mf_type == 'smf' and survey == 'eco' and ver == 1.0:
-    #     chain_file = path_to_processed + 'mcmc_{0}.dat'.format(survey)
-    # else:
-    #     chain_file = path_to_processed + 'smhm_colour_run35/mcmc_{0}_colour_raw.txt'.\
-    #         format(survey)
+        catl_file = path_to_processed + "gal_group_eco_stellar_buffer_volh1_dr3.hdf5"
 
     print('Reading chi-squared file')
-    # chi2 = read_chi2(chi2_file)
     reader = emcee.backends.HDFBackend(
         path_to_processed + "smhm_colour_run{0}/chain.h5".format(run), read_only=True)
     chi2 = reader.get_blobs(flat=True)
 
     print('Reading mcmc chain file')
-    # mcmc_table = read_mcmc(chain_file)
     names=['Mhalo_c', 'Mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter',
             'Mstar_q','Mhalo_q','mu','nu']
     flatchain = reader.get_chain(flat=True)
     mcmc_table = pd.DataFrame(flatchain, columns=names)
 
-    print('Getting subset of 100 Behroozi parameters')
+    print('Getting subset of 500 Behroozi parameters')
     mcmc_table_subset = get_paramvals_percentile(mcmc_table, 68, chi2)
 
     params_df = pd.DataFrame(mcmc_table_subset)
@@ -1182,29 +1145,14 @@ def main(args):
     i=2
     for params in mcmc_table_subset[1:]:
         print(i)
+        if i==3:
+            break
         params = params[:5]
         mock = populate_mock(params, model_init, True)
         mock = mock.sort_values(by='halo_mvir_host_halo')
         gals_df_['{0}'.format(i)] = mock.stellar_mass.values
         i+=1
     gals_df_.reset_index(inplace=True, drop=True)
-
-    # def mp_func(a_list):
-    #     for theta in enumerate(a_list):
-    #         params = theta[:5]
-    #         mock = populate_mock(params, model_init)
-    #         mock = mock.sort_values(by='halo_mvir_host_halo')
-    #         gals_arr = np.insert(gals_arr, mock.stellar_mass.values, axis=1)
-
-    # chunks = np.array([mcmc_table_subset_test[1:][i::5] \
-    #     for i in range(5)])
-    # from multiprocessing import Pool
-    # nproc = 4
-    # pool = Pool(processes=nproc)
-    # global gals_arr 
-    # gals_arr = np.zeros(shape=(7450441,10))
-
-    # pool.map(mp_func, chunks)
 
     h5File = path_to_processed + "mocks101_run{0}.h5".format(run)
     gals_df_.to_hdf(h5File, "/gals_df_/d1")
@@ -1219,24 +1167,68 @@ def main(args):
         (gals_rsd_df.cz <= cz_outer)].reset_index(drop=True)
     
     for col in col_idxs:
+        if col == '3':
+            break
         print('{0} out of {1}'.format(col, len(col_idxs)))
         # Keep track of index from gals_rsd_subset_df
         gals_rsd_grpfinder_df = gals_rsd_subset_df.loc[gals_rsd_subset_df\
             [col]>10**8.6][['{0}'.format(col),'ra','dec','cz']].\
             reset_index(drop=False)
         # * Make sure that df that group finding is run on has its indices reset
-        gal_group_df, group_df = group_finding(gals_rsd_grpfinder_df, col, 
+        gal_group_df, group_df_or = group_finding(gals_rsd_grpfinder_df, col, 
             path_to_data + 'interim/', param_dict)
+        
+        #* Pair splitting
+        psgrpid = split_false_pairs(
+            np.array(gal_group_df.ra),
+            np.array(gal_group_df.dec),
+            np.array(gal_group_df.cz), 
+            np.array(gal_group_df['groupid_{0}'.format(col)]))
+        
+        gal_group_df["ps_groupid_{0}".format(col)] = psgrpid
+
+        arr1 = gal_group_df["ps_groupid_{0}".format(col)]
+        arr1_unq = gal_group_df["ps_groupid_{0}".format(col)].drop_duplicates()  
+        arr2_unq = np.arange(len(np.unique(gal_group_df["ps_groupid_{0}".format(col)]))) 
+        mapping = dict(zip(arr1_unq, arr2_unq))   
+        new_values = arr1.map(mapping)
+        gal_group_df['ps_groupid_{0}'.format(col)] = new_values  
+
+        most_massive_gal_idxs = gal_group_df.groupby(['ps_groupid_{0}'.format(col)])['{0}'.format(col)]\
+            .transform(max) == gal_group_df['{0}'.format(col)]        
+        grp_censat_new = most_massive_gal_idxs.astype(int)
+        gal_group_df["ps_grp_censat_{0}".format(col)] = grp_censat_new
+
+        gal_group_df = models_add_cengrpcz(
+            gal_group_df, 
+            col,
+            grpid_col='ps_groupid_{0}'.format(col), 
+            galtype_col='ps_grp_censat_{0}'.format(col), 
+            cen_cz_col='cz')
+
+        # Dropping pre-pair splitting groupids and related info and replacing
+        # with post-pait splitting info
+        gal_group_df.drop(columns=[
+            'groupid_{0}'.format(col),
+            'grp_censat_{0}'.format(col),
+            'cen_cz_{0}'.format(col)], 
+            inplace=True)
+
+        rename_dict = {'ps_groupid_{0}'.format(col): 'groupid_{0}'.format(col),
+                        'ps_grp_censat_{0}'.format(col): 'grp_censat_{0}'.format(col),
+                        'ps_cen_cz_{0}'.format(col): 'cen_cz_{0}'.format(col)}
+        gal_group_df.rename(columns=rename_dict, inplace=True)
+
         ## No need to run this function since group_finding now returns 
         ## grp_censat flag
         # gal_group_df_new, group_df_new = \
         #     group_mass_assignment_rev(gal_group_df, group_df, param_dict, col)
         gals_rsd_subset_df = pd.merge(gals_rsd_subset_df, gal_group_df, 
-            how='left', left_on = gals_rsd_subset_df.index, right_on='index')
+            how='left', left_on = gals_rsd_subset_df.index.values, right_on='index')
 
         rename_dict = {'ra_x': 'ra',
                         'dec_x': 'dec',
-                        'cz_x': 'cz'}
+                        'cz_x': 'cz',}
         gals_rsd_subset_df.rename(columns=rename_dict, inplace=True)
         ## 'index_x' and 'index_y' are only created when col > 1. ra, dec and cz
         ## are calculated for all 101 mocks and the information is only needed
