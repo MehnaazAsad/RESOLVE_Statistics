@@ -139,7 +139,7 @@ def get_sigma_error(eco_keys):
     return std_red_cen_err, std_blue_cen_err
 
 ###Formatting for plots and animation
-rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']}, size=20)
+rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']}, size=30)
 rc('text', usetex=True)
 rc('text.latex', preamble=r"\usepackage{amsmath}")
 rc('axes', linewidth=2)
@@ -434,7 +434,7 @@ fig1.tight_layout()
 plt.show()
 
 ################################################################################
-#* Panel plots of sigma-mstar and mstar-sigma for ECO data only (Figures 2a and 
+#* Panel plots of sigma-mstar and mstar-sigma for ECODR3 only (Figures 2a and 
 #* 2b in paper)
 
 survey = 'eco'
@@ -500,8 +500,8 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
         logmstar_col = 'logmstar'
         ## Use group level for data even when settings.level == halo
         if catl_type == 'data' or level == 'group':
-            galtype_col = 'fc_e16'
-            id_col = 'grp_e16'
+            galtype_col = 'fc'
+            id_col = 'grp'
         ## No halo level in data
         if catl_type == 'mock':
             if level == 'halo':
@@ -591,8 +591,8 @@ def get_stacked_velocity_dispersion(catl, catl_type, randint=None):
         logmstar_col = 'logmstar'
         ## Use group level for data even when settings.level == halo
         if catl_type == 'data' or level == 'group':
-            galtype_col = 'fc_e16'
-            id_col = 'grp_e16'
+            galtype_col = 'fc'
+            id_col = 'grp'
         ## No halo level in data
         if catl_type == 'mock':
             if level == 'halo':
@@ -615,7 +615,7 @@ def get_stacked_velocity_dispersion(catl, catl_type, randint=None):
     # cen_red_subset_df = red_subset_df.loc[red_subset_df[galtype_col] == 1]
     # red_cen_stellar_mass_arr = cen_red_subset_df.groupby(['{0}'.format(id_col),
     #     '{0}'.format(galtype_col)])[logmstar_col].apply(np.sum).values
-    red_subset_df['deltav'] = red_subset_df['cz'] - red_subset_df['grpcz_e16']
+    red_subset_df['deltav'] = red_subset_df['cz'] - red_subset_df['grpcz']
     red_cen_stellar_mass_arr = red_subset_df[logmstar_col].loc[red_subset_df[galtype_col] == 1]
     red_g_ngal_arr = red_subset_df.groupby([id_col]).size()
     red_cen_stellar_mass_arr = np.repeat(red_cen_stellar_mass_arr, red_g_ngal_arr)
@@ -636,7 +636,7 @@ def get_stacked_velocity_dispersion(catl, catl_type, randint=None):
     # cen_blue_subset_df = blue_subset_df.loc[blue_subset_df[galtype_col] == 1]
     # blue_cen_stellar_mass_arr = cen_blue_subset_df.groupby(['{0}'.format(id_col),
     #     '{0}'.format(galtype_col)])[logmstar_col].apply(np.sum).values
-    blue_subset_df['deltav'] = blue_subset_df['cz'] - blue_subset_df['grpcz_e16']
+    blue_subset_df['deltav'] = blue_subset_df['cz'] - blue_subset_df['grpcz']
     blue_cen_stellar_mass_arr = blue_subset_df[logmstar_col].loc[blue_subset_df[galtype_col] == 1]
     blue_g_ngal_arr = blue_subset_df.groupby([id_col]).size()
     blue_cen_stellar_mass_arr = np.repeat(blue_cen_stellar_mass_arr, blue_g_ngal_arr)
@@ -645,6 +645,47 @@ def get_stacked_velocity_dispersion(catl, catl_type, randint=None):
     return red_deltav_arr, red_cen_stellar_mass_arr, blue_deltav_arr, \
         blue_cen_stellar_mass_arr
 
+def assign_colour_label_data(catl):
+    """
+    Assign colour label to data
+
+    Parameters
+    ----------
+    catl: pandas Dataframe 
+        Data catalog
+
+    Returns
+    ---------
+    catl: pandas Dataframe
+        Data catalog with colour label assigned as new column
+    """
+
+    colour_label_arr = np.array(['R' if x==1 else 'B' for x in catl.red.values])    
+    catl['colour_label'] = colour_label_arr
+
+    return catl
+
+catl_file = path_to_raw + "eco/ecodr3.csv"
+duplicate_file = path_to_raw + "ECO_duplicate_classification.csv"
+catl_colours_file = path_to_raw + "eco_dr3_colours.csv"
+
+eco_buff = pd.read_csv(catl_file, delimiter=",", header=0)
+eco_duplicates = pd.read_csv(duplicate_file, header=0)
+eco_colours = pd.read_csv(catl_colours_file, header=0, index_col=0)
+
+# Removing duplicate entries
+duplicate_names = eco_duplicates.NAME.loc[eco_duplicates.DUP > 0]
+eco_buff = eco_buff[~eco_buff.name.isin(duplicate_names)].reset_index(drop=True)
+
+# Combining colour information
+eco_buff = pd.merge(eco_buff, eco_colours, left_on='name', right_on='galname')\
+    .drop(columns=["galname"])
+
+eco_nobuff = eco_buff.loc[(eco_buff.grpcz.values >= 3000) &
+    (eco_buff.grpcz.values <= 7000) & (eco_buff.absrmag.values <= -17.33) &
+    (eco_buff.logmstar.values >= 8.9)]
+
+eco_nobuff = assign_colour_label_data(eco_nobuff)
 
 red_deltav, red_cen_mstar_sigma, blue_deltav, \
     blue_cen_mstar_sigma = get_stacked_velocity_dispersion(eco_nobuff, 'data')
@@ -670,9 +711,9 @@ red_sigma = np.log10(red_sigma)
 blue_sigma = np.log10(blue_sigma)
 
 mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
-    statistic=average_of_log, bins=np.linspace(-2,3,5))
+    statistic=average_of_log, bins=np.linspace(1,3,5))
 mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
-    statistic=average_of_log, bins=np.linspace(-1,3,5))
+    statistic=average_of_log, bins=np.linspace(1,3,5))
 
 #* Bootstrap errors
 from tqdm import tqdm
@@ -682,8 +723,8 @@ sigma_blue_data_global = []
 mean_mstar_red_data_global = []
 mean_mstar_blue_data_global = []
 for i in tqdm(range(iterations)):       
-    galtype_col = 'fc_e16'
-    id_col = 'grp_e16'
+    galtype_col = 'fc'
+    id_col = 'grp'
 
     all_group_ids = np.unique(eco_nobuff[id_col].loc[eco_nobuff[galtype_col] == 1].values) 
     n_group_samples = len(all_group_ids)
@@ -712,14 +753,14 @@ for i in tqdm(range(iterations)):
     blue_sigma = np.log10(blue_sigma)
 
     mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
-        statistic=average_of_log, bins=np.linspace(-2,3,5))
+        statistic=average_of_log, bins=np.linspace(1,3,5))
     mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
-        statistic=average_of_log, bins=np.linspace(-1,3,5))
+        statistic=average_of_log, bins=np.linspace(1,3,5))
 
     mean_mstar_red_counts = bs(red_sigma, red_cen_mstar_sigma, 
-        statistic='count', bins=np.linspace(0,3,5))
+        statistic='count', bins=np.linspace(1,3,5))
     mean_mstar_blue_counts = bs(blue_sigma, blue_cen_mstar_sigma, 
-        statistic='count', bins=np.linspace(0,3,5))
+        statistic='count', bins=np.linspace(1,3,5))
 
     mean_mstar_red_data_global.append(mean_mstar_red[0])
     mean_mstar_blue_data_global.append(mean_mstar_blue[0])
@@ -741,11 +782,13 @@ bin_centers = 0.5 * (bins[1:] + bins[:-1])
 
 
 ax[0].errorbar(bin_centers, sigma_red_data, yerr=sigma_red_err,
-    color='indianred', fmt='s-', ecolor='indianred', markersize=12, capsize=7,
-    capthick=1.5, zorder=10, marker='s', ls='--', lw=7)
+    color='indianred', fmt='s-', ecolor='darkred', mfc='darkred', mec='darkred',
+    markersize=17, capsize=10, elinewidth=5,
+    capthick=2.0, zorder=10, marker='^', ls='--', lw=7)
 ax[0].errorbar(bin_centers, sigma_blue_data, yerr=sigma_blue_err,
-    color='cornflowerblue', fmt='s-', ecolor='cornflowerblue', markersize=12, 
-    capsize=7, capthick=1.5, zorder=10, marker='s', ls='--', lw=7)
+    color='cornflowerblue', fmt='s-', ecolor='darkblue', mfc='darkblue',
+    mec='darkblue', markersize=17, elinewidth=5,
+    capsize=10, capthick=2.0, zorder=12, marker='^', ls='--', lw=7)
 
 # ax[0].plot(bin_centers, sigma_red_data,
 #     color='indianred', zorder=10, ls='--', lw=7)
@@ -771,13 +814,14 @@ bin_centers_blue = 0.5 * (bins_blue[1:] + bins_blue[:-1])
 # blue_poisson_error = np.log10(np.sqrt(np.flip(np.array(list(counter)))[:,0]))
 
 ax[1].errorbar(bin_centers_red, mean_mstar_red_data[0], 
-    yerr=mean_mstar_red_err, color='indianred', fmt='s-', ecolor='indianred', 
-    markersize=12, capsize=7, capthick=1.5, zorder=10, marker='^', ls='--', 
-    lw=7)
+    yerr=mean_mstar_red_err, color='indianred', fmt='s-', 
+    ecolor='darkred', mfc='darkred', mec='darkred', markersize=17, elinewidth=5, 
+    capsize=10, capthick=2.0, 
+    zorder=10, marker='^', ls='--', lw=7)
 ax[1].errorbar(bin_centers_blue, mean_mstar_blue_data[0],
-    yerr=mean_mstar_blue_err, color='cornflowerblue', fmt='s-', 
-    ecolor='cornflowerblue', markersize=12, capsize=7, capthick=1.5, zorder=10, 
-    marker='^', ls='--', lw=7)
+    yerr=mean_mstar_blue_err, color='cornflowerblue', fmt='s-', ecolor='darkblue',
+    mfc='darkblue', mec='darkblue', markersize=17, elinewidth=5, capsize=10, capthick=2.0, 
+    zorder=12, marker='^', ls='--', lw=7)
 
 # avmstar_red, = ax[1].plot(bin_centers_red, mean_mstar_red_data[0], 
 #     color='indianred', zorder=10, ls='--', lw=7)
@@ -794,11 +838,14 @@ ax[1].set_xlabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km\ s^{-1}} \right]
 ax[0].set_ylabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km/s} \right]$', fontsize=35, labelpad=15)
 ax[1].set_ylabel(r'\boldmath$\overline{\log_{10}\ M_{*, group\ cen}} \left[\mathrm{M_\odot}\ \right]$', fontsize=35, labelpad=15)
 
-# plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_sigma_mstar_panel.pdf', 
-#     bbox_inches="tight", dpi=1200)
+ax[0].minorticks_on()
+ax[1].minorticks_on()
 
-plt.savefig('/Users/asadm2/Desktop/eco_sigma_mstar_panel_origbin.pdf', 
+plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_sigma_mstar_panel.pdf', 
     bbox_inches="tight", dpi=1200)
+
+# plt.savefig('/Users/asadm2/Desktop/eco_sigma_mstar_panel_origbin.pdf', 
+#     bbox_inches="tight", dpi=1200)
 
 plt.show()
 
