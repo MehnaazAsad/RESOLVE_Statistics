@@ -541,7 +541,7 @@ def split_false_pairs(galra, galde, galcz, galgroupid):
     return newgroupid 
 
 survey = 'eco'
-mf_type = 'smf'
+mf_type = 'bmf'
 ## Running group-finding on data including the buffer
 cz_inner = 2530
 cz_outer = 7470
@@ -671,5 +671,5 @@ if mf_type == 'smf':
         key='gal_group_df')
 elif mf_type == 'bmf':
     pandas_df_to_hdf5_file(data=gal_group_df_new,
-        hdf5_file=path_to_processed + 'gal_group_eco_bary_data_buffer_volh1_dr2.hdf5', 
+        hdf5_file=path_to_processed + 'gal_group_eco_bary_buffer_volh1_dr3.hdf5', 
         key='gal_group_df')
