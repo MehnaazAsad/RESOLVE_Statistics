@@ -1722,8 +1722,8 @@ def get_err_data(survey, path):
     # plt.show()
 
     ############################################################################
-    #* Observable plots for paper
-    #* Total SMFs from mocks and data for paper
+    # #* Observable plots for paper
+    # #* Total SMFs from mocks and data for paper
 
     # data = combined_df.values[:,:4]
 
@@ -1924,7 +1924,8 @@ def get_err_data(survey, path):
     # # plt.title(r'Velocity dispersion from mocks and data')
     # plt.legend([(dt_red, dt_blue), (mt_red, mt_blue)], 
     #     ['ECO','Mocks'],
-    #     handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='lower right', prop={'size':20})
+    #     handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='upper left', 
+    #     prop={'size':20})
     # plt.minorticks_on()
     # if mf_type == 'smf':
     #     plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_vdisp_offsetmocks.pdf', 
@@ -1965,7 +1966,6 @@ def get_err_data(survey, path):
     # dt_blue = plt.errorbar(bins_blue, sigma_blue_data, yerr=error[4:8],
     #     color='cornflowerblue', fmt='s', ecolor='cornflowerblue', markersize=5, capsize=3,
     #     capthick=1.5, zorder=10, marker='^')
-
 
     # plt.ylabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km/s} \right]$', fontsize=20)
     # if mf_type == 'smf':
@@ -2707,7 +2707,7 @@ def lnprob(theta, data, err, corr_mat_inv):
                 mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
                     statistic=average_of_log, bins=np.linspace(1,3,5))
         elif mf_type == 'bmf':
-            logmstar_col = 'logmstar'
+            logmstar_col = 'logmstar' #No explicit logmbary column
             total_model = diff_bmf(10**(gal_group_df[logmstar_col]), 
                 survey_vol, True) 
 
@@ -2924,7 +2924,7 @@ def main(args):
             catl_file = path_to_proc + "gal_group_eco_stellar_buffer_volh1_dr3.hdf5"
         elif mf_type == 'bmf':
             catl_file = path_to_proc + \
-            "gal_group_eco_bary_data_buffer_volh1_dr2.hdf5"    
+            "gal_group_eco_bary_buffer_volh1_dr3.hdf5"    
         else:
             print("Incorrect mass function chosen")
     elif survey == 'resolvea' or survey == 'resolveb':
