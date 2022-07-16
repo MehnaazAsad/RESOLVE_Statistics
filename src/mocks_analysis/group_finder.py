@@ -267,7 +267,7 @@ def get_paramvals_percentile(table, percentile, chi2_arr):
     bf_params = mcmc_table_pctl.drop_duplicates().reset_index(drop=True).\
         values[0][:9]
     # subset = mcmc_table_pctl.drop_duplicates().sample(100).values[:,:5] 
-    subset = mcmc_table_pctl.drop_duplicates().sample(500).values[:,:9]
+    subset = mcmc_table_pctl.drop_duplicates().sample(200).values[:,:9]
     subset = np.insert(subset, 0, bf_params, axis=0)
 
     return subset
@@ -1145,8 +1145,6 @@ def main(args):
     i=2
     for params in mcmc_table_subset[1:]:
         print(i)
-        if i==3:
-            break
         params = params[:5]
         mock = populate_mock(params, model_init, True)
         mock = mock.sort_values(by='halo_mvir_host_halo')
@@ -1162,13 +1160,11 @@ def main(args):
     gals_rsd_df = apply_rsd(gals_df_)
 
     print('Applying velocity and stellar mass cuts')
-    col_idxs = [str(int(x)) for x in np.linspace(1,101,101)]   
+    col_idxs = [str(int(x)) for x in np.linspace(1,201,201)]   
     gals_rsd_subset_df = gals_rsd_df.loc[(gals_rsd_df.cz >= cz_inner) & \
         (gals_rsd_df.cz <= cz_outer)].reset_index(drop=True)
     
     for col in col_idxs:
-        if col == '3':
-            break
         print('{0} out of {1}'.format(col, len(col_idxs)))
         # Keep track of index from gals_rsd_subset_df
         gals_rsd_grpfinder_df = gals_rsd_subset_df.loc[gals_rsd_subset_df\
