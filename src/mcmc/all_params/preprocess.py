@@ -361,10 +361,10 @@ class Preprocess():
         if randints_df is not None:
             bf_randint = mcmc_table_pctl.drop_duplicates().reset_index(drop=True).\
                 values[0][5].astype(int)
-            mcmc_table_pctl = mcmc_table_pctl.drop_duplicates().sample(500)
+            mcmc_table_pctl = mcmc_table_pctl.drop_duplicates().sample(100)
             return mcmc_table_pctl, bf_params, bf_chi2, bf_randint
         # Randomly sample 100 lowest chi2 
-        mcmc_table_pctl = mcmc_table_pctl.drop_duplicates().sample(500)
+        mcmc_table_pctl = mcmc_table_pctl.drop_duplicates().sample(100)
 
         return mcmc_table_pctl, bf_params, bf_chi2
 
@@ -384,13 +384,13 @@ class Preprocess():
         ## Group finder run on subset after applying M* cut 8.6 and cz cut 3000-12000
         gal_group = self.read_mock_catl(settings.path_to_proc + \
             "gal_group_run{0}.hdf5".format(settings.run)) 
-
+        
         idx_arr = np.insert(np.linspace(0,20,21), len(np.linspace(0,20,21)), \
-            (22, 123, 124, 125, 126, 127, 128, 129)).\
+            (22, 223, 224, 225, 226, 227, 228, 229)).\
             astype(int)
 
         names_arr = [x for x in gal_group.columns.values[idx_arr]]
-        for idx in np.arange(2,102,1):
+        for idx in np.arange(2,202,1):
             names_arr.append('{0}_y'.format(idx))
             names_arr.append('groupid_{0}'.format(idx))
             names_arr.append('grp_censat_{0}'.format(idx))
@@ -416,10 +416,10 @@ class Preprocess():
         self.mcmc_table_pctl, self.bf_params, self.bf_chi2 = \
             self.get_paramvals_percentile(mcmc_table, 68, chi2)
 
-        colnames = ['mhalo_c', 'mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter', \
-            'mstar_q', 'mh_q', 'mu', 'nu']
-        #! Change this if testing with different cz limit
-        self.mcmc_table_pctl_subset = pd.read_csv(settings.path_to_proc + 
-            'run{0}_params_subset.txt'.format(settings.run), 
-            delim_whitespace=True, names=colnames)\
-            .iloc[1:,:].reset_index(drop=True)
+        # colnames = ['mhalo_c', 'mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter', \
+        #     'mstar_q', 'mh_q', 'mu', 'nu']
+        # #! Change this if testing with different cz limit
+        # self.mcmc_table_pctl_subset = pd.read_csv(settings.path_to_proc + 
+        #     'run{0}_params_subset.txt'.format(settings.run), 
+        #     delim_whitespace=True, names=colnames)\
+        #     .iloc[1:,:].reset_index(drop=True)
