@@ -6,11 +6,13 @@ the size of the dataframe is as small as needed.}
 """
 __author__ = '{Mehnaaz Asad}'
 
+import argparse
+import os
+
 from cosmo_utils.utils import work_paths as cwpaths
 import pandas as pd
 import numpy as np
-import argparse
-import os
+
 
 def read_mock_catl(filename, catl_format='.hdf5'):
     """
@@ -138,7 +140,7 @@ def main(args):
         "gal_group_run{0}.hdf5".format(run)) 
 
     print('Creating subset')
-    idx_arr = np.insert(np.linspace(1, 20, 21), len(np.linspace(1, 20, 21)), \
+    idx_arr = np.insert(np.linspace(1, 20, 20), len(np.linspace(1, 20, 20)), \
         (22, 223, 224, 225, 226, 227, 228, 229)).\
         astype(int)
 
