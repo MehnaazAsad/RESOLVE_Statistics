@@ -74,25 +74,35 @@ class Experiments():
         settings = self.settings
         preprocess = self.preprocess
 
+        mstar_limit = 8.9
         if catl_type == 'data':
             if settings.survey == 'eco' or settings.survey == 'resolvea':
-                catl = catl.loc[catl.logmstar >= 8.9]
+                catl = catl.loc[catl.logmstar >= mstar_limit]
             elif settings.survey == 'resolveb':
                 catl = catl.loc[catl.logmstar >= 8.7]
 
-        if catl_type == 'data' or catl_type == 'mock':
             catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
+
             logmstar_col = 'logmstar'
+
             ## Use group level for data even when settings.level == halo
-            if catl_type == 'data' or settings.level == 'group':
-                galtype_col = 'g_galtype'
-                id_col = 'groupid'
-            ## No halo level in data
-            if catl_type == 'mock':
-                if settings.level == 'halo':
-                    galtype_col = 'cs_flag'
-                    ## Halo ID is equivalent to halo_hostid in vishnu mock
-                    id_col = 'haloid'
+            galtype_col = 'g_galtype'
+            id_col = 'ps_groupid'
+
+        if catl_type == 'mock':
+            catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
+
+            catl = catl.loc[catl.logmstar >= np.log10((10**mstar_limit)/2.041)]
+
+            logmstar_col = 'logmstar'
+
+            if settings.level == 'group':
+                galtype_col = 'ps_grp_censat'
+                id_col = 'ps_groupid'
+            if settings.level == 'halo':
+                galtype_col = 'cs_flag'
+                ## Halo ID is equivalent to halo_hostid in vishnu mock
+            id_col = 'haloid'
     
         if catl_type == 'model':
             if settings.survey == 'eco':
@@ -180,7 +190,8 @@ class Experiments():
         #     red_subset_df.groupid).keys() if Counter(
         #         red_subset_df.groupid)[key] > 1]
         #* Excluding N=1 groups
-        red_subset_ids = red_subset_df.groupby([id_col]).filter(lambda x: len(x) > 1)[id_col].unique()
+        red_subset_ids = red_subset_df.groupby([id_col]).filter\
+            (lambda x: len(x) > 1)[id_col].unique()
         red_subset_df = catl.loc[catl[id_col].isin(
             red_subset_ids)].sort_values(by='{0}'.format(id_col))
         # red_cen_stellar_mass_arr_new = red_subset_df.logmstar.loc[\
@@ -192,9 +203,9 @@ class Experiments():
         #     red_subset_df['deltav'] = red_subset_df['cz'] - red_subset_df['grpcz_av']   
         # elif catl_type == 'model':     
             # red_subset_df['deltav'] = red_subset_df['cz'] - red_subset_df[cencz_col]   
-        red_subset_df['deltav'] = red_subset_df['cz'] - red_subset_df['grpcz_av']
+        # red_subset_df['deltav'] = red_subset_df['cz'] - red_subset_df['grpcz_av']
         #* The gapper method does not exclude the central 
-        red_sigma_arr = red_subset_df.groupby(['{0}'.format(id_col)])['deltav'].\
+        red_sigma_arr = red_subset_df.groupby(['{0}'.format(id_col)])['cz'].\
             apply(lambda x: self.gapper(x)).values
 
         # if settings.level == 'halo':
@@ -211,7 +222,8 @@ class Experiments():
         #     red_subset_df.groupid).keys() if Counter(
         #         red_subset_df.groupid)[key] > 1]
         #* Excluding N=1 groups
-        blue_subset_ids = blue_subset_df.groupby([id_col]).filter(lambda x: len(x) > 1)[id_col].unique()
+        blue_subset_ids = blue_subset_df.groupby([id_col]).filter\
+            (lambda x: len(x) > 1)[id_col].unique()
         blue_subset_df = catl.loc[catl[id_col].isin(
             blue_subset_ids)].sort_values(by='{0}'.format(id_col))
         # red_cen_stellar_mass_arr_new = red_subset_df.logmstar.loc[\
@@ -223,8 +235,8 @@ class Experiments():
         #     blue_subset_df['deltav'] = blue_subset_df['cz'] - blue_subset_df['grpcz_new']    
         # elif catl_type == 'model':
         #     blue_subset_df['deltav'] = blue_subset_df['cz'] - blue_subset_df[cencz_col]            
-        blue_subset_df['deltav'] = blue_subset_df['cz'] - blue_subset_df['grpcz_av']
-        blue_sigma_arr = blue_subset_df.groupby(['{0}'.format(id_col)])['deltav'].\
+        # blue_subset_df['deltav'] = blue_subset_df['cz'] - blue_subset_df['grpcz_av']
+        blue_sigma_arr = blue_subset_df.groupby(['{0}'.format(id_col)])['cz'].\
             apply(lambda x: self.gapper(x)).values
 
         # if settings.level == 'halo':
@@ -352,25 +364,35 @@ class Experiments():
         settings = self.settings
         preprocess = self.preprocess
 
+        mstar_limit = 8.9
         if catl_type == 'data':
             if settings.survey == 'eco' or settings.survey == 'resolvea':
-                catl = catl.loc[catl.logmstar >= 8.9]
+                catl = catl.loc[catl.logmstar >= mstar_limit]
             elif settings.survey == 'resolveb':
                 catl = catl.loc[catl.logmstar >= 8.7]
 
-        if catl_type == 'data' or catl_type == 'mock':
             catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
+
             logmstar_col = 'logmstar'
+
             ## Use group level for data even when settings.level == halo
-            if catl_type == 'data' or settings.level == 'group':
-                galtype_col = 'g_galtype'
-                id_col = 'groupid'
-            ## No halo level in data
-            if catl_type == 'mock':
-                if settings.level == 'halo':
-                    galtype_col = 'cs_flag'
-                    ## Halo ID is equivalent to halo_hostid in vishnu mock
-                    id_col = 'haloid'
+            galtype_col = 'g_galtype'
+            id_col = 'ps_groupid'
+
+        if catl_type == 'mock':
+            catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
+
+            catl = catl.loc[catl.logmstar >= np.log10((10**mstar_limit)/2.041)]
+
+            logmstar_col = 'logmstar'
+
+            if settings.level == 'group':
+                galtype_col = 'ps_grp_censat'
+                id_col = 'ps_groupid'
+            if settings.level == 'halo':
+                galtype_col = 'cs_flag'
+                ## Halo ID is equivalent to halo_hostid in vishnu mock
+                id_col = 'haloid'
 
         if catl_type == 'model':
             if settings.survey == 'eco':
@@ -485,25 +507,35 @@ class Experiments():
         settings = self.settings
         preprocess = self.preprocess
 
+        mstar_limit = 8.9
         if catl_type == 'data':
             if settings.survey == 'eco' or settings.survey == 'resolvea':
-                catl = catl.loc[catl.logmstar >= 8.9]
+                catl = catl.loc[catl.logmstar >= mstar_limit]
             elif settings.survey == 'resolveb':
                 catl = catl.loc[catl.logmstar >= 8.7]
 
-        if catl_type == 'data' or catl_type == 'mock':
             catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
+
             logmstar_col = 'logmstar'
+
             ## Use group level for data even when settings.level == halo
-            if catl_type == 'data' or settings.level == 'group':
-                galtype_col = 'g_galtype'
-                id_col = 'groupid'
-            ## No halo level in data
-            if catl_type == 'mock':
-                if settings.level == 'halo':
-                    galtype_col = 'cs_flag'
-                    ## Halo ID is equivalent to halo_hostid in vishnu mock
-                    id_col = 'haloid'
+            galtype_col = 'g_galtype'
+            id_col = 'ps_groupid'
+
+        if catl_type == 'mock':
+            catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
+
+            catl = catl.loc[catl.logmstar >= np.log10((10**mstar_limit)/2.041)]
+
+            logmstar_col = 'logmstar'
+
+            if settings.level == 'group':
+                galtype_col = 'ps_grp_censat'
+                id_col = 'ps_groupid'
+            if settings.level == 'halo':
+                galtype_col = 'cs_flag'
+                ## Halo ID is equivalent to halo_hostid in vishnu mock
+            id_col = 'haloid'
     
         if catl_type == 'model':
             if settings.survey == 'eco':
@@ -616,8 +648,8 @@ class Experiments():
             blue_host_halo_mass_arr
 
     def get_vdf(self, red_sigma, blue_sigma, volume):
-        bins_red=np.linspace(-2,3,5)
-        bins_blue=np.linspace(-1,3,5)
+        bins_red=np.linspace(1,3,5)
+        bins_blue=np.linspace(1,3,5)
         # Unnormalized histogram and bin edges
         counts_red, edg = np.histogram(red_sigma, bins=bins_red)  # paper used 17 bins
         counts_blue, edg = np.histogram(blue_sigma, bins=bins_blue)  # paper used 17 bins
