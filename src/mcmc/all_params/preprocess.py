@@ -19,6 +19,7 @@ class Preprocess():
         self.bf_chi2 = None
         self.mcmc_table_pctl_subset = None
         self.mcmc_table_pctl = None
+        self.gal_group_df_subset = None
         self.settings = settings
 
     def read_mcmc(self, path_to_file):
@@ -349,19 +350,19 @@ class Preprocess():
 
         # globals.gal_group_df_subset = gal_group[names_arr]
 
-        globals.gal_group_df_subset = self.read_mock_catl(settings.path_to_proc + \
+        self.gal_group_df_subset = self.read_mock_catl(settings.path_to_proc + \
             "mod_gal_group_run{0}.hdf5".format(settings.run)) 
 
         # Renaming the "1_y" column kept from line 1896 because of case where it was
         # also in mcmc_table_ptcl.mock_num and was selected twice
-        globals.gal_group_df_subset.columns.values[25] = "behroozi_bf"
+        self.gal_group_df_subset.columns.values[25] = "behroozi_bf"
 
         ### Removing "_y" from column names for stellar mass
         # Have to remove the first element because it is 'halo_y' column name
         cols_with_y = np.array([[idx, s] for idx, s in enumerate(
-            globals.gal_group_df_subset.columns.values) if '_y' in s][1:])
+            self.gal_group_df_subset.columns.values) if '_y' in s][1:])
         colnames_without_y = [s.replace("_y", "") for s in cols_with_y[:,1]]
-        globals.gal_group_df_subset.columns.values[cols_with_y[:,0].\
+        self.gal_group_df_subset.columns.values[cols_with_y[:,0].\
             astype(int)] = colnames_without_y
 
         print('Getting data in specific percentile')
