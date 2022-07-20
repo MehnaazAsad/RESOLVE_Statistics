@@ -381,23 +381,29 @@ class Preprocess():
         mcmc_table = self.read_mcmc(settings.chain_file)
         self.catl, self.volume, self.z_median = self.\
             read_data_catl(settings.catl_file, settings.survey)
-        ## Group finder run on subset after applying M* cut 8.6 and cz cut 3000-12000
-        gal_group = self.read_mock_catl(settings.path_to_proc + \
-            "gal_group_run{0}.hdf5".format(settings.run)) 
         
-        idx_arr = np.insert(np.linspace(0,20,21), len(np.linspace(0,20,21)), \
-            (22, 223, 224, 225, 226, 227, 228, 229)).\
-            astype(int)
+        #* This portion of the preprocessing happens in another script since 
+        #* the file was too big
+        ## Group finder run on subset after applying M* cut 8.6 and cz cut 3000-12000
+        # gal_group = self.read_mock_catl(settings.path_to_proc + \
+        #     "mod_gal_group_run{0}.hdf5".format(settings.run)) 
 
-        names_arr = [x for x in gal_group.columns.values[idx_arr]]
-        for idx in np.arange(2,202,1):
-            names_arr.append('{0}_y'.format(idx))
-            names_arr.append('groupid_{0}'.format(idx))
-            names_arr.append('grp_censat_{0}'.format(idx))
-            names_arr.append('cen_cz_{0}'.format(idx))
-        names_arr = np.array(names_arr)
+        # idx_arr = np.insert(np.linspace(1,20,21), len(np.linspace(0,20,21)), \
+        #     (22, 223, 224, 225, 226, 227, 228, 229)).\
+        #     astype(int)
 
-        globals.gal_group_df_subset = gal_group[names_arr]
+        # names_arr = [x for x in gal_group.columns.values[idx_arr]]
+        # for idx in np.arange(2,202,1):
+        #     names_arr.append('{0}_y'.format(idx))
+        #     names_arr.append('groupid_{0}'.format(idx))
+        #     names_arr.append('grp_censat_{0}'.format(idx))
+        #     names_arr.append('cen_cz_{0}'.format(idx))
+        # names_arr = np.array(names_arr)
+
+        # globals.gal_group_df_subset = gal_group[names_arr]
+
+        globals.gal_group_df_subset = self.read_mock_catl(settings.path_to_proc + \
+            "mod_gal_group_run{0}.hdf5".format(settings.run)) 
 
         # Renaming the "1_y" column kept from line 1896 because of case where it was
         # also in mcmc_table_ptcl.mock_num and was selected twice
