@@ -147,59 +147,6 @@ class Preprocess():
 
         return mock_pd
 
-    def mock_add_grpcz_old(self, mock_df, data_bool=None, grpid_col=None, 
-        censat_col=None, cencz_col=None):
-        """Adds column of group cz values to mock catalogues
-
-        Args:
-            mock_df (pandas.DataFrame): Mock catalogue
-
-        Returns:
-            pandas.DataFrame: Mock catalogue with new column called grpcz added
-        """
-        if data_bool:
-            groups = mock_df.groupby('groupid') 
-            keys = groups.groups.keys() 
-            grpcz_new = [] 
-            grpn = []
-            for key in keys: 
-                group = groups.get_group(key) 
-                cen_cz = group.cz.loc[group.g_galtype == 1].values[0] 
-                grpcz_new.append(cen_cz) 
-                grpn.append(len(group))
-
-            full_grpcz_arr = np.repeat(grpcz_new, grpn)
-            mock_df['grpcz_new'] = full_grpcz_arr
-        elif data_bool is None:
-            ## Mocks case
-            groups = mock_df.groupby('groupid') 
-            keys = groups.groups.keys() 
-            grpcz_new = [] 
-            grpn = []
-            for key in keys: 
-                group = groups.get_group(key) 
-                cen_cz = group.cz.loc[group.g_galtype == 1].values[0] 
-                grpcz_new.append(cen_cz) 
-                grpn.append(len(group))
-
-            full_grpcz_arr = np.repeat(grpcz_new, grpn)
-            mock_df['grpcz'] = full_grpcz_arr
-        else:
-            ## Models from Vishnu
-            groups = mock_df.groupby(grpid_col) 
-            keys = groups.groups.keys() 
-            grpcz_new = [] 
-            grpn = []
-            for key in keys: 
-                group = groups.get_group(key)
-                cen_cz = group[cencz_col].loc[group[censat_col] == 1].values[0] 
-                grpcz_new.append(cen_cz) 
-                grpn.append(len(group))
-
-            full_grpcz_arr = np.repeat(grpcz_new, grpn)
-            mock_df['grpcz'] = full_grpcz_arr
-        return mock_df
-
     def mock_add_grpcz(self, df, grpid_col=None, galtype_col=None, cen_cz_col=None):
         cen_subset_df = df.loc[df[galtype_col] == 1].sort_values(by=grpid_col)
         # Sum doesn't actually add up anything here but I didn't know how to get
@@ -208,7 +155,7 @@ class Preprocess():
             galtype_col)])['{0}'.format(cen_cz_col)].apply(np.sum).values    
         zip_iterator = zip(list(cen_subset_df[grpid_col]), list(cen_cz))
         a_dictionary = dict(zip_iterator)
-        df['grpcz_new'] = df['{0}'.format(grpid_col)].map(a_dictionary)
+        df['grpcz_cen'] = df['{0}'.format(grpid_col)].map(a_dictionary)
 
         av_cz = df.groupby(['{0}'.format(grpid_col)])\
             ['cz'].apply(np.average).values
@@ -255,22 +202,22 @@ class Preprocess():
             #* Recommended to exclude this galaxy in erratum to Hood et. al 2018
             eco_buff = eco_buff.loc[eco_buff.name != 'ECO13860']
 
-            eco_buff = self.mock_add_grpcz(eco_buff, grpid_col='groupid', 
+            eco_buff = self.mock_add_grpcz(eco_buff, grpid_col='ps_groupid', 
                 galtype_col='g_galtype', cen_cz_col='cz')
 
             if settings.mf_type == 'smf':
                 # 6456 galaxies
-                catl = eco_buff.loc[(eco_buff.grpcz_new.values >= 3000) &\
-                    (eco_buff.grpcz_new.values <= 7000) &\
+                catl = eco_buff.loc[(eco_buff.grpcz_cen.values >= 3000) &\
+                    (eco_buff.grpcz_cen.values <= 7000) &\
                     (eco_buff.absrmag.values <= -17.33)]
             elif settings.mf_type == 'bmf':
-                catl = eco_buff.loc[(eco_buff.grpcz_new.values >= 3000) &\
-                    (eco_buff.grpcz_new.values <= 7000) &\
+                catl = eco_buff.loc[(eco_buff.grpcz_cen.values >= 3000) &\
+                    (eco_buff.grpcz_cen.values <= 7000) &\
                     (eco_buff.absrmag.values <= -17.33)]
 
             volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
             # cvar = 0.125
-            z_median = np.median(catl.grpcz_new.values) / (3 * 10**5)
+            z_median = np.median(catl.grpcz_cen.values) / (3 * 10**5)
 
         elif survey == 'resolvea' or survey == 'resolveb':
             columns = ['name', 'radeg', 'dedeg', 'cz', 'grpcz', 'absrmag',
