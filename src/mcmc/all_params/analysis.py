@@ -8,11 +8,10 @@ from halotools.sim_manager import CachedHaloCatalog
 from scipy.stats import binned_statistic as bs
 # from multiprocessing import Pool
 from pathos.multiprocessing import ProcessingPool as Pool
-from functools import partial
-from itertools import repeat
 import numpy as np
 import pandas as pd
 import globals
+import random
 import time
 
 class Analysis():
@@ -47,43 +46,16 @@ class Analysis():
 
         Parameters
         ----------
-        catl: pandas.DataFrame 
+        catl: pandas Dataframe 
             Data catalog
 
         Returns
         ---------
-        catl: pandas.DataFrame
+        catl: pandas Dataframe
             Data catalog with colour label assigned as new column
         """
 
-        logmstar_arr = catl.logmstar.values
-        u_r_arr = catl.modelu_rcorr.values
-
-        colour_label_arr = np.empty(len(catl), dtype='str')
-        for idx, value in enumerate(logmstar_arr):
-
-            # Divisions taken from Moffett et al. 2015 equation 1
-            if value <= 9.1:
-                if u_r_arr[idx] > 1.457:
-                    colour_label = 'R'
-                else:
-                    colour_label = 'B'
-
-            if value > 9.1 and value < 10.1:
-                divider = 0.24 * value - 0.7
-                if u_r_arr[idx] > divider:
-                    colour_label = 'R'
-                else:
-                    colour_label = 'B'
-
-            if value >= 10.1:
-                if u_r_arr[idx] > 1.7:
-                    colour_label = 'R'
-                else:
-                    colour_label = 'B'
-                
-            colour_label_arr[idx] = colour_label
-        
+        colour_label_arr = np.array(['R' if x==1 else 'B' for x in catl.red.values])    
         catl['colour_label'] = colour_label_arr
 
         return catl
@@ -286,7 +258,10 @@ class Analysis():
         ## Mocks case different than data because of censat_col
         elif not data_bool and not h1_bool:
             mstar_total_arr = catl.logmstar.values
-            censat_col = 'g_galtype'
+
+            # Not g_galtype anymore after applying pair splitting
+            censat_col = 'ps_grp_censat'
+            # censat_col = 'g_galtype'
             # censat_col = 'cs_flag'
             mstar_cen_arr = catl.logmstar.loc[catl[censat_col] == 1].values
             mstar_sat_arr = catl.logmstar.loc[catl[censat_col] == 0].values           
@@ -1005,6 +980,168 @@ class Analysis():
 
         return best_fit_results, best_fit_experimentals, gals_df
 
+    def group_skycoords(self, galaxyra, galaxydec, galaxycz, galaxygrpid):
+        """
+        -----
+        Obtain a list of group centers (RA/Dec/cz) given a list of galaxy coordinates (equatorial)
+        and their corresponding group ID numbers.
+        
+        Inputs (all same length)
+        galaxyra : 1D iterable,  list of galaxy RA values in decimal degrees
+        galaxydec : 1D iterable, list of galaxy dec values in decimal degrees
+        galaxycz : 1D iterable, list of galaxy cz values in km/s
+        galaxygrpid : 1D iterable, group ID number for every galaxy in previous arguments.
+        
+        Outputs (all shape match `galaxyra`)
+        groupra : RA in decimal degrees of galaxy i's group center.
+        groupdec : Declination in decimal degrees of galaxy i's group center.
+        groupcz : Redshift velocity in km/s of galaxy i's group center.
+        
+        Note: the FoF code of AA Berlind uses theta_i = declination, with theta_cen = 
+        the central declination. This version uses theta_i = pi/2-dec, with some trig functions
+        changed so that the output *matches* that of Berlind's FoF code (my "deccen" is the same as
+        his "thetacen", to be exact.)
+        -----
+        """
+        # Prepare cartesian coordinates of input galaxies
+        ngalaxies = len(galaxyra)
+        galaxyphi = galaxyra * np.pi/180.
+        galaxytheta = np.pi/2. - galaxydec*np.pi/180.
+        galaxyx = np.sin(galaxytheta)*np.cos(galaxyphi)
+        galaxyy = np.sin(galaxytheta)*np.sin(galaxyphi)
+        galaxyz = np.cos(galaxytheta)
+        # Prepare output arrays
+        uniqidnumbers = np.unique(galaxygrpid)
+        groupra = np.zeros(ngalaxies)
+        groupdec = np.zeros(ngalaxies)
+        groupcz = np.zeros(ngalaxies)
+        for i,uid in enumerate(uniqidnumbers):
+            sel=np.where(galaxygrpid==uid)
+            nmembers = len(galaxygrpid[sel])
+            xcen=np.sum(galaxycz[sel]*galaxyx[sel])/nmembers
+            ycen=np.sum(galaxycz[sel]*galaxyy[sel])/nmembers
+            zcen=np.sum(galaxycz[sel]*galaxyz[sel])/nmembers
+            czcen = np.sqrt(xcen**2 + ycen**2 + zcen**2)
+            deccen = np.arcsin(zcen/czcen)*180.0/np.pi # degrees
+            if (ycen >=0 and xcen >=0):
+                phicor = 0.0
+            elif (ycen < 0 and xcen < 0):
+                phicor = 180.0
+            elif (ycen >= 0 and xcen < 0):
+                phicor = 180.0
+            elif (ycen < 0 and xcen >=0):
+                phicor = 360.0
+            elif (xcen==0 and ycen==0):
+                print("Warning: xcen=0 and ycen=0 for group {}".format(galaxygrpid[i]))
+            # set up phicorrection and return phicen.
+            racen=np.arctan(ycen/xcen)*(180/np.pi)+phicor # in degrees
+            # set values at each element in the array that belongs to the group under iteration
+            groupra[sel] = racen # in degrees
+            groupdec[sel] = deccen # in degrees
+            groupcz[sel] = czcen
+        return groupra, groupdec, groupcz
+
+    def multiplicity_function(self, grpids, return_by_galaxy=False):
+        """
+        Return counts for binning based on group ID numbers.
+        Parameters
+        ----------
+        grpids : iterable
+            List of group ID numbers. Length must match # galaxies.
+        Returns
+        -------
+        occurences : list
+            Number of galaxies in each galaxy group (length matches # groups).
+        """
+        grpids=np.asarray(grpids)
+        uniqid = np.unique(grpids)
+        if return_by_galaxy:
+            grpn_by_gal=np.zeros(len(grpids)).astype(int)
+            for idv in grpids:
+                sel = np.where(grpids==idv)
+                grpn_by_gal[sel]=len(sel[0])
+            return grpn_by_gal
+        else:
+            occurences=[]
+            for uid in uniqid:
+                sel = np.where(grpids==uid)
+                occurences.append(len(grpids[sel]))
+            return occurences
+
+    def angular_separation(seld, ra1, dec1, ra2, dec2):
+        """
+        Compute the angular separation bewteen two lists of galaxies using the Haversine formula.
+        
+        Parameters
+        ------------
+        ra1, dec1, ra2, dec2 : array-like
+        Lists of right-ascension and declination values for input targets, in decimal degrees. 
+        
+        Returns
+        ------------
+        angle : np.array
+        Array containing the angular separations between coordinates in list #1 and list #2, as above.
+        Return value expressed in radians, NOT decimal degrees.
+        """
+        phi1 = ra1*np.pi/180.
+        phi2 = ra2*np.pi/180.
+        theta1 = np.pi/2. - dec1*np.pi/180.
+        theta2 = np.pi/2. - dec2*np.pi/180.
+        return 2*np.arcsin(np.sqrt(np.sin((theta2-theta1)/2.0)**2.0 + np.sin(theta1)*np.sin(theta2)*np.sin((phi2 - phi1)/2.0)**2.0))
+
+    def split_false_pairs(self, galra, galde, galcz, galgroupid):
+        """
+        Split false-pairs of FoF groups following the algorithm
+        of Eckert et al. (2017), Appendix A.
+        https://ui.adsabs.harvard.edu/abs/2017ApJ...849...20E/abstract
+        Parameters
+        ---------------------
+        galra : array_like
+            Array containing galaxy RA.
+            Units: decimal degrees.
+        galde : array_like
+            Array containing containing galaxy DEC.
+            Units: degrees.
+        galcz : array_like
+            Array containing cz of galaxies.
+            Units: km/s
+        galid : array_like
+            Array containing group ID number for each galaxy.
+        
+        Returns
+        ---------------------
+        newgroupid : np.array
+            Updated group ID numbers.
+        """
+        groupra,groupde,groupcz=group_skycoords(galra,galde,galcz,galgroupid)
+        groupn = multiplicity_function(galgroupid, return_by_galaxy=True)
+        newgroupid = np.copy(galgroupid)
+        brokenupids = np.arange(len(newgroupid))+np.max(galgroupid)+100
+        # brokenupids_start = np.max(galgroupid)+1
+        r75func = lambda r1,r2: 0.75*(r2-r1)+r1
+        n2grps = np.unique(galgroupid[np.where(groupn==2)])
+        ## parameters corresponding to Katie's dividing line in cz-rproj space
+        bb=360.
+        mm = (bb-0.0)/(0.0-0.12)
+
+        for ii,gg in enumerate(n2grps):
+            # pair of indices where group's ngal == 2
+            galsel = np.where(galgroupid==gg)
+            deltacz = np.abs(np.diff(galcz[galsel])) 
+            theta = angular_separation(galra[galsel],galde[galsel],groupra[galsel],\
+                groupde[galsel])
+            rproj = theta*groupcz[galsel][0]/70.
+            grprproj = r75func(np.min(rproj),np.max(rproj))
+            keepN2 = bool((deltacz<(mm*grprproj+bb)))
+            if (not keepN2):
+                # break
+                newgroupid[galsel]=brokenupids[galsel]
+                # newgroupid[galsel] = np.array([brokenupids_start, brokenupids_start+1])
+                # brokenupids_start+=2
+            else:
+                pass
+        return newgroupid 
+
     def get_err_data(self, path, experiments):
         """
         Calculate error in data SMF from mocks
@@ -1095,12 +1232,56 @@ class Analysis():
                 filename = temp_path + '{0}_cat_{1}_Planck_memb_cat.hdf5'.format(
                     mock_name, num)
                 mock_pd = preprocess.read_mock_catl(filename) 
-                mock_pd = preprocess.mock_add_grpcz(mock_pd, grpid_col='groupid', 
-                    galtype_col='g_galtype', cen_cz_col='cz')
+
+                ## Pair splitting
+                psgrpid = self.split_false_pairs(
+                    np.array(mock_pd.ra),
+                    np.array(mock_pd.dec),
+                    np.array(mock_pd.cz), 
+                    np.array(mock_pd.groupid))
+
+                mock_pd["ps_groupid"] = psgrpid
+
+                arr1 = mock_pd.ps_groupid
+                arr1_unq = mock_pd.ps_groupid.drop_duplicates()  
+                arr2_unq = np.arange(len(np.unique(mock_pd.ps_groupid))) 
+                mapping = dict(zip(arr1_unq, arr2_unq))   
+                new_values = arr1.map(mapping)
+                mock_pd['ps_groupid'] = new_values  
+
+                most_massive_gal_idxs = mock_pd.groupby(['ps_groupid'])['logmstar']\
+                    .transform(max) == mock_pd['logmstar']        
+                grp_censat_new = most_massive_gal_idxs.astype(int)
+                mock_pd["ps_grp_censat"] = grp_censat_new
+
+                # Deal with the case where one group has two equally massive galaxies
+                groups = mock_pd.groupby('ps_groupid')
+                keys = groups.groups.keys()
+                groupids = []
+                for key in keys:
+                    group = groups.get_group(key)
+                    if np.sum(group.ps_grp_censat.values)>1:
+                        groupids.append(key)
+                
+                final_sat_idxs = []
+                for key in groupids:
+                    group = groups.get_group(key)
+                    cens = group.loc[group.ps_grp_censat.values == 1]
+                    num_cens = len(cens)
+                    final_sat_idx = random.sample(list(cens.index.values), num_cens-1)
+                    # mock_pd.ps_grp_censat.loc[mock_pd.index == final_sat_idx] = 0
+                    final_sat_idxs.append(final_sat_idx)
+                final_sat_idxs = np.hstack(final_sat_idxs)
+
+                mock_pd.loc[final_sat_idxs, 'ps_grp_censat'] = 0
+                #
+
+                mock_pd = preprocess.mock_add_grpcz(mock_pd, grpid_col='ps_groupid', 
+                    galtype_col='ps_grp_censat', cen_cz_col='cz')
                 # Using the same survey definition as in mcmc smf i.e excluding the 
                 # buffer
-                mock_pd = mock_pd.loc[(mock_pd.grpcz_new.values >= min_cz) & \
-                    (mock_pd.grpcz_new.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
+                mock_pd = mock_pd.loc[(mock_pd.grpcz_cen.values >= min_cz) & \
+                    (mock_pd.grpcz_cen.values <= max_cz) & (mock_pd.M_r.values <= mag_limit) &\
                     (mock_pd.logmstar.values >= mstar_limit)].reset_index(drop=True)
 
                 ## Using best-fit found for new ECO data using result from chain 50
@@ -1133,7 +1314,6 @@ class Analysis():
 
                 logmstar_arr = mock_pd.logmstar.values 
 
-
                 ### Statistics for correlation matrix
                 #Measure SMF of mock using diff_smf function
                 mass_total, phi_total, err_total, bins_total, counts_total = \
@@ -1147,6 +1327,7 @@ class Analysis():
                 f_blue_cen_arr.append(f_blue_cen)
                 f_blue_sat_arr.append(f_blue_sat)
 
+                #Measure dynamics of red and blue galaxy groups
                 if settings.stacked_stat:
                     red_deltav, red_cen_mstar_sigma, blue_deltav, \
                         blue_cen_mstar_sigma = \
@@ -1173,9 +1354,9 @@ class Analysis():
                     blue_sigma = np.log10(blue_sigma)
 
                     mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
-                        statistic=self.average_of_log, bins=np.linspace(-2,3,5))
+                        statistic=self.average_of_log, bins=np.linspace(1,3,5))
                     mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
-                        statistic=self.average_of_log, bins=np.linspace(-1,3,5))
+                        statistic=self.average_of_log, bins=np.linspace(1,3,5))
 
                     mean_mstar_red_arr.append(mean_mstar_red[0])
                     mean_mstar_blue_arr.append(mean_mstar_blue[0])
@@ -1723,10 +1904,11 @@ class Analysis():
             red_sigma = np.log10(red_sigma)
             blue_sigma = np.log10(blue_sigma)
 
-            mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
-                statistic=self.average_of_log, bins=np.linspace(-2,3,5))
-            mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
-                statistic=self.average_of_log, bins=np.linspace(-1,3,5))
+            #* This is done at time of plotting instead (plotting.py)
+            # mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
+            #     statistic=self.average_of_log, bins=np.linspace(1,3,5))
+            # mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
+            #     statistic=self.average_of_log, bins=np.linspace(1,3,5))
 
             self.vdisp_red_data = [red_sigma, red_cen_mstar_sigma]
             self.vdisp_blue_data = [blue_sigma, blue_cen_mstar_sigma]
