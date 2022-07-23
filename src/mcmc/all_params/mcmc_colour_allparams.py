@@ -410,6 +410,7 @@ def diff_smf(mstar_arr, volume, h1_bool, colour_flag=False):
         if survey == 'eco' and colour_flag == 'R':
             bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
             bin_num = 6
+            
         elif survey == 'eco' and colour_flag == 'B':
             bin_max = np.round(np.log10((10**11) / 2.041), 1)
             bin_num = 6
@@ -2619,8 +2620,7 @@ def lnprob(theta, data, err, corr_mat_inv):
         elif quenching == 'halo':
             f_red_cen, f_red_sat = halo_quenching_model(theta[5:], gals_df, \
                 'vishnu')
-        gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, \
-            gals_df)
+        gals_df = assign_colour_label_mock(f_red_cen, f_red_sat, gals_df)
 
         # npmax = 1e5
         # if len(gals_df) >= npmax:
