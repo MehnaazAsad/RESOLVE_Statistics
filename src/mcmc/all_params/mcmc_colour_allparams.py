@@ -1439,9 +1439,10 @@ def get_err_data(survey, path):
             # mu = 0.69
             # nu = 0.148
 
-            ## Using best-fit found for new ECO data using result from chain 50
+            ## Using best-fit found for new ECO data using result from chain 67
             ## i.e. hybrid quenching model
-            bf_from_last_chain = [10.11453861, 13.69516435, 0.7229029 , 0.05319513]
+            bf_from_last_chain = [10.1942986, 14.5454828, 0.708013630,
+                0.00722556715]
 
             Mstar_q = bf_from_last_chain[0] # Msun/h**2
             Mh_q = bf_from_last_chain[1] # Msun/h
@@ -1457,7 +1458,8 @@ def get_err_data(survey, path):
 
             ## Using best-fit found for new ECO data using result from chain 49
             ## i.e. halo quenching model
-            bf_from_last_chain = [12.00859308, 12.62730517, 1.48669053, 0.66870568]
+            bf_from_last_chain = [12.00859308, 12.62730517, 1.48669053, 
+                0.66870568]
 
             Mh_qc = bf_from_last_chain[0] # Msun/h
             Mh_qs = bf_from_last_chain[1] # Msun/h
