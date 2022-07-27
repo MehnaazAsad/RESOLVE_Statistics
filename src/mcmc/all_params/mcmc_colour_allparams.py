@@ -1456,15 +1456,21 @@ def get_err_data(survey, path):
             # mu_c = 0.40
             # mu_s = 0.148
 
-            ## Using best-fit found for new ECO data using result from chain 49
+            ## Using best-fit found for new ECO data using result from chain 62
             ## i.e. halo quenching model
-            bf_from_last_chain = [12.00859308, 12.62730517, 1.48669053, 
-                0.66870568]
+            bf_from_last_chain = [11.749165, 12.471502, 1.496924, 0.416936]
 
             Mh_qc = bf_from_last_chain[0] # Msun/h
             Mh_qs = bf_from_last_chain[1] # Msun/h
             mu_c = bf_from_last_chain[2]
             mu_s = bf_from_last_chain[3]
+
+            # Copied from chain 67
+            min_chi2_params = [10.194299, 14.545483, 0.708014, 0.007226] #chi2=35
+            max_chi2_params = [10.582321, 14.119958, 0.745622, 0.233953] #chi2=1839
+            
+            # From chain 61
+            min_chi2_params = [10.143908, 13.630966, 0.825897, 0.042685] #chi2=13.66
 
             if quenching == 'hybrid':
                 theta = [Mstar_q, Mh_q, mu, nu]
@@ -1659,7 +1665,7 @@ def get_err_data(survey, path):
     # rc('xtick.minor', width=2, size=7)
     # rc('ytick.minor', width=2, size=7)
 
-    # #* Reduced feature space
+    # # #* Reduced feature space
     # fig1 = plt.figure()
     # ax1 = fig1.add_subplot(111)
     # cmap = cm.get_cmap('Spectral_r')
