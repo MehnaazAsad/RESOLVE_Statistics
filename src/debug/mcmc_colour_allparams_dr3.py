@@ -1,7 +1,11 @@
 """
 {This script carries out an MCMC analysis and varies Behroozi parameters as well 
- as quenching parameters simultaneously. Observables used are total SMF and blue
- fraction of galaxies both in bins of stellar mass.}
+ as quenching parameters simultaneously. Observables used are total SMF, blue
+ fraction of galaxies both in bins of stellar mass, and velocity dispersion
+ around red and blue group centrals. This script is testing whether changing 
+ the ECO catalog from DR2 to DR3 (along with the updated colour classification) 
+ is affecting chi-squared. The old sigma binning is slightly modified to work 
+ with DR3.}
 """
 
 # Built-in/Generic Imports
