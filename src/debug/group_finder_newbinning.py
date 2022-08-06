@@ -1232,7 +1232,7 @@ def main(args):
         # gal_group_df_new, group_df_new = \
         #     group_mass_assignment_rev(gal_group_df, group_df, param_dict, col)
         gals_rsd_subset_df = pd.merge(gals_rsd_subset_df, gal_group_df, 
-            how='left', left_on = gals_rsd_subset_df.index, right_on='index')
+            how='left', left_on=gals_rsd_subset_df.index.values, right_on='index')
 
         rename_dict = {'ra_x': 'ra',
                         'dec_x': 'dec',
