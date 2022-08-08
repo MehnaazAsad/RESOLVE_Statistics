@@ -321,7 +321,7 @@ def measure_all_smf(table, volume, data_bool, randint_logmstar=None):
 
     if data_bool:
         logmstar_col = 'logmstar'
-        max_total, phi_total, err_total, bins_total, counts_total = \
+        max_total, phi_total, err_total, counts_total = \
             diff_smf(table[logmstar_col], volume, False)
         # max_red, phi_red, err_red, bins_red, counts_red = \
         #     diff_smf(table[logmstar_col].loc[table[colour_col] == 'R'], 
@@ -335,7 +335,7 @@ def measure_all_smf(table, volume, data_bool, randint_logmstar=None):
         else:
             logmstar_col = 'logmstar'
         ## Changed to 10**X because Behroozi mocks now have M* values in log
-        max_total, phi_total, err_total, bins_total, counts_total = \
+        max_total, phi_total, err_total, counts_total = \
             diff_smf(10**(table[logmstar_col]), volume, True)
         # max_red, phi_red, err_red, bins_red, counts_red = \
         #     diff_smf(10**(table[logmstar_col].loc[table[colour_col] == 'R']), 
