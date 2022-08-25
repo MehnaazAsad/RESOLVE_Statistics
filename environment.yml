@@ -3,16 +3,18 @@ name: resolve_statistics
 channels:
   - defaults
   - astropy
+    # - conda-metachannel
   - conda-forge
 
 dependencies:
-  - python>=3.6
+  - python=3.9
   - ipython
   - anaconda
   - astropy
-  - h5py
+  - h5py=3.5
   - numpy
   - pandas
+  - pathos
   - scipy
  # Removed halotools to install it from source instead
  #- halotools
