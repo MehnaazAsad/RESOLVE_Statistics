@@ -3001,6 +3001,7 @@ def main(args):
                 statistic=average_of_log, bins=np.linspace(1,3,5))
             mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
                 statistic=average_of_log, bins=np.linspace(1,3,5))
+                
         elif mf_type == 'bmf':
             print('Measuring velocity dispersion for data')
             red_sigma, red_cen_mbary_sigma, blue_sigma, \
