@@ -27,13 +27,13 @@ rc('xtick.major', width=2, size=7)
 rc('ytick.major', width=2, size=7)
 
 survey = 'eco'
-quenching = 'halo'
+quenching = 'hybrid'
 mf_type = 'smf'
 nwalkers = 100
 nsteps = 1000
 burnin = 300
 ndim = 9
-run = 48
+run = 67
     
 def get_samples(chain_file, nsteps, nwalkers, ndim, burnin):
     if quenching == 'hybrid':
@@ -119,23 +119,69 @@ else:
 
     samples = get_samples(chain_fname, nsteps, nwalkers, ndim, burnin)
 
+if quenching == 'hybrid':
+
+    run = 63
+    reader = emcee.backends.HDFBackend(
+        path_to_proc + "smhm_colour_run{0}/chain.h5".format(run), 
+        read_only=True)
+    samples_63 = reader.get_chain(flat=True, discard=burnin) 
+
+    run = 55
+    reader = emcee.backends.HDFBackend(
+        path_to_proc + "smhm_colour_run{0}/chain.h5".format(run), 
+        read_only=True)
+    samples_55 = reader.get_chain(flat=True, discard=burnin) 
+
+    run = 57
+    reader = emcee.backends.HDFBackend(
+        path_to_proc + "smhm_colour_run{0}/chain.h5".format(run), 
+        read_only=True)
+    samples_57 = reader.get_chain(flat=True, discard=burnin) 
+
+    run = 59
+    reader = emcee.backends.HDFBackend(
+        path_to_proc + "smhm_colour_run{0}/chain.h5".format(run), 
+        read_only=True)
+    samples_59 = reader.get_chain(flat=True, discard=burnin) 
+
+elif quenching == 'halo':
+    run = 56
+    reader = emcee.backends.HDFBackend(
+        path_to_proc + "smhm_colour_run{0}/chain.h5".format(run), 
+        read_only=True)
+    samples_56 = reader.get_chain(flat=True, discard=burnin) 
+
+    run = 58
+    reader = emcee.backends.HDFBackend(
+        path_to_proc + "smhm_colour_run{0}/chain.h5".format(run), 
+        read_only=True)
+    samples_58 = reader.get_chain(flat=True, discard=burnin) 
+
+    run = 60
+    reader = emcee.backends.HDFBackend(
+        path_to_proc + "smhm_colour_run{0}/chain.h5".format(run), 
+        read_only=True)
+    samples_60 = reader.get_chain(flat=True, discard=burnin) 
+
+quenching = 'hybrid'
+mf_type = 'bmf'
 nwalkers = 100
 nsteps = 1000
 burnin = 300
 ndim = 9
-run = 46
+run = 4
 
-if run >= 37:
-    reader = emcee.backends.HDFBackend(
-        path_to_proc + "smhm_colour_run{0}/chain.h5".format(run), 
-        read_only=True)
-    samples_46 = reader.get_chain(flat=True, discard=burnin) 
+reader = emcee.backends.HDFBackend(
+    path_to_proc + "bmhm_run{0}/chain.h5".format(run), 
+    read_only=True)
+samples_bmf = reader.get_chain(flat=True, discard=burnin) 
 
-else:
-    chain_fname = path_to_proc + 'smhm_colour_run{0}/mcmc_{1}_colour_raw.txt'.\
-        format(run, survey)
-
-    samples = get_samples(chain_fname, nsteps, nwalkers, ndim, burnin)
+# run = 45
+# reader = emcee.backends.HDFBackend(
+#     path_to_proc + "smhm_colour_run{0}/chain.h5".format(run), 
+#     read_only=True)
+# samples_45 = reader.get_chain(flat=True, discard=burnin) 
 
 # chain_fname_halo_35 = path_to_proc + 'smhm_colour_run{0}/mcmc_{1}_colour_raw.txt'.\
 #     format(run_smf, survey)
@@ -154,68 +200,68 @@ optimizer_best_fit_eco_smf_hybrid = [10.49, 14.03, 0.69, 0.148] # For hybrid mod
 zumandelbaum_param_vals_halo = [12.20, 0.38, 12.17, 0.15] # For halo model
 optimizer_best_fit_eco_smf_halo = [12.61, 13.5, 0.40, 0.148] # For halo model
 
-#45
-best_fit_hybrid = [12.29868808, 10.48771974,  0.41364778,  0.41375455,  0.30506659,
-       10.1679343 , 13.10135398,  0.81869216,  0.13844437]
-#46
-best_fit_halo = [12.37399415, 10.57683767,  0.42357192,  0.50163458,  0.31593679,
-       11.86645536, 12.54502723,  1.42736618,  0.5261119 ]
+#61
+best_fit_hybrid = [12.22166393, 10.51015325,  0.39844833,  0.50993929,  0.32051433,
+10.14390814, 13.63096564,  0.82589714,  0.04268463]
+#62
+best_fit_halo = [12.24808533, 10.55515426,  0.40228399,  0.50789582,  0.32759754,
+11.74916496, 12.47150227,  1.49692441,  0.41693634]
 # parameters=[r"${log_{10}\ M_{1}}$", 
 #         r"${log_{10}\ M_{*}}$", r"${\beta}$",
 #         r"${\delta}$", r"${\xi}$", 
 #         r"${log_{10}\ M^{q}_{*}}$", r"${log_{10}\ M^{q}_{h}}$", 
 #         r"${\mu}$", r"${\nu}$"]
 
+param_names_hybrid = [r"$\mathbf{log_{10}\ M_{1}}$", 
+        r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
+        r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
+        r"$\mathbf{log_{10}\ M^{q}_{*}}$", r"$\mathbf{log_{10}\ M^{q}_{h}}$", 
+        r"$\boldsymbol{\mu}$", r"$\boldsymbol{\nu}$"]
+
+param_names_halo = [r"$\mathbf{log_{10}\ M_{1}}$", 
+        r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
+        r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
+        r"$\mathbf{log_{10}\ M^{qc}_{h}}$", r"$\mathbf{log_{10}\ M^{qs}_{h}}$", 
+        r"$\boldsymbol{{\mu}_c}$", r"$\boldsymbol{{\mu}_s}$"]
+
 c = ChainConsumer()
 if quenching == 'hybrid':
-    c.add_chain(samples, parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
-        r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
-        r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
-        r"$\mathbf{log_{10}\ M^{q}_{*}}$", r"$\mathbf{log_{10}\ M^{q}_{h}}$", 
-        r"$\boldsymbol{\mu}$", r"$\boldsymbol{\nu}$"],
-        name=r"ECO hybrid (sigma-mstar)", color="#663399", zorder=10)
+    c.add_chain(samples[:,:], parameters=param_names_hybrid[:],
+        name=r"Stellar", color='#E766EA', zorder=20)
 
-    # for i in range(len(best_fit_hybrid)):
-    #     for j in range(len(best_fit_hybrid)):
-    #         if i==j:
-    #             continue
-    #         else:
-    #             c.add_marker([best_fit_hybrid[i],best_fit_hybrid[j]], 
-    #             [parameters[i], parameters[j]], marker_style="*", 
-    #             marker_size=100, color='#1f77b4')
-        
+    # c.add_chain(samples_bmf[:,:], parameters=param_names_hybrid[:],
+    #     name=r"Baryonic", color='#FE420F', zorder=25)
 
-    c.add_chain(samples_45,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
-        r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
-        r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
-        r"$\mathbf{log_{10}\ M^{q}_{*}}$", r"$\mathbf{log_{10}\ M^{q}_{h}}$", 
-        r"$\boldsymbol{\mu}$", r"$\boldsymbol{\nu}$"],
-        name="ECO hybrid (mstar-sigma)", color='#E766EA', 
-        zorder=13)
+    # c.add_chain(samples_63[:,:], parameters=param_names_hybrid[:],
+    #     name=r"Non-PCA", color='#663399', zorder=25)
+
+    # c.add_chain(samples_59[:,:],parameters=param_names_hybrid[:],
+    #     name="$\mathbf{\Phi}$  + $\mathbf{f_{blue, cen}}$ + $\mathbf{f_{blue, sat}}$ + $\mathbf{M_{*}-\sigma}$", color="#663399", 
+    #     zorder=15)
+
+    # c.add_chain(samples_55[:,:],parameters=param_names_hybrid[:],
+    #     name="$\mathbf{\Phi}$", color='#FE420F', 
+    #     zorder=5)
+
+    # c.add_chain(samples_57[:,:],parameters=param_names_hybrid[:],
+    #     name="$\mathbf{\Phi}$  + $\mathbf{f_{blue, cen}}$ + $\mathbf{f_{blue, sat}}$", color='#069AF3', 
+    #     zorder=10)
+
 
 elif quenching == 'halo':
-    c.add_chain(samples,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
-        r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
-        r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
-        r"$\mathbf{log_{10}\ M^{qc}_{h}}$", r"$\mathbf{log_{10}\ M^{qs}_{h}}$", 
-        r"$\boldsymbol{{\mu}_c}$", r"$\boldsymbol{{\mu}_s}$"],
-        name=r"ECO halo (sigma-mstar)", color='#663399', zorder=13)
+    c.add_chain(samples[:,:],parameters=param_names_halo[:],
+        name=r"$\mathbf{\Phi}$  + $\mathbf{f_{blue, cen}}$ + $\mathbf{f_{blue, sat}}$ + $\mathbf{\sigma - M_{*}}$", color='#E766EA', zorder=20)
 
-    c.add_chain(samples_46,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
-        r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
-        r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
-        r"$\mathbf{log_{10}\ M^{qc}_{h}}$", r"$\mathbf{log_{10}\ M^{qs}_{h}}$", 
-        r"$\boldsymbol{{\mu}_c}$", r"$\boldsymbol{{\mu}_s}$"],
-        name=r"ECO halo (mstar-sigma)", color='#E766EA', 
-        zorder=10)
+    # c.add_chain(samples_60[:,:],parameters=param_names_halo[:],
+    #     name="$\mathbf{\Phi}$  + $\mathbf{f_{blue, cen}}$ + $\mathbf{f_{blue, sat}}$ + $\mathbf{M_{*}-\sigma}$", color="#663399", 
+    #     zorder=15)
 
+    # c.add_chain(samples_56[:,:],parameters=param_names_halo[:],
+    #     name="$\mathbf{\Phi}$", color='#FE420F', 
+    #     zorder=5)
 
-    # c.add_chain(samples_chain35,parameters=[r"$\mathbf{log_{10}\ M_{1}}$", 
-    #     r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
-    #     r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
-    #     r"$\mathbf{log_{10}\ M^{qc}_{h}}$", r"$\mathbf{log_{10}\ M^{qs}_{h}}$", 
-    #     r"$\boldsymbol{{\mu}_c}$", r"$\boldsymbol{{\mu}_s}$"],
-    #     name=r"ECO halo: $\mathbf{\Phi}$  + $\mathbf{f_{blue, cen}}$ + $\mathbf{f_{blue, sat}}$", color='#E766EA', 
+    # c.add_chain(samples_58[:,:],parameters=param_names_halo[:],
+    #     name="$\mathbf{\Phi}$  + $\mathbf{f_{blue, cen}}$ + $\mathbf{f_{blue, sat}}$", color='#069AF3', 
     #     zorder=10)
 
 # c.configure(shade_gradient=[0.1, 3.0], colors=['r', 'b'], \
@@ -223,10 +269,10 @@ elif quenching == 'halo':
 
 # sigma levels for 1D gaussian showing 68%,95% conf intervals
 c.configure(kde=2.0, shade_gradient = 2.0, shade_alpha=0.8, label_font_size=15, 
-    tick_font_size=10, summary=False, sigma2d=False, diagonal_tick_labels=False, 
+    tick_font_size=10, summary=True, sigma2d=False, diagonal_tick_labels=False, 
     max_ticks=4, linewidths=2, legend_kwargs={"fontsize": 15})
 c.configure_truth(color='goldenrod', lw=1.7)
-fig1 = c.plotter.plot(display=True)
+# fig1 = c.plotter.plot(display=True)
 # c.configure(label_font_size=15, tick_font_size=10, summary=True, 
 #     sigma2d=False, legend_kwargs={"fontsize": 15}) 
 if quenching == 'hybrid':
