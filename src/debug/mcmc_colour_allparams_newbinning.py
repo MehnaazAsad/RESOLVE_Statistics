@@ -2410,6 +2410,7 @@ def lnprob(theta, data, err, corr_mat_inv):
                     statistic=average_of_log, bins=np.linspace(1,3,5))
                 mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
                     statistic=average_of_log, bins=np.linspace(1,2.9,5))
+                    
         elif mf_type == 'bmf':
             logmstar_col = 'logmstar'
             total_model = diff_bmf(10**(gal_group_df[logmstar_col]), 
