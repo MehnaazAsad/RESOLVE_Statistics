@@ -47,15 +47,14 @@ survey = 'eco'
 mf_type = 'smf'
 quenching = 'halo'
 nwalkers = 100
-run = 48
+run = 70
 
 if mf_type == 'smf':
     path_to_proc = path_to_proc + 'smhm_colour_run{0}/'.format(run)
 else:
-    path_to_proc = path_to_proc + 'bmhm_run3/'
+    path_to_proc = path_to_proc + 'bmhm_run{0}/'.format(run)
 
 if run >= 37:
-    quenching = 'halo'
     reader = emcee.backends.HDFBackend(
         path_to_proc + "chain.h5", read_only=True)
     flatchain = reader.get_chain(flat=True)
