@@ -102,7 +102,7 @@ class Experiments():
             if settings.level == 'halo':
                 galtype_col = 'cs_flag'
                 ## Halo ID is equivalent to halo_hostid in vishnu mock
-            id_col = 'haloid'
+                id_col = 'haloid'
     
         if catl_type == 'model':
             if settings.survey == 'eco':
