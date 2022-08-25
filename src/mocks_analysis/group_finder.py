@@ -1118,7 +1118,7 @@ def main(args):
     flatchain = reader.get_chain(flat=True)
     mcmc_table = pd.DataFrame(flatchain, columns=names)
 
-    print('Getting subset of 500 Behroozi parameters')
+    print('Getting subset of 200 Behroozi parameters')
     mcmc_table_subset = get_paramvals_percentile(mcmc_table, 68, chi2)
 
     params_df = pd.DataFrame(mcmc_table_subset)
