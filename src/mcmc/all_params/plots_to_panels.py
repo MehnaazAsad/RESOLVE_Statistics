@@ -120,6 +120,6 @@ ax[0].legend([(dt), (mt), (bft)], ['Data','Models','Best-fit'],
 
 # figM = plt.get_current_fig_manager()
 # figM.resize(*figM.window.maxsize())
-plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/smf_total_panel.pdf', 
-    bbox_inches="tight", dpi=1200)
-# plt.show()
+# plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/smf_total_panel.pdf', 
+#     bbox_inches="tight", dpi=1200)
+plt.show()
