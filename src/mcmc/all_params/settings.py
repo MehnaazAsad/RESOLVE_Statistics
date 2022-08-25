@@ -61,7 +61,6 @@ class Settings():
             # catl_file = path_to_raw + "eco/eco_all.csv"
             ## Updated catalog with group finder run on subset after applying M* 
             # and cz cuts: changed volume to be in h=1 instead of 0.7
-            #! Change to DR3 catalog
             self.catl_file = self.path_to_proc + \
                 "gal_group_eco_stellar_buffer_volh1_dr3.hdf5"
             self.path_to_mocks = path_to_data + 'mocks/m200b/eco/'
