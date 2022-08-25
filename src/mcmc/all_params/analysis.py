@@ -1113,8 +1113,8 @@ class Analysis():
         newgroupid : np.array
             Updated group ID numbers.
         """
-        groupra,groupde,groupcz=group_skycoords(galra,galde,galcz,galgroupid)
-        groupn = multiplicity_function(galgroupid, return_by_galaxy=True)
+        groupra,groupde,groupcz=self.group_skycoords(galra,galde,galcz,galgroupid)
+        groupn = self.multiplicity_function(galgroupid, return_by_galaxy=True)
         newgroupid = np.copy(galgroupid)
         brokenupids = np.arange(len(newgroupid))+np.max(galgroupid)+100
         # brokenupids_start = np.max(galgroupid)+1
@@ -1128,7 +1128,7 @@ class Analysis():
             # pair of indices where group's ngal == 2
             galsel = np.where(galgroupid==gg)
             deltacz = np.abs(np.diff(galcz[galsel])) 
-            theta = angular_separation(galra[galsel],galde[galsel],groupra[galsel],\
+            theta = self.angular_separation(galra[galsel],galde[galsel],groupra[galsel],\
                 groupde[galsel])
             rproj = theta*groupcz[galsel][0]/70.
             grprproj = r75func(np.min(rproj),np.max(rproj))
@@ -1613,8 +1613,8 @@ class Analysis():
         settings = self.settings
 
         start = time.time()
-        params_df = mcmc_table_pctl.iloc[:,:9].reset_index(drop=True)
         if settings.many_behroozi_mocks:
+            params_df = mcmc_table_pctl.iloc[:,:9].reset_index(drop=True)
             mock_num_df = mcmc_table_pctl.iloc[:,5].reset_index(drop=True)
             frames = [params_df, mock_num_df]
             mcmc_table_pctl_new = pd.concat(frames, axis=1)
@@ -1626,7 +1626,7 @@ class Analysis():
             # Chunks are just numbers from 1-100 for the case where rsd + grp finder
             # were run for a selection of 100 random 1sigma models from run 32
             # and all those mocks are used instead. 
-            chunks = np.arange(1,101,1).reshape(5, 20, 1) # Mimic shape of chunks above 
+            chunks = np.arange(2,202,1).reshape(10, 20, 1) # Mimic shape of chunks above 
         pool = Pool(processes=nproc)
         # mp_dict = {"experiments":experiments, "analysis":self}
         # nargs = [(chunk, experiments) for chunk in chunks]
