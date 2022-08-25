@@ -12,7 +12,7 @@ import os
 from cosmo_utils.utils import work_paths as cwpaths
 import pandas as pd
 import numpy as np
-
+import pickle
 
 def read_mock_catl(filename, catl_format='.hdf5'):
     """
@@ -155,10 +155,10 @@ def main(args):
     gal_group_df_subset = gal_group[names_arr]
 
     print('Writing to output files')
-    pandas_df_to_hdf5_file(data=gal_group_df_subset,
-        hdf5_file=path_to_proc + 'mod_gal_group_run{0}.hdf5'.format(run), 
-        key='gal_group_df')
-  
+    with open(path_to_proc + 'gal_group_run{0}.pickle'.format(run), 'wb') as handle:
+        pickle.dump(gal_group_df_subset, handle, 
+        protocol=pickle.HIGHEST_PROTOCOL)
+
 if __name__ == '__main__':
     args = args_parser()
     main(args)
