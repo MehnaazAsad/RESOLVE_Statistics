@@ -1541,9 +1541,9 @@ def get_err_data(survey, path):
                     blue_sigma = np.log10(blue_sigma)
 
                     mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
-                        statistic=average_of_log, bins=np.linspace(1,3,5))
+                        statistic=average_of_log, bins=np.linspace(1,2.8,5))
                     mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
-                        statistic=average_of_log, bins=np.linspace(1,3,5))
+                        statistic=average_of_log, bins=np.linspace(1,2.5,5))
                 
                 elif mf_type == 'bmf':
                     red_sigma, red_cen_mbary_sigma, blue_sigma, \
@@ -2711,9 +2711,9 @@ def lnprob(theta, data, err, corr_mat_inv):
                 blue_sigma = np.log10(blue_sigma)
 
                 mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
-                    statistic=average_of_log, bins=np.linspace(1,3,5))
+                    statistic=average_of_log, bins=np.linspace(1,2.8,5))
                 mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
-                    statistic=average_of_log, bins=np.linspace(1,3,5))
+                    statistic=average_of_log, bins=np.linspace(1,2.5,5))
         elif mf_type == 'bmf':
             logmstar_col = 'logmstar' #No explicit logmbary column
             total_model = diff_bmf(10**(gal_group_df[logmstar_col]), 
@@ -2998,10 +2998,10 @@ def main(args):
             blue_sigma = np.log10(blue_sigma)
 
             mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
-                statistic=average_of_log, bins=np.linspace(1,3,5))
+                statistic=average_of_log, bins=np.linspace(1,2.8,5))
             mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
-                statistic=average_of_log, bins=np.linspace(1,3,5))
-                
+                statistic=average_of_log, bins=np.linspace(1,2.5,5))
+
         elif mf_type == 'bmf':
             print('Measuring velocity dispersion for data')
             red_sigma, red_cen_mbary_sigma, blue_sigma, \
