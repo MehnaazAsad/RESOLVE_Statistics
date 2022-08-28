@@ -4045,9 +4045,9 @@ def lnprob(theta):
             blue_sigma = np.log10(blue_sigma)
 
             mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
-                statistic='count', bins=np.linspace(1,3,5))
+                statistic=average_of_log, bins=np.linspace(1,3,5))
             mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
-                statistic='count', bins=np.linspace(1,2.9,5))
+                statistic=average_of_log, bins=np.linspace(1,2.9,5))
                 
     elif mf_type == 'bmf':
         logmstar_col = 'logmstar'
@@ -4190,9 +4190,9 @@ def calc_data_stats(catl_file):
             blue_sigma = np.log10(blue_sigma)
 
             mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
-                statistic='count', bins=np.linspace(1,3,5))
+                statistic=average_of_log, bins=np.linspace(1,3,5))
             mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
-                statistic='count', bins=np.linspace(1,2.9,5))
+                statistic=average_of_log, bins=np.linspace(1,2.9,5))
         elif mf_type == 'bmf':
             print('Measuring velocity dispersion for data')
             red_sigma, red_cen_mbary_sigma, blue_sigma, \
@@ -4938,8 +4938,8 @@ rc('ytick.minor', width=2, size=7)
 # binning)
 fig1= plt.figure(figsize=(10,10))
 
-bins_red_data = np.linspace(1,2.8,5)
-bins_blue_data = np.linspace(1,2.5,5)
+bins_red_data = np.linspace(1,3,5)
+bins_blue_data = np.linspace(1,2.9,5)
 bin_centers_red_data = 0.5 * (bins_red_data[1:] + bins_red_data[:-1])
 bin_centers_blue_data = 0.5 * (bins_blue_data[1:] + bins_blue_data[:-1])
 
