@@ -666,7 +666,7 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
         if level == 'group':
             galtype_col = 'ps_grp_censat'
             id_col = 'ps_groupid'
-        if level == 'halo':
+        elif level == 'halo':
             galtype_col = 'cs_flag'
             ## Halo ID is equivalent to halo_hostid in vishnu mock
             id_col = 'haloid'
@@ -748,10 +748,15 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
     #* Excluding N=1 groups
     red_subset_ids = red_subset_df.groupby([id_col]).filter\
         (lambda x: len(x) > 1)[id_col].unique()
+    #* DF of only N > 1 groups sorted by ps_groupid
     red_subset_df = catl.loc[catl[id_col].isin(
         red_subset_ids)].sort_values(by='{0}'.format(id_col))
     cen_red_subset_df = red_subset_df.loc[red_subset_df[galtype_col] == 1]
     if mf_type == 'smf':
+        #* np.sum doesn't actually add anything since there is only one central 
+        #* per group (checked)
+        #* Could use np.concatenate(cen_red_subset_df.groupby(['{0}'.format(id_col),
+        #*    '{0}'.format(galtype_col)])[logmstar_col].apply(np.array).ravel())
         red_cen_stellar_mass_arr = cen_red_subset_df.groupby(['{0}'.format(id_col),
             '{0}'.format(galtype_col)])[logmstar_col].apply(np.sum).values
     elif mf_type == 'bmf':
@@ -1439,10 +1444,16 @@ def get_err_data(survey, path):
             # mu = 0.69
             # nu = 0.148
 
-            ## Using best-fit found for new ECO data using result from chain 67
-            ## i.e. hybrid quenching model
-            bf_from_last_chain = [10.1942986, 14.5454828, 0.708013630,
-                0.00722556715]
+            # ## Using best-fit found for new ECO data using result from chain 67
+            # ## i.e. hybrid quenching model
+            # bf_from_last_chain = [10.1942986, 14.5454828, 0.708013630,
+            #     0.00722556715]
+
+            ## Using best-fit found for new ECO data using result from chain 59
+            ## i.e. hybrid quenching model which was the last time sigma-M* was
+            ## used i.e. stacked_stat = True
+            bf_from_last_chain = [10.133745, 13.478087, 0.810922,
+                0.043523]
 
             Mstar_q = bf_from_last_chain[0] # Msun/h**2
             Mh_q = bf_from_last_chain[1] # Msun/h
@@ -2903,7 +2914,7 @@ def main(args):
     rseed = 12
     np.random.seed(rseed)
     level = "group"
-    stacked_stat = False
+    stacked_stat = True
     pca = False
     new_chain = True
 
