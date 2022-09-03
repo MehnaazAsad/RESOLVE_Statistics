@@ -9332,7 +9332,15 @@ def get_err_data(survey, path, bin_i=None):
         'mstar_blue_cen_0':mstar_blue_cen_0, 'mstar_blue_cen_1':mstar_blue_cen_1, 
         'mstar_blue_cen_2':mstar_blue_cen_2, 'mstar_blue_cen_3':mstar_blue_cen_3})
 
-    if bin_i:
+    # Drop multiple columns simultaneously
+    if type(bin_i) != "NoneType" and type(bin_i) == np.ndarray:
+        num_to_remove = len(bin_i)
+        num_cols_by_idx = combined_df.shape[1] - 1
+        combined_df = combined_df.drop(combined_df.columns[\
+            np.array(num_to_remove*[num_cols_by_idx]) - bin_i], 
+            axis=1)     
+    # Drop only one column
+    elif type(bin_i) != "NoneType" and type(bin_i) == int:
         num_cols_by_idx = combined_df.shape[1] - 1
         combined_df = combined_df.drop(combined_df.columns[num_cols_by_idx - bin_i], 
             axis=1)
@@ -10729,8 +10737,7 @@ plt.legend([dc, ds, bfc, bfs], [ 'Data cen', 'Data sat', 'Best-fit cen', 'Best-f
     handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)})
 plt.show()
 
-## Remove visually bad bins (sigma_red #4 & fblue_sat #2 & #3)
-#! Need to re-run
+## Remove visually bad bins (fblue_sat #2 & #3 & sigma_red #4)
 bins_to_remove = [9, 10, 15]
 # Subtraction is required from 19 since np.delete is removing idxs backwards 
 # i.e it's not i that's removed but 19-i so if you want to remove bin 4, i can't
@@ -10754,22 +10761,25 @@ for i in idxs_to_remove:
         chi2_arr.append(chi2)
 
 ## chi2_arr: 
-# [86.41767575312585, 46.38803981907263, 43.179847778975876, 29.246484717662764]
+#[68.07603259157973, 30.079954101188385, 54.75680297796448, 42.17193344327803]
 
 ## Remove all red sigma bins
 chi2_arr = []
 chi2 = chi_squared(data_stats, model_stats, sigma, mat)
 chi2_arr.append(chi2)
 bins_to_remove = [12, 13, 14, 15]
-idxs_to_remove = np.array([19]*len(bins_to_remove)) - np.array([bins_to_remove])
-sigma, mat = get_err_data(survey, path_to_mocks, idxs_to_remove)
+idxs_to_remove = np.array([19]*len(bins_to_remove)) - np.array([bins_to_remove])[0]
+sigma_mod, mat_mod = get_err_data(survey, path_to_mocks, idxs_to_remove)
 
 num_elems_by_idx = len(data_stats) - 1
-data_stats_mod  = np.delete(data_stats, num_elems_by_idx-i) 
-model_stats_mod  = np.delete(model_stats, num_elems_by_idx-i) 
+data_stats_mod  = np.delete(data_stats, len(bins_to_remove)*[num_elems_by_idx]-idxs_to_remove) 
+model_stats_mod  = np.delete(model_stats, len(bins_to_remove)*[num_elems_by_idx]-idxs_to_remove) 
 
-chi2 = chi_squared(data_stats_mod, model_stats_mod, sigma, mat)
+chi2 = chi_squared(data_stats_mod, model_stats_mod, sigma_mod, mat_mod)
 chi2_arr.append(chi2)
+
+## chi2_arr: 
+#[68.07603259157973, 40.730628369467894]
 
 ## Remove all blue sigma bins
 chi2_arr = []
@@ -10777,14 +10787,15 @@ chi2 = chi_squared(data_stats, model_stats, sigma, mat)
 chi2_arr.append(chi2)
 bins_to_remove = [16, 17, 18, 19]
 idxs_to_remove = np.array([19]*len(bins_to_remove)) - np.array([bins_to_remove])
-sigma, mat = get_err_data(survey, path_to_mocks, idxs_to_remove)
+sigma_mod, mat_mod = get_err_data(survey, path_to_mocks, idxs_to_remove)
 
 num_elems_by_idx = len(data_stats) - 1
-data_stats_mod  = np.delete(data_stats, num_elems_by_idx-i) 
-model_stats_mod  = np.delete(model_stats, num_elems_by_idx-i) 
+data_stats_mod  = np.delete(data_stats, len(bins_to_remove)*[num_elems_by_idx]-idxs_to_remove) 
+model_stats_mod  = np.delete(model_stats, len(bins_to_remove)*[num_elems_by_idx]-idxs_to_remove) 
 
-chi2 = chi_squared(data_stats_mod, model_stats_mod, sigma, mat)
+chi2 = chi_squared(data_stats_mod, model_stats_mod, sigma_mod, mat_mod)
 chi2_arr.append(chi2)
+
 
 ## Remove all red+blue sigma bins
 chi2_arr = []
@@ -10792,11 +10803,11 @@ chi2 = chi_squared(data_stats, model_stats, sigma, mat)
 chi2_arr.append(chi2)
 bins_to_remove = [12, 13, 14, 15, 16, 17, 18, 19]
 idxs_to_remove = np.array([19]*len(bins_to_remove)) - np.array([bins_to_remove])
-sigma, mat = get_err_data(survey, path_to_mocks, idxs_to_remove)
+sigma_mod, mat_mod = get_err_data(survey, path_to_mocks, idxs_to_remove)
 
 num_elems_by_idx = len(data_stats) - 1
-data_stats_mod  = np.delete(data_stats, num_elems_by_idx-i) 
-model_stats_mod  = np.delete(model_stats, num_elems_by_idx-i) 
+data_stats_mod  = np.delete(data_stats, len(bins_to_remove)*[num_elems_by_idx]-idxs_to_remove) 
+model_stats_mod  = np.delete(model_stats, len(bins_to_remove)*[num_elems_by_idx]-idxs_to_remove) 
 
-chi2 = chi_squared(data_stats_mod, model_stats_mod, sigma, mat)
+chi2 = chi_squared(data_stats_mod, model_stats_mod, sigma_mod, mat_mod)
 chi2_arr.append(chi2)
