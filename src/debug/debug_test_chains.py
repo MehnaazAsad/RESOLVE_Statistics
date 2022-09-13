@@ -17345,3 +17345,125 @@ plt.legend([(dr, db), (bfr, bfb)], ['Data','Best-fit'],
     handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)})
 plt.show()
 
+########################################################################
+#* Looking at chi-squared distribution in a small region around best-fit point
+
+from cosmo_utils.utils import work_paths as cwpaths
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+import emcee
+import math
+import os
+
+__author__ = '{Mehnaaz Asad}'
+
+plt.rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']},size=15)
+plt.rc('text', usetex=True)
+plt.rc('text.latex', preamble=r"\usepackage{bm}")
+plt.rc('axes', linewidth=2)
+plt.rc('xtick.major', width=2, size=7)
+plt.rc('ytick.major', width=2, size=7)
+
+def find_nearest(array, value): 
+    """Finds the element in array that is closest to the value
+
+    Args:
+        array (numpy.array): Array of values
+        value (numpy.float): Value to find closest match to
+
+    Returns:
+        numpy.float: Closest match found in array
+    """
+    array = np.asarray(array) 
+    idx = (np.abs(array - value)).argmin() 
+    return array[idx] 
+
+dict_of_paths = cwpaths.cookiecutter_paths()
+path_to_raw = dict_of_paths['raw_dir']
+path_to_proc = dict_of_paths['proc_dir']
+path_to_interim = dict_of_paths['int_dir']
+path_to_figures = dict_of_paths['plot_dir']
+
+survey = 'eco'
+mf_type = 'smf'
+quenching = 'hybrid'
+nwalkers = 100
+run = 78
+path_to_proc = path_to_proc + 'smhm_colour_run{0}/'.format(run)
+
+reader = emcee.backends.HDFBackend(
+    path_to_proc + "chain.h5", read_only=True)
+flatchain = reader.get_chain(flat=True)
+
+names_hybrid=['Mhalo_c', 'Mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter',
+        'Mstar_q','Mhalo_q','mu','nu']
+names_halo=['Mhalo_c', 'Mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter',
+    'Mh_qc','Mh_qs','mu_c','mu_s']
+
+if quenching == 'hybrid':
+    emcee_table = pd.DataFrame(flatchain, columns=names_hybrid)
+elif quenching == 'halo':
+    emcee_table = pd.DataFrame(flatchain, columns=names_halo)       
+
+chi2 = reader.get_blobs(flat=True)
+emcee_table['chi2'] = chi2
+
+walker_id_arr = np.zeros(len(emcee_table))
+iteration_id_arr = np.zeros(len(emcee_table))
+counter_wid = 0
+counter_stepid = 0
+for idx,row in emcee_table.iterrows():
+    counter_wid += 1
+    if idx % nwalkers == 0:
+        counter_stepid += 1
+        counter_wid = 1
+    walker_id_arr[idx] = counter_wid
+    iteration_id_arr[idx] = counter_stepid
+
+id_data = {'walker_id': walker_id_arr, 'iteration_id': iteration_id_arr}
+id_df = pd.DataFrame(id_data, index=emcee_table.index)
+emcee_table = emcee_table.assign(**id_df)
+
+bf_params = emcee_table.loc[emcee_table.chi2 == emcee_table.chi2.min()][emcee_table.columns[:9]].values[0]
+emcee_table_params = emcee_table[emcee_table.columns[0:9]]
+
+tol=0.1
+
+region_around_bf = \
+np.isclose(bf_params[0], emcee_table_params.iloc[:,0], atol=tol) & \
+np.isclose(bf_params[1], emcee_table_params.iloc[:,1], atol=tol) & \
+np.isclose(bf_params[2], emcee_table_params.iloc[:,2], atol=tol) & \
+np.isclose(bf_params[3], emcee_table_params.iloc[:,3], atol=tol) & \
+np.isclose(bf_params[4], emcee_table_params.iloc[:,4], atol=tol) & \
+np.isclose(bf_params[5], emcee_table_params.iloc[:,5], atol=tol) & \
+np.isclose(bf_params[6], emcee_table_params.iloc[:,6], atol=tol) & \
+np.isclose(bf_params[7], emcee_table_params.iloc[:,7], atol=tol) & \
+np.isclose(bf_params[8], emcee_table_params.iloc[:,8], atol=tol)
+
+idx_where_true = np.array([i for i, x in enumerate(region_around_bf) if x])
+voxel = emcee_table.loc[idx_where_true]
+
+if run == 78:
+    chi2_dist_78 = voxel.chi2.values
+elif run == 74:
+    chi2_dist_74 = voxel.chi2.values
+
+plt.hist(chi2_dist_78, histtype='step', lw=2, density=True)
+plt.hist(chi2_dist_74, histtype='step', lw=2, ls='--', density=True)
+plt.show()
+
+std = np.std(emcee_table_params, axis=0).values
+fraction_of_std = 0.1
+tol = fraction_of_std*std
+
+region_around_bf = \
+np.isclose(bf_params[0], emcee_table_params.iloc[:,0], atol=tol[0]) & \
+np.isclose(bf_params[1], emcee_table_params.iloc[:,1], atol=tol[1]) & \
+np.isclose(bf_params[2], emcee_table_params.iloc[:,2], atol=tol[2]) & \
+np.isclose(bf_params[3], emcee_table_params.iloc[:,3], atol=tol[3]) & \
+np.isclose(bf_params[4], emcee_table_params.iloc[:,4], atol=tol[4]) & \
+np.isclose(bf_params[5], emcee_table_params.iloc[:,5], atol=tol[5]) & \
+np.isclose(bf_params[6], emcee_table_params.iloc[:,6], atol=tol[6]) & \
+np.isclose(bf_params[7], emcee_table_params.iloc[:,7], atol=tol[7]) & \
+np.isclose(bf_params[8], emcee_table_params.iloc[:,8], atol=tol[8])
