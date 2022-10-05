@@ -3003,7 +3003,7 @@ def main(args):
     rseed = 12
     np.random.seed(rseed)
     level = "group"
-    stacked_stat = True
+    stacked_stat = False
     pca = False
     new_chain = True
 
