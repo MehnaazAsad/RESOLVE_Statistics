@@ -27,6 +27,7 @@ import warnings
 import random
 import emcee 
 import math
+import h5py
 import os
 
 __author__ = '[Mehnaaz Asad]'
@@ -1310,7 +1311,7 @@ def get_stellar_mock(df, mock, randint=None):
 
     return cen_gals, sat_gals
 
-def get_err_data(survey, path):
+def get_err_data_legacy(survey, path):
     """
     Calculate error in data SMF from mocks
 
@@ -1449,6 +1450,9 @@ def get_err_data(survey, path):
             # bf_from_last_chain = [10.1942986, 14.5454828, 0.708013630,
             #     0.00722556715]
 
+            # ## 75
+            # bf_from_last_chain = [10.215486, 13.987752, 0.753758, 0.025111]
+            
             ## Using best-fit found for new ECO data using result from chain 59
             ## i.e. hybrid quenching model which was the last time sigma-M* was
             ## used i.e. stacked_stat = True
@@ -1662,19 +1666,19 @@ def get_err_data(survey, path):
         #* Same as err_colour.dot(sigma_mat)
         err_colour = err_colour[:n_elements]*sigma_mat.diagonal()
 
-    # from matplotlib.legend_handler import HandlerTuple
-    # import matplotlib.pyplot as plt
-    # from matplotlib import rc
-    # from matplotlib import cm
+    from matplotlib.legend_handler import HandlerTuple
+    import matplotlib.pyplot as plt
+    from matplotlib import rc
+    from matplotlib import cm
 
-    # rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=20)
-    # rc('text', usetex=True)
-    # rc('text.latex', preamble=r"\usepackage{amsmath}")
-    # rc('axes', linewidth=2)
-    # rc('xtick.major', width=4, size=7)
-    # rc('ytick.major', width=4, size=7)
-    # rc('xtick.minor', width=2, size=7)
-    # rc('ytick.minor', width=2, size=7)
+    rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=20)
+    rc('text', usetex=True)
+    rc('text.latex', preamble=r"\usepackage{amsmath}")
+    rc('axes', linewidth=2)
+    rc('xtick.major', width=4, size=7)
+    rc('ytick.major', width=4, size=7)
+    rc('xtick.minor', width=2, size=7)
+    rc('ytick.minor', width=2, size=7)
 
     # # #* Reduced feature space
     # fig1 = plt.figure()
@@ -1688,34 +1692,34 @@ def get_err_data(survey, path):
     # plt.show()
 
     # #* Reconstructed post-SVD (sub corr_mat_colour for original matrix)
-    # fig1 = plt.figure()
-    # ax1 = fig1.add_subplot(111)
-    # cmap = cm.get_cmap('Spectral_r')
-    # cax = ax1.matshow(corr_mat_colour, cmap=cmap, vmin=-1, vmax=1)
+    fig1 = plt.figure()
+    ax1 = fig1.add_subplot(111)
+    cmap = cm.get_cmap('Spectral_r')
+    cax = ax1.matshow(corr_mat_colour, cmap=cmap, vmin=-1, vmax=1)
     # cax = ax1.matshow(B, cmap=cmap, vmin=-1, vmax=1)
-    # tick_marks = [i for i in range(len(combined_df.columns))]
-    # names = [
-    # r'$\Phi_1$', r'$\Phi_2$', r'$\Phi_3$', r'$\Phi_4$',
-    # r'$fblue\ cen_1$', r'$cen_2$', r'$cen_3$', r'$cen_4$',
-    # r'$fblue\ sat_1$', r'$sat_2$', r'$sat_3$', r'$sat_4$',
-    # r'$mstar\ red\ grpcen_1$', r'$grpcen_2$', r'$grpcen_3$', r'$grpcen_4$',
-    # r'$mstar\ blue\ grpcen_1$', r'$grpcen_2$', r'$grpcen_3$', r'$grpcen_4$',]
+    tick_marks = [i for i in range(len(combined_df.columns))]
+    names = [
+    r'$\Phi_1$', r'$\Phi_2$', r'$\Phi_3$', r'$\Phi_4$',
+    r'$fblue\ cen_1$', r'$cen_2$', r'$cen_3$', r'$cen_4$',
+    r'$fblue\ sat_1$', r'$sat_2$', r'$sat_3$', r'$sat_4$',
+    r'$mstar\ red\ grpcen_1$', r'$grpcen_2$', r'$grpcen_3$', r'$grpcen_4$',
+    r'$mstar\ blue\ grpcen_1$', r'$grpcen_2$', r'$grpcen_3$', r'$grpcen_4$',]
     
-    # tick_marks=[0, 4, 8, 12, 16]
-    # names = [
-    #     r"$\boldsymbol\phi$",
-    #     r"$\boldsymbol{f_{blue}^{c}}$",
-    #     r"$\boldsymbol{f_{blue}^{s}}$",
-    #     r"$\boldsymbol{\overline{M_{*,red}^{c}}}$",
-    #     r"$\boldsymbol{\overline{M_{*,blue}^{c}}}$"]
+    tick_marks=[0, 4, 8, 12, 16]
+    names = [
+        r"$\boldsymbol\phi$",
+        r"$\boldsymbol{f_{blue}^{c}}$",
+        r"$\boldsymbol{f_{blue}^{s}}$",
+        r"$\boldsymbol{\overline{M_{*,red}^{c}}}$",
+        r"$\boldsymbol{\overline{M_{*,blue}^{c}}}$"]
 
-    # plt.xticks(tick_marks, names, fontsize=10)#, rotation='vertical')
-    # plt.yticks(tick_marks, names, fontsize=10)    
-    # plt.gca().invert_yaxis() 
-    # plt.gca().xaxis.tick_bottom()
-    # plt.colorbar(cax)
-    # plt.title('{0}'.format(quenching))
-    # plt.show()
+    plt.xticks(tick_marks, names, fontsize=10)#, rotation='vertical')
+    plt.yticks(tick_marks, names, fontsize=10)    
+    plt.gca().invert_yaxis() 
+    plt.gca().xaxis.tick_bottom()
+    plt.colorbar(cax)
+    plt.title('{0}'.format(quenching))
+    plt.show()
     # plt.savefig('/Users/asadm2/Desktop/matrix_eco_smf.pdf')
 
 
@@ -2006,6 +2010,91 @@ def get_err_data(survey, path):
         return err_colour, sigma_mat, n_elements
     else:
         return err_colour, corr_mat_inv_colour
+
+def calc_corr_mat(df):
+    num_cols = df.shape[1]
+    corr_mat = np.zeros((num_cols, num_cols))
+    for i in range(num_cols):
+        for j in range(num_cols):
+            num = df.values[i][j]
+            denom = np.sqrt(df.values[i][i] * df.values[j][j])
+            corr_mat[i][j] = num/denom
+    return corr_mat
+
+def get_err_data(path_to_proc):
+    # Read in datasets from h5 file and calculate corr matrix
+    hf_read = h5py.File(path_to_proc +'corr_matrices.h5', 'r')
+    hf_read.keys()
+    smf = hf_read.get('smf')
+    smf = np.array(smf)
+    fblue_cen = hf_read.get('fblue_cen')
+    fblue_cen = np.array(fblue_cen)
+    fblue_sat = hf_read.get('fblue_sat')
+    fblue_sat = np.array(fblue_sat)
+    mean_mstar_red = hf_read.get('mean_mstar_red')
+    mean_mstar_red = np.array(mean_mstar_red)
+    mean_mstar_blue = hf_read.get('mean_mstar_blue')
+    mean_mstar_blue = np.array(mean_mstar_blue)
+
+    for i in range(100):
+        phi_total_0 = smf[i][:,0]
+        phi_total_1 = smf[i][:,1]
+        phi_total_2 = smf[i][:,2]
+        phi_total_3 = smf[i][:,3]
+
+        f_blue_cen_0 = fblue_cen[i][:,0]
+        f_blue_cen_1 = fblue_cen[i][:,1]
+        f_blue_cen_2 = fblue_cen[i][:,2]
+        f_blue_cen_3 = fblue_cen[i][:,3]
+
+        f_blue_sat_0 = fblue_sat[i][:,0]
+        f_blue_sat_1 = fblue_sat[i][:,1]
+        f_blue_sat_2 = fblue_sat[i][:,2]
+        f_blue_sat_3 = fblue_sat[i][:,3]
+
+        mstar_red_cen_0 = mean_mstar_red[i][:,0]
+        mstar_red_cen_1 = mean_mstar_red[i][:,1]
+        mstar_red_cen_2 = mean_mstar_red[i][:,2]
+        mstar_red_cen_3 = mean_mstar_red[i][:,3]
+
+        mstar_blue_cen_0 = mean_mstar_blue[i][:,0]
+        mstar_blue_cen_1 = mean_mstar_blue[i][:,1]
+        mstar_blue_cen_2 = mean_mstar_blue[i][:,2]
+        mstar_blue_cen_3 = mean_mstar_blue[i][:,3]
+
+        combined_df = pd.DataFrame({
+            'phi_tot_0':phi_total_0, 'phi_tot_1':phi_total_1, 
+            'phi_tot_2':phi_total_2, 'phi_tot_3':phi_total_3,
+            'f_blue_cen_0':f_blue_cen_0, 'f_blue_cen_1':f_blue_cen_1, 
+            'f_blue_cen_2':f_blue_cen_2, 'f_blue_cen_3':f_blue_cen_3,
+            'f_blue_sat_0':f_blue_sat_0, 'f_blue_sat_1':f_blue_sat_1, 
+            'f_blue_sat_2':f_blue_sat_2, 'f_blue_sat_3':f_blue_sat_3,
+            'mstar_red_cen_0':mstar_red_cen_0, 'mstar_red_cen_1':mstar_red_cen_1, 
+            'mstar_red_cen_2':mstar_red_cen_2, 'mstar_red_cen_3':mstar_red_cen_3,
+            'mstar_blue_cen_0':mstar_blue_cen_0, 'mstar_blue_cen_1':mstar_blue_cen_1, 
+            'mstar_blue_cen_2':mstar_blue_cen_2, 'mstar_blue_cen_3':mstar_blue_cen_3})
+
+        if i == 0:
+            # Correlation matrix of phi and deltav colour measurements combined
+            corr_mat_global = combined_df.corr()
+            cov_mat_global = combined_df.cov()
+
+            corr_mat_average = corr_mat_global
+            cov_mat_average = cov_mat_global
+        else:
+            corr_mat_average = pd.concat([corr_mat_average, combined_df.corr()]).groupby(level=0, sort=False).mean()
+            cov_mat_average = pd.concat([cov_mat_average, combined_df.cov()]).groupby(level=0, sort=False).mean()
+            
+
+    # Using average cov mat to get correlation matrix
+    corr_mat_average = calc_corr_mat(cov_mat_average)
+    corr_mat_inv_colour_average = np.linalg.inv(corr_mat_average) 
+    sigma_average = np.sqrt(np.diag(cov_mat_average))
+
+    # corr_mat_inv_colour_average = np.linalg.inv(corr_mat_average.values) 
+    # sigma_average = np.sqrt(np.diag(cov_mat_average))
+
+    return sigma_average, corr_mat_inv_colour_average
 
 def mcmc(nproc, nwalkers, nsteps, data, err, corr_mat_inv):
     """
@@ -3034,10 +3123,10 @@ def main(args):
     # mat_test = np.ones((5,5))
 
     print('Measuring error in data from mocks')
-    if pca:
-        sigma, mat, n_eigen = get_err_data(survey, path_to_mocks)
+    if pca: #! Would need to update get_err_data for pca
+        sigma, mat, n_eigen = get_err_data_legacy(survey, path_to_mocks)
     else:
-        sigma, mat = get_err_data(survey, path_to_mocks)
+        sigma, mat = get_err_data(path_to_proc)
 
     print('Error in data: \n', sigma)
     print('------------- \n')
