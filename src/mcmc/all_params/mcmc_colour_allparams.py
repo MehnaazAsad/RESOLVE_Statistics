@@ -760,6 +760,7 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
         #*    '{0}'.format(galtype_col)])[logmstar_col].apply(np.array).ravel())
         red_cen_stellar_mass_arr = cen_red_subset_df.groupby(['{0}'.format(id_col),
             '{0}'.format(galtype_col)])[logmstar_col].apply(np.sum).values
+            
     elif mf_type == 'bmf':
         red_cen_bary_mass_arr = cen_red_subset_df.groupby(['{0}'.format(id_col),
             '{0}'.format(galtype_col)])[logmbary_col].apply(np.sum).values
@@ -1196,7 +1197,6 @@ def assign_colour_label_mock(f_red_cen, f_red_sat, df, drop_fred=False):
 
     # Saving labels
     color_label_arr = [[] for x in range(len(df))]
-    rng_arr = [[] for x in range(len(df))]
     # Adding columns for f_red to df
     df.loc[:, 'f_red'] = np.zeros(len(df))
     df.loc[df['cs_flag'] == 1, 'f_red'] = f_red_cen
@@ -1206,19 +1206,18 @@ def assign_colour_label_mock(f_red_cen, f_red_sat, df, drop_fred=False):
     # Looping over galaxies
     for ii, cs_ii in enumerate(df['cs_flag']):
         # Draw a random number
-        rng = np.random.uniform()
+        rng = np.random.default_rng(df['galid'][ii])
+        rfloat = rng.uniform()
         # Comparing against f_red
-        if (rng >= f_red_arr[ii]):
+        if (rfloat >= f_red_arr[ii]):
             color_label = 'B'
         else:
             color_label = 'R'
         # Saving to list
         color_label_arr[ii] = color_label
-        rng_arr[ii] = rng
     
     ## Assigning to DataFrame
     df.loc[:, 'colour_label'] = color_label_arr
-    df.loc[:, 'rng'] = rng_arr
     # Dropping 'f_red` column
     if drop_fred:
         df.drop('f_red', axis=1, inplace=True)
@@ -2214,7 +2213,7 @@ def populate_mock(theta, model):
     model.param_dict['smhm_delta_0'] = mhigh_slope
     model.param_dict['scatter_model_param1'] = mstellar_scatter
 
-    model.mock.populate()
+    model.mock.populate(seed=1993)
 
     # if survey == 'eco' or survey == 'resolvea':
     #     if mf_type == 'smf':
@@ -2704,6 +2703,7 @@ def lnprob(theta, data, err, corr_mat_inv):
             gals_df = gals_df.loc[gals_df['stellar_mass'] >= 10**8.6].reset_index(drop=True)
         elif mf_type == 'bmf':
             gals_df = gals_df.loc[gals_df['stellar_mass'] >= 10**9.1].reset_index(drop=True)
+        
         gals_df = apply_rsd(gals_df)
 
         gals_df = gals_df.loc[\
@@ -2714,7 +2714,7 @@ def lnprob(theta, data, err, corr_mat_inv):
             gals_df['halo_id'], 1, 0)
 
         cols_to_use = ['halo_mvir', 'halo_mvir_host_halo', 'cs_flag', 
-            'stellar_mass', 'ra', 'dec', 'cz']
+            'stellar_mass', 'ra', 'dec', 'cz', 'galid']
         gals_df = gals_df[cols_to_use]
 
         gals_df.rename(columns={'stellar_mass':'logmstar'}, inplace=True)
