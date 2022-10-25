@@ -2022,7 +2022,7 @@ def calc_corr_mat(df):
 
 def get_err_data(path_to_proc):
     # Read in datasets from h5 file and calculate corr matrix
-    hf_read = h5py.File(path_to_proc +'corr_matrices.h5', 'r')
+    hf_read = h5py.File(path_to_proc +'corr_matrices_{0}.h5'.format(quenching), 'r')
     hf_read.keys()
     smf = hf_read.get('smf')
     smf = np.array(smf)
@@ -3005,7 +3005,7 @@ def main(args):
     level = "group"
     stacked_stat = False
     pca = False
-    new_chain = False
+    new_chain = True
 
     survey = args.survey
     machine = args.machine
