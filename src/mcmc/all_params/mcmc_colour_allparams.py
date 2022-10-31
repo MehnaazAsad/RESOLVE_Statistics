@@ -3005,7 +3005,7 @@ def main(args):
     level = "group"
     stacked_stat = False
     pca = False
-    new_chain = True
+    new_chain = False
 
     survey = args.survey
     machine = args.machine
