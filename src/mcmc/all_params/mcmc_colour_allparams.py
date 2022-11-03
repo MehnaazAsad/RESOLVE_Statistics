@@ -2022,18 +2022,34 @@ def calc_corr_mat(df):
 
 def get_err_data(path_to_proc):
     # Read in datasets from h5 file and calculate corr matrix
-    hf_read = h5py.File(path_to_proc +'corr_matrices_{0}.h5'.format(quenching), 'r')
-    hf_read.keys()
-    smf = hf_read.get('smf')
-    smf = np.array(smf)
-    fblue_cen = hf_read.get('fblue_cen')
-    fblue_cen = np.array(fblue_cen)
-    fblue_sat = hf_read.get('fblue_sat')
-    fblue_sat = np.array(fblue_sat)
-    mean_mstar_red = hf_read.get('mean_mstar_red')
-    mean_mstar_red = np.array(mean_mstar_red)
-    mean_mstar_blue = hf_read.get('mean_mstar_blue')
-    mean_mstar_blue = np.array(mean_mstar_blue)
+    if stacked_stat:
+        hf_read = h5py.File(path_to_proc + 'corr_matrices_xy_mstarsigma_{0}.h5'.format(quenching), 'r')
+        hf_read.keys()
+        smf = hf_read.get('smf')
+        smf = np.array(smf)
+        fblue_cen = hf_read.get('fblue_cen')
+        fblue_cen = np.array(fblue_cen)
+        fblue_sat = hf_read.get('fblue_sat')
+        fblue_sat = np.array(fblue_sat)
+        mean_mstar_red = hf_read.get('mean_sigma_red')
+        mean_mstar_red = np.array(mean_mstar_red)
+        mean_mstar_blue = hf_read.get('mean_sigma_blue')
+        mean_mstar_blue = np.array(mean_mstar_blue)
+
+    else:
+        hf_read = h5py.File(path_to_proc + 'corr_matrices_{0}.h5'.format(quenching), 'r')
+        hf_read.keys()
+        smf = hf_read.get('smf')
+        smf = np.array(smf)
+        fblue_cen = hf_read.get('fblue_cen')
+        fblue_cen = np.array(fblue_cen)
+        fblue_sat = hf_read.get('fblue_sat')
+        fblue_sat = np.array(fblue_sat)
+        mean_mstar_red = hf_read.get('mean_mstar_red')
+        mean_mstar_red = np.array(mean_mstar_red)
+        mean_mstar_blue = hf_read.get('mean_mstar_blue')
+        mean_mstar_blue = np.array(mean_mstar_blue)
+
 
     for i in range(100):
         phi_total_0 = smf[i][:,0]
@@ -2796,9 +2812,9 @@ def lnprob(theta, data, err, corr_mat_inv):
                         gal_group_df, 'model')
 
                 sigma_red = bs(red_cen_mstar_sigma, red_deltav,
-                    statistic='std', bins=np.linspace(8.6,11,5))
+                    statistic='std', bins=np.linspace(8.6,11.2,5))
                 sigma_blue = bs( blue_cen_mstar_sigma, blue_deltav,
-                    statistic='std', bins=np.linspace(8.6,11,5))
+                    statistic='std', bins=np.linspace(8.6,11.2,5))
                 
                 sigma_red = np.log10(sigma_red[0])
                 sigma_blue = np.log10(sigma_blue[0])
@@ -3003,9 +3019,9 @@ def main(args):
     rseed = 12
     np.random.seed(rseed)
     level = "group"
-    stacked_stat = False
+    stacked_stat = True
     pca = False
-    new_chain = False
+    new_chain = True
 
     survey = args.survey
     machine = args.machine
@@ -3069,9 +3085,9 @@ def main(args):
                 blue_cen_mstar_sigma = get_stacked_velocity_dispersion(catl, 'data')
 
             sigma_red_data = bs(red_cen_mstar_sigma, red_deltav,
-                statistic='std', bins=np.linspace(8.6,11,5))
+                statistic='std', bins=np.linspace(8.6,11.2,5))
             sigma_blue_data = bs( blue_cen_mstar_sigma, blue_deltav,
-                statistic='std', bins=np.linspace(8.6,11,5))
+                statistic='std', bins=np.linspace(8.6,11.2,5))
             
             sigma_red_data = np.log10(sigma_red_data[0])
             sigma_blue_data = np.log10(sigma_blue_data[0])
