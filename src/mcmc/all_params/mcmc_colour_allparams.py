@@ -2812,9 +2812,9 @@ def lnprob(theta, data, err, corr_mat_inv):
                         gal_group_df, 'model')
 
                 sigma_red = bs(red_cen_mstar_sigma, red_deltav,
-                    statistic='std', bins=np.linspace(8.6,11.2,5))
+                    statistic='std', bins=np.linspace(8.6,10.8,5))
                 sigma_blue = bs( blue_cen_mstar_sigma, blue_deltav,
-                    statistic='std', bins=np.linspace(8.6,11.2,5))
+                    statistic='std', bins=np.linspace(8.6,10.8,5))
                 
                 sigma_red = np.log10(sigma_red[0])
                 sigma_blue = np.log10(sigma_blue[0])
@@ -3085,9 +3085,9 @@ def main(args):
                 blue_cen_mstar_sigma = get_stacked_velocity_dispersion(catl, 'data')
 
             sigma_red_data = bs(red_cen_mstar_sigma, red_deltav,
-                statistic='std', bins=np.linspace(8.6,11.2,5))
+                statistic='std', bins=np.linspace(8.6,10.8,5))
             sigma_blue_data = bs( blue_cen_mstar_sigma, blue_deltav,
-                statistic='std', bins=np.linspace(8.6,11.2,5))
+                statistic='std', bins=np.linspace(8.6,10.8,5))
             
             sigma_red_data = np.log10(sigma_red_data[0])
             sigma_blue_data = np.log10(sigma_blue_data[0])
