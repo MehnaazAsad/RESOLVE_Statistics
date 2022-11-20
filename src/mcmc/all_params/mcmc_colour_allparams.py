@@ -3254,8 +3254,8 @@ def main(args):
 
     print('Dispersion red data: \n', sigma_red_data)
     print('Dispersion blue data: \n', sigma_blue_data)
-    print('Dispersion red data: \n', mean_mstar_red_data[0])
-    print('Dispersion blue data: \n', mean_mstar_blue_data[0])
+    print('Mean M* red data: \n', mean_mstar_red_data[0])
+    print('Mean M* blue data: \n', mean_mstar_blue_data[0])
     print('------------- \n')
 
     print('Running MCMC')
