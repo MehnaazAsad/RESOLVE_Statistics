@@ -554,7 +554,7 @@ def blue_frac(catl, h1_bool, data_bool, randint_logmstar=None):
             bin_min = np.round(np.log10((10**mstar_limit) / 2.041), 1)
 
         elif mf_type == 'bmf':
-            mbary_limit = 9.4
+            mbary_limit = 9.3
             bin_min = np.round(np.log10((10**mbary_limit) / 2.041), 1)
 
         bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
@@ -1052,7 +1052,7 @@ def diff_bmf(mass_arr, volume, h1_bool, colour_flag=False):
         logmbary_arr = np.log10(mass_arr)
 
     if survey == 'eco' or survey == 'resolvea':
-        bin_min = np.round(np.log10((10**9.4) / 2.041), 1)
+        bin_min = np.round(np.log10((10**9.3) / 2.041), 1)
 
         if survey == 'eco':
             # *checked 
@@ -1639,86 +1639,106 @@ def get_err_data_legacy(survey, path):
         # populate Sigma with n x n diagonal matrix
         sigma_mat[:corr_mat_colour.shape[0], :corr_mat_colour.shape[0]] = diag(s)
 
-        ## values in s are singular values. Corresponding (possibly non-zero) 
-        ## eigenvalues are given by s**2.
+        ## values in s are eigenvalues #confirmed by comparing s to 
+        ## output of np.linalg.eig(C) where the first array is array of 
+        ## eigenvalues.
+        ## https://towardsdatascience.com/pca-and-svd-explained-with-numpy-5d13b0d2a4d8
 
         # Equation 10 from Sinha et. al 
-        # LHS is actually eigenvalue**2 so need to take the sqrt two more times 
-        # to be able to compare directly to values in Sigma 
-        max_eigen = np.sqrt(np.sqrt(np.sqrt(2/(num_mocks*len(box_id_arr)))))
+        # LHS is actually eigenvalue**2 so need to take the sqrt one more time 
+        # to be able to compare directly to values in Sigma since eigenvalues 
+        # are squares of singular values 
+        # (http://www.math.usm.edu/lambers/cos702/cos702_files/docs/PCA.pdf)
+        # https://web.mit.edu/be.400/www/SVD/Singular_Value_Decomposition.htm#:~:text=The%20SVD%20represents%20an%20expansion,up%20the%20columns%20of%20U.
+        max_eigen = np.sqrt(np.sqrt(2/(num_mocks*len(box_id_arr))))
         #* Note: for a symmetric matrix, the singular values are absolute values of 
         #* the eigenvalues which means 
         #* max_eigen = np.sqrt(np.sqrt(2/(num_mocks*len(box_id_arr))))
         n_elements = len(s[s>max_eigen])
+        VT = VT[:n_elements, :]
+        ## reconstruct
         sigma_mat = sigma_mat[:, :n_elements]
-        # VT = VT[:n_elements, :]
-        # reconstruct
-        # B = U.dot(sigma_mat.dot(VT))
+        B = U.dot(sigma_mat.dot(VT))
         # print(B)
-        # transform 2 ways (this is how you would transform data, model and sigma
-        # i.e. new_data = data.dot(Sigma) etc.)
+        ## transform 2 ways (this is how you would transform data, model and sigma
+        ## i.e. new_data = data.dot(Sigma) etc.) <- not sure this is correct
+        #* Both lines below are equivalent transforms of the matrix BUT to project 
+        #* data, model, err in the new space, you need the eigenvectors NOT the 
+        #* eigenvalues (sigma_mat) as was used earlier. The eigenvectors are 
+        #* VT.T (the right singular vectors) since those have the reduced 
+        #* dimensions needed for projection. Data and model should then be 
+        #* projected similarly to err_colour below. 
+        #* err_colour.dot(sigma_mat) no longer makes sense since that is 
+        #* multiplying the error with the eigenvalues. Using sigma_mat only
+        #* makes sense in U.dot(sigma_mat) since U and sigma_mat were both derived 
+        #* by doing svd on the matrix which is what you're trying to get in the 
+        #* new space by doing U.dot(sigma_mat). 
+        #* http://www.math.usm.edu/lambers/cos702/cos702_files/docs/PCA.pdf
         # T = U.dot(sigma_mat)
         # print(T)
         # T = corr_mat_colour.dot(VT.T)
         # print(T)
 
-        #* Same as err_colour.dot(sigma_mat)
-        err_colour = err_colour[:n_elements]*sigma_mat.diagonal()
+        err_colour_pca = err_colour.dot(VT.T)
+        eigenvectors = VT.T
 
-    from matplotlib.legend_handler import HandlerTuple
-    import matplotlib.pyplot as plt
-    from matplotlib import rc
-    from matplotlib import cm
+        ## Same as err_colour.dot(sigma_mat)
+        # err_colour = err_colour[:n_elements]*sigma_mat.diagonal()
 
-    rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=20)
-    rc('text', usetex=True)
-    rc('text.latex', preamble=r"\usepackage{amsmath}")
-    rc('axes', linewidth=2)
-    rc('xtick.major', width=4, size=7)
-    rc('ytick.major', width=4, size=7)
-    rc('xtick.minor', width=2, size=7)
-    rc('ytick.minor', width=2, size=7)
+    # from matplotlib.legend_handler import HandlerTuple
+    # import matplotlib.pyplot as plt
+    # from matplotlib import rc
+    # from matplotlib import cm
 
-    # # #* Reduced feature space
+    # rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=20)
+    # rc('text', usetex=True)
+    # rc('text.latex', preamble=r"\usepackage{amsmath}")
+    # rc('axes', linewidth=2)
+    # rc('xtick.major', width=4, size=7)
+    # rc('ytick.major', width=4, size=7)
+    # rc('xtick.minor', width=2, size=7)
+    # rc('ytick.minor', width=2, size=7)
+
+    # #* Reduced feature space
     # fig1 = plt.figure()
     # ax1 = fig1.add_subplot(111)
     # cmap = cm.get_cmap('Spectral_r')
-    # cax = ax1.matshow(T.corr(), cmap=cmap)
+    # cax = ax1.matshow(B, cmap=cmap, vmin=-1, vmax=1)
     # plt.gca().invert_yaxis() 
     # plt.gca().xaxis.tick_bottom()
     # plt.colorbar(cax)
     # plt.title('{0}'.format(quenching))
     # plt.show()
 
-    # #* Reconstructed post-SVD (sub corr_mat_colour for original matrix)
-    fig1 = plt.figure()
-    ax1 = fig1.add_subplot(111)
-    cmap = cm.get_cmap('Spectral_r')
-    cax = ax1.matshow(corr_mat_colour, cmap=cmap, vmin=-1, vmax=1)
-    # cax = ax1.matshow(B, cmap=cmap, vmin=-1, vmax=1)
-    tick_marks = [i for i in range(len(combined_df.columns))]
-    names = [
-    r'$\Phi_1$', r'$\Phi_2$', r'$\Phi_3$', r'$\Phi_4$',
-    r'$fblue\ cen_1$', r'$cen_2$', r'$cen_3$', r'$cen_4$',
-    r'$fblue\ sat_1$', r'$sat_2$', r'$sat_3$', r'$sat_4$',
-    r'$mstar\ red\ grpcen_1$', r'$grpcen_2$', r'$grpcen_3$', r'$grpcen_4$',
-    r'$mstar\ blue\ grpcen_1$', r'$grpcen_2$', r'$grpcen_3$', r'$grpcen_4$',]
+    # # #* Reconstructed post-SVD (sub corr_mat_colour for original matrix)
+    # fig1 = plt.figure()
+    # ax1 = fig1.add_subplot(111)
+    # cmap = cm.get_cmap('Spectral_r')
+    # cax = ax1.matshow(corr_mat_colour, cmap=cmap, vmin=-1, vmax=1)
+    # # cax = ax1.matshow(B, cmap=cmap, vmin=-1, vmax=1)
+    # tick_marks = [i for i in range(len(combined_df.columns))]
+    # names = [
+    # r'$\Phi_1$', r'$\Phi_2$', r'$\Phi_3$', r'$\Phi_4$',
+    # r'$fblue\ cen_1$', r'$cen_2$', r'$cen_3$', r'$cen_4$',
+    # r'$fblue\ sat_1$', r'$sat_2$', r'$sat_3$', r'$sat_4$',
+    # r'$mstar\ red\ grpcen_1$', r'$grpcen_2$', r'$grpcen_3$', r'$grpcen_4$',
+    # r'$mstar\ blue\ grpcen_1$', r'$grpcen_2$', r'$grpcen_3$', r'$grpcen_4$',]
     
-    tick_marks=[0, 4, 8, 12, 16]
-    names = [
-        r"$\boldsymbol\phi$",
-        r"$\boldsymbol{f_{blue}^{c}}$",
-        r"$\boldsymbol{f_{blue}^{s}}$",
-        r"$\boldsymbol{\overline{M_{*,red}^{c}}}$",
-        r"$\boldsymbol{\overline{M_{*,blue}^{c}}}$"]
+    # tick_marks=[0, 4, 8, 12, 16]
+    # names = [
+    #     r"$\boldsymbol\phi$",
+    #     r"$\boldsymbol{f_{blue}^{c}}$",
+    #     r"$\boldsymbol{f_{blue}^{s}}$",
+    #     r"$\boldsymbol{\overline{M_{*,red}^{c}}}$",
+    #     r"$\boldsymbol{\overline{M_{*,blue}^{c}}}$"]
 
-    plt.xticks(tick_marks, names, fontsize=10)#, rotation='vertical')
-    plt.yticks(tick_marks, names, fontsize=10)    
-    plt.gca().invert_yaxis() 
-    plt.gca().xaxis.tick_bottom()
-    plt.colorbar(cax)
-    plt.title('{0}'.format(quenching))
-    plt.show()
+    # plt.xticks(tick_marks, names, fontsize=10)#, rotation='vertical')
+    # plt.yticks(tick_marks, names, fontsize=10)    
+    # plt.gca().invert_yaxis() 
+    # plt.gca().xaxis.tick_bottom()
+    # plt.colorbar(cax)
+    # plt.title('{0}'.format(quenching))
+    # plt.show()
     # plt.savefig('/Users/asadm2/Desktop/matrix_eco_smf.pdf')
 
 
@@ -2006,7 +2026,7 @@ def get_err_data_legacy(survey, path):
     # plt.show()
 
     if pca:
-        return err_colour, sigma_mat, n_elements
+        return err_colour_pca, eigenvectors, n_elements
     else:
         return err_colour, corr_mat_inv_colour
 
@@ -2022,7 +2042,25 @@ def calc_corr_mat(df):
 
 def get_err_data(path_to_proc):
     # Read in datasets from h5 file and calculate corr matrix
-    if stacked_stat:
+    if stacked_stat == 'both':
+        hf_read = h5py.File(path_to_proc + 'corr_matrices_28stats_{0}.h5'.format(quenching), 'r')
+        hf_read.keys()
+        smf = hf_read.get('smf')
+        smf = np.squeeze(np.array(smf))
+        fblue_cen = hf_read.get('fblue_cen')
+        fblue_cen = np.array(fblue_cen)
+        fblue_sat = hf_read.get('fblue_sat')
+        fblue_sat = np.array(fblue_sat)
+        mean_mstar_red = hf_read.get('mean_mstar_red')
+        mean_mstar_red = np.array(mean_mstar_red)
+        mean_mstar_blue = hf_read.get('mean_mstar_blue')
+        mean_mstar_blue = np.array(mean_mstar_blue)
+        sigma_red = hf_read.get('sigma_red')
+        sigma_red = np.array(sigma_red)
+        sigma_blue = hf_read.get('sigma_blue')
+        sigma_blue = np.array(sigma_blue)
+
+    elif stacked_stat:
         hf_read = h5py.File(path_to_proc + 'corr_matrices_xy_mstarsigma_{0}.h5'.format(quenching), 'r')
         hf_read.keys()
         smf = hf_read.get('smf')
@@ -2050,7 +2088,6 @@ def get_err_data(path_to_proc):
         mean_mstar_blue = hf_read.get('mean_mstar_blue')
         mean_mstar_blue = np.array(mean_mstar_blue)
 
-
     for i in range(100):
         phi_total_0 = smf[i][:,0]
         phi_total_1 = smf[i][:,1]
@@ -2077,6 +2114,16 @@ def get_err_data(path_to_proc):
         mstar_blue_cen_2 = mean_mstar_blue[i][:,2]
         mstar_blue_cen_3 = mean_mstar_blue[i][:,3]
 
+        sigma_red_0 = sigma_red[i][:,0]
+        sigma_red_1 = sigma_red[i][:,1]
+        sigma_red_2 = sigma_red[i][:,2]
+        sigma_red_3 = sigma_red[i][:,3]
+
+        sigma_blue_0 = sigma_blue[i][:,0]
+        sigma_blue_1 = sigma_blue[i][:,1]
+        sigma_blue_2 = sigma_blue[i][:,2]
+        sigma_blue_3 = sigma_blue[i][:,3]
+
         combined_df = pd.DataFrame({
             'phi_tot_0':phi_total_0, 'phi_tot_1':phi_total_1, 
             'phi_tot_2':phi_total_2, 'phi_tot_3':phi_total_3,
@@ -2087,7 +2134,11 @@ def get_err_data(path_to_proc):
             'mstar_red_cen_0':mstar_red_cen_0, 'mstar_red_cen_1':mstar_red_cen_1, 
             'mstar_red_cen_2':mstar_red_cen_2, 'mstar_red_cen_3':mstar_red_cen_3,
             'mstar_blue_cen_0':mstar_blue_cen_0, 'mstar_blue_cen_1':mstar_blue_cen_1, 
-            'mstar_blue_cen_2':mstar_blue_cen_2, 'mstar_blue_cen_3':mstar_blue_cen_3})
+            'mstar_blue_cen_2':mstar_blue_cen_2, 'mstar_blue_cen_3':mstar_blue_cen_3,
+            'sigma_red_0':sigma_red_0, 'sigma_red_1':sigma_red_1, 
+            'sigma_red_2':sigma_red_2, 'sigma_red_3':sigma_red_3,
+            'sigma_blue_0':sigma_blue_0, 'sigma_blue_1':sigma_blue_1, 
+            'sigma_blue_2':sigma_blue_2, 'sigma_blue_3':sigma_blue_3})
 
         if i == 0:
             # Correlation matrix of phi and deltav colour measurements combined
@@ -2106,10 +2157,66 @@ def get_err_data(path_to_proc):
     corr_mat_inv_colour_average = np.linalg.inv(corr_mat_average) 
     sigma_average = np.sqrt(np.diag(cov_mat_average))
 
-    # corr_mat_inv_colour_average = np.linalg.inv(corr_mat_average.values) 
-    # sigma_average = np.sqrt(np.diag(cov_mat_average))
+    if pca:
+        num_mocks = 64
+        #* Testing SVD
+        from scipy.linalg import svd
+        from numpy import zeros
+        from numpy import diag
+        # Singular-value decomposition
+        U, s, VT = svd(corr_mat_average)
+        # create m x n Sigma matrix
+        sigma_mat = zeros((corr_mat_average.shape[0], corr_mat_average.shape[1]))
+        # populate Sigma with n x n diagonal matrix
+        sigma_mat[:corr_mat_average.shape[0], :corr_mat_average.shape[0]] = diag(s)
 
-    return sigma_average, corr_mat_inv_colour_average
+        ## values in s are eigenvalues #confirmed by comparing s to 
+        ## output of np.linalg.eig(C) where the first array is array of 
+        ## eigenvalues.
+        ## https://towardsdatascience.com/pca-and-svd-explained-with-numpy-5d13b0d2a4d8
+
+        # Equation 10 from Sinha et. al 
+        # LHS is actually eigenvalue**2 so need to take the sqrt one more time 
+        # to be able to compare directly to values in Sigma since eigenvalues 
+        # are squares of singular values 
+        # (http://www.math.usm.edu/lambers/cos702/cos702_files/docs/PCA.pdf)
+        # https://web.mit.edu/be.400/www/SVD/Singular_Value_Decomposition.htm#:~:text=The%20SVD%20represents%20an%20expansion,up%20the%20columns%20of%20U.
+        max_eigen = np.sqrt(np.sqrt(2/(num_mocks)))
+        #* Note: for a symmetric matrix, the singular values are absolute values of 
+        #* the eigenvalues which means 
+        #* max_eigen = np.sqrt(np.sqrt(2/(num_mocks*len(box_id_arr))))
+        n_elements = len(s[s>max_eigen])
+        VT = VT[:n_elements, :]
+        ## reconstruct
+        # sigma_mat = sigma_mat[:, :n_elements]
+        # B = U.dot(sigma_mat.dot(VT))
+        # print(B)
+        ## transform 2 ways (this is how you would transform data, model and sigma
+        ## i.e. new_data = data.dot(Sigma) etc.) <- not sure this is correct
+        #* Both lines below are equivalent transforms of the matrix BUT to project 
+        #* data, model, err in the new space, you need the eigenvectors NOT the 
+        #* eigenvalues (sigma_mat) as was used earlier. The eigenvectors are 
+        #* VT.T (the right singular vectors) since those have the reduced 
+        #* dimensions needed for projection. Data and model should then be 
+        #* projected similarly to err_colour below. 
+        #* err_colour.dot(sigma_mat) no longer makes sense since that is 
+        #* multiplying the error with the eigenvalues. Using sigma_mat only
+        #* makes sense in U.dot(sigma_mat) since U and sigma_mat were both derived 
+        #* by doing svd on the matrix which is what you're trying to get in the 
+        #* new space by doing U.dot(sigma_mat). 
+        #* http://www.math.usm.edu/lambers/cos702/cos702_files/docs/PCA.pdf
+        # T = U.dot(sigma_mat)
+        # print(T)
+        # T = corr_mat_colour.dot(VT.T)
+        # print(T)
+
+        err_colour_pca = sigma_average.dot(VT.T)
+        eigenvectors = VT.T
+
+    if pca:
+        return err_colour_pca, eigenvectors
+    else:
+        return sigma_average, corr_mat_inv_colour_average
 
 def mcmc(nproc, nwalkers, nsteps, data, err, corr_mat_inv):
     """
@@ -2806,30 +2913,30 @@ def lnprob(theta, data, err, corr_mat_inv):
             f_blue = blue_frac(gal_group_df, True, False)
         
             ## Observable #3 
-            if stacked_stat:
-                red_deltav, red_cen_mstar_sigma, blue_deltav, \
-                    blue_cen_mstar_sigma = get_stacked_velocity_dispersion(
-                        gal_group_df, 'model')
+            red_deltav, red_cen_mstar_sigma, blue_deltav, \
+                blue_cen_mstar_sigma = get_stacked_velocity_dispersion(
+                    gal_group_df, 'model')
 
-                sigma_red = bs(red_cen_mstar_sigma, red_deltav,
-                    statistic='std', bins=np.linspace(8.6,10.8,5))
-                sigma_blue = bs( blue_cen_mstar_sigma, blue_deltav,
-                    statistic='std', bins=np.linspace(8.6,10.8,5))
-                
-                sigma_red = np.log10(sigma_red[0])
-                sigma_blue = np.log10(sigma_blue[0])
-            else:
-                red_sigma, red_cen_mstar_sigma, blue_sigma, \
-                    blue_cen_mstar_sigma = get_velocity_dispersion(
-                        gal_group_df, 'model')
+            sigma_red = bs(red_cen_mstar_sigma, red_deltav,
+                statistic='std', bins=np.linspace(8.6,10.8,5))
+            sigma_blue = bs( blue_cen_mstar_sigma, blue_deltav,
+                statistic='std', bins=np.linspace(8.6,10.8,5))
+            
+            sigma_red = np.log10(sigma_red[0])
+            sigma_blue = np.log10(sigma_blue[0])
 
-                red_sigma = np.log10(red_sigma)
-                blue_sigma = np.log10(blue_sigma)
+            red_sigma, red_cen_mstar_sigma, blue_sigma, \
+                blue_cen_mstar_sigma = get_velocity_dispersion(
+                    gal_group_df, 'model')
 
-                mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
-                    statistic=average_of_log, bins=np.linspace(1,2.8,5))
-                mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
-                    statistic=average_of_log, bins=np.linspace(1,2.5,5))
+            red_sigma = np.log10(red_sigma)
+            blue_sigma = np.log10(blue_sigma)
+
+            mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
+                statistic=average_of_log, bins=np.linspace(1,2.8,5))
+            mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
+                statistic=average_of_log, bins=np.linspace(1,2.5,5))
+
         elif mf_type == 'bmf':
             logmstar_col = 'logmstar' #No explicit logmbary column
             total_model = diff_bmf(10**(gal_group_df[logmstar_col]), 
@@ -2868,12 +2975,10 @@ def lnprob(theta, data, err, corr_mat_inv):
         model_arr.append(total_model[1])
         model_arr.append(f_blue[2])   
         model_arr.append(f_blue[3])
-        if stacked_stat:
-            model_arr.append(sigma_red)
-            model_arr.append(sigma_blue)
-        else:
-            model_arr.append(mean_mstar_red[0])
-            model_arr.append(mean_mstar_blue[0])
+        model_arr.append(sigma_red)
+        model_arr.append(sigma_blue)
+        model_arr.append(mean_mstar_red[0])
+        model_arr.append(mean_mstar_blue[0])
 
         model_arr = np.array(model_arr)
 
@@ -2957,8 +3062,7 @@ def chi_squared_pca(data, model, err_data, mat):
     # print('data: \n', data)
     # print('model: \n', model)
 
-    #* Same as model_pca = model.dot(mat)
-    model = model[:n_eigen]*mat.diagonal()
+    model = model.dot(mat)
 
     #Error is already transformed in get_err_data() and data is already 
     #transformed in main()
@@ -3014,12 +3118,11 @@ def main(args):
     global stacked_stat
     global pca
     global new_chain
-    global n_eigen
 
     rseed = 12
     np.random.seed(rseed)
     level = "group"
-    stacked_stat = True
+    stacked_stat = "both"
     pca = False
     new_chain = True
 
@@ -3078,71 +3181,63 @@ def main(args):
     print('Measuring blue fraction for data')
     f_blue_data = blue_frac(catl, False, True)
 
-    if stacked_stat:
-        if mf_type == 'smf':
-            print('Measuring stacked velocity dispersion for data')
-            red_deltav, red_cen_mstar_sigma, blue_deltav, \
-                blue_cen_mstar_sigma = get_stacked_velocity_dispersion(catl, 'data')
+    if mf_type == 'smf':
+        print('Measuring stacked velocity dispersion for data')
+        red_deltav, red_cen_mstar_sigma, blue_deltav, \
+            blue_cen_mstar_sigma = get_stacked_velocity_dispersion(catl, 'data')
 
-            sigma_red_data = bs(red_cen_mstar_sigma, red_deltav,
-                statistic='std', bins=np.linspace(8.6,10.8,5))
-            sigma_blue_data = bs( blue_cen_mstar_sigma, blue_deltav,
-                statistic='std', bins=np.linspace(8.6,10.8,5))
-            
-            sigma_red_data = np.log10(sigma_red_data[0])
-            sigma_blue_data = np.log10(sigma_blue_data[0])
-        elif mf_type == 'bmf':
-            print('Measuring stacked velocity dispersion for data')
-            red_deltav, red_cen_mbary_sigma, blue_deltav, \
-                blue_cen_mbary_sigma = get_stacked_velocity_dispersion(catl, 'data')
+        sigma_red_data = bs(red_cen_mstar_sigma, red_deltav,
+            statistic='std', bins=np.linspace(8.6,10.8,5))
+        sigma_blue_data = bs( blue_cen_mstar_sigma, blue_deltav,
+            statistic='std', bins=np.linspace(8.6,10.8,5))
+        
+        sigma_red_data = np.log10(sigma_red_data[0])
+        sigma_blue_data = np.log10(sigma_blue_data[0])
+    elif mf_type == 'bmf':
+        print('Measuring stacked velocity dispersion for data')
+        red_deltav, red_cen_mbary_sigma, blue_deltav, \
+            blue_cen_mbary_sigma = get_stacked_velocity_dispersion(catl, 'data')
 
-            sigma_red_data = bs(red_cen_mbary_sigma, red_deltav,
-                statistic='std', bins=np.linspace(9.1,11,5))
-            sigma_blue_data = bs( blue_cen_mbary_sigma, blue_deltav,
-                statistic='std', bins=np.linspace(9.1,11,5))
-            
-            sigma_red_data = np.log10(sigma_red_data[0])
-            sigma_blue_data = np.log10(sigma_blue_data[0])
+        sigma_red_data = bs(red_cen_mbary_sigma, red_deltav,
+            statistic='std', bins=np.linspace(9.0,11.2,5))
+        sigma_blue_data = bs( blue_cen_mbary_sigma, blue_deltav,
+            statistic='std', bins=np.linspace(9.0,11.2,5))
+        
+        sigma_red_data = np.log10(sigma_red_data[0])
+        sigma_blue_data = np.log10(sigma_blue_data[0])
 
-    else:
-        if mf_type == 'smf':
-            print('Measuring velocity dispersion for data')
-            red_sigma, red_cen_mstar_sigma, blue_sigma, \
-                blue_cen_mstar_sigma = get_velocity_dispersion(catl, 'data')
+    if mf_type == 'smf':
+        print('Measuring velocity dispersion for data')
+        red_sigma, red_cen_mstar_sigma, blue_sigma, \
+            blue_cen_mstar_sigma = get_velocity_dispersion(catl, 'data')
 
-            red_sigma = np.log10(red_sigma)
-            blue_sigma = np.log10(blue_sigma)
+        red_sigma = np.log10(red_sigma)
+        blue_sigma = np.log10(blue_sigma)
 
-            mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
-                statistic=average_of_log, bins=np.linspace(1,2.8,5))
-            mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
-                statistic=average_of_log, bins=np.linspace(1,2.5,5))
+        mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
+            statistic=average_of_log, bins=np.linspace(1,2.8,5))
+        mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
+            statistic=average_of_log, bins=np.linspace(1,2.5,5))
 
-        elif mf_type == 'bmf':
-            print('Measuring velocity dispersion for data')
-            red_sigma, red_cen_mbary_sigma, blue_sigma, \
-                blue_cen_mbary_sigma = get_velocity_dispersion(catl, 'data')
+    elif mf_type == 'bmf':
+        print('Measuring velocity dispersion for data')
+        red_sigma, red_cen_mbary_sigma, blue_sigma, \
+            blue_cen_mbary_sigma = get_velocity_dispersion(catl, 'data')
 
-            red_sigma = np.log10(red_sigma)
-            blue_sigma = np.log10(blue_sigma)
+        red_sigma = np.log10(red_sigma)
+        blue_sigma = np.log10(blue_sigma)
 
-            mean_mstar_red_data = bs(red_sigma, red_cen_mbary_sigma, 
-                statistic=average_of_log, bins=np.linspace(1,3,5))
-            mean_mstar_blue_data = bs(blue_sigma, blue_cen_mbary_sigma, 
-                statistic=average_of_log, bins=np.linspace(1,3,5))
+        mean_mstar_red_data = bs(red_sigma, red_cen_mbary_sigma, 
+            statistic=average_of_log, bins=np.linspace(1,2.8,5))
+        mean_mstar_blue_data = bs(blue_sigma, blue_cen_mbary_sigma, 
+            statistic=average_of_log, bins=np.linspace(1,2.5,5))
 
 
     print('Initial population of halo catalog')
     model_init = halocat_init(halo_catalog, z_median)
 
-    # sigma_test = np.ones(20)
-    # mat_test = np.ones((5,5))
-
     print('Measuring error in data from mocks')
-    if pca: #! Would need to update get_err_data for pca
-        sigma, mat, n_eigen = get_err_data_legacy(survey, path_to_mocks)
-    else:
-        sigma, mat = get_err_data(path_to_proc)
+    sigma, mat = get_err_data(path_to_proc)
 
     print('Error in data: \n', sigma)
     print('------------- \n')
@@ -3157,16 +3252,35 @@ def main(args):
     print('Blue frac sat data: \n', f_blue_data[3])
     print('------------- \n')
 
-    if stacked_stat:
-        print('Dispersion red data: \n', sigma_red_data)
-        print('Dispersion blue data: \n', sigma_blue_data)
-    else:
-        print('Dispersion red data: \n', mean_mstar_red_data[0])
-        print('Dispersion blue data: \n', mean_mstar_blue_data[0])
+    print('Dispersion red data: \n', sigma_red_data)
+    print('Dispersion blue data: \n', sigma_blue_data)
+    print('Dispersion red data: \n', mean_mstar_red_data[0])
+    print('Dispersion blue data: \n', mean_mstar_blue_data[0])
     print('------------- \n')
 
     print('Running MCMC')
-    if stacked_stat:
+    if stacked_stat == "both":
+
+        phi_total_data, f_blue_cen_data, f_blue_sat_data, vdisp_red_data, \
+            vdisp_blue_data, mean_mstar_red_data, mean_mstar_blue_data = total_data[1], f_blue_data[2], f_blue_data[3], \
+            sigma_red_data, sigma_blue_data,  mean_mstar_red_data[0], mean_mstar_blue_data[0]
+
+        data_arr = []
+        data_arr.append(phi_total_data)
+        data_arr.append(f_blue_cen_data)
+        data_arr.append(f_blue_sat_data)
+        data_arr.append(vdisp_red_data)
+        data_arr.append(vdisp_blue_data)
+        data_arr.append(mean_mstar_red_data)
+        data_arr.append(mean_mstar_blue_data)
+        data_arr = np.array(data_arr)
+        data_arr = data_arr.flatten() # flatten from (5,4) to (1,20)
+
+        if pca:
+            data_arr = data_arr.dot(mat)
+
+    # if stacked_stat == True
+    elif stacked_stat: 
 
         phi_total_data, f_blue_cen_data, f_blue_sat_data, vdisp_red_data, \
             vdisp_blue_data = total_data[1], f_blue_data[2], f_blue_data[3], \
@@ -3178,13 +3292,15 @@ def main(args):
         data_arr.append(f_blue_sat_data)
         data_arr.append(vdisp_red_data)
         data_arr.append(vdisp_blue_data)
+        data_arr.append(mean_mstar_red_data)
+        data_arr.append(mean_mstar_blue_data)
         data_arr = np.array(data_arr)
         data_arr = data_arr.flatten() # flatten from (5,4) to (1,20)
 
         if pca:
-            #* Same as data_arr = data_arr.dot(mat)
-            data_arr = data_arr[:n_eigen]*mat.diagonal()
+            data_arr = data_arr.dot(mat)
 
+    # if stacked_stat == False
     else:
 
         phi_total_data, f_blue_cen_data, f_blue_sat_data, vdisp_red_data, \
@@ -3201,8 +3317,7 @@ def main(args):
         data_arr = data_arr.flatten()
 
         if pca:
-            #* Same as data_arr = data_arr.dot(mat)
-            data_arr = data_arr[:n_eigen]*mat.diagonal()
+            data_arr = data_arr.dot(mat)
 
     sampler = mcmc(nproc, nwalkers, nsteps, data_arr, sigma, mat)
 
@@ -3229,3 +3344,9 @@ if __name__ == '__main__':
 
     # with open('profile_eco_2p_16w_5s.txt', 'w+') as f:
     #     f.write(s.getvalue())
+
+
+
+
+
+
