@@ -2975,10 +2975,10 @@ def lnprob(theta, data, err, corr_mat_inv):
         model_arr.append(total_model[1])
         model_arr.append(f_blue[2])   
         model_arr.append(f_blue[3])
-        model_arr.append(sigma_red)
-        model_arr.append(sigma_blue)
         model_arr.append(mean_mstar_red[0])
         model_arr.append(mean_mstar_blue[0])
+        model_arr.append(sigma_red)
+        model_arr.append(sigma_blue)
 
         model_arr = np.array(model_arr)
 
@@ -3269,10 +3269,10 @@ def main(args):
         data_arr.append(phi_total_data)
         data_arr.append(f_blue_cen_data)
         data_arr.append(f_blue_sat_data)
-        data_arr.append(vdisp_red_data)
-        data_arr.append(vdisp_blue_data)
         data_arr.append(mean_mstar_red_data)
         data_arr.append(mean_mstar_blue_data)
+        data_arr.append(vdisp_red_data)
+        data_arr.append(vdisp_blue_data)
         data_arr = np.array(data_arr)
         data_arr = data_arr.flatten() # flatten from (5,4) to (1,20)
 
