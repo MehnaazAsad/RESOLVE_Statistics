@@ -3123,7 +3123,7 @@ def main(args):
     np.random.seed(rseed)
     level = "group"
     stacked_stat = "both"
-    pca = False
+    pca = True
     new_chain = True
 
     survey = args.survey
