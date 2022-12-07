@@ -423,7 +423,8 @@ def diff_smf(mstar_arr, volume, h1_bool, colour_flag=False):
 
         else:
             # For eco total
-            bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
+            #* Changed max bin from 11.5 to 11.1 to be the same as mstar-sigma (10.8)
+            bin_max = np.round(np.log10((10**11.1) / 2.041), 1)
             bin_num = 5
 
         bins = np.linspace(bin_min, bin_max, bin_num)
@@ -557,7 +558,8 @@ def blue_frac(catl, h1_bool, data_bool, randint_logmstar=None):
             mbary_limit = 9.3
             bin_min = np.round(np.log10((10**mbary_limit) / 2.041), 1)
 
-        bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
+        #* Changed max bin from 11.5 to 11.1 to be the same as mstar-sigma (10.8)
+        bin_max = np.round(np.log10((10**11.1) / 2.041), 1)
         bin_num = 5
         bins = np.linspace(bin_min, bin_max, bin_num)
 
@@ -2181,11 +2183,11 @@ def get_err_data(path_to_proc):
         # are squares of singular values 
         # (http://www.math.usm.edu/lambers/cos702/cos702_files/docs/PCA.pdf)
         # https://web.mit.edu/be.400/www/SVD/Singular_Value_Decomposition.htm#:~:text=The%20SVD%20represents%20an%20expansion,up%20the%20columns%20of%20U.
-        max_eigen = np.sqrt(np.sqrt(2/(num_mocks)))
+        min_eigen = np.sqrt(np.sqrt(2/(num_mocks)))
         #* Note: for a symmetric matrix, the singular values are absolute values of 
         #* the eigenvalues which means 
-        #* max_eigen = np.sqrt(np.sqrt(2/(num_mocks*len(box_id_arr))))
-        n_elements = len(s[s>max_eigen])
+        #* min_eigen = np.sqrt(np.sqrt(2/(num_mocks*len(box_id_arr))))
+        n_elements = len(s[s>min_eigen])
         VT = VT[:n_elements, :]
         ## reconstruct
         # sigma_mat = sigma_mat[:, :n_elements]
@@ -3123,7 +3125,7 @@ def main(args):
     np.random.seed(rseed)
     level = "group"
     stacked_stat = "both"
-    pca = True
+    pca = False
     new_chain = True
 
     survey = args.survey
