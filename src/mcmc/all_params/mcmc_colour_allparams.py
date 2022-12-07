@@ -2280,8 +2280,11 @@ def mcmc(nproc, nwalkers, nsteps, data, err, corr_mat_inv):
 
     p0 = all_param_vals + 0.1*np.random.rand(ndim*nwalkers).\
         reshape((nwalkers, ndim))
-
-    filename = "chain_{0}.h5".format(quenching)
+    
+    if pca:
+        filename = "chain_{0}_pca.h5".format(quenching)
+    else:
+        filename = "chain_{0}.h5".format(quenching)
     # filename = "memtest.h5"
 
     if not new_chain:
@@ -3125,7 +3128,7 @@ def main(args):
     np.random.seed(rseed)
     level = "group"
     stacked_stat = "both"
-    pca = False
+    pca = True
     new_chain = True
 
     survey = args.survey
