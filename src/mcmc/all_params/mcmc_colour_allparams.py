@@ -487,9 +487,9 @@ def blue_frac(catl, h1_bool, data_bool, randint_logmstar=None):
             mass_sat_arr = catl.logmstar.loc[catl[censat_col] == 0].values
 
         elif mf_type == 'bmf':
-            mass_total_arr = catl.logmbary.values
-            mass_cen_arr = catl.logmbary.loc[catl[censat_col] == 1].values
-            mass_sat_arr = catl.logmbary.loc[catl[censat_col] == 0].values
+            mass_total_arr = catl.logmbary_a23.values
+            mass_cen_arr = catl.logmbary_a23.loc[catl[censat_col] == 1].values
+            mass_sat_arr = catl.logmbary_a23.loc[catl[censat_col] == 0].values
 
     ## Mocks case different than data because of censat_col
     elif not data_bool and not h1_bool:
@@ -631,13 +631,13 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
 
     """
     mstar_limit = 8.9
-    mbary_limit = 9.4
+    mbary_limit = 9.3
     if catl_type == 'data':
         if survey == 'eco' or survey == 'resolvea':
             if mf_type == 'smf':
                 catl = catl.loc[catl.logmstar >= mstar_limit]
             elif mf_type == 'bmf':
-                catl = catl.loc[catl.logmbary >= mbary_limit]
+                catl = catl.loc[catl.logmbary_a23 >= mbary_limit]
         elif survey == 'resolveb':
             catl = catl.loc[catl.logmstar >= 8.7]
 
@@ -645,7 +645,7 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
         catl.logmbary = np.log10((10**catl.logmbary) / 2.041)
 
         logmstar_col = 'logmstar'
-        logmbary_col = 'logmbary'
+        logmbary_col = 'logmbary_a23'
 
         ## Use group level for data even when settings.level == halo
         galtype_col = 'g_galtype'
@@ -681,7 +681,7 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
             if mf_type == 'smf':
                 mstar_limit = 8.9
             elif mf_type == 'bmf':
-                mstar_limit = 9.4
+                mstar_limit = 9.3
         elif survey == 'resolvea':
             min_cz = 4500
             max_cz = 7000
@@ -832,13 +832,13 @@ def get_stacked_velocity_dispersion(catl, catl_type, randint=None):
 
     """
     mstar_limit = 8.9
-    mbary_limit = 9.4
+    mbary_limit = 9.3
     if catl_type == 'data':
         if survey == 'eco' or survey == 'resolvea':
             if mf_type == 'smf':
                 catl = catl.loc[catl.logmstar >= mstar_limit]
             elif mf_type == 'bmf':
-                catl = catl.loc[catl.logmbary >= mbary_limit]
+                catl = catl.loc[catl.logmbary_a23 >= mbary_limit]
         elif survey == 'resolveb':
             catl = catl.loc[catl.logmstar >= 8.7]
 
@@ -846,7 +846,7 @@ def get_stacked_velocity_dispersion(catl, catl_type, randint=None):
         catl.logmbary = np.log10((10**catl.logmbary) / 2.041)
 
         logmstar_col = 'logmstar'
-        logmbary_col = 'logmbary'
+        logmbary_col = 'logmbary_a23'
 
         ## Use group level for data even when settings.level == halo
         galtype_col = 'g_galtype'
@@ -882,7 +882,7 @@ def get_stacked_velocity_dispersion(catl, catl_type, randint=None):
             if mf_type == 'smf':
                 mstar_limit = 8.9
             elif mf_type == 'bmf':
-                mstar_limit = 9.4
+                mstar_limit = 9.3
         elif survey == 'resolvea':
             min_cz = 4500
             max_cz = 7000
@@ -1687,19 +1687,19 @@ def get_err_data_legacy(survey, path):
         ## Same as err_colour.dot(sigma_mat)
         # err_colour = err_colour[:n_elements]*sigma_mat.diagonal()
 
-    # from matplotlib.legend_handler import HandlerTuple
-    # import matplotlib.pyplot as plt
-    # from matplotlib import rc
-    # from matplotlib import cm
+    from matplotlib.legend_handler import HandlerTuple
+    import matplotlib.pyplot as plt
+    from matplotlib import rc
+    from matplotlib import cm
 
-    # rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=20)
-    # rc('text', usetex=True)
-    # rc('text.latex', preamble=r"\usepackage{amsmath}")
-    # rc('axes', linewidth=2)
-    # rc('xtick.major', width=4, size=7)
-    # rc('ytick.major', width=4, size=7)
-    # rc('xtick.minor', width=2, size=7)
-    # rc('ytick.minor', width=2, size=7)
+    rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=20)
+    rc('text', usetex=True)
+    rc('text.latex', preamble=r"\usepackage{amsmath}")
+    rc('axes', linewidth=2)
+    rc('xtick.major', width=4, size=7)
+    rc('ytick.major', width=4, size=7)
+    rc('xtick.minor', width=2, size=7)
+    rc('ytick.minor', width=2, size=7)
 
     # #* Reduced feature space
     # fig1 = plt.figure()
@@ -1770,262 +1770,298 @@ def get_err_data_legacy(survey, path):
     # #* Observable plots for paper
     # #* Total SMFs from mocks and data for paper
 
-    # data = combined_df.values[:,:4]
+    data = combined_df.values[:,:4]
+    max_total = total_data[0]
 
-    # upper_bound = np.nanmean(data, axis=0) + \
-    #     np.nanstd(data, axis=0)
-    # lower_bound = np.nanmean(data, axis=0) - \
-    #     np.nanstd(data, axis=0)
+    upper_bound = np.nanmean(data, axis=0) + \
+        np.nanstd(data, axis=0)
+    lower_bound = np.nanmean(data, axis=0) - \
+        np.nanstd(data, axis=0)
 
-    # phi_max = []
-    # phi_min = []
-    # for idx in range(len(upper_bound)):
-    #     idxs = np.where(np.logical_and(data.T[idx]
-    #         >=lower_bound[idx], data.T[idx]<=upper_bound[idx]))
-    #     nums = data.T[idx][idxs]
-    #     phi_min.append(min(nums))
-    #     phi_max.append(max(nums))
+    phi_max = []
+    phi_min = []
+    for idx in range(len(upper_bound)):
+        idxs = np.where(np.logical_and(data.T[idx]
+            >=lower_bound[idx], data.T[idx]<=upper_bound[idx]))
+        nums = data.T[idx][idxs]
+        phi_min.append(min(nums))
+        phi_max.append(max(nums))
 
-    # phi_max = np.array(phi_max)
-    # phi_min = np.array(phi_min)
+    phi_max = np.array(phi_max)
+    phi_min = np.array(phi_min)
 
-    # midpoint_phi_err = -((phi_max * phi_min) ** 0.5)
-    # phi_data_midpoint_diff = 10**total_data[1] - 10**midpoint_phi_err 
+    midpoint_phi_err = -((phi_max * phi_min) ** 0.5)
+    phi_data_midpoint_diff = 10**total_data[1] - 10**midpoint_phi_err 
 
-    # fig1 = plt.figure()
+    fig1 = plt.figure()
 
-    # mt = plt.fill_between(x=max_total, y1=np.log10(10**phi_min + phi_data_midpoint_diff), 
-    #     y2=np.log10(10**phi_max + phi_data_midpoint_diff), color='silver', alpha=0.4)
+    mt = plt.fill_between(x=max_total, y1=np.log10(10**phi_min + phi_data_midpoint_diff), 
+        y2=np.log10(10**phi_max + phi_data_midpoint_diff), color='silver', alpha=0.4)
 
-    # # mt = plt.fill_between(x=max_total, y1=phi_max, 
-    # #     y2=phi_min, color='silver', alpha=0.4)
-    # dt = plt.scatter(total_data[0], total_data[1],
-    #     color='k', s=150, zorder=10, marker='^')
+    # mt = plt.fill_between(x=max_total, y1=phi_max, 
+    #     y2=phi_min, color='silver', alpha=0.4)
+    dt = plt.scatter(total_data[0], total_data[1],
+        color='k', s=150, zorder=10, marker='^')
 
-    # if mf_type == 'smf':
-    #     plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=20)
-    # elif mf_type == 'bmf':
-    #     plt.xlabel(r'\boldmath$\log_{10}\ M_b \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=20)
+    if mf_type == 'smf':
+        plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=20)
+    elif mf_type == 'bmf':
+        plt.xlabel(r'\boldmath$\log_{10}\ M_b \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=20)
 
-    # plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dlogM}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=20)
+    plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dlogM}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=20)
 
-    # plt.legend([(dt), (mt)], ['ECO','Mocks'],
-    #     handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='lower left', prop={'size':20})
-    # plt.minorticks_on()
-    # # plt.title(r'SMFs from mocks')
-    # if mf_type == 'smf':
-    #     plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_smf_total_offsetmocks.pdf', 
-    #         bbox_inches="tight", dpi=1200)
-    # elif mf_type == 'bmf':
-    #     plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_bmf_total.pdf', 
-    #         bbox_inches="tight", dpi=1200)
-    # plt.show()
+    plt.legend([(dt), (mt)], ['ECO','Mocks'],
+        handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='lower left', prop={'size':20})
+    plt.minorticks_on()
+    # plt.title(r'SMFs from mocks')
+    if mf_type == 'smf':
+        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_smf_total_offsetmocks.pdf', 
+            bbox_inches="tight", dpi=1200)
+    elif mf_type == 'bmf':
+        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_bmf_total.pdf', 
+            bbox_inches="tight", dpi=1200)
+    plt.show()
 
     # # #* Blue fraction from mocks and data for paper
 
-    # data_cen = combined_df.values[:,4:8]
-    # data_sat = combined_df.values[:,8:12]
+    data_cen = combined_df.values[:,4:8]
+    data_sat = combined_df.values[:,8:12]
 
-    # upper_bound = np.nanmean(data_cen, axis=0) + \
-    #     np.nanstd(data_cen, axis=0)
-    # lower_bound = np.nanmean(data_cen, axis=0) - \
-    #     np.nanstd(data_cen, axis=0)
+    upper_bound = np.nanmean(data_cen, axis=0) + \
+        np.nanstd(data_cen, axis=0)
+    lower_bound = np.nanmean(data_cen, axis=0) - \
+        np.nanstd(data_cen, axis=0)
 
-    # cen_max = []
-    # cen_min = []
-    # for idx in range(len(upper_bound)):
-    #     idxs = np.where(np.logical_and(data_cen.T[idx]
-    #         >=lower_bound[idx], data_cen.T[idx]<=upper_bound[idx]))
-    #     nums = data_cen.T[idx][idxs]
-    #     cen_min.append(min(nums))
-    #     cen_max.append(max(nums))
+    cen_max = []
+    cen_min = []
+    for idx in range(len(upper_bound)):
+        idxs = np.where(np.logical_and(data_cen.T[idx]
+            >=lower_bound[idx], data_cen.T[idx]<=upper_bound[idx]))
+        nums = data_cen.T[idx][idxs]
+        cen_min.append(min(nums))
+        cen_max.append(max(nums))
 
-    # upper_bound = np.nanmean(data_sat, axis=0) + \
-    #     np.nanstd(data_sat, axis=0)
-    # lower_bound = np.nanmean(data_sat, axis=0) - \
-    #     np.nanstd(data_sat, axis=0)
+    upper_bound = np.nanmean(data_sat, axis=0) + \
+        np.nanstd(data_sat, axis=0)
+    lower_bound = np.nanmean(data_sat, axis=0) - \
+        np.nanstd(data_sat, axis=0)
 
-    # sat_max = []
-    # sat_min = []
-    # for idx in range(len(upper_bound)):
-    #     idxs = np.where(np.logical_and(data_sat.T[idx]
-    #         >=lower_bound[idx], data_sat.T[idx]<=upper_bound[idx]))
-    #     nums = data_sat.T[idx][idxs]
-    #     sat_min.append(min(nums))
-    #     sat_max.append(max(nums))
+    sat_max = []
+    sat_min = []
+    for idx in range(len(upper_bound)):
+        idxs = np.where(np.logical_and(data_sat.T[idx]
+            >=lower_bound[idx], data_sat.T[idx]<=upper_bound[idx]))
+        nums = data_sat.T[idx][idxs]
+        sat_min.append(min(nums))
+        sat_max.append(max(nums))
 
-    # cen_max = np.array(cen_max)
-    # cen_min = np.array(cen_min)
-    # sat_max = np.array(sat_max)
-    # sat_min = np.array(sat_min)
+    cen_max = np.array(cen_max)
+    cen_min = np.array(cen_min)
+    sat_max = np.array(sat_max)
+    sat_min = np.array(sat_min)
 
-    # midpoint_cen_err = (cen_max * cen_min) ** 0.5
-    # midpoint_sat_err = (sat_max * sat_min) ** 0.5
-    # cen_data_midpoint_diff = f_blue_data[2] - midpoint_cen_err 
-    # sat_data_midpoint_diff = f_blue_data[3] - midpoint_sat_err
+    midpoint_cen_err = (cen_max * cen_min) ** 0.5
+    midpoint_sat_err = (sat_max * sat_min) ** 0.5
+    cen_data_midpoint_diff = f_blue_data[2] - midpoint_cen_err 
+    sat_data_midpoint_diff = f_blue_data[3] - midpoint_sat_err
 
-    # fig2 = plt.figure()
+    fig2 = plt.figure()
 
-    # #* Points not truly in the middle like in next figure. They're just shifted.
-    # # mt_cen = plt.fill_between(x=f_blue_data[0], y1=cen_max + (f_blue_data[2] - cen_max), 
-    # #     y2=cen_min + (f_blue_data[2] - cen_min) - (np.array(cen_max) - np.array(cen_min)), color='rebeccapurple', alpha=0.4)
-    # # mt_sat = plt.fill_between(x=f_blue_data[0], y1=sat_max + (f_blue_data[3] - sat_max), 
-    # #     y2=sat_min + (f_blue_data[3] - sat_min) - (np.array(sat_max) - np.array(sat_min)), color='goldenrod', alpha=0.4)
+    #* Points not truly in the middle like in next figure. They're just shifted.
+    # mt_cen = plt.fill_between(x=f_blue_data[0], y1=cen_max + (f_blue_data[2] - cen_max), 
+    #     y2=cen_min + (f_blue_data[2] - cen_min) - (np.array(cen_max) - np.array(cen_min)), color='rebeccapurple', alpha=0.4)
+    # mt_sat = plt.fill_between(x=f_blue_data[0], y1=sat_max + (f_blue_data[3] - sat_max), 
+    #     y2=sat_min + (f_blue_data[3] - sat_min) - (np.array(sat_max) - np.array(sat_min)), color='goldenrod', alpha=0.4)
 
-    # mt_cen = plt.fill_between(x=f_blue_data[0], y1=cen_max + cen_data_midpoint_diff, 
-    #     y2=cen_min + cen_data_midpoint_diff, color='rebeccapurple', alpha=0.4)
-    # mt_sat = plt.fill_between(x=f_blue_data[0], y1=sat_max + sat_data_midpoint_diff, 
-    #     y2=sat_min + sat_data_midpoint_diff, color='goldenrod', alpha=0.4)
+    mt_cen = plt.fill_between(x=f_blue_data[0], y1=cen_max + cen_data_midpoint_diff, 
+        y2=cen_min + cen_data_midpoint_diff, color='rebeccapurple', alpha=0.4)
+    mt_sat = plt.fill_between(x=f_blue_data[0], y1=sat_max + sat_data_midpoint_diff, 
+        y2=sat_min + sat_data_midpoint_diff, color='goldenrod', alpha=0.4)
 
-    # dt_cen = plt.scatter(f_blue_data[0], f_blue_data[2],
-    #     color='rebeccapurple', s=150, zorder=10, marker='^')
-    # dt_sat = plt.scatter(f_blue_data[0], f_blue_data[3],
-    #     color='goldenrod', s=150, zorder=10, marker='^')
+    dt_cen = plt.scatter(f_blue_data[0], f_blue_data[2],
+        color='rebeccapurple', s=150, zorder=10, marker='^')
+    dt_sat = plt.scatter(f_blue_data[0], f_blue_data[3],
+        color='goldenrod', s=150, zorder=10, marker='^')
 
-    # if mf_type == 'smf':
-    #     plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=20)
-    # elif mf_type == 'bmf':
-    #     plt.xlabel(r'\boldmath$\log_{10}\ M_b \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=20)
-    # plt.ylabel(r'\boldmath$f_{blue}$', fontsize=20)
-    # plt.ylim(0,1)
-    # # plt.title(r'Blue fractions from mocks and data')
-    # plt.legend([dt_cen, dt_sat, mt_cen, mt_sat], 
-    #     ['ECO cen', 'ECO sat', 'Mocks cen', 'Mocks sat'],
-    #     handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='upper right', prop={'size':17})
-    # plt.minorticks_on()
-    # if mf_type == 'smf':
-    #     plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_fblue_offsetmocks.pdf', 
-    #         bbox_inches="tight", dpi=1200)
-    # elif mf_type == 'bmf':
-    #     plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_fblue_bary.pdf', 
-    #         bbox_inches="tight", dpi=1200)
-    # plt.show()
+    if mf_type == 'smf':
+        plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=20)
+    elif mf_type == 'bmf':
+        plt.xlabel(r'\boldmath$\log_{10}\ M_b \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=20)
+    plt.ylabel(r'\boldmath$f_{blue}$', fontsize=20)
+    plt.ylim(0,1)
+    # plt.title(r'Blue fractions from mocks and data')
+    plt.legend([dt_cen, dt_sat, mt_cen, mt_sat], 
+        ['ECO cen', 'ECO sat', 'Mocks cen', 'Mocks sat'],
+        handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='upper right', prop={'size':17})
+    plt.minorticks_on()
+    if mf_type == 'smf':
+        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_fblue_offsetmocks.pdf', 
+            bbox_inches="tight", dpi=1200)
+    elif mf_type == 'bmf':
+        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_fblue_bary.pdf', 
+            bbox_inches="tight", dpi=1200)
+    plt.show()
 
 
     # #* Velocity dispersion from mocks and data for paper
 
-    # bins_red=np.linspace(1,3,5)
-    # bins_blue=np.linspace(1,3,5)
-    # bins_red = 0.5 * (bins_red[1:] + bins_red[:-1])
-    # bins_blue = 0.5 * (bins_blue[1:] + bins_blue[:-1])
+    bins_red=np.linspace(1,2.8,5)
+    bins_blue=np.linspace(1,2.5,5)
+    bins_red = 0.5 * (bins_red[1:] + bins_red[:-1])
+    bins_blue = 0.5 * (bins_blue[1:] + bins_blue[:-1])
 
-    # data_red = combined_df.values[:,12:16]
-    # data_blue = combined_df.values[:,16:20]
+    data_red = combined_df.values[:,12:16]
+    data_blue = combined_df.values[:,16:20]
 
-    # upper_bound = np.nanmean(data_red, axis=0) + \
-    #     np.nanstd(data_red, axis=0)
-    # lower_bound = np.nanmean(data_red, axis=0) - \
-    #     np.nanstd(data_red, axis=0)
+    upper_bound = np.nanmean(data_red, axis=0) + \
+        np.nanstd(data_red, axis=0)
+    lower_bound = np.nanmean(data_red, axis=0) - \
+        np.nanstd(data_red, axis=0)
 
-    # red_max = []
-    # red_min = []
-    # for idx in range(len(upper_bound)):
-    #     idxs = np.where(np.logical_and(data_red.T[idx]
-    #         >=lower_bound[idx], data_red.T[idx]<=upper_bound[idx]))
-    #     nums = data_red.T[idx][idxs]
-    #     red_min.append(min(nums))
-    #     red_max.append(max(nums))
+    red_max = []
+    red_min = []
+    for idx in range(len(upper_bound)):
+        idxs = np.where(np.logical_and(data_red.T[idx]
+            >=lower_bound[idx], data_red.T[idx]<=upper_bound[idx]))
+        nums = data_red.T[idx][idxs]
+        red_min.append(min(nums))
+        red_max.append(max(nums))
 
-    # upper_bound = np.nanmean(data_blue, axis=0) + \
-    #     np.nanstd(data_blue, axis=0)
-    # lower_bound = np.nanmean(data_blue, axis=0) - \
-    #     np.nanstd(data_blue, axis=0)
+    upper_bound = np.nanmean(data_blue, axis=0) + \
+        np.nanstd(data_blue, axis=0)
+    lower_bound = np.nanmean(data_blue, axis=0) - \
+        np.nanstd(data_blue, axis=0)
 
-    # blue_max = []
-    # blue_min = []
-    # for idx in range(len(upper_bound)):
-    #     idxs = np.where(np.logical_and(data_blue.T[idx]
-    #         >=lower_bound[idx], data_blue.T[idx]<=upper_bound[idx]))
-    #     nums = data_blue.T[idx][idxs]
-    #     blue_min.append(min(nums))
-    #     blue_max.append(max(nums))
+    blue_max = []
+    blue_min = []
+    for idx in range(len(upper_bound)):
+        idxs = np.where(np.logical_and(data_blue.T[idx]
+            >=lower_bound[idx], data_blue.T[idx]<=upper_bound[idx]))
+        nums = data_blue.T[idx][idxs]
+        blue_min.append(min(nums))
+        blue_max.append(max(nums))
 
-    # red_max = np.array(red_max)
-    # red_min = np.array(red_min)
-    # blue_max = np.array(blue_max)
-    # blue_min = np.array(blue_min)
+    red_max = np.array(red_max)
+    red_min = np.array(red_min)
+    blue_max = np.array(blue_max)
+    blue_min = np.array(blue_min)
 
-    # midpoint_red_err = (red_max * red_min) ** 0.5
-    # midpoint_blue_err = (blue_max * blue_min) ** 0.5
-    # red_data_midpoint_diff = 10**mean_mstar_red_data[0] - 10**midpoint_red_err 
-    # blue_data_midpoint_diff = 10**mean_mstar_blue_data[0] - 10**midpoint_blue_err
+    midpoint_red_err = (red_max * red_min) ** 0.5
+    midpoint_blue_err = (blue_max * blue_min) ** 0.5
+    red_data_midpoint_diff = 10**mean_mstar_red_data[0] - 10**midpoint_red_err 
+    blue_data_midpoint_diff = 10**mean_mstar_blue_data[0] - 10**midpoint_blue_err
 
-    # fig3 = plt.figure()
-    # mt_red = plt.fill_between(x=bins_red, y1=np.log10(np.abs(10**red_min + red_data_midpoint_diff)), 
-    #     y2=np.log10(10**red_max + red_data_midpoint_diff), color='indianred', alpha=0.4)
-    # mt_blue = plt.fill_between(x=bins_blue, y1=np.log10(10**blue_min + blue_data_midpoint_diff), 
-    #     y2=np.log10(10**blue_max + blue_data_midpoint_diff), color='cornflowerblue', alpha=0.4)
+    fig3 = plt.figure()
+    mt_red = plt.fill_between(x=bins_red, y1=np.log10(np.abs(10**red_min + red_data_midpoint_diff)), 
+        y2=np.log10(10**red_max + red_data_midpoint_diff), color='indianred', alpha=0.4)
+    mt_blue = plt.fill_between(x=bins_blue, y1=np.log10(10**blue_min + blue_data_midpoint_diff), 
+        y2=np.log10(10**blue_max + blue_data_midpoint_diff), color='cornflowerblue', alpha=0.4)
 
-    # dt_red = plt.scatter(bins_red, mean_mstar_red_data[0], 
-    #     color='indianred', s=150, zorder=10, marker='^')
-    # dt_blue = plt.scatter(bins_blue, mean_mstar_blue_data[0],
-    #     color='cornflowerblue', s=150, zorder=10, marker='^')
+    dt_red = plt.scatter(bins_red, mean_mstar_red_data[0], 
+        color='indianred', s=150, zorder=10, marker='^')
+    dt_blue = plt.scatter(bins_blue, mean_mstar_blue_data[0],
+        color='cornflowerblue', s=150, zorder=10, marker='^')
 
-    # plt.xlabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km\ s^{-1}} \right]$', fontsize=20)
-    # if mf_type == 'smf':
-    #     plt.ylabel(r'\boldmath$\overline{\log_{10}\ M_{*, group\ cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=20)
-    # elif mf_type == 'bmf':
-    #     plt.ylabel(r'\boldmath$\overline{\log_{10}\ M_{b, group\ cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=20)
-    # # plt.title(r'Velocity dispersion from mocks and data')
-    # plt.legend([(dt_red, dt_blue), (mt_red, mt_blue)], 
-    #     ['ECO','Mocks'],
-    #     handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='upper left', 
-    #     prop={'size':20})
-    # plt.minorticks_on()
-    # if mf_type == 'smf':
-    #     plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_vdisp_offsetmocks.pdf', 
-    #         bbox_inches="tight", dpi=1200)
-    # elif mf_type == 'bmf':
-    #     plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_vdisp_bary.pdf', 
-    #         bbox_inches="tight", dpi=1200)
+    plt.xlabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km\ s^{-1}} \right]$', fontsize=20)
+    if mf_type == 'smf':
+        plt.ylabel(r'\boldmath$\overline{\log_{10}\ M_{*, group\ cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=20)
+    elif mf_type == 'bmf':
+        plt.ylabel(r'\boldmath$\overline{\log_{10}\ M_{b, group\ cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=20)
+    # plt.title(r'Velocity dispersion from mocks and data')
+    plt.legend([(dt_red, dt_blue), (mt_red, mt_blue)], 
+        ['ECO','Mocks'],
+        handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='upper left', 
+        prop={'size':20})
+    plt.minorticks_on()
+    if mf_type == 'smf':
+        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_avmstar_offsetmocks.pdf', 
+            bbox_inches="tight", dpi=1200)
+    elif mf_type == 'bmf':
+        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_avmstar_bary.pdf', 
+            bbox_inches="tight", dpi=1200)
 
-    # plt.show()
+    plt.show()
     ############################################################################
-    # ## Stacked sigma from mocks and data for paper
-    # if mf_type == 'smf':
-    #     bin_min = 8.6
-    # elif mf_type == 'bmf':
-    #     bin_min = 9.1
-    # bins_red=np.linspace(bin_min,11.2,5)
-    # bins_blue=np.linspace(bin_min,11.2,5)
-    # bins_red = 0.5 * (bins_red[1:] + bins_red[:-1])
-    # bins_blue = 0.5 * (bins_blue[1:] + bins_blue[:-1])
+    ## Stacked sigma from mocks and data for paper
+    if mf_type == 'smf':
+        bin_min = 8.6
+    elif mf_type == 'bmf':
+        bin_min = 9.1
+    bins_red=np.linspace(bin_min,10.8,5)
+    bins_blue=np.linspace(bin_min,10.8,5)
+    bins_red = 0.5 * (bins_red[1:] + bins_red[:-1])
+    bins_blue = 0.5 * (bins_blue[1:] + bins_blue[:-1])
 
-    # mean_mstar_red_max = np.nanmax(combined_df.values[:,12:16], axis=0)
-    # mean_mstar_red_min = np.nanmin(combined_df.values[:,12:16], axis=0)
-    # mean_mstar_blue_max = np.nanmax(combined_df.values[:,16:20], axis=0)
-    # mean_mstar_blue_min = np.nanmin(combined_df.values[:,16:20], axis=0)
+    data_red = combined_df.values[:,20:24]
+    data_blue = combined_df.values[:,24:28]
 
-    # error = np.nanstd(combined_df.values[:,12:], axis=0)
+    upper_bound = np.nanmean(data_red, axis=0) + \
+        np.nanstd(data_red, axis=0)
+    lower_bound = np.nanmean(data_red, axis=0) - \
+        np.nanstd(data_red, axis=0)
 
-    # fig2 = plt.figure()
+    red_max = []
+    red_min = []
+    for idx in range(len(upper_bound)):
+        idxs = np.where(np.logical_and(data_red.T[idx]
+            >=lower_bound[idx], data_red.T[idx]<=upper_bound[idx]))
+        nums = data_red.T[idx][idxs]
+        red_min.append(min(nums))
+        red_max.append(max(nums))
 
-    # mt_red = plt.fill_between(x=bins_red, y1=mean_mstar_red_max, 
-    #     y2=mean_mstar_red_min, color='indianred', alpha=0.4)
-    # mt_blue = plt.fill_between(x=bins_blue, y1=mean_mstar_blue_max, 
-    #     y2=mean_mstar_blue_min, color='cornflowerblue', alpha=0.4)
+    upper_bound = np.nanmean(data_blue, axis=0) + \
+        np.nanstd(data_blue, axis=0)
+    lower_bound = np.nanmean(data_blue, axis=0) - \
+        np.nanstd(data_blue, axis=0)
 
-    # dt_red = plt.errorbar(bins_red, sigma_red_data, yerr=error[:4],
-    #     color='indianred', fmt='s', ecolor='indianred', markersize=5, capsize=3,
-    #     capthick=1.5, zorder=10, marker='^')
-    # dt_blue = plt.errorbar(bins_blue, sigma_blue_data, yerr=error[4:8],
-    #     color='cornflowerblue', fmt='s', ecolor='cornflowerblue', markersize=5, capsize=3,
-    #     capthick=1.5, zorder=10, marker='^')
+    blue_max = []
+    blue_min = []
+    for idx in range(len(upper_bound)):
+        idxs = np.where(np.logical_and(data_blue.T[idx]
+            >=lower_bound[idx], data_blue.T[idx]<=upper_bound[idx]))
+        nums = data_blue.T[idx][idxs]
+        blue_min.append(min(nums))
+        blue_max.append(max(nums))
 
-    # plt.ylabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km/s} \right]$', fontsize=20)
-    # if mf_type == 'smf':
-    #     plt.xlabel(r'\boldmath$\log_{10}\ M_{*, group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=20)
-    # elif mf_type == 'bmf':
-    #     plt.xlabel(r'\boldmath$\log_{10}\ M_{b, group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=20)       
-    # # plt.title(r'Velocity dispersion from mocks and data')
-    # plt.legend([(dt_red, dt_blue), (mt_red, mt_blue)], 
-    #     ['ECO','Mocks'],
-    #     handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='lower right', prop={'size':20})
-    # plt.minorticks_on()
-    # # plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_vdisp.pdf', 
-    # #     bbox_inches="tight", dpi=1200)
+    red_max = np.array(red_max)
+    red_min = np.array(red_min)
+    blue_max = np.array(blue_max)
+    blue_min = np.array(blue_min)
 
-    # plt.show()
+    midpoint_red_err = (red_max * red_min) ** 0.5
+    midpoint_blue_err = (blue_max * blue_min) ** 0.5
+    red_data_midpoint_diff = 10**sigma_red_data - 10**midpoint_red_err
+    blue_data_midpoint_diff = 10**sigma_blue_data - 10**midpoint_blue_err
+
+    fig3 = plt.figure()
+    mt_red = plt.fill_between(x=bins_red, y1=np.log10(np.abs(10**red_min + red_data_midpoint_diff)), 
+        y2=np.log10(10**red_max + red_data_midpoint_diff), color='indianred', alpha=0.4)
+    mt_blue = plt.fill_between(x=bins_blue, y1=np.log10(10**blue_min + blue_data_midpoint_diff), 
+        y2=np.log10(10**blue_max + blue_data_midpoint_diff), color='cornflowerblue', alpha=0.4)
+
+    dt_red = plt.scatter(bins_red, sigma_red_data, 
+        color='indianred', s=150, zorder=10, marker='^')
+    dt_blue = plt.scatter(bins_blue, sigma_blue_data,
+        color='cornflowerblue', s=150, zorder=10, marker='^')
+
+    plt.ylabel(r'\boldmath$\overline{\log_{10}\ \sigma} \left[\mathrm{km\ s^{-1}} \right]$', fontsize=20)
+    if mf_type == 'smf':
+        plt.xlabel(r'\boldmath$\log_{10}\ M_{*, group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=20)
+    elif mf_type == 'bmf':
+        plt.xlabel(r'\boldmath$\log_{10}\ M_{b, group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=20)
+    plt.legend([(dt_red, dt_blue), (mt_red, mt_blue)], 
+        ['ECO','Mocks'],
+        handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='lower right', 
+        prop={'size':20})
+    plt.minorticks_on()
+    if mf_type == 'smf':
+        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_vdisp_offsetmocks.pdf', 
+            bbox_inches="tight", dpi=1200)
+    elif mf_type == 'bmf':
+        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_vdisp_bary.pdf', 
+            bbox_inches="tight", dpi=1200)
+
+    plt.show()
 
     if pca:
         return err_colour_pca, eigenvectors, n_elements
@@ -2045,7 +2081,8 @@ def calc_corr_mat(df):
 def get_err_data(path_to_proc):
     # Read in datasets from h5 file and calculate corr matrix
     if stacked_stat == 'both':
-        hf_read = h5py.File(path_to_proc + 'corr_matrices_28stats_{0}.h5'.format(quenching), 'r')
+        hf_read = h5py.File(path_to_proc + 'corr_matrices_28stats_{0}_{1}.h5'.
+            format(quenching, mf_type), 'r')
         hf_read.keys()
         smf = hf_read.get('smf')
         smf = np.squeeze(np.array(smf))
@@ -2830,7 +2867,7 @@ def lnprob(theta, data, err, corr_mat_inv):
         if mf_type == 'smf':
             gals_df = gals_df.loc[gals_df['stellar_mass'] >= 10**8.6].reset_index(drop=True)
         elif mf_type == 'bmf':
-            gals_df = gals_df.loc[gals_df['stellar_mass'] >= 10**9.1].reset_index(drop=True)
+            gals_df = gals_df.loc[gals_df['stellar_mass'] >= 10**9.0].reset_index(drop=True)
         
         gals_df = apply_rsd(gals_df)
 
@@ -2950,31 +2987,28 @@ def lnprob(theta, data, err, corr_mat_inv):
             ## Observable #2 - Blue fraction
             f_blue = blue_frac(gal_group_df, True, False)
         
-            ## Observable #3 
-            if stacked_stat:
-                red_deltav, red_cen_mstar_sigma, blue_deltav, \
-                    blue_cen_mstar_sigma = get_stacked_velocity_dispersion(
-                        gal_group_df, 'model')
-                #! Max bin not the same as in obs 1&2
-                sigma_red = bs(red_cen_mstar_sigma, red_deltav,
-                    statistic='std', bins=np.linspace(9.1,11,5))
-                sigma_blue = bs( blue_cen_mstar_sigma, blue_deltav,
-                    statistic='std', bins=np.linspace(9.1,11,5))
-                
-                sigma_red = np.log10(sigma_red[0])
-                sigma_blue = np.log10(sigma_blue[0])
-            else:
-                red_sigma, red_cen_mstar_sigma, blue_sigma, \
-                    blue_cen_mstar_sigma = get_velocity_dispersion(
-                        gal_group_df, 'model')
+            red_deltav, red_cen_mstar_sigma, blue_deltav, \
+                blue_cen_mstar_sigma = get_stacked_velocity_dispersion(
+                    gal_group_df, 'model')
+            sigma_red = bs(red_cen_mstar_sigma, red_deltav,
+                statistic='std', bins=np.linspace(9.0,11.2,5))
+            sigma_blue = bs( blue_cen_mstar_sigma, blue_deltav,
+                statistic='std', bins=np.linspace(9.0,11.2,5))
+            
+            sigma_red = np.log10(sigma_red[0])
+            sigma_blue = np.log10(sigma_blue[0])
 
-                red_sigma = np.log10(red_sigma)
-                blue_sigma = np.log10(blue_sigma)
+            red_sigma, red_cen_mstar_sigma, blue_sigma, \
+                blue_cen_mstar_sigma = get_velocity_dispersion(
+                    gal_group_df, 'model')
 
-                mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
-                    statistic=average_of_log, bins=np.linspace(1,3,5))
-                mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
-                    statistic=average_of_log, bins=np.linspace(1,3,5))
+            red_sigma = np.log10(red_sigma)
+            blue_sigma = np.log10(blue_sigma)
+
+            mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
+                statistic=average_of_log, bins=np.linspace(1,3,5))
+            mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
+                statistic=average_of_log, bins=np.linspace(1,3,5))
  
         model_arr = []
         model_arr.append(total_model[1])
@@ -3128,7 +3162,7 @@ def main(args):
     np.random.seed(rseed)
     level = "group"
     stacked_stat = "both"
-    pca = True
+    pca = False
     new_chain = True
 
     survey = args.survey
@@ -3180,7 +3214,7 @@ def main(args):
         total_data = measure_all_smf(catl, volume, True)
     elif mf_type == 'bmf':
         print('Measuring BMF for data')
-        logmbary = catl.logmbary.values
+        logmbary = catl.logmbary_a23.values
         total_data = diff_bmf(logmbary, volume, False)
 
     print('Measuring blue fraction for data')
