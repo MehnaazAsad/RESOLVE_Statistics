@@ -3006,9 +3006,9 @@ def lnprob(theta, data, err, corr_mat_inv):
             blue_sigma = np.log10(blue_sigma)
 
             mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
-                statistic=average_of_log, bins=np.linspace(1,3,5))
+                statistic=average_of_log, bins=np.linspace(1,2.8,5))
             mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
-                statistic=average_of_log, bins=np.linspace(1,3,5))
+                statistic=average_of_log, bins=np.linspace(1,2.5,5))
  
         model_arr = []
         model_arr.append(total_model[1])
@@ -3162,7 +3162,7 @@ def main(args):
     np.random.seed(rseed)
     level = "group"
     stacked_stat = "both"
-    pca = True
+    pca = False
     new_chain = True
 
     survey = args.survey
