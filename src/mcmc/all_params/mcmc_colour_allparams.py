@@ -2226,6 +2226,9 @@ def get_err_data(path_to_proc):
         #* min_eigen = np.sqrt(np.sqrt(2/(num_mocks*len(box_id_arr))))
         n_elements = len(s[s>min_eigen])
         VT = VT[:n_elements, :]
+
+        print("Number of principle components kept: {0}".format(n_elements))
+
         ## reconstruct
         # sigma_mat = sigma_mat[:, :n_elements]
         # B = U.dot(sigma_mat.dot(VT))
