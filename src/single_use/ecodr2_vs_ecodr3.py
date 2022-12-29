@@ -3938,7 +3938,7 @@ def assign_colour_label_dr2(catl):
     """
 
     logmstar_arr = catl.logmstar.values
-    u_r_arr = catl.modelu_rcorr.values
+    u_r_arr = catl.modelu_r.values
 
     colour_label_arr = np.empty(len(catl), dtype='str')
     for idx, value in enumerate(logmstar_arr):
@@ -4304,12 +4304,12 @@ dict_of_paths = cwpaths.cookiecutter_paths()
 path_to_proc = dict_of_paths['proc_dir']
 
 dr3_filename = path_to_proc + "gal_group_eco_stellar_buffer_volh1_dr3.hdf5"
-dr2_filename = path_to_proc + "gal_group_eco_data_buffer_volh1_dr2.hdf5"
+dr2_filename = path_to_proc + "gal_group_eco_stellar_buffer_volh1_dr2_ps.hdf5"
 
 dr2 = reading_catls(dr2_filename)
 dr3 = reading_catls(dr3_filename)
 
-dr2 = mock_add_grpcz(dr2, grpid_col='groupid', 
+dr2 = mock_add_grpcz(dr2, grpid_col='ps_groupid', 
     galtype_col='g_galtype', cen_cz_col='cz')
 dr3 = mock_add_grpcz(dr3, grpid_col='ps_groupid', 
     galtype_col='g_galtype', cen_cz_col='cz')
@@ -4371,7 +4371,7 @@ plt.show()
 
 red_sigma, red_cen_mstar_sigma, blue_sigma, \
     blue_cen_mstar_sigma = get_velocity_dispersion(dr2, 
-        galtype_col='g_galtype', id_col='groupid')
+        galtype_col='g_galtype', id_col='ps_groupid')
 
 red_sigma = np.log10(red_sigma)
 blue_sigma = np.log10(blue_sigma)
