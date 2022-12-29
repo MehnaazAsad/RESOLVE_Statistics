@@ -1,24 +1,25 @@
 from cosmo_utils.utils import work_paths as cwpaths
 from scipy.stats import binned_statistic as bs
+from tqdm import tqdm
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
+import random
 import h5py
 import os
 
-from matplotlib.legend_handler import HandlerTuple
-import matplotlib.pyplot as plt
-from matplotlib import rc
-from matplotlib import cm
+# from matplotlib.legend_handler import HandlerTuple
+# import matplotlib.pyplot as plt
+# from matplotlib import rc
+# from matplotlib import cm
 
-rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=20)
-rc('text', usetex=True)
-rc('text.latex', preamble=r"\usepackage{amsmath}")
-rc('axes', linewidth=2)
-rc('xtick.major', width=4, size=7)
-rc('ytick.major', width=4, size=7)
-rc('xtick.minor', width=2, size=7)
-rc('ytick.minor', width=2, size=7)
+# rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=20)
+# rc('text', usetex=True)
+# rc('text.latex', preamble=r"\usepackage{amsmath}")
+# rc('axes', linewidth=2)
+# rc('xtick.major', width=4, size=7)
+# rc('ytick.major', width=4, size=7)
+# rc('xtick.minor', width=2, size=7)
+# rc('ytick.minor', width=2, size=7)
 
 def reading_catls(filename, catl_format='.hdf5'):
     """
@@ -164,7 +165,8 @@ def diff_smf(mstar_arr, volume, h1_bool, colour_flag=False):
 
         else:
             # For eco total
-            bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
+            #* Changed max bin from 11.5 to 11.1 to be the same as mstar-sigma (10.8)
+            bin_max = np.round(np.log10((10**11.1) / 2.041), 1)
             bin_num = 5
 
         bins = np.linspace(bin_min, bin_max, bin_num)
@@ -217,26 +219,12 @@ def blue_frac(catl, h1_bool, data_bool, randint_logmstar=None):
     f_blue: array
         Array of y-axis blue fraction values
     """
-
-    if data_bool:
-        censat_col = 'g_galtype'
-
-        if mf_type == 'smf':
-            mass_total_arr = catl.logmstar.values
-            mass_cen_arr = catl.logmstar.loc[catl[censat_col] == 1].values
-            mass_sat_arr = catl.logmstar.loc[catl[censat_col] == 0].values
-
-        elif mf_type == 'bmf':
-            mass_total_arr = catl.logmbary.values
-            mass_cen_arr = catl.logmbary.loc[catl[censat_col] == 1].values
-            mass_sat_arr = catl.logmbary.loc[catl[censat_col] == 0].values
-
     ## Mocks case different than data because of censat_col
-    elif not data_bool and not h1_bool:
+    if not data_bool and not h1_bool:
 
         # Not g_galtype anymore after applying pair splitting
-        # censat_col = 'ps_grp_censat'
-        censat_col = 'g_galtype'
+        censat_col = 'ps_grp_censat'
+        # censat_col = 'g_galtype'
         # censat_col = 'cs_flag'
 
         if mf_type == 'smf':
@@ -254,26 +242,6 @@ def blue_frac(catl, h1_bool, data_bool, randint_logmstar=None):
             mass_total_arr = catl.logmbary.values
             mass_cen_arr = catl.logmbary.loc[catl[censat_col] == 1].values
             mass_sat_arr = catl.logmbary.loc[catl[censat_col] == 0].values
-
-    # elif randint_logmstar != 1 and randint_logmstar is not None:
-    #     mass_total_arr = catl['{0}'.format(randint_logmstar)].values
-    #     censat_col = 'g_galtype_{0}'.format(randint_logmstar)
-    #     mass_cen_arr = catl['{0}'.format(randint_logmstar)].loc[catl[censat_col] == 1].values
-    #     mass_sat_arr = catl['{0}'.format(randint_logmstar)].loc[catl[censat_col] == 0].values
-    # elif randint_logmstar == 1:
-    #     mass_total_arr = catl['behroozi_bf'].values
-    #     censat_col = 'g_galtype_{0}'.format(randint_logmstar)
-    #     mass_cen_arr = catl['behroozi_bf'].loc[catl[censat_col] == 1].values
-    #     mass_sat_arr = catl['behroozi_bf'].loc[catl[censat_col] == 0].values
-    
-    # New case where no subset of mocks are used and group finding is done within
-    # mcmc framework
-    elif randint_logmstar is None:
-        mass_total_arr = catl['logmstar'].values
-        censat_col = 'grp_censat'
-        mass_cen_arr = catl['logmstar'].loc[catl[censat_col] == 1].values
-        mass_sat_arr = catl['logmstar'].loc[catl[censat_col] == 0].values
-    
 
     colour_label_total_arr = catl.colour_label.values
     colour_label_cen_arr = catl.colour_label.loc[catl[censat_col] == 1].values
@@ -294,13 +262,18 @@ def blue_frac(catl, h1_bool, data_bool, randint_logmstar=None):
             mstar_limit = 8.9
             bin_min = np.round(np.log10((10**mstar_limit) / 2.041), 1)
 
-        elif mf_type == 'bmf':
-            mbary_limit = 9.4
-            bin_min = np.round(np.log10((10**mbary_limit) / 2.041), 1)
+            #* Changed max bin from 11.5 to 11.1 to be the same as mstar-sigma (10.8)
+            bin_max = np.round(np.log10((10**11.1) / 2.041), 1)
+            bin_num = 5
+            bins = np.linspace(bin_min, bin_max, bin_num)
 
-        bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
-        bin_num = 5
-        bins = np.linspace(bin_min, bin_max, bin_num)
+        elif mf_type == 'bmf':
+            mbary_limit = 9.3
+            bin_min = np.round(np.log10((10**mbary_limit) / 2.041), 1)
+            bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
+            bin_num = 5
+            bins = np.linspace(bin_min, bin_max, bin_num)
+
 
     elif survey == 'resolveb':
         bin_min = np.round(np.log10((10**8.7) / 2.041), 1)
@@ -370,25 +343,7 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
 
     """
     mstar_limit = 8.9
-    mbary_limit = 9.4
-    if catl_type == 'data':
-        if survey == 'eco' or survey == 'resolvea':
-            if mf_type == 'smf':
-                catl = catl.loc[catl.logmstar >= mstar_limit]
-            elif mf_type == 'bmf':
-                catl = catl.loc[catl.logmbary >= mbary_limit]
-        elif survey == 'resolveb':
-            catl = catl.loc[catl.logmstar >= 8.7]
-
-        catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
-        catl.logmbary = np.log10((10**catl.logmbary) / 2.041)
-
-        logmstar_col = 'logmstar'
-        logmbary_col = 'logmbary'
-
-        ## Use group level for data even when settings.level == halo
-        galtype_col = 'g_galtype'
-        id_col = 'groupid'
+    mbary_limit = 9.3
 
     if catl_type == 'mock':
         catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
@@ -406,79 +361,13 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
         logmbary_col = 'logmbary'
 
         if level == 'group':
-            galtype_col = 'g_galtype'
-            id_col = 'groupid'
+            galtype_col = 'ps_grp_censat'
+            # galtype_col = 'g_galtype'
+            id_col = 'ps_groupid'
         elif level == 'halo':
             galtype_col = 'cs_flag'
             ## Halo ID is equivalent to halo_hostid in vishnu mock
             id_col = 'haloid'
-
-    if catl_type == 'model':
-        if survey == 'eco':
-            min_cz = 3000
-            max_cz = 12000
-            if mf_type == 'smf':
-                mstar_limit = 8.9
-            elif mf_type == 'bmf':
-                mstar_limit = 9.4
-        elif survey == 'resolvea':
-            min_cz = 4500
-            max_cz = 7000
-            mstar_limit = 8.9
-        elif survey == 'resolveb':
-            min_cz = 4500
-            max_cz = 7000
-            mstar_limit = 8.7
-
-        if randint is None:
-            logmstar_col = 'logmstar'
-            logmbary_col = 'logmstar'
-            galtype_col = 'grp_censat'
-            id_col = 'groupid'
-            cencz_col = 'cen_cz'
-            # Using the same survey definition as in mcmc smf i.e excluding the 
-            # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
-            # and M* star cuts to mimic mocks and data.
-            # catl = mock_add_grpcz(catl, id_col, False, galtype_col)
-            catl = catl.loc[
-                (catl[cencz_col].values >= min_cz) & \
-                (catl[cencz_col].values <= max_cz) & \
-                (catl[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
-            # catl[logmstar_col] = np.log10(catl[logmstar_col])
-
-        elif isinstance(randint, int) and randint != 1:
-            logmstar_col = '{0}'.format(randint)
-            galtype_col = 'grp_censat_{0}'.format(randint)
-            cencz_col = 'cen_cz_{0}'.format(randint)
-            id_col = 'groupid_{0}'.format(randint)
-            # Using the same survey definition as in mcmc smf i.e excluding the 
-            # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
-            # and M* star cuts to mimic mocks and data.
-            # catl = mock_add_grpcz(catl, id_col, False, galtype_col, cencz_col)
-            catl = catl.loc[
-                (catl[cencz_col].values >= min_cz) & \
-                (catl[cencz_col].values <= max_cz) & \
-                (catl[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
-
-        elif isinstance(randint, int) and randint == 1:
-            logmstar_col = 'behroozi_bf'
-            galtype_col = 'grp_censat_{0}'.format(randint)
-            cencz_col = 'cen_cz_{0}'.format(randint)
-            id_col = 'groupid_{0}'.format(randint)
-            # Using the same survey definition as in mcmc smf i.e excluding the 
-            # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
-            # and M* star cuts to mimic mocks and data.
-            # catl = mock_add_grpcz(catl, id_col, False, galtype_col, cencz_col)
-            catl = catl.loc[
-                (catl[cencz_col].values >= min_cz) & \
-                (catl[cencz_col].values <= max_cz) & \
-                (catl[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
-
-        if level == 'halo':
-            galtype_col = 'cs_flag'
-            id_col = 'halo_hostid'
-
-        catl = models_add_avgrpcz(catl, id_col, galtype_col)
 
     red_subset_ids = np.unique(catl[id_col].loc[(catl.\
         colour_label == 'R') & (catl[galtype_col] == 1)].values) 
@@ -501,6 +390,10 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
         #*    '{0}'.format(galtype_col)])[logmstar_col].apply(np.array).ravel())
         red_cen_stellar_mass_arr = cen_red_subset_df.groupby(['{0}'.format(id_col),
             '{0}'.format(galtype_col)])[logmstar_col].apply(np.sum).values
+        # if max(red_cen_stellar_mass_arr) > 12:
+        #     print(max(red_cen_stellar_mass_arr))
+        #     cen_red_subset_df.to_csv("cen_red_subset_df_{0}.csv".format(max(red_cen_stellar_mass_arr)))
+
     elif mf_type == 'bmf':
         red_cen_bary_mass_arr = cen_red_subset_df.groupby(['{0}'.format(id_col),
             '{0}'.format(galtype_col)])[logmbary_col].apply(np.sum).values
@@ -570,25 +463,7 @@ def get_stacked_velocity_dispersion(catl, catl_type, randint=None):
 
     """
     mstar_limit = 8.9
-    mbary_limit = 9.4
-    if catl_type == 'data':
-        if survey == 'eco' or survey == 'resolvea':
-            if mf_type == 'smf':
-                catl = catl.loc[catl.logmstar >= mstar_limit]
-            elif mf_type == 'bmf':
-                catl = catl.loc[catl.logmbary >= mbary_limit]
-        elif survey == 'resolveb':
-            catl = catl.loc[catl.logmstar >= 8.7]
-
-        catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
-        catl.logmbary = np.log10((10**catl.logmbary) / 2.041)
-
-        logmstar_col = 'logmstar'
-        logmbary_col = 'logmbary'
-
-        ## Use group level for data even when settings.level == halo
-        galtype_col = 'g_galtype'
-        id_col = 'groupid'
+    mbary_limit = 9.3
 
     if catl_type == 'mock':
         catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
@@ -606,79 +481,13 @@ def get_stacked_velocity_dispersion(catl, catl_type, randint=None):
         logmbary_col = 'logmbary'
 
         if level == 'group':
-            galtype_col = 'g_galtype'
-            id_col = 'groupid'
-        if level == 'halo':
+            galtype_col = 'ps_grp_censat'
+            # galtype_col = 'g_galtype'
+            id_col = 'ps_groupid'
+        elif level == 'halo':
             galtype_col = 'cs_flag'
             ## Halo ID is equivalent to halo_hostid in vishnu mock
             id_col = 'haloid'
-
-    if catl_type == 'model':
-        if survey == 'eco':
-            min_cz = 3000
-            max_cz = 12000
-            if mf_type == 'smf':
-                mstar_limit = 8.9
-            elif mf_type == 'bmf':
-                mstar_limit = 9.4
-        elif survey == 'resolvea':
-            min_cz = 4500
-            max_cz = 7000
-            mstar_limit = 8.9
-        elif survey == 'resolveb':
-            min_cz = 4500
-            max_cz = 7000
-            mstar_limit = 8.7
-
-        if randint is None:
-            logmstar_col = 'logmstar'
-            logmbary_col = 'logmstar'
-            galtype_col = 'grp_censat'
-            id_col = 'groupid'
-            cencz_col = 'cen_cz'
-            # Using the same survey definition as in mcmc smf i.e excluding the 
-            # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
-            # and M* star cuts to mimic mocks and data.
-            # catl = mock_add_grpcz(catl, id_col, False, galtype_col)
-            catl = catl.loc[
-                (catl[cencz_col].values >= min_cz) & \
-                (catl[cencz_col].values <= max_cz) & \
-                (catl[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
-            # catl[logmstar_col] = np.log10(catl[logmstar_col])
-
-        elif isinstance(randint, int) and randint != 1:
-            logmstar_col = '{0}'.format(randint)
-            galtype_col = 'grp_censat_{0}'.format(randint)
-            cencz_col = 'cen_cz_{0}'.format(randint)
-            id_col = 'groupid_{0}'.format(randint)
-            # Using the same survey definition as in mcmc smf i.e excluding the 
-            # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
-            # and M* star cuts to mimic mocks and data.
-            # catl = mock_add_grpcz(catl, id_col, False, galtype_col, cencz_col)
-            catl = catl.loc[
-                (catl[cencz_col].values >= min_cz) & \
-                (catl[cencz_col].values <= max_cz) & \
-                (catl[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
-
-        elif isinstance(randint, int) and randint == 1:
-            logmstar_col = 'behroozi_bf'
-            galtype_col = 'grp_censat_{0}'.format(randint)
-            cencz_col = 'cen_cz_{0}'.format(randint)
-            id_col = 'groupid_{0}'.format(randint)
-            # Using the same survey definition as in mcmc smf i.e excluding the 
-            # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
-            # and M* star cuts to mimic mocks and data.
-            # catl = mock_add_grpcz(catl, id_col, False, galtype_col, cencz_col)
-            catl = catl.loc[
-                (catl[cencz_col].values >= min_cz) & \
-                (catl[cencz_col].values <= max_cz) & \
-                (catl[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
-
-        if level == 'halo':
-            galtype_col = 'cs_flag'
-            id_col = 'halo_hostid'
-
-        catl = models_add_avgrpcz(catl, id_col, galtype_col)
 
     red_subset_ids = np.unique(catl[id_col].loc[(catl.\
         colour_label == 'R') & (catl[galtype_col] == 1)].values) 
@@ -792,7 +601,7 @@ def diff_bmf(mass_arr, volume, h1_bool, colour_flag=False):
         logmbary_arr = np.log10(mass_arr)
 
     if survey == 'eco' or survey == 'resolvea':
-        bin_min = np.round(np.log10((10**9.4) / 2.041), 1)
+        bin_min = np.round(np.log10((10**9.3) / 2.041), 1)
 
         if survey == 'eco':
             # *checked 
@@ -1066,14 +875,182 @@ def chi_squared(data, model, err_data, inv_corr_mat):
 
     return chi_squared[0][0]
 
+def group_skycoords(galaxyra, galaxydec, galaxycz, galaxygrpid):
+    """
+    -----
+    Obtain a list of group centers (RA/Dec/cz) given a list of galaxy coordinates (equatorial)
+    and their corresponding group ID numbers.
+    
+    Inputs (all same length)
+       galaxyra : 1D iterable,  list of galaxy RA values in decimal degrees
+       galaxydec : 1D iterable, list of galaxy dec values in decimal degrees
+       galaxycz : 1D iterable, list of galaxy cz values in km/s
+       galaxygrpid : 1D iterable, group ID number for every galaxy in previous arguments.
+    
+    Outputs (all shape match `galaxyra`)
+       groupra : RA in decimal degrees of galaxy i's group center.
+       groupdec : Declination in decimal degrees of galaxy i's group center.
+       groupcz : Redshift velocity in km/s of galaxy i's group center.
+    
+    Note: the FoF code of AA Berlind uses theta_i = declination, with theta_cen = 
+    the central declination. This version uses theta_i = pi/2-dec, with some trig functions
+    changed so that the output *matches* that of Berlind's FoF code (my "deccen" is the same as
+    his "thetacen", to be exact.)
+    -----
+    """
+    # Prepare cartesian coordinates of input galaxies
+    ngalaxies = len(galaxyra)
+    galaxyphi = galaxyra * np.pi/180.
+    galaxytheta = np.pi/2. - galaxydec*np.pi/180.
+    galaxyx = np.sin(galaxytheta)*np.cos(galaxyphi)
+    galaxyy = np.sin(galaxytheta)*np.sin(galaxyphi)
+    galaxyz = np.cos(galaxytheta)
+    # Prepare output arrays
+    uniqidnumbers = np.unique(galaxygrpid)
+    groupra = np.zeros(ngalaxies)
+    groupdec = np.zeros(ngalaxies)
+    groupcz = np.zeros(ngalaxies)
+    for i,uid in enumerate(uniqidnumbers):
+        sel=np.where(galaxygrpid==uid)
+        nmembers = len(galaxygrpid[sel])
+        xcen=np.sum(galaxycz[sel]*galaxyx[sel])/nmembers
+        ycen=np.sum(galaxycz[sel]*galaxyy[sel])/nmembers
+        zcen=np.sum(galaxycz[sel]*galaxyz[sel])/nmembers
+        czcen = np.sqrt(xcen**2 + ycen**2 + zcen**2)
+        deccen = np.arcsin(zcen/czcen)*180.0/np.pi # degrees
+        if (ycen >=0 and xcen >=0):
+            phicor = 0.0
+        elif (ycen < 0 and xcen < 0):
+            phicor = 180.0
+        elif (ycen >= 0 and xcen < 0):
+            phicor = 180.0
+        elif (ycen < 0 and xcen >=0):
+            phicor = 360.0
+        elif (xcen==0 and ycen==0):
+            print("Warning: xcen=0 and ycen=0 for group {}".format(galaxygrpid[i]))
+        # set up phicorrection and return phicen.
+        racen=np.arctan(ycen/xcen)*(180/np.pi)+phicor # in degrees
+        # set values at each element in the array that belongs to the group under iteration
+        groupra[sel] = racen # in degrees
+        groupdec[sel] = deccen # in degrees
+        groupcz[sel] = czcen
+    return groupra, groupdec, groupcz
+
+def multiplicity_function(grpids, return_by_galaxy=False):
+    """
+    Return counts for binning based on group ID numbers.
+    Parameters
+    ----------
+    grpids : iterable
+        List of group ID numbers. Length must match # galaxies.
+    Returns
+    -------
+    occurences : list
+        Number of galaxies in each galaxy group (length matches # groups).
+    """
+    grpids=np.asarray(grpids)
+    uniqid = np.unique(grpids)
+    if return_by_galaxy:
+        grpn_by_gal=np.zeros(len(grpids)).astype(int)
+        for idv in grpids:
+            sel = np.where(grpids==idv)
+            grpn_by_gal[sel]=len(sel[0])
+        return grpn_by_gal
+    else:
+        occurences=[]
+        for uid in uniqid:
+            sel = np.where(grpids==uid)
+            occurences.append(len(grpids[sel]))
+        return occurences
+
+def angular_separation(ra1,dec1,ra2,dec2):
+    """
+    Compute the angular separation bewteen two lists of galaxies using the Haversine formula.
+    
+    Parameters
+    ------------
+    ra1, dec1, ra2, dec2 : array-like
+       Lists of right-ascension and declination values for input targets, in decimal degrees. 
+    
+    Returns
+    ------------
+    angle : np.array
+       Array containing the angular separations between coordinates in list #1 and list #2, as above.
+       Return value expressed in radians, NOT decimal degrees.
+    """
+    phi1 = ra1*np.pi/180.
+    phi2 = ra2*np.pi/180.
+    theta1 = np.pi/2. - dec1*np.pi/180.
+    theta2 = np.pi/2. - dec2*np.pi/180.
+    return 2*np.arcsin(np.sqrt(np.sin((theta2-theta1)/2.0)**2.0 + np.sin(theta1)*np.sin(theta2)*np.sin((phi2 - phi1)/2.0)**2.0))
+
+def split_false_pairs(galra, galde, galcz, galgroupid):
+    """
+    Split false-pairs of FoF groups following the algorithm
+    of Eckert et al. (2017), Appendix A.
+    https://ui.adsabs.harvard.edu/abs/2017ApJ...849...20E/abstract
+    Parameters
+    ---------------------
+    galra : array_like
+        Array containing galaxy RA.
+        Units: decimal degrees.
+    galde : array_like
+        Array containing containing galaxy DEC.
+        Units: degrees.
+    galcz : array_like
+        Array containing cz of galaxies.
+        Units: km/s
+    galid : array_like
+        Array containing group ID number for each galaxy.
+    
+    Returns
+    ---------------------
+    newgroupid : np.array
+        Updated group ID numbers.
+    """
+    groupra,groupde,groupcz=group_skycoords(galra,galde,galcz,galgroupid)
+    groupn = multiplicity_function(galgroupid, return_by_galaxy=True)
+    newgroupid = np.copy(galgroupid)
+    brokenupids = np.arange(len(newgroupid))+np.max(galgroupid)+100
+    # brokenupids_start = np.max(galgroupid)+1
+    r75func = lambda r1,r2: 0.75*(r2-r1)+r1
+    n2grps = np.unique(galgroupid[np.where(groupn==2)])
+    ## parameters corresponding to Katie's dividing line in cz-rproj space
+    bb=360.
+    mm = (bb-0.0)/(0.0-0.12)
+
+    for ii,gg in enumerate(n2grps):
+        # pair of indices where group's ngal == 2
+        galsel = np.where(galgroupid==gg)
+        deltacz = np.abs(np.diff(galcz[galsel])) 
+        theta = angular_separation(galra[galsel],galde[galsel],groupra[galsel],\
+            groupde[galsel])
+        rproj = theta*groupcz[galsel][0]/70.
+        grprproj = r75func(np.min(rproj),np.max(rproj))
+        keepN2 = bool((deltacz<(mm*grprproj+bb)))
+        if (not keepN2):
+            # break
+            newgroupid[galsel]=brokenupids[galsel]
+            # newgroupid[galsel] = np.array([brokenupids_start, brokenupids_start+1])
+            # brokenupids_start+=2
+        else:
+            pass
+    return newgroupid 
+
 
 
 survey = 'eco'
-mf_type = 'smf'
+mf_type = 'bmf'
 quenching = 'hybrid'
 machine = 'bender'
 level = 'group'
-stacked_stat = False
+stacked_stat = True
+
+print("Survey: {0}\n".format(survey))
+print("Mass function: {0}\n".format(mf_type))
+print("Quenching: {0}\n".format(quenching))
+print("Level: {0}\n".format(level))
+print("M*-sigma: {0}\n".format(stacked_stat))
 
 dict_of_paths = cwpaths.cookiecutter_paths()
 path_to_raw = dict_of_paths['raw_dir']
@@ -1118,12 +1095,16 @@ fblue_cen_global = []
 fblue_sat_global = []
 mean_mstar_red_global = []
 mean_mstar_blue_global = []
+sigma_red_global = []
+sigma_blue_global = []
 for i in tqdm(range(100)):
     phi_total_arr = []
     f_blue_cen_arr = []
     f_blue_sat_arr = []
     mean_mstar_red_arr = []
     mean_mstar_blue_arr = []
+    sigma_red_arr = []
+    sigma_blue_arr = []
     box_id_arr = np.linspace(5001,5008,8)
     for box in tqdm(box_id_arr):
         box = int(box)
@@ -1135,8 +1116,51 @@ for i in tqdm(range(100)):
             # print('Box {0} : Mock {1}'.format(box, num))
             mock_pd = reading_catls(filename) 
 
-            mock_pd = mock_add_grpcz(mock_pd, grpid_col='groupid', 
-                galtype_col='g_galtype', cen_cz_col='cz')
+            ## Pair splitting
+            psgrpid = split_false_pairs(
+                np.array(mock_pd.ra),
+                np.array(mock_pd.dec),
+                np.array(mock_pd.cz), 
+                np.array(mock_pd.groupid))
+
+            mock_pd["ps_groupid"] = psgrpid
+
+            arr1 = mock_pd.ps_groupid
+            arr1_unq = mock_pd.ps_groupid.drop_duplicates()  
+            arr2_unq = np.arange(len(np.unique(mock_pd.ps_groupid))) 
+            mapping = dict(zip(arr1_unq, arr2_unq))   
+            new_values = arr1.map(mapping)
+            mock_pd['ps_groupid'] = new_values  
+
+            most_massive_gal_idxs = mock_pd.groupby(['ps_groupid'])['logmstar']\
+                .transform(max) == mock_pd['logmstar']        
+            grp_censat_new = most_massive_gal_idxs.astype(int)
+            mock_pd["ps_grp_censat"] = grp_censat_new
+
+            # Deal with the case where one group has two equally massive galaxies
+            groups = mock_pd.groupby('ps_groupid')
+            keys = groups.groups.keys()
+            groupids = []
+            for key in keys:
+                group = groups.get_group(key)
+                if np.sum(group.ps_grp_censat.values)>1:
+                    groupids.append(key)
+            
+            final_sat_idxs = []
+            for key in groupids:
+                group = groups.get_group(key)
+                cens = group.loc[group.ps_grp_censat.values == 1]
+                num_cens = len(cens)
+                final_sat_idx = random.sample(list(cens.index.values), num_cens-1)
+                # mock_pd.ps_grp_censat.loc[mock_pd.index == final_sat_idx] = 0
+                final_sat_idxs.append(final_sat_idx)
+            final_sat_idxs = np.hstack(final_sat_idxs)
+
+            mock_pd.loc[final_sat_idxs, 'ps_grp_censat'] = 0
+            #
+
+            mock_pd = mock_add_grpcz(mock_pd, grpid_col='ps_groupid', 
+                galtype_col='ps_grp_censat', cen_cz_col='cz')
             # Using the same survey definition as in mcmc smf i.e excluding the 
             # buffer
             if mf_type == 'smf':
@@ -1149,52 +1173,71 @@ for i in tqdm(range(100)):
                     (mock_pd.grpcz_cen.values <= max_cz) & \
                     (mock_pd.M_r.values <= mag_limit)].reset_index(drop=True)
 
-            # ## Using best-fit found for old ECO data using optimize_hybridqm_eco,py
-            # Mstar_q = 10.39 # Msun/h
-            # Mh_q = 14.85 # Msun/h
-            # mu = 0.65
-            # nu = 0.16
 
-            # ## Using best-fit found for new ECO data using optimize_qm_eco.py 
-            # ## for hybrid quenching model
-            # Mstar_q = 10.49 # Msun/h
-            # Mh_q = 14.03 # Msun/h
-            # mu = 0.69
-            # nu = 0.148
+            if mf_type == "smf":
+                if quenching == "hybrid" and not stacked_stat:
+                    # from #75 used for hybrid sigma-mstar chain 80
+                    bf_from_last_chain = [10.215486, 13.987752, 0.753758, 0.025111]
 
-            # ## Using best-fit found for new ECO data using result from chain 67
-            # ## i.e. hybrid quenching model
-            # bf_from_last_chain = [10.1942986, 14.5454828, 0.708013630,
-            #     0.00722556715]
+                    Mstar_q = bf_from_last_chain[0] # Msun/h**2
+                    Mh_q = bf_from_last_chain[1] # Msun/h
+                    mu = bf_from_last_chain[2]
+                    nu = bf_from_last_chain[3]
 
-            # ## 75
-            bf_from_last_chain = [10.215486, 13.987752, 0.753758, 0.025111]
-            
-            ## Using best-fit found for new ECO data using result from chain 59
-            ## i.e. hybrid quenching model which was the last time M*-sigma was
-            ## used i.e. stacked_stat = True
-            # bf_from_last_chain = [10.133745, 13.478087, 0.810922, 0.043523]
+                elif quenching == "hybrid" and stacked_stat:
+                    # from #77 used for hybrid mstar-sigma chain 82
+                    bf_from_last_chain = [1.01338019e+01, 1.39737846e+01, 6.87668577e-01,
+                        2.59809323e-02]
 
-            Mstar_q = bf_from_last_chain[0] # Msun/h**2
-            Mh_q = bf_from_last_chain[1] # Msun/h
-            mu = bf_from_last_chain[2]
-            nu = bf_from_last_chain[3]
+                    ## This set was not used in this code to make matrices.
+                    ## Using best-fit found for new ECO data using result from chain 59
+                    ## i.e. hybrid quenching model which was the last time M*-sigma was
+                    ## used i.e. stacked_stat = True
+                    # bf_from_last_chain = [10.133745, 13.478087, 0.810922, 0.043523]
 
-            # ## Using best-fit found for new ECO data using optimize_qm_eco.py 
-            # ## for halo quenching model
-            # Mh_qc = 12.61 # Msun/h
-            # Mh_qs = 13.5 # Msun/h
-            # mu_c = 0.40
-            # mu_s = 0.148
 
-            ## Using best-fit found for new ECO data using result from chain 62
-            ## i.e. halo quenching model
-            bf_from_last_chain = [11.749165, 12.471502, 1.496924, 0.416936]
+                    Mstar_q = bf_from_last_chain[0] # Msun/h**2
+                    Mh_q = bf_from_last_chain[1] # Msun/h
+                    mu = bf_from_last_chain[2]
+                    nu = bf_from_last_chain[3]
 
-            Mh_qc = bf_from_last_chain[0] # Msun/h
-            Mh_qs = bf_from_last_chain[1] # Msun/h
-            mu_c = bf_from_last_chain[2]
-            mu_s = bf_from_last_chain[3]
+                elif quenching == "halo" and not stacked_stat:
+                    # from #76 used for halo sigma-mstar chain 81
+                    bf_from_last_chain = [11.7784379, 12.1174944, 1.62771601, 0.131290924]
+                   
+                    Mh_qc = bf_from_last_chain[0] # Msun/h
+                    Mh_qs = bf_from_last_chain[1] # Msun/h
+                    mu_c = bf_from_last_chain[2]
+                    mu_s = bf_from_last_chain[3]
+
+                elif quenching == "halo" and stacked_stat:
+                    #from #83 used for chain 86
+                    bf_from_last_chain = [12.01240587, 12.51050784, 1.40100554, 0.44524407]
+                    Mh_qc = bf_from_last_chain[0] # Msun/h
+                    Mh_qs = bf_from_last_chain[1] # Msun/h
+                    mu_c = bf_from_last_chain[2]
+                    mu_s = bf_from_last_chain[3]
+
+            elif mf_type == "bmf":
+                if quenching == "hybrid" and stacked_stat:
+                    # from #68 
+                    bf_from_last_chain = [10.40868054, 14.06677972,  0.83745589,  0.14406545]
+
+                    Mstar_q = bf_from_last_chain[0] # Msun/h**2
+                    Mh_q = bf_from_last_chain[1] # Msun/h
+                    mu = bf_from_last_chain[2]
+                    nu = bf_from_last_chain[3]
+
+                elif quenching == "halo" and stacked_stat:
+                    #from #83 used for chain 90 
+                    #These are the same params as used for halo, smf case 
+                    #since this is the very first halo quenching baryonic 
+                    #chain to be run
+                    bf_from_last_chain = [12.01240587, 12.51050784, 1.40100554, 0.44524407]
+                    Mh_qc = bf_from_last_chain[0] # Msun/h
+                    Mh_qs = bf_from_last_chain[1] # Msun/h
+                    mu_c = bf_from_last_chain[2]
+                    mu_s = bf_from_last_chain[3]
 
             # Copied from chain 67
             min_chi2_params = [10.194299, 14.545483, 0.708014, 0.007226] #chi2=35
@@ -1226,7 +1269,7 @@ for i in tqdm(range(100)):
                 #Measure BMF of mock using diff_bmf function
                 max_total, phi_total, err_total, counts_total = \
                     diff_bmf(logmbary_arr, volume, False)
-
+            
             phi_total_arr.append(phi_total)
 
             #Measure blue fraction of galaxies
@@ -1239,11 +1282,10 @@ for i in tqdm(range(100)):
                 if mf_type == 'smf':
                     red_deltav, red_cen_mstar_sigma, blue_deltav, \
                         blue_cen_mstar_sigma = get_stacked_velocity_dispersion(mock_pd, 'mock')
-
                     sigma_red = bs(red_cen_mstar_sigma, red_deltav,
-                        statistic='std', bins=np.linspace(8.6,11,5))
+                        statistic='std', bins=np.linspace(8.6,10.8,5))
                     sigma_blue = bs( blue_cen_mstar_sigma, blue_deltav,
-                        statistic='std', bins=np.linspace(8.6,11,5))
+                        statistic='std', bins=np.linspace(8.6,10.8,5))
                     
                     sigma_red = np.log10(sigma_red[0])
                     sigma_blue = np.log10(sigma_blue[0])
@@ -1253,17 +1295,18 @@ for i in tqdm(range(100)):
                         blue_cen_mbary_sigma = get_stacked_velocity_dispersion(mock_pd, 'mock')
 
                     sigma_red = bs(red_cen_mbary_sigma, red_deltav,
-                        statistic='std', bins=np.linspace(9.1,11,5))
+                        statistic='std', bins=np.linspace(9.5,11.2,5))
                     sigma_blue = bs( blue_cen_mbary_sigma, blue_deltav,
-                        statistic='std', bins=np.linspace(9.1,11,5))
+                        statistic='std', bins=np.linspace(9.0,11.2,5))
                     
                     sigma_red = np.log10(sigma_red[0])
                     sigma_blue = np.log10(sigma_blue[0])
 
-                mean_mstar_red_arr.append(sigma_red)
-                mean_mstar_blue_arr.append(sigma_blue)
-
-            else:
+                sigma_red_arr.append(sigma_red)
+                sigma_blue_arr.append(sigma_blue)
+            
+            #* Changed from else to if since now we want to include both stats
+            if stacked_stat:
                 if mf_type == 'smf':
                     red_sigma, red_cen_mstar_sigma, blue_sigma, \
                         blue_cen_mstar_sigma = get_velocity_dispersion(mock_pd, 'mock')
@@ -1284,9 +1327,9 @@ for i in tqdm(range(100)):
                     blue_sigma = np.log10(blue_sigma)
 
                     mean_mstar_red = bs(red_sigma, red_cen_mbary_sigma, 
-                        statistic=average_of_log, bins=np.linspace(1,3,5))
+                        statistic=average_of_log, bins=np.linspace(1,2.8,5))
                     mean_mstar_blue = bs(blue_sigma, blue_cen_mbary_sigma, 
-                        statistic=average_of_log, bins=np.linspace(1,3,5))
+                        statistic=average_of_log, bins=np.linspace(1,2.5,5))
                 
                 mean_mstar_red_arr.append(mean_mstar_red[0])
                 mean_mstar_blue_arr.append(mean_mstar_blue[0])
@@ -1299,27 +1342,263 @@ for i in tqdm(range(100)):
     mean_mstar_red_arr = np.array(mean_mstar_red_arr)
     mean_mstar_blue_arr = np.array(mean_mstar_blue_arr)
 
+    sigma_red_arr = np.array(sigma_red_arr)
+    sigma_blue_arr = np.array(sigma_blue_arr)
+
     phi_global.append(phi_arr_total)
     fblue_cen_global.append(f_blue_cen_arr)
     fblue_sat_global.append(f_blue_sat_arr)
     mean_mstar_red_global.append(mean_mstar_red_arr)
     mean_mstar_blue_global.append(mean_mstar_blue_arr)
+    sigma_red_global.append(sigma_red_arr)
+    sigma_blue_global.append(sigma_blue_arr)
 
 phi_global = np.array(phi_global)
 fblue_cen_global = np.array(fblue_cen_global)
 fblue_sat_global = np.array(fblue_sat_global)
 mean_mstar_red_global = np.array(mean_mstar_red_global)
 mean_mstar_blue_global = np.array(mean_mstar_blue_global)
+sigma_red_global = np.array(sigma_red_global)
+sigma_blue_global = np.array(sigma_blue_global)
 
-hf = h5py.File(path_to_proc + 'corr_matrices.h5', 'w')
+hf = h5py.File(path_to_proc + 'corr_matrices_28stats_{0}_{1}.h5'.format(quenching, mf_type), 'w')
 hf.create_dataset('smf', data=phi_global)
 hf.create_dataset('fblue_cen', data=fblue_cen_global)
 hf.create_dataset('fblue_sat', data=fblue_sat_global)
+hf.create_dataset('sigma_red', data=sigma_red_global)
+hf.create_dataset('sigma_blue', data=sigma_blue_global)
 hf.create_dataset('mean_mstar_red', data=mean_mstar_red_global)
 hf.create_dataset('mean_mstar_blue', data=mean_mstar_blue_global)
 hf.close()
 
+if stacked_stat:
+    hf = h5py.File(path_to_proc + 'corr_matrices_xy_mstarsigma_oldbins_{0}.h5'.format(quenching), 'w')
+    hf.create_dataset('smf', data=phi_global)
+    hf.create_dataset('fblue_cen', data=fblue_cen_global)
+    hf.create_dataset('fblue_sat', data=fblue_sat_global)
+    hf.create_dataset('mean_sigma_red', data=mean_mstar_red_global)
+    hf.create_dataset('mean_sigma_blue', data=mean_mstar_blue_global)
+    hf.close()
+else:
+    hf = h5py.File(path_to_proc + 'corr_matrices_{0}.h5'.format(quenching), 'w')
+    hf.create_dataset('smf', data=phi_global)
+    hf.create_dataset('fblue_cen', data=fblue_cen_global)
+    hf.create_dataset('fblue_sat', data=fblue_sat_global)
+    hf.create_dataset('mean_mstar_red', data=mean_mstar_red_global)
+    hf.create_dataset('mean_mstar_blue', data=mean_mstar_blue_global)
+    hf.close()
+
 # Read in datasets from h5 file and calculate corr matrix
+if stacked_stat:
+    hf_read = h5py.File(path_to_proc + 'corr_matrices_xy_mstarsigma_oldbins_{0}.h5'.format(quenching), 'r')
+else:
+    hf_read = h5py.File(path_to_proc + 'corr_matrices_{0}.h5'.format(quenching), 'r')
+hf_read.keys()
+smf = hf_read.get('smf')
+smf = np.array(smf)
+fblue_cen = hf_read.get('fblue_cen')
+fblue_cen = np.array(fblue_cen)
+fblue_sat = hf_read.get('fblue_sat')
+fblue_sat = np.array(fblue_sat)
+mean_mstar_red = hf_read.get('mean_mstar_red')
+mean_mstar_red = np.array(mean_mstar_red)
+mean_mstar_blue = hf_read.get('mean_mstar_blue')
+mean_mstar_blue = np.array(mean_mstar_blue)
+
+#* Values from chain 74
+#* bf_bin_params = [1.25265896e+01, 1.05945720e+01, 4.53178499e-01, 5.82146045e-01,
+#*       3.19537853e-01, 1.01463004e+01, 1.43383461e+01, 6.83946944e-01,
+#*       1.41126799e-02]
+#* bf_bin_chi2 = 30.84
+
+#* Using DR3 with pair-splitting since matrix included pair splitting + new bins
+data_stats = [-1.52518353, -1.67537112, -1.89183513, -2.60866256,  0.82258065,
+        0.58109091,  0.32606325,  0.09183673,  0.46529814,  0.31311707,
+        0.21776504,  0.04255319, 10.33120738, 10.44089237, 10.49140916,
+        10.90520085,  9.96134779, 10.02206739, 10.08378187, 10.19648856]
+
+model_stats = [-1.6519256 , -1.8308534 , -2.06871355, -2.76088258,  0.80957628,
+        0.61997687,  0.32985039,  0.06624606,  0.48458904,  0.35380835,
+        0.17920657,  0.0754717 , 10.34519482, 10.37549973, 10.56002331,
+        10.72787762,  9.92759132,  9.87016296, 10.05955315, 10.15922451]
+
+data_stats = np.array(data_stats)
+model_stats = np.array(model_stats)
+
+chi_squared_arr = []
+sigma_arr = []
+for i in range(100):
+    phi_total_0 = smf[i][:,0]
+    phi_total_1 = smf[i][:,1]
+    phi_total_2 = smf[i][:,2]
+    phi_total_3 = smf[i][:,3]
+
+    f_blue_cen_0 = fblue_cen[i][:,0]
+    f_blue_cen_1 = fblue_cen[i][:,1]
+    f_blue_cen_2 = fblue_cen[i][:,2]
+    f_blue_cen_3 = fblue_cen[i][:,3]
+
+    f_blue_sat_0 = fblue_sat[i][:,0]
+    f_blue_sat_1 = fblue_sat[i][:,1]
+    f_blue_sat_2 = fblue_sat[i][:,2]
+    f_blue_sat_3 = fblue_sat[i][:,3]
+
+    mstar_red_cen_0 = mean_mstar_red[i][:,0]
+    mstar_red_cen_1 = mean_mstar_red[i][:,1]
+    mstar_red_cen_2 = mean_mstar_red[i][:,2]
+    mstar_red_cen_3 = mean_mstar_red[i][:,3]
+
+    mstar_blue_cen_0 = mean_mstar_blue[i][:,0]
+    mstar_blue_cen_1 = mean_mstar_blue[i][:,1]
+    mstar_blue_cen_2 = mean_mstar_blue[i][:,2]
+    mstar_blue_cen_3 = mean_mstar_blue[i][:,3]
+
+    sigma_red_0 = sigma_red[i][:,0]
+    sigma_red_1 = sigma_red[i][:,1]
+    sigma_red_2 = sigma_red[i][:,2]
+    sigma_red_3 = sigma_red[i][:,3]
+
+    sigma_blue_0 = sigma_blue[i][:,0]
+    sigma_blue_1 = sigma_blue[i][:,1]
+    sigma_blue_2 = sigma_blue[i][:,2]
+    sigma_blue_3 = sigma_blue[i][:,3]
+
+    combined_df = pd.DataFrame({
+        'phi_tot_0':phi_total_0, 'phi_tot_1':phi_total_1, 
+        'phi_tot_2':phi_total_2, 'phi_tot_3':phi_total_3,
+        'f_blue_cen_0':f_blue_cen_0, 'f_blue_cen_1':f_blue_cen_1, 
+        'f_blue_cen_2':f_blue_cen_2, 'f_blue_cen_3':f_blue_cen_3,
+        'f_blue_sat_0':f_blue_sat_0, 'f_blue_sat_1':f_blue_sat_1, 
+        'f_blue_sat_2':f_blue_sat_2, 'f_blue_sat_3':f_blue_sat_3,
+        'mstar_red_cen_0':mstar_red_cen_0, 'mstar_red_cen_1':mstar_red_cen_1, 
+        'mstar_red_cen_2':mstar_red_cen_2, 'mstar_red_cen_3':mstar_red_cen_3,
+        'mstar_blue_cen_0':mstar_blue_cen_0, 'mstar_blue_cen_1':mstar_blue_cen_1, 
+        'mstar_blue_cen_2':mstar_blue_cen_2, 'mstar_blue_cen_3':mstar_blue_cen_3,
+        'sigma_red_0':sigma_red_0, 'sigma_red_1':sigma_red_1, 
+        'sigma_red_2':sigma_red_2, 'sigma_red_3':sigma_red_3,
+        'sigma_blue_0':sigma_blue_0, 'sigma_blue_1':sigma_blue_1, 
+        'sigma_blue_2':sigma_blue_2, 'sigma_blue_3':sigma_blue_3})
+
+    if i == 0:
+        # Correlation matrix of phi and deltav colour measurements combined
+        corr_mat_global = combined_df.corr()
+        cov_mat_global = combined_df.cov()
+
+        corr_mat_average = corr_mat_global
+        cov_mat_average = cov_mat_global
+    else:
+        corr_mat_average = pd.concat([corr_mat_average, combined_df.corr()]).groupby(level=0, sort=False).mean()
+        cov_mat_average = pd.concat([cov_mat_average, combined_df.cov()]).groupby(level=0, sort=False).mean()
+        
+        corr_mat_global = corr_mat_global.append(combined_df.corr())
+        cov_mat_global = cov_mat_global.append(combined_df.cov())
+        
+
+    corr_mat_inv_colour = np.linalg.inv(combined_df.corr().values)  
+    sigma = np.sqrt(np.diag(combined_df.cov()))
+    sigma_arr.append(sigma)
+
+    chi_squared_i = chi_squared(data_stats, model_stats, sigma, corr_mat_inv_colour)
+    chi_squared_arr.append(chi_squared_i)
+
+
+#* Calculating chi2 using av. corr. mat and av. cov mat calculated independently
+corr_mat_inv_colour_average = np.linalg.inv(corr_mat_average.values) 
+sigma_average = np.sqrt(np.diag(cov_mat_average))
+# sigma_average = np.mean(sigma_arr, axis=0)
+chi_squared_average = chi_squared(data_stats, model_stats, sigma_average, corr_mat_inv_colour_average)
+
+#* Calculating chi2 using av. corr. mat derived from av. cov mat
+
+#* Coded covariance matrix and correlation matrix to make sure 
+#* df.corr() and np.cov() produce expected results (and they do!)
+def calc_cov_mat(df):
+    N = len(df)
+    fact = 1/(N-1)
+
+    df_mean = df.mean(axis=0).values
+    num_cols = df.shape[1]
+    cov_mat = np.zeros((num_cols, num_cols))
+    for i in range(num_cols):
+        for j in range(num_cols):
+            mean_y_i = df_mean[i]
+            mean_y_j = df_mean[j]
+            cov_mat[i][j] = fact * np.sum((df.values.T[i] - mean_y_i)*(df.values.T[j] - mean_y_j))
+        
+            #* Alt code
+            # summation = 0
+            # for n in range(N):
+            #     summation += (df.values.T[i][n] - mean_y_i) * (df.values.T[j][n] - mean_y_j)
+            # cov_mat[i][j] = fact * summation
+
+    return cov_mat
+
+def calc_corr_mat(df):
+    num_cols = df.shape[1]
+    corr_mat = np.zeros((num_cols, num_cols))
+    for i in range(num_cols):
+        for j in range(num_cols):
+            num = df.values[i][j]
+            denom = np.sqrt(df.values[i][i] * df.values[j][j])
+            corr_mat[i][j] = num/denom
+    return corr_mat
+
+# my_cov_mat = calc_cov_mat(combined_df)
+#Using average cov mat
+my_corr_mat = calc_corr_mat(cov_mat_average)
+corr_mat_inv_colour_average = np.linalg.inv(my_corr_mat) 
+sigma_average = np.sqrt(np.diag(cov_mat_average))
+# sigma_average = np.mean(sigma_arr, axis=0)
+chi_squared_average = chi_squared(data_stats, model_stats, sigma_average, corr_mat_inv_colour_average)
+
+#* Calculating chi2 by varying models (bf from run 74) instead of matrix
+model_init = halocat_init(halo_catalog, z_median)
+bf_bin_params = [1.25265896e+01, 1.05945720e+01, 4.53178499e-01, 5.82146045e-01,
+    3.19537853e-01, 1.01463004e+01, 1.43383461e+01, 6.83946944e-01,
+    1.41126799e-02]
+bf_bin_chi2 = 30.84
+model_stats_global = []
+for i in range(100):
+    model_stats = lnprob(bf_bin_params)
+    model_stats = model_stats.flatten()
+    model_stats_global.append(model_stats)
+model_stats_global = np.array(model_stats_global)
+
+model_stats_global = np.genfromtxt('/Users/asadm2/Desktop/100models.csv', delimiter=',')
+
+# Using average corr matrix and sigma from average cov matrix
+corr_mat_inv_colour = np.linalg.inv(corr_mat_average.values)  
+sigma = np.sqrt(np.diag(cov_mat_average))
+chi_squared_100models_arr = []
+for i in range(100):
+    model_stats = model_stats_global[i]
+    chi_squared_100models_i = chi_squared(data_stats, model_stats, sigma, corr_mat_inv_colour)
+    chi_squared_100models_arr.append(chi_squared_100models_i)
+chi_squared_100models_arr = np.array(chi_squared_100models_arr)
+
+# Removing extremely large chi-squared of 83000+
+chi_squared_100models_arr_mod = chi_squared_100models_arr[\
+    chi_squared_100models_arr < max(chi_squared_100models_arr)]
+
+fig1 = plt.figure(figsize=(10,8))
+plt.hist(chi_squared_arr, histtype='step', lw=2, color='rebeccapurple', 
+    label='100 matrices')
+plt.hist(chi_squared_100models_arr_mod, histtype='step', lw=2, 
+    color='goldenrod', label='100 models')
+plt.axvline(np.average(chi_squared_arr), color='rebeccapurple', 
+    linestyle='dashed', linewidth=1, 
+    label=r'\boldmath$\overline{ \chi^2 }$ =' + 
+    '{0}'.format(np.round(np.average(chi_squared_arr), 2)))
+plt.axvline(np.average(chi_squared_100models_arr_mod), color='goldenrod',
+    linestyle='dashed', linewidth=1, 
+    label=r'\boldmath$\overline{ \chi^2 }$ =' + 
+    '{0}'.format(np.round(np.average(chi_squared_100models_arr_mod), 2)))
+plt.legend(loc="best",prop={'size':20})
+plt.xlabel(r'\boldmath$\chi^{2}$')
+plt.show()
+
+#* 21 is index of model that's at the center of the yellow distribution
+
 hf_read = h5py.File(path_to_proc +'corr_matrices.h5', 'r')
 hf_read.keys()
 smf = hf_read.get('smf')
@@ -1333,21 +1612,17 @@ mean_mstar_red = np.array(mean_mstar_red)
 mean_mstar_blue = hf_read.get('mean_mstar_blue')
 mean_mstar_blue = np.array(mean_mstar_blue)
 
-#* Values from chain 78
-#* bf_bin_params = [12.614564, 10.622212, 0.453382, 0.384225, 0.210445, 10.182908,
-#*    14.063352, 0.728482, 0.023669]
-#* bf_bin_chi2 = 18.78
+#* Using DR3 with pair-splitting since matrix included pair splitting + new bins
+data_stats = [-1.52518353, -1.67537112, -1.89183513, -2.60866256,  0.82258065,
+        0.58109091,  0.32606325,  0.09183673,  0.46529814,  0.31311707,
+        0.21776504,  0.04255319, 10.33120738, 10.44089237, 10.49140916,
+        10.90520085,  9.96134779, 10.02206739, 10.08378187, 10.19648856]
 
-
-data_stats = [-1.52636489, -1.67495453, -1.89217831, -2.60866256,  0.82645562, 
-    0.58006042,  0.32635061,  0.09183673,  0.50428082,  0.33464567,
-    0.22067039,  0.04255319, 10.32296892, 10.41302058, 10.43689304,
-    10.80875171,  9.92036448,  9.98886097, 10.02533109, 10.05904768]
-
-model_stats = [-1.73441117, -1.9072183 , -2.13926361, -2.94373088,  0.83503268,
-    0.65494978,  0.34580754,  0.09195402,  0.51870242,  0.37688442,
-    0.21483771,  0.12      , 10.29579639, 10.31774426, 10.45108414,
-    10.61262035,  9.88168716,  9.90425777,  9.9949131 , 10.08223915]
+model_stats = [-1.65462665, -1.83406683, -2.06495113, -2.75657834,  0.80264609,
+        0.6276114 ,  0.32879606,  0.08945687,  0.45818693,  0.36019536,
+        0.18370166,  0.02666667, 10.35981178, 10.36600304, 10.54175568,
+       10.73550415,  9.90159321,  9.9658432 , 10.03906345, 10.21994781]
+    
 
 data_stats = np.array(data_stats)
 model_stats = np.array(model_stats)
@@ -1414,49 +1689,28 @@ for i in range(100):
     chi_squared_i = chi_squared(data_stats, model_stats, sigma, corr_mat_inv_colour)
     chi_squared_arr.append(chi_squared_i)
 
+fig1 = plt.figure(figsize=(10,8))
+plt.hist(chi_squared_arr, histtype='step', lw=2, color='rebeccapurple', 
+    label='100 matrices')
+plt.hist(chi_squared_100models_arr_mod, histtype='step', lw=2, 
+    color='goldenrod', label='100 models')
+plt.axvline(np.average(chi_squared_arr), color='rebeccapurple', 
+    linestyle='dashed', linewidth=1, 
+    label=r'\boldmath$\overline{ \chi^2 }$ =' + 
+    '{0}'.format(np.round(np.average(chi_squared_arr), 2)))
+plt.axvline(np.average(chi_squared_100models_arr_mod), color='goldenrod',
+    linestyle='dashed', linewidth=1, 
+    label=r'\boldmath$\overline{ \chi^2 }$ =' + 
+    '{0}'.format(np.round(np.average(chi_squared_100models_arr_mod), 2)))
+plt.legend(loc="best",prop={'size':20})
+plt.xlabel(r'\boldmath$\chi^{2}$')
+plt.show()
 
-corr_mat_inv_colour_average = np.linalg.inv(corr_mat_average.values) 
-sigma_average = np.sqrt(np.diag(cov_mat_average))
-# sigma_average = np.mean(sigma_arr, axis=0)
-chi_squared_average = chi_squared(data_stats, model_stats, sigma_average, corr_mat_inv_colour_average)
-
-#* Coded covariance matrix and correlation matrix to make sure 
-#* df.corr() and np.cov() produce expected results (and they do!)
-def calc_cov_mat(df):
-    N = len(df)
-    fact = 1/(N-1)
-
-    df_mean = df.mean(axis=0).values
-    num_cols = df.shape[1]
-    cov_mat = np.zeros((num_cols, num_cols))
-    for i in range(num_cols):
-        for j in range(num_cols):
-            mean_y_i = df_mean[i]
-            mean_y_j = df_mean[j]
-            cov_mat[i][j] = fact * np.sum((df.values.T[i] - mean_y_i)*(df.values.T[j] - mean_y_j))
-        
-            #* Alt code
-            # summation = 0
-            # for n in range(N):
-            #     summation += (df.values.T[i][n] - mean_y_i) * (df.values.T[j][n] - mean_y_j)
-            # cov_mat[i][j] = fact * summation
-
-    return cov_mat
-
-
-def calc_corr_mat(df):
-    num_cols = df.shape[1]
-    corr_mat = np.zeros((num_cols, num_cols))
-    for i in range(num_cols):
-        for j in range(num_cols):
-            num = df[i][j]
-            denom = np.sqrt(df[i][i] * df[j][j])
-            corr_mat[i][j] = num/denom
-    return corr_mat
-
-my_cov_mat = calc_cov_mat(combined_df)
-my_corr_mat = calc_corr_mat(my_cov_mat)
-
+# Looking at most massive galaxy
+for i in range(100):
+    model.mock.populate()
+    gals = model.mock.galaxy_table           
+    print(np.log10(gals['stellar_mass'].max()))
 
 #* Checking to see if distribution of cells across 64 mocks is gaussian 
 from scipy.stats import normaltest
@@ -1511,20 +1765,138 @@ plt.colorbar(cax)
 plt.title('{0}'.format(quenching))
 plt.show()
 
-# import multiprocessing as mp
+#* Matrix plot for when all 28 bins are included
 
-# def func(x, y):
-#     print(x*x, x+(5*y))
-#     return x*x, x+(5*y)
+hf_read = h5py.File('/Users/asadm2/Desktop/corr_matrices_28stats_{0}.h5'.format(quenching), 'r')
+hf_read.keys()
+smf = hf_read.get('smf')
+smf = np.array(smf)
+fblue_cen = hf_read.get('fblue_cen')
+fblue_cen = np.array(fblue_cen)
+fblue_sat = hf_read.get('fblue_sat')
+fblue_sat = np.array(fblue_sat)
+mean_mstar_red = hf_read.get('mean_mstar_red')
+mean_mstar_red = np.array(mean_mstar_red)
+mean_mstar_blue = hf_read.get('mean_mstar_blue')
+mean_mstar_blue = np.array(mean_mstar_blue)
+sigma_red = hf_read.get('sigma_red')
+sigma_red = np.array(sigma_red)
+sigma_blue = hf_read.get('sigma_blue')
+sigma_blue = np.array(sigma_blue)
 
-# def main():
-#     with mp.Pool(2) as pool:
-#         for i in range(10):
-#             results = pool.starmap(func,
-#                                 [(a, b) for a in range(3)
-#                                         for b in range(2, 5)])
-#         sorted_results = sorted(results, key=lambda x: x[1], reverse=True)
-#         print(sorted_results)
 
-# if __name__ == '__main__':
-#     main()
+for i in range(1):
+    phi_total_0 = smf[i][:,0]
+    phi_total_1 = smf[i][:,1]
+    phi_total_2 = smf[i][:,2]
+    phi_total_3 = smf[i][:,3]
+
+    f_blue_cen_0 = fblue_cen[i][:,0]
+    f_blue_cen_1 = fblue_cen[i][:,1]
+    f_blue_cen_2 = fblue_cen[i][:,2]
+    f_blue_cen_3 = fblue_cen[i][:,3]
+
+    f_blue_sat_0 = fblue_sat[i][:,0]
+    f_blue_sat_1 = fblue_sat[i][:,1]
+    f_blue_sat_2 = fblue_sat[i][:,2]
+    f_blue_sat_3 = fblue_sat[i][:,3]
+
+    mstar_red_cen_0 = mean_mstar_red[i][:,0]
+    mstar_red_cen_1 = mean_mstar_red[i][:,1]
+    mstar_red_cen_2 = mean_mstar_red[i][:,2]
+    mstar_red_cen_3 = mean_mstar_red[i][:,3]
+
+    mstar_blue_cen_0 = mean_mstar_blue[i][:,0]
+    mstar_blue_cen_1 = mean_mstar_blue[i][:,1]
+    mstar_blue_cen_2 = mean_mstar_blue[i][:,2]
+    mstar_blue_cen_3 = mean_mstar_blue[i][:,3]
+
+    sigma_red_0 = sigma_red[i][:,0]
+    sigma_red_1 = sigma_red[i][:,1]
+    sigma_red_2 = sigma_red[i][:,2]
+    sigma_red_3 = sigma_red[i][:,3]
+
+    sigma_blue_0 = sigma_blue[i][:,0]
+    sigma_blue_1 = sigma_blue[i][:,1]
+    sigma_blue_2 = sigma_blue[i][:,2]
+    sigma_blue_3 = sigma_blue[i][:,3]
+
+    combined_df = pd.DataFrame({
+        'phi_tot_0':phi_total_0, 'phi_tot_1':phi_total_1, 
+        'phi_tot_2':phi_total_2, 'phi_tot_3':phi_total_3,
+        'f_blue_cen_0':f_blue_cen_0, 'f_blue_cen_1':f_blue_cen_1, 
+        'f_blue_cen_2':f_blue_cen_2, 'f_blue_cen_3':f_blue_cen_3,
+        'f_blue_sat_0':f_blue_sat_0, 'f_blue_sat_1':f_blue_sat_1, 
+        'f_blue_sat_2':f_blue_sat_2, 'f_blue_sat_3':f_blue_sat_3,
+        'mstar_red_cen_0':mstar_red_cen_0, 'mstar_red_cen_1':mstar_red_cen_1, 
+        'mstar_red_cen_2':mstar_red_cen_2, 'mstar_red_cen_3':mstar_red_cen_3,
+        'mstar_blue_cen_0':mstar_blue_cen_0, 'mstar_blue_cen_1':mstar_blue_cen_1, 
+        'mstar_blue_cen_2':mstar_blue_cen_2, 'mstar_blue_cen_3':mstar_blue_cen_3,
+        'sigma_red_0':sigma_red_0, 'sigma_red_1':sigma_red_1, 
+        'sigma_red_2':sigma_red_2, 'sigma_red_3':sigma_red_3,
+        'sigma_blue_0':sigma_blue_0, 'sigma_blue_1':sigma_blue_1,
+        'sigma_blue_2':sigma_blue_2, 'sigma_blue_3':sigma_blue_3})
+
+    if i == 0:
+        # Correlation matrix of phi and deltav colour measurements combined
+        corr_mat_global = combined_df.corr()
+        cov_mat_global = combined_df.cov()
+
+        corr_mat_average = corr_mat_global
+        cov_mat_average = cov_mat_global
+    else:
+        corr_mat_average = pd.concat([corr_mat_average, combined_df.corr()]).groupby(level=0, sort=False).mean()
+        cov_mat_average = pd.concat([cov_mat_average, combined_df.cov()]).groupby(level=0, sort=False).mean()
+        
+
+# Using average cov mat to get correlation matrix
+corr_mat_average = calc_corr_mat(cov_mat_average)
+corr_mat_inv_colour_average = np.linalg.inv(corr_mat_average) 
+sigma_average = np.sqrt(np.diag(cov_mat_average))
+
+
+from matplotlib.legend_handler import HandlerTuple
+import matplotlib.pyplot as plt
+from matplotlib import rc
+from matplotlib import cm
+
+rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=20)
+rc('text', usetex=True)
+rc('text.latex', preamble=r"\usepackage{amsmath}")
+rc('axes', linewidth=2)
+rc('xtick.major', width=4, size=7)
+rc('ytick.major', width=4, size=7)
+rc('xtick.minor', width=2, size=7)
+rc('ytick.minor', width=2, size=7)
+
+fig1 = plt.figure()
+ax1 = fig1.add_subplot(111)
+cmap = cm.get_cmap('Spectral_r')
+cax = ax1.matshow(corr_mat_average, cmap=cmap, vmin=-1, vmax=1)
+tick_marks = [i for i in range(len(combined_df.columns))]
+names = [
+r'$\Phi_1$', r'$\Phi_2$', r'$\Phi_3$', r'$\Phi_4$',
+r'$fblue\ cen_1$', r'$cen_2$', r'$cen_3$', r'$cen_4$',
+r'$fblue\ sat_1$', r'$sat_2$', r'$sat_3$', r'$sat_4$',
+r'$mstar\ red\ grpcen_1$', r'$grpcen_2$', r'$grpcen_3$', r'$grpcen_4$',
+r'$mstar\ blue\ grpcen_1$', r'$grpcen_2$', r'$grpcen_3$', r'$grpcen_4$',
+r'$sigma\ red_1$', r'$red_2$', r'$red_3$', r'$red_4$',
+r'$sigma\ blue_1$', r'$blue_2$', r'$blue_3$', r'$blue_4$']
+
+tick_marks=[0, 4, 8, 12, 16, 20, 24]
+names = [
+    r"$\boldsymbol\phi$",
+    r"$\boldsymbol{f_{blue}^{c}}$",
+    r"$\boldsymbol{f_{blue}^{s}}$",
+    r"$\boldsymbol{\overline{M_{*,red}^{c}}}$",
+    r"$\boldsymbol{\overline{M_{*,blue}^{c}}}$",
+    r"$\boldsymbol{\sigma_{red}}$",
+    r"$\boldsymbol{\sigma_{blue}}$"]
+
+plt.xticks(tick_marks, names, fontsize=10)#, rotation='vertical')
+plt.yticks(tick_marks, names, fontsize=10)    
+plt.gca().invert_yaxis() 
+plt.gca().xaxis.tick_bottom()
+plt.colorbar(cax)
+plt.title('{0}'.format(quenching))
+plt.show()
