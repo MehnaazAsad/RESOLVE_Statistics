@@ -13,6 +13,7 @@ import pandas as pd
 import globals
 import random
 import time
+import h5py
 
 class Analysis():
 
@@ -177,7 +178,8 @@ class Analysis():
 
             else:
                 # For eco total
-                bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
+                #* Changed max bin from 11.5 to 11.1 to be the same as mstar-sigma (10.8)
+                bin_max = np.round(np.log10((10**11.1) / 2.041), 1)
                 bin_num = 5
 
             bins = np.linspace(bin_min, bin_max, bin_num)
@@ -198,6 +200,81 @@ class Analysis():
         phi = np.log10(phi)
 
         return maxis, phi, err_tot, bins, counts
+
+    def calc_bary(self, logmstar_arr, logmgas_arr):
+        """Calculates baryonic mass of galaxies from survey"""
+        logmbary = np.log10((10**logmstar_arr) + (10**logmgas_arr))
+        return logmbary
+
+    def diff_bmf(self, mass_arr, volume, h1_bool, colour_flag=False):
+        """
+        Calculates differential baryonic mass function
+
+        Parameters
+        ----------
+        mstar_arr: numpy array
+            Array of baryonic masses
+
+        volume: float
+            Volume of survey or simulation
+
+        cvar_err: float
+            Cosmic variance of survey
+
+        sim_bool: boolean
+            True if masses are from mock
+
+        Returns
+        ---------
+        maxis: array
+            Array of x-axis mass values
+
+        phi: array
+            Array of y-axis values
+
+        err_tot: array
+            Array of error values per bin
+        
+        bins: array
+            Array of bin edge values
+        """
+        settings = self.settings
+
+        if not h1_bool:
+            # changing from h=0.7 to h=1 assuming h^-2 dependence
+            logmbary_arr = np.log10((10**mass_arr) / 2.041)
+        else:
+            logmbary_arr = np.log10(mass_arr)
+
+        if settings.survey == 'eco' or settings.survey == 'resolvea':
+            bin_min = np.round(np.log10((10**9.3) / 2.041), 1)
+
+            if settings.survey == 'eco':
+                # *checked 
+                bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
+
+            elif settings.survey == 'resolvea':
+                bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
+
+            bins = np.linspace(bin_min, bin_max, 5)
+
+        elif settings.survey == 'resolveb':
+            bin_min = np.round(np.log10((10**9.1) / 2.041), 1)
+            bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
+            bins = np.linspace(bin_min, bin_max, 5)
+
+        # Unnormalized histogram and bin edges
+        counts, edg = np.histogram(logmbary_arr, bins=bins)  # paper used 17 bins
+        dm = edg[1] - edg[0]  # Bin width
+        maxis = 0.5 * (edg[1:] + edg[:-1])  # Mass axis i.e. bin centers
+        # Normalized to volume and bin width
+        err_poiss = np.sqrt(counts) / (volume * dm)
+        err_tot = err_poiss
+
+        phi = counts / (volume * dm)  # not a log quantity
+        phi = np.log10(phi)
+
+        return maxis, phi, err_tot, counts
 
     def blue_frac_helper(self, arr):
         """Helper function for blue_frac() that calculates the fraction of blue 
@@ -251,31 +328,57 @@ class Analysis():
         # print("after type set")
 
         if data_bool:
-            mstar_total_arr = catl.logmstar.values
             censat_col = 'g_galtype'
-            mstar_cen_arr = catl.logmstar.loc[catl[censat_col] == 1].values
-            mstar_sat_arr = catl.logmstar.loc[catl[censat_col] == 0].values
+
+            if settings.mf_type == 'smf':
+                mass_total_arr = catl.logmstar.values
+                mass_cen_arr = catl.logmstar.loc[catl[censat_col] == 1].values
+                mass_sat_arr = catl.logmstar.loc[catl[censat_col] == 0].values
+
+            elif settings.mf_type == 'bmf':
+                mass_total_arr = catl.logmbary_a23.values
+                mass_cen_arr = catl.logmbary_a23.loc[catl[censat_col] == 1].values
+                mass_sat_arr = catl.logmbary_a23.loc[catl[censat_col] == 0].values
+
         ## Mocks case different than data because of censat_col
         elif not data_bool and not h1_bool:
-            mstar_total_arr = catl.logmstar.values
 
             # Not g_galtype anymore after applying pair splitting
             censat_col = 'ps_grp_censat'
             # censat_col = 'g_galtype'
             # censat_col = 'cs_flag'
-            mstar_cen_arr = catl.logmstar.loc[catl[censat_col] == 1].values
-            mstar_sat_arr = catl.logmstar.loc[catl[censat_col] == 0].values           
+
+            if settings.mf_type == 'smf':
+                mass_total_arr = catl.logmstar.values
+                mass_cen_arr = catl.logmstar.loc[catl[censat_col] == 1].values
+                mass_sat_arr = catl.logmstar.loc[catl[censat_col] == 0].values
+
+            elif settings.mf_type == 'bmf':
+                logmstar_arr = catl.logmstar.values
+                mhi_arr = catl.mhi.values
+                logmgas_arr = np.log10(1.4 * mhi_arr)
+                logmbary_arr = self.calc_bary(logmstar_arr, logmgas_arr)
+                catl["logmbary"] = logmbary_arr
+
+                mass_total_arr = catl.logmbary.values
+                mass_cen_arr = catl.logmbary.loc[catl[censat_col] == 1].values
+                mass_sat_arr = catl.logmbary.loc[catl[censat_col] == 0].values
+
         elif isinstance(randint_logmstar, int) and randint_logmstar != 1:
             # print("mp_func brought me here")
-            mstar_total_arr = catl['{0}'.format(randint_logmstar)].values
             censat_col = 'grp_censat_{0}'.format(randint_logmstar)
-            mstar_cen_arr = catl['{0}'.format(randint_logmstar)].loc[catl[censat_col] == 1].values
-            mstar_sat_arr = catl['{0}'.format(randint_logmstar)].loc[catl[censat_col] == 0].values
+
+            mass_total_arr = catl['{0}'.format(randint_logmstar)].values
+            mass_cen_arr = catl['{0}'.format(randint_logmstar)].loc[catl[censat_col] == 1].values
+            mass_sat_arr = catl['{0}'.format(randint_logmstar)].loc[catl[censat_col] == 0].values
+        
         elif isinstance(randint_logmstar, int) and randint_logmstar == 1:
-            mstar_total_arr = catl['behroozi_bf'].values
+
             censat_col = 'grp_censat_{0}'.format(randint_logmstar)
-            mstar_cen_arr = catl['behroozi_bf'].loc[catl[censat_col] == 1].values
-            mstar_sat_arr = catl['behroozi_bf'].loc[catl[censat_col] == 0].values
+
+            mass_total_arr = catl['behroozi_bf'].values
+            mass_cen_arr = catl['behroozi_bf'].loc[catl[censat_col] == 1].values
+            mass_sat_arr = catl['behroozi_bf'].loc[catl[censat_col] == 0].values
 
         # print("censat_col:{0}".format(censat_col))
         # print(type(randint_logmstar))
@@ -285,19 +388,27 @@ class Analysis():
 
         if not h1_bool:
             # changing from h=0.7 to h=1 assuming h^-2 dependence
-            logmstar_total_arr = np.log10((10**mstar_total_arr) / 2.041)
-            logmstar_cen_arr = np.log10((10**mstar_cen_arr) / 2.041)
-            logmstar_sat_arr = np.log10((10**mstar_sat_arr) / 2.041)
+            logmass_total_arr = np.log10((10**mass_total_arr) / 2.041)
+            logmass_cen_arr = np.log10((10**mass_cen_arr) / 2.041)
+            logmass_sat_arr = np.log10((10**mass_sat_arr) / 2.041)
         else:
-            logmstar_total_arr = mstar_total_arr
-            logmstar_cen_arr = mstar_cen_arr
-            logmstar_sat_arr = mstar_sat_arr
+            logmass_total_arr = mass_total_arr
+            logmass_cen_arr = mass_cen_arr
+            logmass_sat_arr = mass_sat_arr
 
         if settings.survey == 'eco' or settings.survey == 'resolvea':
-            bin_min = np.round(np.log10((10**8.9) / 2.041), 1)
-            bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
-            bin_num = 5
 
+            if settings.mf_type == 'smf':
+                mstar_limit = 8.9
+                bin_min = np.round(np.log10((10**mstar_limit) / 2.041), 1)
+
+            elif settings.mf_type == 'bmf':
+                mbary_limit = 9.3
+                bin_min = np.round(np.log10((10**mbary_limit) / 2.041), 1)
+
+            #* Changed max bin from 11.5 to 11.1 to be the same as mstar-sigma (10.8)
+            bin_max = np.round(np.log10((10**11.1) / 2.041), 1)
+            bin_num = 5
             bins = np.linspace(bin_min, bin_max, bin_num)
 
         elif settings.survey == 'resolveb':
@@ -305,9 +416,12 @@ class Analysis():
             bin_max = np.round(np.log10((10**11.8) / 2.041), 1)
             bins = np.linspace(bin_min, bin_max, 7)
 
-        result_total = bs(logmstar_total_arr, colour_label_total_arr, self.blue_frac_helper, bins=bins)
-        result_cen = bs(logmstar_cen_arr, colour_label_cen_arr, self.blue_frac_helper, bins=bins)
-        result_sat = bs(logmstar_sat_arr, colour_label_sat_arr, self.blue_frac_helper, bins=bins)
+        result_total = bs(logmass_total_arr, colour_label_total_arr, 
+            self.blue_frac_helper, bins=bins)
+        result_cen = bs(logmass_cen_arr, colour_label_cen_arr, 
+            self.blue_frac_helper, bins=bins)
+        result_sat = bs(logmass_sat_arr, colour_label_sat_arr, 
+            self.blue_frac_helper, bins=bins)
         edges = result_total[1]
         dm = edges[1] - edges[0]  # Bin width
         maxis = 0.5 * (edges[1:] + edges[:-1])  # Mass axis i.e. bin centers
@@ -587,7 +701,6 @@ class Analysis():
 
         # Saving labels
         color_label_arr = [[] for x in range(len(df))]
-        rng_arr = [[] for x in range(len(df))]
         # Adding columns for f_red to df
         df.loc[:, 'f_red'] = np.zeros(len(df))
         df.loc[df['cs_flag'] == 1, 'f_red'] = f_red_cen
@@ -597,19 +710,18 @@ class Analysis():
         # Looping over galaxies
         for ii, cs_ii in enumerate(df['cs_flag']):
             # Draw a random number
-            rng = np.random.uniform()
+            rng = np.random.default_rng(df['galid'][ii])
+            rfloat = rng.uniform()
             # Comparing against f_red
-            if (rng >= f_red_arr[ii]):
+            if (rfloat >= f_red_arr[ii]):
                 color_label = 'B'
             else:
                 color_label = 'R'
             # Saving to list
             color_label_arr[ii] = color_label
-            rng_arr[ii] = rng
         
         ## Assigning to DataFrame
         df.loc[:, 'colour_label'] = color_label_arr
-        df.loc[:, 'rng'] = rng_arr
         # Dropping 'f_red` column
         if drop_fred:
             df.drop('f_red', axis=1, inplace=True)
@@ -875,33 +987,92 @@ class Analysis():
         ## Observable #2 - Blue fraction
         f_blue = self.blue_frac(gals_df, True, False, randint_logmstar)
 
-        ## Observable #3 - sigma-M* or M*-sigma
+        ## Observables #3 & #4 - sigma-M* and M*-sigma
         if settings.stacked_stat:
-            red_deltav, red_cen_mstar_sigma, blue_deltav, \
-            blue_cen_mstar_sigma = experiments.get_stacked_velocity_dispersion(
-                gals_df, 'model', randint_logmstar)
-
-            best_fit_experimentals["vel_disp"] = {'red_sigma':red_deltav,
-                'red_cen_mstar':red_cen_mstar_sigma,
-                'blue_sigma':blue_deltav, 'blue_cen_mstar':blue_cen_mstar_sigma}
-
-        else:
-            red_sigma, red_cen_mstar_sigma, blue_sigma, \
-                blue_cen_mstar_sigma = experiments.get_velocity_dispersion(
+            if settings.mf_type == 'smf':
+                red_deltav, red_cen_mstar_sigma, blue_deltav, \
+                blue_cen_mstar_sigma = experiments.get_stacked_velocity_dispersion(
                     gals_df, 'model', randint_logmstar)
 
-            red_sigma = np.log10(red_sigma)
-            blue_sigma = np.log10(blue_sigma)
+                red_sigma_stat = bs(red_cen_mstar_sigma, red_deltav,
+                    statistic='std', bins=np.linspace(8.6,10.8,5))
+                blue_sigma_stat = bs( blue_cen_mstar_sigma, blue_deltav,
+                    statistic='std', bins=np.linspace(8.6,10.8,5))
+                
+                red_sigma = np.log10(red_sigma_stat[0])
+                blue_sigma = np.log10(blue_sigma_stat[0])
 
-            best_fit_experimentals["vel_disp"] = {'red_sigma':red_sigma,
-                'red_cen_mstar':red_cen_mstar_sigma,
-                'blue_sigma':blue_sigma, 'blue_cen_mstar':blue_cen_mstar_sigma}
+                red_cen_mstar_sigma = red_sigma_stat[1]
+                blue_cen_mstar_sigma = blue_sigma_stat[1]
 
+                best_fit_experimentals["vel_disp"] = {'red_sigma':red_sigma,
+                    'red_cen_mstar':red_cen_mstar_sigma,
+                    'blue_sigma':blue_sigma, 'blue_cen_mstar':blue_cen_mstar_sigma}
 
-        # mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
-        #     statistic='mean', bins=np.linspace(-2,3,5))
-        # mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
-        #     statistic='mean', bins=np.linspace(-1,3,5))
+                red_sigma, red_cen_mstar_sigma, blue_sigma, \
+                    blue_cen_mstar_sigma = experiments.get_velocity_dispersion(
+                        gals_df, 'model', randint_logmstar)
+
+                red_sigma = np.log10(red_sigma)
+                blue_sigma = np.log10(blue_sigma)
+
+                mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
+                    statistic=self.average_of_log, bins=np.linspace(1,2.8,5))
+                mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
+                    statistic=self.average_of_log, bins=np.linspace(1,2.5,5))
+
+                mean_mstar_red = mean_mstar_red[0]
+                mean_mstar_blue = mean_mstar_blue[0]
+
+                red_sigma = mean_mstar_red[1]
+                blue_sigma = mean_mstar_blue[1]
+
+                best_fit_experimentals["mean_mstar"] = {'red_sigma':red_sigma,
+                    'red_cen_mstar':mean_mstar_red,
+                    'blue_sigma':blue_sigma, 'blue_cen_mstar':mean_mstar_blue}
+
+            elif settings.mf_type == 'bmf':
+                red_deltav, red_cen_mbary_sigma, blue_deltav, \
+                blue_cen_mbary_sigma = experiments.get_stacked_velocity_dispersion(
+                    gals_df, 'model', randint_logmstar)
+
+                red_sigma_stat = bs(red_cen_mbary_sigma, red_deltav,
+                    statistic='std', bins=np.linspace(9.0,11.2,5))
+                blue_sigma_stat = bs( blue_cen_mbary_sigma, blue_deltav,
+                    statistic='std', bins=np.linspace(9.0,11.2,5))
+                
+                red_sigma = np.log10(red_sigma_stat[0])
+                blue_sigma = np.log10(blue_sigma_stat[0])
+
+                red_cen_mbary_sigma = red_sigma_stat[1]
+                blue_cen_mbary_sigma = blue_sigma_stat[1]
+
+                best_fit_experimentals["vel_disp"] = {'red_sigma':red_sigma,
+                    'red_cen_mbary':red_cen_mbary_sigma,
+                    'blue_sigma':blue_sigma, 'blue_cen_mbary':blue_cen_mbary_sigma}
+
+                red_sigma, red_cen_mbary_sigma, blue_sigma, \
+                    blue_cen_mbary_sigma = experiments.get_velocity_dispersion(
+                        gals_df, 'model', randint_logmstar)
+
+                red_sigma = np.log10(red_sigma)
+                blue_sigma = np.log10(blue_sigma)
+
+                mean_mbary_red = bs(red_sigma, red_cen_mbary_sigma, 
+                    statistic=self.average_of_log, bins=np.linspace(1,2.8,5))
+                mean_mbary_blue = bs(blue_sigma, blue_cen_mbary_sigma, 
+                    statistic=self.average_of_log, bins=np.linspace(1,2.5,5))
+
+                mean_mbary_red = mean_mbary_red[0]
+                mean_mbary_blue = mean_mbary_blue[0]
+
+                red_sigma = mean_mbary_red[1]
+                blue_sigma = mean_mbary_blue[1]
+
+                best_fit_experimentals["mean_mbary"] = {'red_sigma':red_sigma,
+                    'red_cen_mbary':mean_mbary_red,
+                    'blue_sigma':blue_sigma, 'blue_cen_mbary':mean_mbary_blue}
+
 
         cen_gals, cen_halos, cen_gals_red, cen_halos_red, cen_gals_blue, \
             cen_halos_blue, f_red_cen_red, f_red_cen_blue = \
@@ -914,10 +1085,6 @@ class Analysis():
             self.get_colour_smf_from_fblue(gals_df, f_blue[1], f_blue[0], v_sim, 
             True, randint_logmstar)
 
-        # red_sigma, red_cen_mstar_sigma, blue_sigma, \
-        #     blue_cen_mstar_sigma, red_nsat, blue_nsat, red_host_halo_mass_vd, \
-        #     blue_host_halo_mass_vd = \
-        #     experiments.get_velocity_dispersion(gals_df, 'model', randint_logmstar)
         red_num, red_cen_mstar_richness, blue_num, \
             blue_cen_mstar_richness, red_host_halo_mass, \
             blue_host_halo_mass = \
@@ -959,24 +1126,11 @@ class Analysis():
                                     'cen_blue':f_red_cen_blue,
                                     'sat_red':f_red_sat_red,
                                     'sat_blue':f_red_sat_blue}
-
-
-        # best_fit_experimentals["vel_disp"] = {'red_sigma':mean_mstar_red[1],
-        #     'red_cen_mstar':mean_mstar_red[0],
-        #     'blue_sigma':mean_mstar_blue[1], 'blue_cen_mstar':mean_mstar_blue[0]}
-            # 'red_nsat':red_nsat, 'blue_nsat':blue_nsat, 
-            # 'red_hosthalo':red_host_halo_mass_vd, 
-            # 'blue_hosthalo':blue_host_halo_mass_vd}
         
         best_fit_experimentals["richness"] = {'red_num':red_num,
             'red_cen_mstar':red_cen_mstar_richness, 'blue_num':blue_num,
             'blue_cen_mstar':blue_cen_mstar_richness, 
             'red_hosthalo':red_host_halo_mass, 'blue_hosthalo':blue_host_halo_mass}
-
-        # best_fit_experimentals["vdf"] = {'x_vdf':x_vdf,
-        #     'phi_vdf':phi_vdf,
-        #     'error':error, 'bins':bins,
-        #     'counts':counts}
 
         return best_fit_results, best_fit_experimentals, gals_df
 
@@ -1142,7 +1296,7 @@ class Analysis():
                 pass
         return newgroupid 
 
-    def get_err_data(self, path, experiments):
+    def get_err_data_legacy(self, path, experiments):
         """
         Calculate error in data SMF from mocks
 
@@ -1593,6 +1747,173 @@ class Analysis():
 
         return err_colour, mocks_experimentals
 
+    def calc_corr_mat(self, df):
+        num_cols = df.shape[1]
+        corr_mat = np.zeros((num_cols, num_cols))
+        for i in range(num_cols):
+            for j in range(num_cols):
+                num = df.values[i][j]
+                denom = np.sqrt(df.values[i][i] * df.values[j][j])
+                corr_mat[i][j] = num/denom
+        return corr_mat
+
+    def get_err_data(self, path_to_proc):
+
+        settings = self.settings 
+
+        # Read in datasets from h5 file and calculate corr matrix
+        hf_read = h5py.File(path_to_proc + 'corr_matrices_28stats_{0}_{1}.h5'.
+            format(settings.quenching, settings.mf_type), 'r')
+        hf_read.keys()
+        smf = hf_read.get('smf')
+        smf = np.squeeze(np.array(smf))
+        fblue_cen = hf_read.get('fblue_cen')
+        fblue_cen = np.array(fblue_cen)
+        fblue_sat = hf_read.get('fblue_sat')
+        fblue_sat = np.array(fblue_sat)
+        mean_mstar_red = hf_read.get('mean_mstar_red')
+        mean_mstar_red = np.array(mean_mstar_red)
+        mean_mstar_blue = hf_read.get('mean_mstar_blue')
+        mean_mstar_blue = np.array(mean_mstar_blue)
+        sigma_red = hf_read.get('sigma_red')
+        sigma_red = np.array(sigma_red)
+        sigma_blue = hf_read.get('sigma_blue')
+        sigma_blue = np.array(sigma_blue)
+
+        for i in range(100):
+            phi_total_0 = smf[i][:,0]
+            phi_total_1 = smf[i][:,1]
+            phi_total_2 = smf[i][:,2]
+            phi_total_3 = smf[i][:,3]
+
+            f_blue_cen_0 = fblue_cen[i][:,0]
+            f_blue_cen_1 = fblue_cen[i][:,1]
+            f_blue_cen_2 = fblue_cen[i][:,2]
+            f_blue_cen_3 = fblue_cen[i][:,3]
+
+            f_blue_sat_0 = fblue_sat[i][:,0]
+            f_blue_sat_1 = fblue_sat[i][:,1]
+            f_blue_sat_2 = fblue_sat[i][:,2]
+            f_blue_sat_3 = fblue_sat[i][:,3]
+
+            mstar_red_cen_0 = mean_mstar_red[i][:,0]
+            mstar_red_cen_1 = mean_mstar_red[i][:,1]
+            mstar_red_cen_2 = mean_mstar_red[i][:,2]
+            mstar_red_cen_3 = mean_mstar_red[i][:,3]
+
+            mstar_blue_cen_0 = mean_mstar_blue[i][:,0]
+            mstar_blue_cen_1 = mean_mstar_blue[i][:,1]
+            mstar_blue_cen_2 = mean_mstar_blue[i][:,2]
+            mstar_blue_cen_3 = mean_mstar_blue[i][:,3]
+
+            sigma_red_0 = sigma_red[i][:,0]
+            sigma_red_1 = sigma_red[i][:,1]
+            sigma_red_2 = sigma_red[i][:,2]
+            sigma_red_3 = sigma_red[i][:,3]
+
+            sigma_blue_0 = sigma_blue[i][:,0]
+            sigma_blue_1 = sigma_blue[i][:,1]
+            sigma_blue_2 = sigma_blue[i][:,2]
+            sigma_blue_3 = sigma_blue[i][:,3]
+
+            combined_df = pd.DataFrame({
+                'phi_tot_0':phi_total_0, 'phi_tot_1':phi_total_1, 
+                'phi_tot_2':phi_total_2, 'phi_tot_3':phi_total_3,
+                'f_blue_cen_0':f_blue_cen_0, 'f_blue_cen_1':f_blue_cen_1, 
+                'f_blue_cen_2':f_blue_cen_2, 'f_blue_cen_3':f_blue_cen_3,
+                'f_blue_sat_0':f_blue_sat_0, 'f_blue_sat_1':f_blue_sat_1, 
+                'f_blue_sat_2':f_blue_sat_2, 'f_blue_sat_3':f_blue_sat_3,
+                'mstar_red_cen_0':mstar_red_cen_0, 'mstar_red_cen_1':mstar_red_cen_1, 
+                'mstar_red_cen_2':mstar_red_cen_2, 'mstar_red_cen_3':mstar_red_cen_3,
+                'mstar_blue_cen_0':mstar_blue_cen_0, 'mstar_blue_cen_1':mstar_blue_cen_1, 
+                'mstar_blue_cen_2':mstar_blue_cen_2, 'mstar_blue_cen_3':mstar_blue_cen_3,
+                'sigma_red_0':sigma_red_0, 'sigma_red_1':sigma_red_1, 
+                'sigma_red_2':sigma_red_2, 'sigma_red_3':sigma_red_3,
+                'sigma_blue_0':sigma_blue_0, 'sigma_blue_1':sigma_blue_1, 
+                'sigma_blue_2':sigma_blue_2, 'sigma_blue_3':sigma_blue_3})
+
+            if i == 0:
+                # Correlation matrix of phi and deltav colour measurements combined
+                corr_mat_global = combined_df.corr()
+                cov_mat_global = combined_df.cov()
+
+                corr_mat_average = corr_mat_global
+                cov_mat_average = cov_mat_global
+            else:
+                corr_mat_average = pd.concat([corr_mat_average, combined_df.corr()]).groupby(level=0, sort=False).mean()
+                cov_mat_average = pd.concat([cov_mat_average, combined_df.cov()]).groupby(level=0, sort=False).mean()
+                
+
+        # Using average cov mat to get correlation matrix
+        corr_mat_average = self.calc_corr_mat(cov_mat_average)
+        corr_mat_inv_colour_average = np.linalg.inv(corr_mat_average) 
+        sigma_average = np.sqrt(np.diag(cov_mat_average))
+
+        if settings.pca:
+            if settings.survey == 'eco':
+                num_mocks = 64
+            #* Testing SVD
+            from scipy.linalg import svd
+            from numpy import zeros
+            from numpy import diag
+            # Singular-value decomposition
+            U, s, VT = svd(corr_mat_average)
+            # create m x n Sigma matrix
+            sigma_mat = zeros((corr_mat_average.shape[0], corr_mat_average.shape[1]))
+            # populate Sigma with n x n diagonal matrix
+            sigma_mat[:corr_mat_average.shape[0], :corr_mat_average.shape[0]] = diag(s)
+
+            ## values in s are eigenvalues #confirmed by comparing s to 
+            ## output of np.linalg.eig(C) where the first array is array of 
+            ## eigenvalues.
+            ## https://towardsdatascience.com/pca-and-svd-explained-with-numpy-5d13b0d2a4d8
+
+            # Equation 10 from Sinha et. al 
+            # LHS is actually eigenvalue**2 so need to take the sqrt one more time 
+            # to be able to compare directly to values in Sigma since eigenvalues 
+            # are squares of singular values 
+            # (http://www.math.usm.edu/lambers/cos702/cos702_files/docs/PCA.pdf)
+            # https://web.mit.edu/be.400/www/SVD/Singular_Value_Decomposition.htm#:~:text=The%20SVD%20represents%20an%20expansion,up%20the%20columns%20of%20U.
+            min_eigen = np.sqrt(np.sqrt(2/(num_mocks)))
+            #* Note: for a symmetric matrix, the singular values are absolute values of 
+            #* the eigenvalues which means 
+            #* min_eigen = np.sqrt(np.sqrt(2/(num_mocks*len(box_id_arr))))
+            n_elements = len(s[s>min_eigen])
+            VT = VT[:n_elements, :]
+
+            print("Number of principle components kept: {0}".format(n_elements))
+
+            ## reconstruct
+            # sigma_mat = sigma_mat[:, :n_elements]
+            # B = U.dot(sigma_mat.dot(VT))
+            # print(B)
+            ## transform 2 ways (this is how you would transform data, model and sigma
+            ## i.e. new_data = data.dot(Sigma) etc.) <- not sure this is correct
+            #* Both lines below are equivalent transforms of the matrix BUT to project 
+            #* data, model, err in the new space, you need the eigenvectors NOT the 
+            #* eigenvalues (sigma_mat) as was used earlier. The eigenvectors are 
+            #* VT.T (the right singular vectors) since those have the reduced 
+            #* dimensions needed for projection. Data and model should then be 
+            #* projected similarly to err_colour below. 
+            #* err_colour.dot(sigma_mat) no longer makes sense since that is 
+            #* multiplying the error with the eigenvalues. Using sigma_mat only
+            #* makes sense in U.dot(sigma_mat) since U and sigma_mat were both derived 
+            #* by doing svd on the matrix which is what you're trying to get in the 
+            #* new space by doing U.dot(sigma_mat). 
+            #* http://www.math.usm.edu/lambers/cos702/cos702_files/docs/PCA.pdf
+            # T = U.dot(sigma_mat)
+            # print(T)
+            # T = corr_mat_colour.dot(VT.T)
+            # print(T)
+
+            err_colour_pca = sigma_average.dot(VT.T)
+            eigenvectors = VT.T
+
+        if settings.pca:
+            return err_colour_pca, eigenvectors
+        else:
+            return sigma_average, corr_mat_inv_colour_average
+
     def mp_init(self, mcmc_table_pctl, nproc, experiments):
         """
         Initializes multiprocessing of mocks and smf and smhm measurements
@@ -1676,7 +1997,9 @@ class Analysis():
             "cen_blue":[],"sat_red":[],"sat_blue":[]}]
         model_results = dict(zip(main_keys,sub_keys))
 
-        main_keys = ["vel_disp","richness","vdf"]
+        #! Do we need to get all these measurements for vel_disp
+        #! RESUME HERE
+        main_keys = ["vel_disp","mean_mass", "richness","vdf"]
         sub_keys = [{"red_sigma":[],"red_cen_mstar":[],"blue_sigma":[],\
             "blue_cen_mstar":[],"red_nsat":[],"blue_nsat":[],"red_hosthalo":[],\
             "blue_hosthalo":[]},{"red_num":[],\
@@ -1785,10 +2108,6 @@ class Analysis():
                 model_experimentals["vel_disp"]["blue_sigma"].append(blue_sigma)
                 model_experimentals["vel_disp"]["blue_cen_mstar"].append(blue_cen_mstar_sigma)
 
-            # mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
-            #     statistic='mean', bins=np.linspace(-2,3,5))
-            # mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
-            #     statistic='mean', bins=np.linspace(-1,3,5))
 
             cen_gals, cen_halos, cen_gals_red, cen_halos_red, cen_gals_blue, \
                 cen_halos_blue, f_red_cen_red, f_red_cen_blue = \
@@ -1800,12 +2119,6 @@ class Analysis():
             phi_red_model, phi_blue_model = \
                 self.get_colour_smf_from_fblue(gals_df, f_blue[1], f_blue[0], v_sim, 
                 True, randint_logmstar)
-
-            # red_sigma, red_cen_mstar_sigma, blue_sigma, \
-            #     blue_cen_mstar_sigma, red_nsat, blue_nsat, \
-            #     red_host_halo_mass_vd, blue_host_halo_mass_vd = \
-            #     experiments.get_velocity_dispersion(gals_df, 'model', 
-            #         randint_logmstar)
 
             red_num, red_cen_mstar_richness, blue_num, \
                 blue_cen_mstar_richness, red_host_halo_mass, \
@@ -1881,37 +2194,88 @@ class Analysis():
 
         print('Measuring velocity dispersion for data')
         if settings.stacked_stat:
-            red_deltav, red_cen_mstar_sigma, blue_deltav, \
-            blue_cen_mstar_sigma = experiments.get_stacked_velocity_dispersion(
-                self.catl, 'data')
 
-            red_sigma_stat = bs(red_cen_mstar_sigma, red_deltav,
-                statistic='std', bins=np.linspace(8.6,11,5))
-            blue_sigma_stat = bs( blue_cen_mstar_sigma, blue_deltav,
-                statistic='std', bins=np.linspace(8.6,11,5))
-            
-            red_sigma = np.log10(red_sigma_stat[0])
-            blue_sigma = np.log10(blue_sigma_stat[0])
+            if settings.mf_type == 'smf':
 
-            self.vdisp_red_data = [red_deltav, red_cen_mstar_sigma]
-            self.vdisp_blue_data = [blue_deltav, blue_cen_mstar_sigma]
+                red_deltav, red_cen_mstar_sigma, blue_deltav, \
+                blue_cen_mstar_sigma = experiments.get_stacked_velocity_dispersion(
+                    self.catl, 'data')
 
-        else:
-            red_sigma, red_cen_mstar_sigma, blue_sigma, \
-                blue_cen_mstar_sigma = \
-                experiments.get_velocity_dispersion(self.catl, 'data')
+                red_sigma_stat = bs(red_cen_mstar_sigma, red_deltav,
+                    statistic='std', bins=np.linspace(8.6,10.8,5))
+                blue_sigma_stat = bs( blue_cen_mstar_sigma, blue_deltav,
+                    statistic='std', bins=np.linspace(8.6,10.8,5))
+                
+                red_sigma = np.log10(red_sigma_stat[0])
+                blue_sigma = np.log10(blue_sigma_stat[0])
 
-            red_sigma = np.log10(red_sigma)
-            blue_sigma = np.log10(blue_sigma)
+                red_cen_mstar_sigma = red_sigma_stat[1]
+                blue_cen_mstar_sigma = blue_sigma_stat[1]
 
-            #* This is done at time of plotting instead (plotting.py)
-            # mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
-            #     statistic=self.average_of_log, bins=np.linspace(1,3,5))
-            # mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
-            #     statistic=self.average_of_log, bins=np.linspace(1,3,5))
+                self.vdisp_red_data = [red_sigma, red_cen_mstar_sigma]
+                self.vdisp_blue_data = [blue_sigma, blue_cen_mstar_sigma]
 
-            self.vdisp_red_data = [red_sigma, red_cen_mstar_sigma]
-            self.vdisp_blue_data = [blue_sigma, blue_cen_mstar_sigma]
+                red_sigma, red_cen_mstar_sigma, blue_sigma, \
+                    blue_cen_mstar_sigma = \
+                    experiments.get_velocity_dispersion(self.catl, 'data')
+
+                red_sigma = np.log10(red_sigma)
+                blue_sigma = np.log10(blue_sigma)
+
+                mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
+                    statistic=self.average_of_log, bins=np.linspace(1,2.8,5))
+                mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
+                    statistic=self.average_of_log, bins=np.linspace(1,2.5,5))
+
+                red_cen_mstar_sigma = mean_mstar_red_data[0]
+                blue_cen_mstar_sigma = mean_mstar_blue_data[0]
+
+                red_sigma = mean_mstar_red_data[1]
+                blue_sigma = mean_mstar_blue_data[1]
+
+                self.mean_mstar_red_data = [red_cen_mstar_sigma, red_sigma]
+                self.mean_mstar_blue_data = [blue_cen_mstar_sigma, blue_sigma]
+
+            elif settings.mf_type == 'bmf':
+
+                red_deltav, red_cen_mbary_sigma, blue_deltav, \
+                blue_cen_mbary_sigma = experiments.get_stacked_velocity_dispersion(
+                    self.catl, 'data')
+
+                red_sigma_stat = bs(red_cen_mbary_sigma, red_deltav,
+                    statistic='std', bins=np.linspace(9.0,11.2,5))
+                blue_sigma_stat = bs( blue_cen_mbary_sigma, blue_deltav,
+                    statistic='std', bins=np.linspace(9.0,11.2,5))
+                
+                red_sigma = np.log10(red_sigma_stat[0])
+                blue_sigma = np.log10(blue_sigma_stat[0])
+
+                red_cen_mbary_sigma = red_sigma_stat[1]
+                blue_cen_mbary_sigma = blue_sigma_stat[1]
+
+                self.vdisp_red_data = [red_sigma, red_cen_mbary_sigma]
+                self.vdisp_blue_data = [blue_sigma, blue_cen_mbary_sigma]
+
+                red_sigma, red_cen_mbary_sigma, blue_sigma, \
+                    blue_cen_mbary_sigma = \
+                    experiments.get_velocity_dispersion(self.catl, 'data')
+
+                red_sigma = np.log10(red_sigma)
+                blue_sigma = np.log10(blue_sigma)
+
+                mean_mbary_red_data = bs(red_sigma, red_cen_mbary_sigma, 
+                    statistic=self.average_of_log, bins=np.linspace(1,2.8,5))
+                mean_mbary_blue_data = bs(blue_sigma, blue_cen_mbary_sigma, 
+                    statistic=self.average_of_log, bins=np.linspace(1,2.5,5))
+
+                red_cen_mbary_sigma = mean_mbary_red_data[0]
+                blue_cen_mbary_sigma = mean_mbary_blue_data[0]
+
+                red_sigma = mean_mbary_red_data[1]
+                blue_sigma = mean_mbary_blue_data[1]
+
+                self.mean_mstar_red_data = [red_cen_mbary_sigma, red_sigma]
+                self.mean_mstar_blue_data = [blue_cen_mbary_sigma, blue_sigma]
 
         print('Measuring reconstructed red and blue SMF for data')
         self.phi_red_data, self.phi_blue_data = self.get_colour_smf_from_fblue(self.catl, self.f_blue[1], 
@@ -1926,7 +2290,10 @@ class Analysis():
 
         # return [self.total_data, self.f_blue, self.mean_mstar_red_data, self.mean_mstar_blue_data, self.phi_red_data, self.phi_blue_data, self.error_data, self.mocks_stdevs, self.dof]
 
-        return [self.total_data, self.f_blue, self.vdisp_red_data, self.vdisp_blue_data, self.phi_red_data, self.phi_blue_data, self.error_data, self.mocks_stdevs, self.dof]
+        return [self.total_data, self.f_blue, self.vdisp_red_data, \
+        self.vdisp_blue_data, self.mean_mstar_red_data, \
+        self.mean_mstar_blue_data, self.phi_red_data, self.phi_blue_data, \
+        self.error_data, self.mocks_stdevs, self.dof]
 
     def Mocks_And_Models(self, experiments):
         settings = self.settings
