@@ -14,7 +14,8 @@ class Settings():
         self.survey = 'eco'
         self.mf_type = 'smf'
         self.level = 'group'
-        self.stacked_stat = False
+        self.pca = False
+        self.stacked_stat = True
         self.nproc = 2
         self.run = 0
         self.many_behroozi_mocks = False
@@ -58,11 +59,15 @@ class Settings():
                 format(self.run, self.survey)
 
         if self.survey == 'eco':
+            if self.mf_type == "smf":
             # catl_file = path_to_raw + "eco/eco_all.csv"
             ## Updated catalog with group finder run on subset after applying M* 
             # and cz cuts: changed volume to be in h=1 instead of 0.7
-            self.catl_file = self.path_to_proc + \
-                "gal_group_eco_stellar_buffer_volh1_dr3.hdf5"
+                self.catl_file = self.path_to_proc + \
+                    "gal_group_eco_stellar_buffer_volh1_dr3.hdf5"
+            elif self.mf_type == "bmf":
+                self.catl_file = self.path_to_proc + \
+                    "gal_group_eco_bary_buffer_volh1_dr3.hdf5"
             self.path_to_mocks = path_to_data + 'mocks/m200b/eco/'
         elif self.survey == 'resolvea' or self.survey == 'resolveb':
             self.catl_file = path_to_raw + "RESOLVE_liveJune2018.csv"
