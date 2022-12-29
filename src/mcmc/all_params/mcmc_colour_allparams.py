@@ -3193,7 +3193,7 @@ def main(args):
             catl_file = path_to_proc + "gal_group_eco_stellar_buffer_volh1_dr3.hdf5"
         elif mf_type == 'bmf':
             catl_file = path_to_proc + \
-            "gal_group_eco_bary_buffer_volh1_dr3.hdf5"    
+                "gal_group_eco_bary_buffer_volh1_dr3.hdf5"    
         else:
             print("Incorrect mass function chosen")
     elif survey == 'resolvea' or survey == 'resolveb':
@@ -3240,8 +3240,9 @@ def main(args):
         red_deltav, red_cen_mbary_sigma, blue_deltav, \
             blue_cen_mbary_sigma = get_stacked_velocity_dispersion(catl, 'data')
 
+        #TODO : need to reflect this updated binning in model as well
         sigma_red_data = bs(red_cen_mbary_sigma, red_deltav,
-            statistic='std', bins=np.linspace(9.0,11.2,5))
+            statistic='std', bins=np.linspace(9.5,11.2,5))
         sigma_blue_data = bs( blue_cen_mbary_sigma, blue_deltav,
             statistic='std', bins=np.linspace(9.0,11.2,5))
         

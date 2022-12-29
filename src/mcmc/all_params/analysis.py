@@ -1998,7 +1998,7 @@ class Analysis():
         model_results = dict(zip(main_keys,sub_keys))
 
         #! Do we need to get all these measurements for vel_disp
-        #! RESUME HERE
+        #TODO RESUME HERE
         main_keys = ["vel_disp","mean_mass", "richness","vdf"]
         sub_keys = [{"red_sigma":[],"red_cen_mstar":[],"blue_sigma":[],\
             "blue_cen_mstar":[],"red_nsat":[],"blue_nsat":[],"red_hosthalo":[],\
