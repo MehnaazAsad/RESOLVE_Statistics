@@ -79,7 +79,7 @@ class Preprocess():
 
         return emcee_table
 
-    def read_mock_catl(self, filename, catl_format='.hdf5'):
+    def read_hdf5(self, filename, catl_format='.hdf5'):
         """
         Function to read ECO/RESOLVE catalogues.
 
@@ -199,7 +199,7 @@ class Preprocess():
             # eco_buff = pd.read_csv(path_to_file, delimiter=",", header=0, \
             #     usecols=columns)
 
-            eco_buff = self.read_mock_catl(path_to_file)
+            eco_buff = self.read_hdf5(path_to_file)
             #* Recommended to exclude this galaxy in erratum to Hood et. al 2018
             eco_buff = eco_buff.loc[eco_buff.name != 'ECO13860']
 
@@ -373,7 +373,7 @@ class Preprocess():
 
         colnames = ['mhalo_c', 'mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter', \
             'mstar_q', 'mh_q', 'mu', 'nu']
-        #! Change this if testing with different cz limit
+        #* Change this if testing with different cz limit
         self.mcmc_table_pctl_subset = pd.read_csv(settings.path_to_proc + 
             'run{0}_params_subset.txt'.format(settings.run), 
             delim_whitespace=True, names=colnames)\
