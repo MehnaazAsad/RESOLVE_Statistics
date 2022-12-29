@@ -6,8 +6,6 @@
 # Libs
 from cosmo_utils.utils import work_paths as cwpaths
 import matplotlib.pyplot as plt
-from matplotlib import rc
-import matplotlib
 import pandas as pd
 import numpy as np
 import emcee
@@ -16,12 +14,12 @@ import os
 
 __author__ = '{Mehnaaz Asad}'
 
-rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']},size=15)
-rc('text', usetex=True)
-matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amsmath}"]
-rc('axes', linewidth=2)
-rc('xtick.major', width=2, size=7)
-rc('ytick.major', width=2, size=7)
+plt.rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']},size=15)
+plt.rc('text', usetex=True)
+plt.rc('text.latex', preamble=r"\usepackage{bm}")
+plt.rc('axes', linewidth=2)
+plt.rc('xtick.major', width=2, size=7)
+plt.rc('ytick.major', width=2, size=7)
 
 def find_nearest(array, value): 
     """Finds the element in array that is closest to the value
@@ -46,17 +44,19 @@ path_to_figures = dict_of_paths['plot_dir']
 survey = 'eco'
 mf_type = 'smf'
 quenching = 'halo'
-nwalkers = 100
-run = 70
+nwalkers = 500
+run = 87
 
 if mf_type == 'smf':
     path_to_proc = path_to_proc + 'smhm_colour_run{0}/'.format(run)
 else:
-    path_to_proc = path_to_proc + 'bmhm_run{0}/'.format(run)
+    path_to_proc = path_to_proc + 'bmhm_colour_run{0}/'.format(run)
 
 if run >= 37:
     reader = emcee.backends.HDFBackend(
-        path_to_proc + "chain.h5", read_only=True)
+        path_to_proc + "chain_{0}_pca.h5".format(quenching), read_only=True)
+    # reader = emcee.backends.HDFBackend(
+    #     "/Users/asadm2/Desktop/chain_hybrid_pca.h5", read_only=True)
     flatchain = reader.get_chain(flat=True)
 
     names_hybrid=['Mhalo_c', 'Mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter',
@@ -304,7 +304,7 @@ if quenching == 'hybrid':
     # ax4.set_ylabel(r"$\mathbf{log_{10}} \boldsymbol{\ \nu}$")
     ax9.set_ylabel(r"$\boldsymbol{\nu}$")
     # ax10.set_ylabel(r"$\mathbf{log_{10}} \boldsymbol{{\ \chi}^2}$")
-    ax10.set_ylabel(r"$\boldsymbol{{\chi}^2}$")
+    ax10.set_ylabel(r"$\mathbf{{\chi}^2}$")
     # ax1.set_yscale('log')
     # ax2.set_yscale('log')
 
@@ -570,9 +570,17 @@ elif quenching == 'halo':
     emcee_table = emcee_table.dropna(axis='index', how='any').\
         reset_index(drop=True)
 
-num_unique_rows = emcee_table[['Mhalo_c', 'Mstar_c', 'mlow_slope', 
-    'mhigh_slope', 'scatter','Mstar_q','Mhalo_q','mu','nu']].drop_duplicates().\
-    shape[0]
+names_hybrid=['Mhalo_c', 'Mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter',
+        'Mstar_q','Mhalo_q','mu','nu']
+names_halo=['Mhalo_c', 'Mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter',
+    'Mh_qc','Mh_qs','mu_c','mu_s']
+
+if quenching == "hybrid":
+    num_unique_rows = emcee_table[names_hybrid].drop_duplicates().\
+        shape[0]
+elif quenching == "halo":
+    num_unique_rows = emcee_table[names_halo].drop_duplicates().\
+        shape[0]
 num_rows = len(emcee_table)
 acceptance_fraction = num_unique_rows / num_rows
 print("Acceptance fraction: {0}%".format(np.round(acceptance_fraction,2)*100))
