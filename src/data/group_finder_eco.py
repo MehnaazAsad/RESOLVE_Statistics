@@ -8,7 +8,6 @@ from tqdm import tqdm
 import pandas as pd
 import numpy as np
 import subprocess
-import sys
 import os
 
 __author__ = '{Mehnaaz Asad}'
@@ -254,6 +253,9 @@ def group_mass_assignment(mockgal_pd, mockgroup_pd, param_dict):
     elif param_dict['catl_type'] == 'mstar':
         prop_gal    = 'logmstar'
         reverse_opt = False
+    elif param_dict['catl_type'] == 'mbary':
+        prop_gal    = 'logmbary_a23'
+        reverse_opt = False
     # Absolute value of `prop_gal`
     prop_gal_abs = prop_gal + '_abs'
     ##
@@ -274,6 +276,14 @@ def group_mass_assignment(mockgal_pd, mockgroup_pd, param_dict):
             group_log_prop_tot = np.log10(np.sum(10**group_prop))
             ## Saving to array
             group_prop_arr[group_zz] = group_log_prop_tot
+    elif param_dict['catl_type'] == 'mbary':
+        for group_zz in tqdm(range(n_groups)):
+            ## Baryonic mass
+            group_prop = gal_pd.loc[gal_pd['ps_groupid']==group_zz, prop_gal]
+            group_log_prop_tot = np.log10(np.sum(10**group_prop))
+            ## Saving to array
+            group_prop_arr[group_zz] = group_log_prop_tot
+
     # Luminosity-based
     elif param_dict['catl_type'] == 'mr':
         for group_zz in tqdm(range(n_groups)):
@@ -540,6 +550,11 @@ def split_false_pairs(galra, galde, galcz, galgroupid):
             pass
     return newgroupid 
 
+def calc_bary(logmstar_arr, logmgas_arr):
+    """Calculates baryonic mass of galaxies using stellar and gas masses"""
+    logmbary = np.log10((10**logmstar_arr) + (10**logmgas_arr))
+    return logmbary
+
 survey = 'eco'
 mf_type = 'bmf'
 ## Running group-finding on data including the buffer
@@ -559,7 +574,7 @@ eco = {
     'l_para': 1.1,
     'nmin': 1,
     'verbose': True,
-    'catl_type': 'mstar'
+    'catl_type': 'mbary'
 }
 
 param_dict = vars()[survey]
@@ -590,8 +605,10 @@ if mf_type == 'smf':
         (eco_buff.cz <= cz_outer) & (eco_buff.logmstar >= 8.9)].\
         reset_index(drop=True)
 elif mf_type == 'bmf':
+    eco_buff['logmbary_a23'] = calc_bary(eco_buff.logmstar.values, 
+        eco_buff.logmgas.values)
     eco_subset_df = eco_buff.loc[(eco_buff.cz >= cz_inner) & \
-        (eco_buff.cz <= cz_outer) & (eco_buff.logmbary >= 9.4)].\
+        (eco_buff.cz <= cz_outer) & (eco_buff.logmbary_a23 >= 9.3)].\
         reset_index(drop=True)
   
 ## Testing without M* cut
@@ -673,3 +690,37 @@ elif mf_type == 'bmf':
     pandas_df_to_hdf5_file(data=gal_group_df_new,
         hdf5_file=path_to_processed + 'gal_group_eco_bary_buffer_volh1_dr3.hdf5', 
         key='gal_group_df')
+
+
+'''
+#* Check how many groups (based on M*), have a different group central if 
+#* baryonic instead of stellar mass
+catl['logmbary_a23'] = calc_bary(catl.logmstar.values, 
+    catl.logmgas.values)
+g_galtype_bary_arr = np.zeros(len(catl))
+catl['g_galtype_bary'] = g_galtype_bary_arr
+
+grpid_tracker_arr = []
+eco_groups = catl.groupby("ps_groupid")
+keys = eco_groups.groups.keys()
+for key in keys:
+    group = eco_groups.get_group(key)
+
+    id_biggest_stellar = group.loc[group.logmstar == max(group.logmstar)].index[0]
+    id_biggest_baryonic = group.loc[group.logmbary_a23 == max(group.logmbary_a23)].index[0]
+    if id_biggest_stellar != id_biggest_baryonic:
+        grpid_tracker_arr.append(group.grp.values[0])
+    catl['g_galtype_bary'][id_biggest_baryonic] = 1
+'''
+
+'''
+#* Making sure group central assignment using most massive baryonic gxy worked
+counter = 0
+eco_groups = gal_group_df_new.groupby("ps_groupid")
+keys = eco_groups.groups.keys()
+for key in keys:
+    group = eco_groups.get_group(key)
+    id_biggest_baryonic = group.loc[group.logmbary_a23 == max(group.logmbary_a23)].index[0]
+    if gal_group_df_new['g_galtype'][id_biggest_baryonic] != 1:
+        counter+=1
+'''
