@@ -6,7 +6,6 @@
 from cosmo_utils.utils import work_paths as cwpaths
 from chainconsumer import ChainConsumer 
 import matplotlib.pyplot as plt
-from matplotlib import rc
 import pandas as pd
 import numpy as np
 import emcee
@@ -19,21 +18,21 @@ path_to_proc = dict_of_paths['proc_dir']
 path_to_interim = dict_of_paths['int_dir']
 path_to_figures = dict_of_paths['plot_dir']
 
-rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=20)
-rc('text', usetex=True)
-rc('text.latex', preamble=[r"\usepackage{amsmath}"])
-rc('axes', linewidth=2)
-rc('xtick.major', width=2, size=7)
-rc('ytick.major', width=2, size=7)
+plt.rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=20)
+plt.rc('text', usetex=True)
+plt.rc('text.latex', preamble=r"\usepackage{bm}")
+plt.rc('axes', linewidth=2)
+plt.rc('xtick.major', width=2, size=7)
+plt.rc('ytick.major', width=2, size=7)
 
 survey = 'eco'
 quenching = 'hybrid'
-mf_type = 'smf'
-nwalkers = 100
-nsteps = 1000
-burnin = 300
+mf_type = 'bmf'
+nwalkers = 500
+nsteps = 200
+burnin = 125
 ndim = 9
-run = 67
+run = 89
     
 def get_samples(chain_file, nsteps, nwalkers, ndim, burnin):
     if quenching == 'hybrid':
@@ -109,8 +108,10 @@ def get_samples(chain_file, nsteps, nwalkers, ndim, burnin):
 
 if run >= 37:
     reader = emcee.backends.HDFBackend(
-        path_to_proc + "smhm_colour_run{0}/chain.h5".format(run), 
+        path_to_proc + "bmhm_colour_run{0}/chain_hybrid_pca.h5".format(run), 
         read_only=True)
+        # "/Users/asadm2/Desktop/chain_hybrid.h5", 
+        # read_only=True)
     samples = reader.get_chain(flat=True, discard=burnin) 
 
 else:
@@ -121,61 +122,84 @@ else:
 
 if quenching == 'hybrid':
 
-    run = 63
-    reader = emcee.backends.HDFBackend(
-        path_to_proc + "smhm_colour_run{0}/chain.h5".format(run), 
-        read_only=True)
-    samples_63 = reader.get_chain(flat=True, discard=burnin) 
+    run = 88
+    burnin = 125
 
-    run = 55
     reader = emcee.backends.HDFBackend(
-        path_to_proc + "smhm_colour_run{0}/chain.h5".format(run), 
+        path_to_proc + "bmhm_colour_run{0}/chain_{1}.h5".format(run, quenching), 
         read_only=True)
-    samples_55 = reader.get_chain(flat=True, discard=burnin) 
+    samples_88 = reader.get_chain(flat=True, discard=burnin) 
 
-    run = 57
-    reader = emcee.backends.HDFBackend(
-        path_to_proc + "smhm_colour_run{0}/chain.h5".format(run), 
-        read_only=True)
-    samples_57 = reader.get_chain(flat=True, discard=burnin) 
+    # run = 80
+    # burnin = 100
 
-    run = 59
-    reader = emcee.backends.HDFBackend(
-        path_to_proc + "smhm_colour_run{0}/chain.h5".format(run), 
-        read_only=True)
-    samples_59 = reader.get_chain(flat=True, discard=burnin) 
+    # reader = emcee.backends.HDFBackend(
+    #     path_to_proc + "smhm_colour_run{0}/chain.h5".format(run), 
+    #     read_only=True)
+    # samples_80 = reader.get_chain(flat=True, discard=burnin) 
+
+    # run = 82
+    # burnin = 100
+
+    # reader = emcee.backends.HDFBackend(
+    #     path_to_proc + "smhm_colour_run{0}/chain.h5".format(run), 
+    #     read_only=True)
+    # samples_82 = reader.get_chain(flat=True, discard=burnin) 
+
+
+    # run = 77
+    # reader = emcee.backends.HDFBackend(
+    #     path_to_proc + "smhm_colour_run{0}/chain.h5".format(run), 
+    #     read_only=True)
+    # samples_77 = reader.get_chain(flat=True, discard=burnin) 
+
+    # run = 78
+    # reader = emcee.backends.HDFBackend(
+    #     path_to_proc + "smhm_colour_run{0}/chain.h5".format(run), 
+    #     read_only=True)
+    # samples_78 = reader.get_chain(flat=True, discard=burnin) 
 
 elif quenching == 'halo':
-    run = 56
+    run = 86
+    burnin = 125
+
     reader = emcee.backends.HDFBackend(
         path_to_proc + "smhm_colour_run{0}/chain.h5".format(run), 
         read_only=True)
-    samples_56 = reader.get_chain(flat=True, discard=burnin) 
+    samples_86 = reader.get_chain(flat=True, discard=burnin) 
 
-    run = 58
-    reader = emcee.backends.HDFBackend(
-        path_to_proc + "smhm_colour_run{0}/chain.h5".format(run), 
-        read_only=True)
-    samples_58 = reader.get_chain(flat=True, discard=burnin) 
+    # run = 81
+    # burnin = 125
+    # reader = emcee.backends.HDFBackend(
+    #     path_to_proc + "smhm_colour_run{0}/chain.h5".format(run), 
+    #     read_only=True)
+    # samples_81 = reader.get_chain(flat=True, discard=burnin) 
 
-    run = 60
-    reader = emcee.backends.HDFBackend(
-        path_to_proc + "smhm_colour_run{0}/chain.h5".format(run), 
-        read_only=True)
-    samples_60 = reader.get_chain(flat=True, discard=burnin) 
+    # run = 58
+    # reader = emcee.backends.HDFBackend(
+    #     path_to_proc + "smhm_colour_run{0}/chain.h5".format(run), 
+    #     read_only=True)
+    # samples_58 = reader.get_chain(flat=True, discard=burnin) 
 
-quenching = 'hybrid'
-mf_type = 'bmf'
-nwalkers = 100
-nsteps = 1000
-burnin = 300
-ndim = 9
-run = 4
+    # run = 60
+    # reader = emcee.backends.HDFBackend(
+    #     path_to_proc + "smhm_colour_run{0}/chain.h5".format(run), 
+    #     read_only=True)
+    # samples_60 = reader.get_chain(flat=True, discard=burnin) 
 
-reader = emcee.backends.HDFBackend(
-    path_to_proc + "bmhm_run{0}/chain.h5".format(run), 
-    read_only=True)
-samples_bmf = reader.get_chain(flat=True, discard=burnin) 
+#* Baryonic
+# quenching = 'hybrid'
+# mf_type = 'bmf'
+# nwalkers = 100
+# nsteps = 1000
+# burnin = 300
+# ndim = 9
+# run = 4
+
+# reader = emcee.backends.HDFBackend(
+#     path_to_proc + "bmhm_run{0}/chain.h5".format(run), 
+#     read_only=True)
+# samples_bmf = reader.get_chain(flat=True, discard=burnin) 
 
 # run = 45
 # reader = emcee.backends.HDFBackend(
@@ -200,12 +224,51 @@ optimizer_best_fit_eco_smf_hybrid = [10.49, 14.03, 0.69, 0.148] # For hybrid mod
 zumandelbaum_param_vals_halo = [12.20, 0.38, 12.17, 0.15] # For halo model
 optimizer_best_fit_eco_smf_halo = [12.61, 13.5, 0.40, 0.148] # For halo model
 
-#61
-best_fit_hybrid = [12.22166393, 10.51015325,  0.39844833,  0.50993929,  0.32051433,
-10.14390814, 13.63096564,  0.82589714,  0.04268463]
-#62
-best_fit_halo = [12.24808533, 10.55515426,  0.40228399,  0.50789582,  0.32759754,
-11.74916496, 12.47150227,  1.49692441,  0.41693634]
+#85
+best_fit_hybrid = [12.35985583, 10.73234115, 0.48693041, 0.85309347, 0.17081168,
+10.33681049, 11.64015182, 0.96749897, 0.16770749]
+
+best_fit_84 = [12.64869191, 10.68374592,  0.4640583 ,  0.43375466,  
+        0.22177846, 10.18868649, 13.23990274,  0.72632304,  0.05996219] 
+
+best_fit_80 = [1.26205996e+01, 1.07021820e+01, 4.76597732e-01, 3.92284946e-01,
+       1.68466879e-01, 1.01816555e+01, 1.34914230e+01, 7.29355889e-01,
+       3.71080916e-02]
+
+best_fit_69 = [1.25592081e+01, 1.06803444e+01, 4.68010987e-01, 3.46991714e-01,
+       2.14114852e-01, 1.01642766e+01, 1.25618083e+01, 7.36058655e-01,
+       1.37321398e-01]
+
+best_fit_82 = [1.21988696e+01, 1.05941781e+01, 4.20468082e-01, 6.75529891e-01,
+    2.83431492e-01, 1.01152952e+01, 1.49390877e+01, 6.22740146e-01,
+    5.79299772e-03]
+
+#87
+best_fit_halo = [12.43515588, 10.65978211, 0.46731992, 0.35808034, 0.14540052,
+12.26158655, 11.98913432, 0.63355372, 0.44848781]
+
+best_fit_86 = [12.45003142, 10.49533185, 0.42905612, 0.49491889, 0.38661993,
+11.928341 , 12.60596691, 1.63365685, 0.35175002]
+
+
+best_fit_70 = [1.24943815e+01, 1.05162001e+01, 4.16658235e-01, 4.00419773e-01,
+3.41828945e-01, 1.20060599e+01, 1.27011410e+01, 1.56991081e+00, 8.70258220e-01]
+
+best_fit_83 = [12.53792836, 10.56614154, 0.4564306 , 0.6724157 , 0.33512296,
+    12.01240587, 12.51050784, 1.40100554, 0.44524407]
+
+best_fit_81 = [12.34987088, 10.41560466, 0.39277316, 0.40647588, 0.39271989,
+11.8638783 , 12.59569064, 1.85941172, 0.40251681]
+
+#* BARYONIC
+#89
+best_fit_hybrid_bmf = [12.42762598, 10.98243745, 0.44312913, 0.42222334, 0.15705579,
+10.47769704, 13.84888006, 0.78807027, 0.29083456]
+
+best_fit_88 = [1.17887431e+01, 1.06493529e+01, 4.16143172e-01, 3.96345226e-01,
+4.50756145e-01, 1.07404229e+01, 1.42884117e+01, 4.13953837e-01,
+5.70691342e-02]
+
 # parameters=[r"${log_{10}\ M_{1}}$", 
 #         r"${log_{10}\ M_{*}}$", r"${\beta}$",
 #         r"${\delta}$", r"${\xi}$", 
@@ -227,13 +290,40 @@ param_names_halo = [r"$\mathbf{log_{10}\ M_{1}}$",
 c = ChainConsumer()
 if quenching == 'hybrid':
     c.add_chain(samples[:,:], parameters=param_names_hybrid[:],
-        name=r"Stellar", color='#E766EA', zorder=20)
+        name=r"Hybrid 28 stats baryonic pca", color='#E766EA', zorder=-20)
 
-    # c.add_chain(samples_bmf[:,:], parameters=param_names_hybrid[:],
-    #     name=r"Baryonic", color='#FE420F', zorder=25)
+    # c.add_marker(best_fit_83, parameters=param_names_hybrid, 
+    #     name="Best-fit 83", marker_style="*", marker_size=200, 
+    #     color="#FE420F")
 
-    # c.add_chain(samples_63[:,:], parameters=param_names_hybrid[:],
-    #     name=r"Non-PCA", color='#663399', zorder=25)
+    c.add_chain(samples_88[:,:], parameters=param_names_hybrid[:],
+        name=r"Hybrid 28 stats baryonic non-pca", color='#FE420F', zorder=-10)
+
+    c.add_marker(best_fit_88, parameters=param_names_hybrid, 
+        name="Best-fit non-pca", marker_style="*", marker_size=200, 
+        color="#FE420F")
+
+    # c.add_chain(samples_81[:,:], parameters=param_names_hybrid[:],
+    #     name=r"Halo sigma-M* (x-y)", color='#663399', zorder=-20)
+
+    # c.add_marker(best_fit_82, parameters=param_names_hybrid, 
+    #     name="Best-fit 82", marker_style="*", marker_size=200, 
+    #     color="#663399")
+
+    # c.add_chain(samples_82[:,:], parameters=param_names_hybrid[:],
+    #     name=r"Chain 82 mstar-sigma (x-y)", color='#663399', zorder=25)
+
+    # c.add_chain(samples_73[:,:], parameters=param_names_hybrid[:],
+    #     name=r"Pair-splitting", color='#663399', zorder=22)
+
+    # c.add_chain(samples_77[:,:],parameters=param_names_hybrid[:],
+    #     name="$\mathbf{M_{*} - \sigma}$", color="#069AF3", 
+    #     zorder=15)
+
+    # c.add_chain(samples_78[:,:],parameters=param_names_hybrid[:],
+    #     name="Pair-splitting removed from current mcmc version", 
+    #     color="#2E8B57", 
+    #     zorder=30)
 
     # c.add_chain(samples_59[:,:],parameters=param_names_hybrid[:],
     #     name="$\mathbf{\Phi}$  + $\mathbf{f_{blue, cen}}$ + $\mathbf{f_{blue, sat}}$ + $\mathbf{M_{*}-\sigma}$", color="#663399", 
@@ -249,8 +339,15 @@ if quenching == 'hybrid':
 
 
 elif quenching == 'halo':
-    c.add_chain(samples[:,:],parameters=param_names_halo[:],
-        name=r"$\mathbf{\Phi}$  + $\mathbf{f_{blue, cen}}$ + $\mathbf{f_{blue, sat}}$ + $\mathbf{\sigma - M_{*}}$", color='#E766EA', zorder=20)
+    c.add_chain(samples[:,:], parameters=param_names_halo,
+        name=r"halo 28 stats pca", color='#E766EA', zorder=-20)
+
+    c.add_chain(samples_86[:,:], parameters=param_names_halo,
+        name=r"halo 28 stats non-pca", color='#FE420F', zorder=-10)
+
+    c.add_marker(best_fit_86, parameters=param_names_halo, 
+        name="Best-fit non-pca", marker_style="*", marker_size=200, 
+        color="#FE420F")
 
     # c.add_chain(samples_60[:,:],parameters=param_names_halo[:],
     #     name="$\mathbf{\Phi}$  + $\mathbf{f_{blue, cen}}$ + $\mathbf{f_{blue, sat}}$ + $\mathbf{M_{*}-\sigma}$", color="#663399", 
@@ -263,9 +360,13 @@ elif quenching == 'halo':
     # c.add_chain(samples_58[:,:],parameters=param_names_halo[:],
     #     name="$\mathbf{\Phi}$  + $\mathbf{f_{blue, cen}}$ + $\mathbf{f_{blue, sat}}$", color='#069AF3', 
     #     zorder=10)
+    # c.add_marker(best_fit_83, parameters=param_names_halo, 
+    #     name="Best-fit halo mstar-sigma", marker_style="*", marker_size=200, 
+    #     color="#663399")
 
 # c.configure(shade_gradient=[0.1, 3.0], colors=['r', 'b'], \
 #      sigmas=[1,2], shade_alpha=0.4)
+
 
 # sigma levels for 1D gaussian showing 68%,95% conf intervals
 c.configure(kde=2.0, shade_gradient = 2.0, shade_alpha=0.8, label_font_size=15, 
@@ -276,7 +377,7 @@ c.configure_truth(color='goldenrod', lw=1.7)
 # c.configure(label_font_size=15, tick_font_size=10, summary=True, 
 #     sigma2d=False, legend_kwargs={"fontsize": 15}) 
 if quenching == 'hybrid':
-    fig1 = c.plotter.plot(display=True, truth=best_fit_hybrid)
+    fig1 = c.plotter.plot(display=True, truth=best_fit_hybrid_bmf)
 elif quenching == 'halo':
     fig1 = c.plotter.plot(display=True, truth=best_fit_halo)
 
