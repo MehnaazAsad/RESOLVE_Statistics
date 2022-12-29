@@ -93,3 +93,4 @@ src/single_use/figures
 *.pickle
 src/template.py
 resolve_statistics.code-workspace
+=3.6
