@@ -1295,7 +1295,7 @@ for i in tqdm(range(100)):
                         blue_cen_mbary_sigma = get_stacked_velocity_dispersion(mock_pd, 'mock')
 
                     sigma_red = bs(red_cen_mbary_sigma, red_deltav,
-                        statistic='std', bins=np.linspace(9.5,11.2,5))
+                        statistic='std', bins=np.linspace(9.0,11.2,5))
                     sigma_blue = bs( blue_cen_mbary_sigma, blue_deltav,
                         statistic='std', bins=np.linspace(9.0,11.2,5))
                     
