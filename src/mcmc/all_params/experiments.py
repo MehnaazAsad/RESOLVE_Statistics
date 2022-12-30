@@ -73,17 +73,24 @@ class Experiments():
         """
         settings = self.settings
         preprocess = self.preprocess
+        analysis = self.analysis
 
         mstar_limit = 8.9
+        mbary_limit = 9.3
         if catl_type == 'data':
             if settings.survey == 'eco' or settings.survey == 'resolvea':
-                catl = catl.loc[catl.logmstar >= mstar_limit]
+                if settings.mf_type == 'smf':
+                    catl = catl.loc[catl.logmstar >= mstar_limit]
+                elif settings.mf_type == 'bmf':
+                    catl = catl.loc[catl.logmbary_a23 >= mbary_limit]
             elif settings.survey == 'resolveb':
                 catl = catl.loc[catl.logmstar >= 8.7]
 
             catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
+            catl.logmbary_a23 = np.log10((10**catl.logmbary_a23) / 2.041)
 
             logmstar_col = 'logmstar'
+            logmbary_col = 'logmbary_a23'
 
             ## Use group level for data even when settings.level == halo
             galtype_col = 'g_galtype'
@@ -91,10 +98,18 @@ class Experiments():
 
         if catl_type == 'mock':
             catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
+            mhi_arr = catl.mhi.values
+            logmgas_arr = np.log10((1.4 * mhi_arr) / 2.041)
+            logmbary_arr = analysis.calc_bary(catl.logmstar.values, logmgas_arr)
+            catl["logmbary"] = logmbary_arr
 
-            catl = catl.loc[catl.logmstar >= np.log10((10**mstar_limit)/2.041)]
+            if settings.mf_type == 'smf':
+                catl = catl.loc[catl.logmstar >= np.log10((10**mstar_limit)/2.041)]
+            elif settings.mf_type == 'bmf':
+                catl = catl.loc[catl.logmbary >= np.log10((10**mbary_limit)/2.041)]
 
             logmstar_col = 'logmstar'
+            logmbary_col = 'logmbary'
 
             if settings.level == 'group':
                 galtype_col = 'ps_grp_censat'
@@ -108,7 +123,10 @@ class Experiments():
             if settings.survey == 'eco':
                 min_cz = 3000
                 max_cz = 12000
-                mstar_limit = 8.9
+                if settings.mf_type == 'smf':
+                    mstar_limit = 8.9
+                elif settings.mf_type == 'bmf':
+                    mstar_limit = 9.3
             elif settings.survey == 'resolvea':
                 min_cz = 4500
                 max_cz = 7000
@@ -120,6 +138,7 @@ class Experiments():
 
             if randint is None:
                 logmstar_col = 'logmstar'
+                logmbary_col = 'logmstar'
                 galtype_col = 'grp_censat'
                 id_col = 'groupid'
                 cencz_col = 'cen_cz'
@@ -161,19 +180,6 @@ class Experiments():
                     (catl[cencz_col].values <= max_cz) & \
                     (catl[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
 
-            # else:
-            #     logmstar_col = 'stellar_mass'
-            #     galtype_col = 'g_galtype'
-            #     id_col = 'groupid'
-            #     # Using the same survey definition as in mcmc smf i.e excluding the 
-            #     # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
-            #     # and M* star cuts to mimic mocks and data.
-            #     catl = preprocess.mock_add_grpcz(catl, False, id_col)
-            #     catl = catl.loc[(catl.grpcz.values >= min_cz) & \
-            #         (catl.grpcz.values <= max_cz) & \
-            #         (catl[logmstar_col].values >= (10**mstar_limit)/2.041)]
-            #     catl[logmstar_col] = np.log10(catl[logmstar_col])
-
             if settings.level == 'halo':
                 galtype_col = 'cs_flag'
                 id_col = 'halo_hostid'
@@ -186,56 +192,43 @@ class Experiments():
             colour_label == 'B') & (catl[galtype_col] == 1)].values)
 
         red_subset_df = catl.loc[catl[id_col].isin(red_subset_ids)]
-        # red_subset_ids = [key for key in Counter(
-        #     red_subset_df.groupid).keys() if Counter(
-        #         red_subset_df.groupid)[key] > 1]
         #* Excluding N=1 groups
         red_subset_ids = red_subset_df.groupby([id_col]).filter\
             (lambda x: len(x) > 1)[id_col].unique()
+        #* DF of only N > 1 groups sorted by ps_groupid
         red_subset_df = catl.loc[catl[id_col].isin(
             red_subset_ids)].sort_values(by='{0}'.format(id_col))
-        # red_cen_stellar_mass_arr_new = red_subset_df.logmstar.loc[\
-        #     red_subset_df.g_galtype == 1].values
         cen_red_subset_df = red_subset_df.loc[red_subset_df[galtype_col] == 1]
-        red_cen_stellar_mass_arr = cen_red_subset_df.groupby(['{0}'.format(id_col),
-            '{0}'.format(galtype_col)])[logmstar_col].apply(np.sum).values
-        # if catl_type == 'data' or catl_type == 'mock':
-        #     red_subset_df['deltav'] = red_subset_df['cz'] - red_subset_df['grpcz_av']   
-        # elif catl_type == 'model':     
-            # red_subset_df['deltav'] = red_subset_df['cz'] - red_subset_df[cencz_col]   
-        # red_subset_df['deltav'] = red_subset_df['cz'] - red_subset_df['grpcz_av']
+        if settings.mf_type == 'smf':
+            #* np.sum doesn't actually add anything since there is only one central 
+            #* per group (checked)
+            #* Could use np.concatenate(cen_red_subset_df.groupby(['{0}'.format(id_col),
+            #*    '{0}'.format(galtype_col)])[logmstar_col].apply(np.array).ravel())
+            red_cen_stellar_mass_arr = cen_red_subset_df.groupby(['{0}'.format(id_col),
+                '{0}'.format(galtype_col)])[logmstar_col].apply(np.sum).values
+        elif settings.mf_type == 'bmf':
+            red_cen_bary_mass_arr = cen_red_subset_df.groupby(['{0}'.format(id_col),
+                '{0}'.format(galtype_col)])[logmbary_col].apply(np.sum).values
+
         #* The gapper method does not exclude the central 
         red_sigma_arr = red_subset_df.groupby(['{0}'.format(id_col)])['cz'].\
             apply(lambda x: self.gapper(x)).values
 
-        # if settings.level == 'halo':
-        #     red_hosthalo_arr = red_subset_df.groupby(['{0}'.format(id_col)])\
-        #         ['halo_mvir_host_halo'].apply(lambda x: np.unique(x)[0]).values
 
-        # end = time.time()
-        # time_taken = end - start
-        # print("New method took {0:.1f} seconds".format(time_taken))
-
-        # start = time.time()
         blue_subset_df = catl.loc[catl[id_col].isin(blue_subset_ids)]
-        # red_subset_ids = [key for key in Counter(
-        #     red_subset_df.groupid).keys() if Counter(
-        #         red_subset_df.groupid)[key] > 1]
         #* Excluding N=1 groups
         blue_subset_ids = blue_subset_df.groupby([id_col]).filter\
             (lambda x: len(x) > 1)[id_col].unique()
         blue_subset_df = catl.loc[catl[id_col].isin(
             blue_subset_ids)].sort_values(by='{0}'.format(id_col))
-        # red_cen_stellar_mass_arr_new = red_subset_df.logmstar.loc[\
-        #     red_subset_df.g_galtype == 1].values
         cen_blue_subset_df = blue_subset_df.loc[blue_subset_df[galtype_col] == 1]
-        blue_cen_stellar_mass_arr = cen_blue_subset_df.groupby(['{0}'.format(id_col),
-            '{0}'.format(galtype_col)])[logmstar_col].apply(np.sum).values
-        # if catl_type == 'data' or catl_type == 'mock':
-        #     blue_subset_df['deltav'] = blue_subset_df['cz'] - blue_subset_df['grpcz_new']    
-        # elif catl_type == 'model':
-        #     blue_subset_df['deltav'] = blue_subset_df['cz'] - blue_subset_df[cencz_col]            
-        # blue_subset_df['deltav'] = blue_subset_df['cz'] - blue_subset_df['grpcz_av']
+        if settings.mf_type == 'smf':
+            blue_cen_stellar_mass_arr = cen_blue_subset_df.groupby(['{0}'.format(id_col),
+                '{0}'.format(galtype_col)])[logmstar_col].apply(np.sum).values
+        elif settings.mf_type == 'bmf':
+            blue_cen_bary_mass_arr = cen_blue_subset_df.groupby(['{0}'.format(id_col),
+                '{0}'.format(galtype_col)])[logmbary_col].apply(np.sum).values
+
         blue_sigma_arr = blue_subset_df.groupby(['{0}'.format(id_col)])['cz'].\
             apply(lambda x: self.gapper(x)).values
 
@@ -324,9 +317,13 @@ class Experiments():
         #         blue_nsat_arr.append(nsat)
         #         blue_host_halo_mass_arr.append(host_halo_mass)
 
+        if settings.mf_type == 'smf':
+            return red_sigma_arr, red_cen_stellar_mass_arr, blue_sigma_arr, \
+                blue_cen_stellar_mass_arr
+        elif settings.mf_type == 'bmf':
+            return red_sigma_arr, red_cen_bary_mass_arr, blue_sigma_arr, \
+                blue_cen_bary_mass_arr
 
-        return red_sigma_arr, red_cen_stellar_mass_arr, blue_sigma_arr, \
-            blue_cen_stellar_mass_arr
             #, red_nsat_arr, blue_nsat_arr, \
             #red_host_halo_mass_arr, blue_host_halo_mass_arr
 
@@ -363,17 +360,24 @@ class Experiments():
 
         settings = self.settings
         preprocess = self.preprocess
+        analysis = self.analysis
 
         mstar_limit = 8.9
+        mbary_limit = 9.3
         if catl_type == 'data':
             if settings.survey == 'eco' or settings.survey == 'resolvea':
-                catl = catl.loc[catl.logmstar >= mstar_limit]
+                if settings.mf_type == 'smf':
+                    catl = catl.loc[catl.logmstar >= mstar_limit]
+                elif settings.mf_type == 'bmf':
+                    catl = catl.loc[catl.logmbary_a23 >= mbary_limit]
             elif settings.survey == 'resolveb':
                 catl = catl.loc[catl.logmstar >= 8.7]
 
             catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
+            catl.logmbary_a23 = np.log10((10**catl.logmbary_a23) / 2.041)
 
             logmstar_col = 'logmstar'
+            logmbary_col = 'logmbary_a23'
 
             ## Use group level for data even when settings.level == halo
             galtype_col = 'g_galtype'
@@ -381,10 +385,18 @@ class Experiments():
 
         if catl_type == 'mock':
             catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
+            mhi_arr = catl.mhi.values
+            logmgas_arr = np.log10((1.4 * mhi_arr) / 2.041)
+            logmbary_arr = analysis.calc_bary(catl.logmstar.values, logmgas_arr)
+            catl["logmbary"] = logmbary_arr
 
-            catl = catl.loc[catl.logmstar >= np.log10((10**mstar_limit)/2.041)]
+            if settings.mf_type == 'smf':
+                catl = catl.loc[catl.logmstar >= np.log10((10**mstar_limit)/2.041)]
+            elif settings.mf_type == 'bmf':
+                catl = catl.loc[catl.logmbary >= np.log10((10**mbary_limit)/2.041)]
 
             logmstar_col = 'logmstar'
+            logmbary_col = 'logmbary'
 
             if settings.level == 'group':
                 galtype_col = 'ps_grp_censat'
@@ -398,7 +410,10 @@ class Experiments():
             if settings.survey == 'eco':
                 min_cz = 3000
                 max_cz = 12000
-                mstar_limit = 8.9
+                if settings.mf_type == 'smf':
+                    mstar_limit = 8.9
+                elif settings.mf_type == 'bmf':
+                    mstar_limit = 9.3
             elif settings.survey == 'resolvea':
                 min_cz = 4500
                 max_cz = 7000
@@ -410,6 +425,7 @@ class Experiments():
 
             if randint is None:
                 logmstar_col = 'logmstar'
+                logmbary_col = 'logmstar'
                 galtype_col = 'grp_censat'
                 id_col = 'groupid'
                 cencz_col = 'cen_cz'
@@ -462,20 +478,27 @@ class Experiments():
         blue_subset_ids = np.unique(catl[id_col].loc[(catl.\
             colour_label == 'B') & (catl[galtype_col] == 1)].values)
 
-
         red_subset_df = catl.loc[catl[id_col].isin(red_subset_ids)]
+
         #* Excluding N=1 groups
         red_subset_ids = red_subset_df.groupby([id_col]).filter\
             (lambda x: len(x) > 1)[id_col].unique()
+
         red_subset_df = catl.loc[catl[id_col].isin(
             red_subset_ids)].sort_values(by='{0}'.format(id_col))
-        # cen_red_subset_df = red_subset_df.loc[red_subset_df[galtype_col] == 1]
-        # red_cen_stellar_mass_arr = cen_red_subset_df.groupby(['{0}'.format(id_col),
-        #     '{0}'.format(galtype_col)])[logmstar_col].apply(np.sum).values
+
         red_subset_df['deltav'] = red_subset_df['cz'] - red_subset_df['grpcz_av']
-        red_cen_stellar_mass_arr = red_subset_df[logmstar_col].loc[red_subset_df[galtype_col] == 1]
-        red_g_ngal_arr = red_subset_df.groupby([id_col]).size()
-        red_cen_stellar_mass_arr = np.repeat(red_cen_stellar_mass_arr, red_g_ngal_arr)
+        
+        if settings.mf_type == 'smf':
+            red_cen_stellar_mass_arr = red_subset_df[logmstar_col].loc[red_subset_df[galtype_col] == 1]
+        elif settings.mf_type == 'bmf':
+            red_cen_bary_mass_arr = red_subset_df[logmbary_col].loc[red_subset_df[galtype_col] == 1]        red_g_ngal_arr = red_subset_df.groupby([id_col]).size()
+        
+        if settings.mf_type == 'smf':
+            red_cen_stellar_mass_arr = np.repeat(red_cen_stellar_mass_arr, red_g_ngal_arr)
+        elif settings.mf_type == 'bmf':
+            red_cen_bary_mass_arr = np.repeat(red_cen_bary_mass_arr, red_g_ngal_arr)
+        
         red_deltav_arr = np.hstack(red_subset_df.groupby([id_col])['deltav'].apply(np.array).values)
 
         #* Using ddof = 1 means the denom in std is N-1 instead of N which is 
@@ -485,38 +508,58 @@ class Experiments():
         # red_sigma_arr = red_subset_df.groupby(id_col)['cz'].apply(np.std, ddof=1).values
 
         blue_subset_df = catl.loc[catl[id_col].isin(blue_subset_ids)]
+
         #* Excluding N=1 groups
         blue_subset_ids = blue_subset_df.groupby([id_col]).filter\
             (lambda x: len(x) > 1)[id_col].unique()
+
         blue_subset_df = catl.loc[catl[id_col].isin(
             blue_subset_ids)].sort_values(by='{0}'.format(id_col))
-        # cen_blue_subset_df = blue_subset_df.loc[blue_subset_df[galtype_col] == 1]
-        # blue_cen_stellar_mass_arr = cen_blue_subset_df.groupby(['{0}'.format(id_col),
-        #     '{0}'.format(galtype_col)])[logmstar_col].apply(np.sum).values
+
         blue_subset_df['deltav'] = blue_subset_df['cz'] - blue_subset_df['grpcz_av']
-        blue_cen_stellar_mass_arr = blue_subset_df[logmstar_col].loc[blue_subset_df[galtype_col] == 1]
+
+        if settings.mf_type == 'smf':
+            blue_cen_stellar_mass_arr = blue_subset_df[logmstar_col].loc[blue_subset_df[galtype_col] == 1]
+        elif settings.mf_type == 'bmf':
+            blue_cen_bary_mass_arr = blue_subset_df[logmbary_col].loc[blue_subset_df[galtype_col] == 1]
+        
         blue_g_ngal_arr = blue_subset_df.groupby([id_col]).size()
-        blue_cen_stellar_mass_arr = np.repeat(blue_cen_stellar_mass_arr, blue_g_ngal_arr)
+
+        if settings.mf_type == 'smf':
+            blue_cen_stellar_mass_arr = np.repeat(blue_cen_stellar_mass_arr, blue_g_ngal_arr)
+        elif settings.mf_type == 'bmf':
+            blue_cen_bary_mass_arr = np.repeat(blue_cen_bary_mass_arr, blue_g_ngal_arr)
+        
         blue_deltav_arr = np.hstack(blue_subset_df.groupby([id_col])['deltav'].apply(np.array).values)
 
-
-        return red_deltav_arr, red_cen_stellar_mass_arr, blue_deltav_arr, \
-            blue_cen_stellar_mass_arr
+        if settings.mf_type == 'smf':
+            return red_deltav_arr, red_cen_stellar_mass_arr, blue_deltav_arr, \
+                blue_cen_stellar_mass_arr
+        elif settings.mf_type == 'bmf':
+            return red_deltav_arr, red_cen_bary_mass_arr, blue_deltav_arr, \
+                blue_cen_bary_mass_arr
 
     def get_richness(self, catl, catl_type, randint=None, central_bool=True):
         settings = self.settings
         preprocess = self.preprocess
+        analysis = self.analysis
 
         mstar_limit = 8.9
+        mbary_limit = 9.3
         if catl_type == 'data':
             if settings.survey == 'eco' or settings.survey == 'resolvea':
-                catl = catl.loc[catl.logmstar >= mstar_limit]
+                if settings.mf_type == 'smf':
+                    catl = catl.loc[catl.logmstar >= mstar_limit]
+                elif settings.mf_type == 'bmf':
+                    catl = catl.loc[catl.logmbary_a23 >= mbary_limit]
             elif settings.survey == 'resolveb':
                 catl = catl.loc[catl.logmstar >= 8.7]
 
             catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
+            catl.logmbary_a23 = np.log10((10**catl.logmbary_a23) / 2.041)
 
             logmstar_col = 'logmstar'
+            logmbary_col = 'logmbary_a23'
 
             ## Use group level for data even when settings.level == halo
             galtype_col = 'g_galtype'
@@ -524,10 +567,18 @@ class Experiments():
 
         if catl_type == 'mock':
             catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
+            mhi_arr = catl.mhi.values
+            logmgas_arr = np.log10((1.4 * mhi_arr) / 2.041)
+            logmbary_arr = analysis.calc_bary(catl.logmstar.values, logmgas_arr)
+            catl["logmbary"] = logmbary_arr
 
-            catl = catl.loc[catl.logmstar >= np.log10((10**mstar_limit)/2.041)]
+            if settings.mf_type == 'smf':
+                catl = catl.loc[catl.logmstar >= np.log10((10**mstar_limit)/2.041)]
+            elif settings.mf_type == 'bmf':
+                catl = catl.loc[catl.logmbary >= np.log10((10**mbary_limit)/2.041)]
 
             logmstar_col = 'logmstar'
+            logmbary_col = 'logmbary'
 
             if settings.level == 'group':
                 galtype_col = 'ps_grp_censat'
@@ -540,8 +591,11 @@ class Experiments():
         if catl_type == 'model':
             if settings.survey == 'eco':
                 min_cz = 3000
-                max_cz = 7000
-                mstar_limit = 8.9
+                max_cz = 12000
+                if settings.mf_type == 'smf':
+                    mstar_limit = 8.9
+                elif settings.mf_type == 'bmf':
+                    mstar_limit = 9.3
             elif settings.survey == 'resolvea':
                 min_cz = 4500
                 max_cz = 7000
@@ -551,7 +605,23 @@ class Experiments():
                 max_cz = 7000
                 mstar_limit = 8.7
 
-            if isinstance(randint, int) and randint != 1:
+            if randint is None:
+                logmstar_col = 'logmstar'
+                logmbary_col = 'logmstar'
+                galtype_col = 'grp_censat'
+                id_col = 'groupid'
+                cencz_col = 'cen_cz'
+                # Using the same survey definition as in mcmc smf i.e excluding the 
+                # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
+                # and M* star cuts to mimic mocks and data.
+                # catl = mock_add_grpcz(catl, id_col, False, galtype_col)
+                catl = catl.loc[
+                    (catl[cencz_col].values >= min_cz) & \
+                    (catl[cencz_col].values <= max_cz) & \
+                    (catl[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
+                # catl[logmstar_col] = np.log10(catl[logmstar_col])
+
+            elif isinstance(randint, int) and randint != 1:
                 logmstar_col = '{0}'.format(randint)
                 galtype_col = 'grp_censat_{0}'.format(randint)
                 cencz_col = 'cen_cz_{0}'.format(randint)
@@ -559,7 +629,7 @@ class Experiments():
                 # Using the same survey definition as in mcmc smf i.e excluding the 
                 # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
                 # and M* star cuts to mimic mocks and data.
-                # catl = preprocess.mock_add_grpcz(catl, False, id_col, galtype_col, cencz_col)
+                # catl = mock_add_grpcz(catl, id_col, False, galtype_col, cencz_col)
                 catl = catl.loc[
                     (catl[cencz_col].values >= min_cz) & \
                     (catl[cencz_col].values <= max_cz) & \
@@ -573,28 +643,17 @@ class Experiments():
                 # Using the same survey definition as in mcmc smf i.e excluding the 
                 # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
                 # and M* star cuts to mimic mocks and data.
-                # catl = preprocess.mock_add_grpcz(catl, False, id_col, galtype_col, cencz_col)
+                # catl = mock_add_grpcz(catl, id_col, False, galtype_col, cencz_col)
                 catl = catl.loc[
                     (catl[cencz_col].values >= min_cz) & \
                     (catl[cencz_col].values <= max_cz) & \
                     (catl[logmstar_col].values >= np.log10((10**mstar_limit)/2.041))]
 
-            else:
-                logmstar_col = 'stellar_mass'
-                galtype_col = 'g_galtype'
-                id_col = 'groupid'
-                # Using the same survey definition as in mcmc smf i.e excluding the 
-                # buffer except no M_r cut since vishnu mock has no M_r info. Only grpcz
-                # and M* star cuts to mimic mocks and data.
-                # catl = preprocess.mock_add_grpcz(catl, False, id_col)
-                catl = catl.loc[(catl.grpcz.values >= min_cz) & \
-                    (catl.grpcz.values <= max_cz) & \
-                    (catl[logmstar_col].values >= (10**mstar_limit)/2.041)]
-                catl[logmstar_col] = np.log10(catl[logmstar_col])
-
             if settings.level == 'halo':
                 galtype_col = 'cs_flag'
                 id_col = 'halo_hostid'
+
+            catl = self.models_add_avgrpcz(catl, id_col, galtype_col)
 
         red_subset_ids = np.unique(catl[id_col].loc[(catl.\
             colour_label == 'R') & (catl[galtype_col] == 1)].values)  
@@ -603,12 +662,19 @@ class Experiments():
 
         red_num_arr = []
         red_cen_stellar_mass_arr = []
+        red_cen_bary_mass_arr = []
         red_host_halo_mass_arr = []
         for key in red_subset_ids: 
             group = catl.loc[catl[id_col] == key]
             # print(logmstar_col)
-            cen_stellar_mass = group[logmstar_col].loc[group[galtype_col]\
-                .values == 1].values[0]
+            if settings.mf_type == 'smf':
+                cen_stellar_mass = group[logmstar_col].loc[group[galtype_col]\
+                    .values == 1].values[0]
+                red_cen_stellar_mass_arr.append(cen_stellar_mass)
+            elif settings.mf_type == 'bmf':
+                cen_bary_mass = group[logmbary_col].loc[group[galtype_col]\
+                    .values == 1].values[0]  
+                red_cen_bary_mass_arr.append(cen_bary_mass)
             if catl_type == 'model':
                 host_halo_mass = np.unique(group.halo_mvir_host_halo.values)[0]
             else: 
@@ -619,18 +685,25 @@ class Experiments():
                 num = len(group)
             elif not central_bool:
                 num = len(group) - 1
-            red_cen_stellar_mass_arr.append(cen_stellar_mass)
+            
             red_num_arr.append(num)
             red_host_halo_mass_arr.append(host_halo_mass)
 
                 
         blue_num_arr = []
         blue_cen_stellar_mass_arr = []
+        blue_cen_bary_mass_arr = []
         blue_host_halo_mass_arr = []
         for key in blue_subset_ids: 
             group = catl.loc[catl[id_col] == key]
-            cen_stellar_mass = group[logmstar_col].loc[group[galtype_col]\
-                .values == 1].values[0]
+            if settings.mf_type == 'smf':
+                cen_stellar_mass = group[logmstar_col].loc[group[galtype_col]\
+                    .values == 1].values[0]
+                blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+            elif settings.mf_type == 'bmf':
+                cen_bary_mass = group[logmbary_col].loc[group[galtype_col]\
+                    .values == 1].values[0]  
+                blue_cen_bary_mass_arr.append(cen_bary_mass) 
             if catl_type == 'model':
                 host_halo_mass = np.unique(group.halo_mvir_host_halo.values)[0]
             else: 
@@ -639,17 +712,23 @@ class Experiments():
                 num = len(group)
             elif not central_bool:
                 num = len(group) - 1
-            blue_cen_stellar_mass_arr.append(cen_stellar_mass)
+
             blue_num_arr.append(num)
             blue_host_halo_mass_arr.append(host_halo_mass)
 
-        return red_num_arr, red_cen_stellar_mass_arr, blue_num_arr, \
-            blue_cen_stellar_mass_arr, red_host_halo_mass_arr, \
-            blue_host_halo_mass_arr
+        if settings.mf_type == 'smf':
+            return red_num_arr, red_cen_stellar_mass_arr, blue_num_arr, \
+                blue_cen_stellar_mass_arr, red_host_halo_mass_arr, \
+                blue_host_halo_mass_arr
+        elif settings.mf_type == 'bmf':
+            return red_num_arr, red_cen_bary_mass_arr, blue_num_arr, \
+                blue_cen_bary_mass_arr, red_host_halo_mass_arr, \
+                blue_host_halo_mass_arr
+
 
     def get_vdf(self, red_sigma, blue_sigma, volume):
-        bins_red=np.linspace(1,3,5)
-        bins_blue=np.linspace(1,3,5)
+        bins_red=np.linspace(1,2.8,5)
+        bins_blue=np.linspace(1,2.5,5)
         # Unnormalized histogram and bin edges
         counts_red, edg = np.histogram(red_sigma, bins=bins_red)  # paper used 17 bins
         counts_blue, edg = np.histogram(blue_sigma, bins=bins_blue)  # paper used 17 bins
@@ -670,24 +749,7 @@ class Experiments():
         preprocess = self.preprocess
         settings = self.settings
 
-        if settings.stacked_stat:
-            red_deltav, red_cen_mstar_sigma, blue_deltav, \
-            blue_cen_mstar_sigma = self.get_stacked_velocity_dispersion(
-                analysis.catl, 'data')
-
-            red_sigma_stat = bs(red_cen_mstar_sigma, red_deltav,
-                statistic='std', bins=np.linspace(8.6,11,5))
-            blue_sigma_stat = bs( blue_cen_mstar_sigma, blue_deltav,
-                statistic='std', bins=np.linspace(8.6,11,5))
-            
-            red_sigma = np.log10(red_sigma_stat[0])
-            blue_sigma = np.log10(blue_sigma_stat[0])
-
-            self.data_experimentals["vel_disp"] = {'red_sigma':red_sigma,
-            'red_cen_mstar':red_sigma_stat[0],
-            'blue_sigma':blue_sigma, 'blue_cen_mstar':blue_sigma_stat[0]}
-
-        else:
+        if settings.mf_type == 'smf':
             red_sigma, red_cen_mstar_sigma, blue_sigma, \
                 blue_cen_mstar_sigma = \
                 self.get_velocity_dispersion(analysis.catl, 'data')
@@ -696,13 +758,42 @@ class Experiments():
             blue_sigma = np.log10(blue_sigma)
 
             mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
-                statistic=analysis.average_of_log, bins=np.linspace(-2,3,5))
+                statistic=analysis.average_of_log, bins=np.linspace(1,2.8,5))
             mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
-                statistic=analysis.average_of_log , bins=np.linspace(-1,3,5))
+                statistic=analysis.average_of_log , bins=np.linspace(1,2.5,5))
 
-            self.data_experimentals["vel_disp"] = {'red_sigma':mean_mstar_red_data[1],
-            'red_cen_mstar':mean_mstar_red_data[0],
-            'blue_sigma':mean_mstar_blue_data[1], 'blue_cen_mstar':mean_mstar_blue_data[0]}
+            red_cen_mstar_sigma = mean_mstar_red_data[0]
+            blue_cen_mstar_sigma = mean_mstar_blue_data[0]
+
+            red_sigma = mean_mstar_red_data[1]
+            blue_sigma = mean_mstar_blue_data[1]
+
+            self.data_experimentals["mean_mass"] = {'red_sigma':red_sigma,
+            'red_cen_mass':red_cen_mstar_sigma,
+            'blue_sigma':blue_sigma, 'blue_cen_mass':blue_cen_mstar_sigma}
+        elif settings.mf_type == 'bmf':
+            red_sigma, red_cen_mbary_sigma, blue_sigma, \
+                blue_cen_mbary_sigma = \
+                self.get_velocity_dispersion(analysis.catl, 'data')
+
+            red_sigma = np.log10(red_sigma)
+            blue_sigma = np.log10(blue_sigma)
+
+            mean_mbary_red_data = bs(red_sigma, red_cen_mbary_sigma, 
+                statistic=analysis.average_of_log, bins=np.linspace(1,2.8,5))
+            mean_mbary_blue_data = bs(blue_sigma, blue_cen_mbary_sigma, 
+                statistic=analysis.average_of_log , bins=np.linspace(1,2.5,5))
+
+            red_cen_mbary_sigma = mean_mbary_red_data[0]
+            blue_cen_mbary_sigma = mean_mbary_blue_data[0]
+
+            red_sigma = mean_mbary_red_data[1]
+            blue_sigma = mean_mbary_blue_data[1]
+
+            self.data_experimentals["mean_mass"] = {'red_sigma':red_sigma,
+            'red_cen_mass':red_cen_mbary_sigma,
+            'blue_sigma':blue_sigma, 'blue_cen_mass':blue_cen_mbary_sigma}
+
 
         # red_sigma, red_cen_mstar_sigma, blue_sigma, \
         #     blue_cen_mstar_sigma, red_nsat, blue_nsat, red_host_halo_mass, \
