@@ -553,13 +553,15 @@ def blue_frac(catl, h1_bool, data_bool, randint_logmstar=None):
         if mf_type == 'smf':
             mstar_limit = 8.9
             bin_min = np.round(np.log10((10**mstar_limit) / 2.041), 1)
+            #* Changed max bin from 11.5 to 11.1 to be the same as mstar-sigma (10.8)
+            bin_max = np.round(np.log10((10**11.1) / 2.041), 1)
+
 
         elif mf_type == 'bmf':
             mbary_limit = 9.3
             bin_min = np.round(np.log10((10**mbary_limit) / 2.041), 1)
+            bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
 
-        #* Changed max bin from 11.5 to 11.1 to be the same as mstar-sigma (10.8)
-        bin_max = np.round(np.log10((10**11.1) / 2.041), 1)
         bin_num = 5
         bins = np.linspace(bin_min, bin_max, bin_num)
 
@@ -642,7 +644,7 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
             catl = catl.loc[catl.logmstar >= 8.7]
 
         catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
-        catl.logmbary = np.log10((10**catl.logmbary) / 2.041)
+        catl.logmbary_a23 = np.log10((10**catl.logmbary_a23) / 2.041)
 
         logmstar_col = 'logmstar'
         logmbary_col = 'logmbary_a23'
@@ -843,7 +845,7 @@ def get_stacked_velocity_dispersion(catl, catl_type, randint=None):
             catl = catl.loc[catl.logmstar >= 8.7]
 
         catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
-        catl.logmbary = np.log10((10**catl.logmbary) / 2.041)
+        catl.logmbary_a23 = np.log10((10**catl.logmbary_a23) / 2.041)
 
         logmstar_col = 'logmstar'
         logmbary_col = 'logmbary_a23'
@@ -3240,9 +3242,8 @@ def main(args):
         red_deltav, red_cen_mbary_sigma, blue_deltav, \
             blue_cen_mbary_sigma = get_stacked_velocity_dispersion(catl, 'data')
 
-        #TODO : need to reflect this updated binning in model as well
         sigma_red_data = bs(red_cen_mbary_sigma, red_deltav,
-            statistic='std', bins=np.linspace(9.5,11.2,5))
+            statistic='std', bins=np.linspace(9.0,11.2,5))
         sigma_blue_data = bs( blue_cen_mbary_sigma, blue_deltav,
             statistic='std', bins=np.linspace(9.0,11.2,5))
         
