@@ -1997,15 +1997,12 @@ class Analysis():
             "cen_blue":[],"sat_red":[],"sat_blue":[]}]
         model_results = dict(zip(main_keys,sub_keys))
 
-        #! Do we need to get all these measurements for vel_disp
-        #TODO RESUME HERE
         main_keys = ["vel_disp","mean_mass", "richness","vdf"]
-        sub_keys = [{"red_sigma":[],"red_cen_mstar":[],"blue_sigma":[],\
-            "blue_cen_mstar":[],"red_nsat":[],"blue_nsat":[],"red_hosthalo":[],\
-            "blue_hosthalo":[]},{"red_num":[],\
+        sub_keys = [{"red_sigma":[],"red_cen_mass":[],"blue_sigma":[],\
+            "blue_cen_mass":[]},{"red_sigma":[],"red_cen_mass":[],"blue_sigma":[],\
+            "blue_cen_mass":[]},{"red_num":[],\
             "red_cen_mstar":[],"blue_num":[],"blue_cen_mstar":[],\
             "red_hosthalo":[],"blue_hosthalo":[]},{"phi_red":[],"phi_blue":[]}]
-
         model_experimentals = dict(zip(main_keys,sub_keys))
 
         for theta in a_list:  
@@ -2084,30 +2081,95 @@ class Analysis():
             # print(type(randint_logmstar))
             f_blue = self.blue_frac(gals_df, True, False, randint_logmstar)
 
-            ## Observable #3 - sigma-M* or M*-sigma
+            ## Observable #3 - sigma-M* and M*-sigma
             if settings.stacked_stat:
-                red_deltav, red_cen_mstar_sigma, blue_deltav, \
-                blue_cen_mstar_sigma = experiments.get_stacked_velocity_dispersion(
-                    gals_df, 'model', randint_logmstar)
+                if settings.mf_type == "smf":
+                    red_deltav, red_cen_mstar_sigma, blue_deltav, \
+                    blue_cen_mstar_sigma = experiments.get_stacked_velocity_dispersion(
+                        gals_df, 'model', randint_logmstar)
 
-                model_experimentals["vel_disp"]["red_sigma"].append(red_deltav)
-                model_experimentals["vel_disp"]["red_cen_mstar"].append(red_cen_mstar_sigma)
-                model_experimentals["vel_disp"]["blue_sigma"].append(blue_deltav)
-                model_experimentals["vel_disp"]["blue_cen_mstar"].append(blue_cen_mstar_sigma)
+                    red_sigma_stat = bs(red_cen_mstar_sigma, red_deltav,
+                        statistic='std', bins=np.linspace(8.6,10.8,5))
+                    blue_sigma_stat = bs( blue_cen_mstar_sigma, blue_deltav,
+                        statistic='std', bins=np.linspace(8.6,10.8,5))
+                    
+                    red_sigma = np.log10(red_sigma_stat[0])
+                    blue_sigma = np.log10(blue_sigma_stat[0])
 
-            else:
-                red_sigma, red_cen_mstar_sigma, blue_sigma, \
-                    blue_cen_mstar_sigma = experiments.get_velocity_dispersion(
-                    gals_df, 'model', randint_logmstar)
+                    red_cen_mstar_sigma = red_sigma_stat[1]
+                    blue_cen_mstar_sigma = blue_sigma_stat[1]
 
-                red_sigma = np.log10(red_sigma)
-                blue_sigma = np.log10(blue_sigma)
+                    model_experimentals["vel_disp"]["red_sigma"].append(red_sigma)
+                    model_experimentals["vel_disp"]["red_cen_mass"].append(red_cen_mstar_sigma)
+                    model_experimentals["vel_disp"]["blue_sigma"].append(blue_sigma)
+                    model_experimentals["vel_disp"]["blue_cen_mass"].append(blue_cen_mstar_sigma)
 
-                model_experimentals["vel_disp"]["red_sigma"].append(red_sigma)
-                model_experimentals["vel_disp"]["red_cen_mstar"].append(red_cen_mstar_sigma)
-                model_experimentals["vel_disp"]["blue_sigma"].append(blue_sigma)
-                model_experimentals["vel_disp"]["blue_cen_mstar"].append(blue_cen_mstar_sigma)
+                    red_sigma, red_cen_mstar_sigma, blue_sigma, \
+                        blue_cen_mstar_sigma = experiments.get_velocity_dispersion(
+                        gals_df, 'model', randint_logmstar)
 
+                    red_sigma = np.log10(red_sigma)
+                    blue_sigma = np.log10(blue_sigma)
+
+                    mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
+                        statistic=self.average_of_log, bins=np.linspace(1,2.8,5))
+                    mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
+                        statistic=self.average_of_log, bins=np.linspace(1,2.5,5))
+
+                    mean_mstar_red = mean_mstar_red[0]
+                    mean_mstar_blue = mean_mstar_blue[0]
+
+                    red_sigma = mean_mstar_red[1]
+                    blue_sigma = mean_mstar_blue[1]
+
+                    model_experimentals["mean_mass"]["red_sigma"].append(red_sigma)
+                    model_experimentals["mean_mass"]["red_cen_mass"].append(mean_mstar_red)
+                    model_experimentals["mean_mass"]["blue_sigma"].append(blue_sigma)
+                    model_experimentals["mean_mass"]["blue_cen_mass"].append(mean_mstar_blue)
+
+                elif settings.mf_type == 'bmf':
+                    red_deltav, red_cen_mbary_sigma, blue_deltav, \
+                    blue_cen_mbary_sigma = experiments.get_stacked_velocity_dispersion(
+                        gals_df, 'model', randint_logmstar)
+
+                    red_sigma_stat = bs(red_cen_mbary_sigma, red_deltav,
+                        statistic='std', bins=np.linspace(9.0,11.2,5))
+                    blue_sigma_stat = bs( blue_cen_mbary_sigma, blue_deltav,
+                        statistic='std', bins=np.linspace(9.0,11.2,5))
+                    
+                    red_sigma = np.log10(red_sigma_stat[0])
+                    blue_sigma = np.log10(blue_sigma_stat[0])
+
+                    red_cen_mbary_sigma = red_sigma_stat[1]
+                    blue_cen_mbary_sigma = blue_sigma_stat[1]
+
+                    model_experimentals["vel_disp"]["red_sigma"].append(red_sigma)
+                    model_experimentals["vel_disp"]["red_cen_mass"].append(red_cen_mbary_sigma)
+                    model_experimentals["vel_disp"]["blue_sigma"].append(blue_sigma)
+                    model_experimentals["vel_disp"]["blue_cen_mass"].append(blue_cen_mbary_sigma)
+
+                    red_sigma, red_cen_mbary_sigma, blue_sigma, \
+                        blue_cen_mbary_sigma = experiments.get_velocity_dispersion(
+                            gals_df, 'model', randint_logmstar)
+
+                    red_sigma = np.log10(red_sigma)
+                    blue_sigma = np.log10(blue_sigma)
+
+                    mean_mbary_red = bs(red_sigma, red_cen_mbary_sigma, 
+                        statistic=self.average_of_log, bins=np.linspace(1,2.8,5))
+                    mean_mbary_blue = bs(blue_sigma, blue_cen_mbary_sigma, 
+                        statistic=self.average_of_log, bins=np.linspace(1,2.5,5))
+
+                    mean_mbary_red = mean_mbary_red[0]
+                    mean_mbary_blue = mean_mbary_blue[0]
+
+                    red_sigma = mean_mbary_red[1]
+                    blue_sigma = mean_mbary_blue[1]
+
+                    model_experimentals["mean_mass"]["red_sigma"].append(red_sigma)
+                    model_experimentals["mean_mass"]["red_cen_mass"].append(mean_mbary_red)
+                    model_experimentals["mean_mass"]["blue_sigma"].append(blue_sigma)
+                    model_experimentals["mean_mass"]["blue_cen_mass"].append(mean_mbary_blue)
 
             cen_gals, cen_halos, cen_gals_red, cen_halos_red, cen_gals_blue, \
                 cen_halos_blue, f_red_cen_red, f_red_cen_blue = \
@@ -2160,15 +2222,6 @@ class Analysis():
             model_results["f_red"]["sat_red"].append(f_red_sat_red)
             model_results["f_red"]["cen_blue"].append(f_red_cen_blue)
             model_results["f_red"]["sat_blue"].append(f_red_sat_blue)
-
-            # model_experimentals["vel_disp"]["red_sigma"].append(mean_mstar_red[1])
-            # model_experimentals["vel_disp"]["red_cen_mstar"].append(mean_mstar_red[0])
-            # model_experimentals["vel_disp"]["blue_sigma"].append(mean_mstar_blue[1])
-            # model_experimentals["vel_disp"]["blue_cen_mstar"].append(mean_mstar_blue[0])
-            # model_experimentals["vel_disp"]["red_nsat"].append(red_nsat)
-            # model_experimentals["vel_disp"]["blue_nsat"].append(blue_nsat)
-            # model_experimentals["vel_disp"]["red_hosthalo"].append(red_host_halo_mass_vd)
-            # model_experimentals["vel_disp"]["blue_hosthalo"].append(blue_host_halo_mass_vd)
 
             model_experimentals["richness"]["red_num"].append(red_num)
             model_experimentals["richness"]["red_cen_mstar"].append(red_cen_mstar_richness)
