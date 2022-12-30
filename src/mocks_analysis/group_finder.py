@@ -136,6 +136,24 @@ def mock_add_grpcz(df, grpid_col=None, galtype_col=None, cen_cz_col=None):
     zip_iterator = zip(list(cen_subset_df[grpid_col]), list(cen_cz))
     a_dictionary = dict(zip_iterator)
     df['grpcz_cen'] = df['{0}'.format(grpid_col)].map(a_dictionary)
+
+    av_cz = df.groupby(['{0}'.format(grpid_col)])\
+        ['cz'].apply(np.average).values
+    zip_iterator = zip(list(cen_subset_df[grpid_col]), list(av_cz))
+    a_dictionary = dict(zip_iterator)
+    df['grpcz_av'] = df['{0}'.format(grpid_col)].map(a_dictionary)
+
+    return df
+
+def models_add_avgrpcz(df, grpid_col=None, galtype_col=None):
+    cen_subset_df = df.loc[df[galtype_col] == 1].sort_values(by=grpid_col)
+
+    av_cz = df.groupby(['{0}'.format(grpid_col)])\
+        ['cz'].apply(np.average).values
+    zip_iterator = zip(list(cen_subset_df[grpid_col]), list(av_cz))
+    a_dictionary = dict(zip_iterator)
+    df['grpcz_av'] = df['{0}'.format(grpid_col)].map(a_dictionary)
+
     return df
 
 def models_add_cengrpcz(df, col_id, grpid_col=None, galtype_col=None, cen_cz_col=None):
@@ -182,6 +200,10 @@ def read_data_catl(path_to_file, survey):
         # eco_buff = pd.read_csv(path_to_file,delimiter=",", header=0)
 
         eco_buff = read_mock_catl(path_to_file)
+
+        #* Recommended to exclude this galaxy in erratum to Hood et. al 2018
+        eco_buff = eco_buff.loc[eco_buff.name != 'ECO13860']
+
         eco_buff = mock_add_grpcz(eco_buff, grpid_col='ps_groupid', 
             galtype_col='g_galtype', cen_cz_col='cz')
 
@@ -196,7 +218,7 @@ def read_data_catl(path_to_file, survey):
                 (eco_buff.absrmag.values <= -17.33)]
 
         volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
-        cvar = 0.125
+        # cvar = 0.125
         z_median = np.median(catl.grpcz_cen.values) / (3 * 10**5)
 
     elif survey == 'resolvea' or survey == 'resolveb':
@@ -236,7 +258,7 @@ def read_data_catl(path_to_file, survey):
             cvar = 0.58
             z_median = np.median(resolve_live18.grpcz.values) / (3 * 10**5)
 
-    return catl,volume,cvar,z_median
+    return catl, volume, z_median
 
 def get_paramvals_percentile(table, percentile, chi2_arr):
     """
@@ -323,7 +345,7 @@ def populate_mock(theta, model, remove_cols=False):
     model.param_dict['smhm_delta_0'] = mhigh_slope
     model.param_dict['scatter_model_param1'] = mstellar_scatter
 
-    model.mock.populate()
+    model.mock.populate(seed=1993)
 
     gals = model.mock.galaxy_table
     gals_df = pd.DataFrame(np.array(gals))
@@ -544,334 +566,6 @@ def group_finding(mock_pd, col_id, mock_zz_file, param_dict, file_ext='csv'):
         print('Group Finding ....Done')
 
     return mockgal_pd_merged, mockgroup_pd
-
-def abundance_matching_f(dict1, dict2, dict1_names=None, dict2_names=None,
-    volume1=None, volume2=None, reverse=True, dens1_opt=False,
-    dens2_opt=False):
-    """
-    Performs abundance matching based on two quantities (dict1 and dict2).
-    It assigns values from `dict2` to elements in `dict1`.
-    Parameters
-    ----------
-    dict1: dictionary_like, or array_like
-        Dictionary or array-like object of property 1
-        If `dens1_opt == True`:
-            - Object is a dictionary consisting of the following keys:
-                - 'dict1_names': shape (2,)
-                - Order of `dict1_names`: [var1_value, dens1_value]
-        else:
-            - Object is a 1D array or list
-            - Density must be calculated for var2
-    dict2: dictionary_like, or array_like
-        Dictionary or array-like object of property 2
-        If `dens2_opt == True`:
-            - Object is a dictionary consisting of the following keys:
-                - 'dict2_names': shape (2,)
-                - Order of `dict2_names`: [var2_value, dens2_value]
-        else:
-            - Object is a 1D array or list
-            - Density must be calculated for var2
-    dict1_names: NoneType, or array_list with shape (2,), optional (def: None)
-        names of the `dict1` keys, in order of [var1_value, dens1_value]
-    dict2_names: NoneType, or array_list with shape (2,), optional (def: None)
-        names of the `dict2` keys, in order of [var2_value, dens2_value]
-    volume1: NoneType or float, optional (default = None)
-        Volume of the 1st variable `var1`
-        Required if `dens1_opt == False`
-    volume2: NoneType or float, optional (default = None)
-        Volume of the 2nd variable `var2`
-        Required if `dens2_opt == False`
-    reverse: boolean
-        Determines the relation between var1 and var2.
-        - reverse==True: var1 increases with increasing var2
-        - reverse==False: var1 decreases with increasing var2
-    dens1_opt: boolean, optional (default = False)
-        - If 'True': density is already provided as key for `dict1`
-        - If 'False': density must me calculated
-        - `dict1_names` must be provided and have length (2,)
-    dens2_opt: boolean, optional (default = False)
-        - If 'True': density is already provided as key for `dict2`
-        - If 'False': density must me calculated
-        - `dict2_names` must be provided and have length (2,)
-    Returns
-    -------
-    var1_ab: array_like
-        numpy.array of elements matching those of `dict1`, after matching with
-        dict2.
-    """
-    ## Checking input parameters
-    # 1st property
-    if dens1_opt:
-        assert(len(dict1_names) == 2)
-        var1  = np.array(dict1[dict1_names[0]])
-        dens1 = np.array(dict1[dict1_names[1]])
-    else:
-        var1        = np.array(dict1)
-        assert(volume1 != None)
-        ## Calculating Density for `var1`
-        if reverse:
-            ncounts1 = np.array([np.where(var1<xx)[0].size for xx in var1])+1
-        else:
-            ncounts1 = np.array([np.where(var1>xx)[0].size for xx in var1])+1
-        dens1 = ncounts1.astype(float)/volume1
-    # 2nd property
-    if dens2_opt:
-        assert(len(dict2_names) == 2)
-        var2  = np.array(dict2[dict2_names[0]])
-        dens2 = np.array(dict2[dict2_names[1]])
-    else:
-        var2        = np.array(dict2)
-        assert(volume2 != None)
-        ## Calculating Density for `var1`
-        if reverse:
-            ncounts2 = np.array([np.where(var2<xx)[0].size for xx in var2])+1
-        else:
-            ncounts2 = np.array([np.where(var2>xx)[0].size for xx in var2])+1
-        dens2 = ncounts2.astype(float)/volume2
-    ##
-    ## Interpolating densities and values
-    interp_var2 = interp1d(dens2, var2, bounds_error=True,assume_sorted=False)
-    # Value assignment
-    var1_ab = np.array([interp_var2(xx) for xx in dens1])
-
-    return var1_ab
-
-def group_mass_assignment(mockgal_pd, mockgroup_pd, param_dict):
-    """
-    Assigns a theoretical halo mass to the group based on a group property
-    Parameters
-    -----------
-    mockgal_pd: pandas DataFrame
-        DataFrame containing information for each mock galaxy.
-        Includes galaxy properties + group ID
-    mockgroup_pd: pandas DataFrame
-        DataFame containing information for each galaxy group
-    param_dict: python dictionary
-        dictionary with `project` variables
-
-    Returns
-    -----------
-    mockgal_pd_new: pandas DataFrame
-        Original info + abundance matched mass of the group, M_group
-    mockgroup_pd_new: pandas DataFrame
-        Original info of `mockgroup_pd' + abundance matched mass, M_group
-    """
-    ## Constants
-    if param_dict['verbose']:
-        print('Group Mass Assign. ....')
-    ## Copies of DataFrames
-    gal_pd   = mockgal_pd.copy()
-    group_pd = mockgroup_pd.copy()
-
-    ## Changing stellar mass to log
-    gal_pd['logmstar'] = np.log10(gal_pd['stellar_mass'])
-
-    ## Constants
-    Cens     = int(1)
-    Sats     = int(0)
-    n_gals   = len(gal_pd  )
-    n_groups = len(group_pd)
-    ## Type of abundance matching
-    if param_dict['catl_type'] == 'mr':
-        prop_gal    = 'M_r'
-        reverse_opt = True
-    elif param_dict['catl_type'] == 'mstar':
-        prop_gal    = 'logmstar'
-        reverse_opt = False
-    # Absolute value of `prop_gal`
-    prop_gal_abs = prop_gal + '_abs'
-    ##
-    ## Selecting only a `few` columns
-    # Galaxies
-    gal_pd = gal_pd.loc[:,[prop_gal, 'groupid']]
-    # Groups
-    group_pd = group_pd[['ngals']]
-    ##
-    ## Total `prop_gal` for groups
-    group_prop_arr = [[] for x in range(n_groups)]
-    ## Looping over galaxy groups
-    # Mstar-based
-    if param_dict['catl_type'] == 'mstar':
-        for group_zz in tqdm(range(n_groups)):
-            ## Stellar mass
-            group_prop = gal_pd.loc[gal_pd['groupid']==group_zz, prop_gal]
-            group_log_prop_tot = np.log10(np.sum(10**group_prop))
-            ## Saving to array
-            group_prop_arr[group_zz] = group_log_prop_tot
-    # Luminosity-based
-    elif param_dict['catl_type'] == 'mr':
-        for group_zz in tqdm(range(n_groups)):
-            ## Total abs. magnitude of the group
-            group_prop = gal_pd.loc[gal_pd['groupid']==group_zz, prop_gal]
-            group_prop_tot = Mr_group_calc(group_prop)
-            ## Saving to array
-            group_prop_arr[group_zz] = group_prop_tot
-    ##
-    ## Saving to DataFrame
-    group_prop_arr            = np.asarray(group_prop_arr)
-    group_pd.loc[:, prop_gal] = group_prop_arr
-    if param_dict['verbose']:
-        print('Calculating group masses...Done')
-    ##
-    ## --- Halo Abundance Matching --- ##
-    ## Mass function for given cosmology
-    path_to_hmf = '/fs1/caldervf/Repositories/Large_Scale_Structure/ECO/'\
-        'ECO_Mocks_Catls/data/interim/MF/Planck/ECO/Planck_H0_100.0_HMF_warren.csv'
-
-    hmf_pd = pd.read_csv(path_to_hmf, sep=',')
-
-    ## Halo mass
-    Mh_ab = abundance_matching_f(group_prop_arr,
-                                    hmf_pd,
-                                    volume1=param_dict['survey_vol'],
-                                    reverse=reverse_opt,
-                                    dict2_names=['logM', 'ngtm'],
-                                    dens2_opt=True)
-    # Assigning to DataFrame
-    group_pd.loc[:, 'M_group'] = Mh_ab
-    ###
-    ### ---- Galaxies ---- ###
-    # Adding `M_group` to galaxy catalogue
-    gal_pd = pd.merge(gal_pd, group_pd[['M_group', 'ngals']],
-                        how='left', left_on='groupid', right_index=True)
-    # Renaming `ngals` column
-    gal_pd = gal_pd.rename(columns={'ngals':'g_ngal'})
-    #
-    # Selecting `central` and `satellite` galaxies
-    gal_pd.loc[:, prop_gal_abs] = np.abs(gal_pd[prop_gal])
-    gal_pd.loc[:, 'g_galtype']  = np.ones(n_gals).astype(int)*Sats
-    g_galtype_groups            = np.ones(n_groups)*Sats
-    ##
-    ## Looping over galaxy groups
-    for zz in tqdm(range(n_groups)):
-        gals_g = gal_pd.loc[gal_pd['groupid']==zz]
-        ## Determining group galaxy type
-        gals_g_max = gals_g.loc[gals_g[prop_gal_abs]==gals_g[prop_gal_abs].max()]
-        g_galtype_groups[zz] = int(np.random.choice(gals_g_max.index.values))
-    g_galtype_groups = np.asarray(g_galtype_groups).astype(int)
-    ## Assigning group galaxy type
-    gal_pd.loc[g_galtype_groups, 'g_galtype'] = Cens
-    ##
-    ## Dropping columns
-    # Galaxies
-    gal_col_arr = [prop_gal, prop_gal_abs, 'groupid']
-    gal_pd      = gal_pd.drop(gal_col_arr, axis=1)
-    # Groups
-    group_col_arr = ['ngals']
-    group_pd      = group_pd.drop(group_col_arr, axis=1)
-    ##
-    ## Merging to original DataFrames
-    # Galaxies
-    mockgal_pd_new = pd.merge(mockgal_pd, gal_pd, how='left', left_index=True,
-        right_index=True)
-    # Groups
-    mockgroup_pd_new = pd.merge(mockgroup_pd, group_pd, how='left',
-        left_index=True, right_index=True)
-    if param_dict['verbose']:
-        print('Group Mass Assign. ....Done')
-
-    return mockgal_pd_new, mockgroup_pd_new
-
-def group_mass_assignment_rev(mockgal_pd, mockgroup_pd, param_dict, mock_num):
-    """
-    Assigns a theoretical halo mass to the group based on a group property
-    Parameters
-    -----------
-    mockgal_pd: pandas DataFrame
-        DataFrame containing information for each mock galaxy.
-        Includes galaxy properties + group ID
-    mockgroup_pd: pandas DataFrame
-        DataFame containing information for each galaxy group
-    param_dict: python dictionary
-        dictionary with `project` variables
-
-    Returns
-    -----------
-    mockgal_pd_new: pandas DataFrame
-        Original info + abundance matched mass of the group, M_group
-    mockgroup_pd_new: pandas DataFrame
-        Original info of `mockgroup_pd' + abundance matched mass, M_group
-    """
-    ## Constants
-    # if param_dict['verbose']:
-    #     print('Group Mass Assign. ....')
-    ## Copies of DataFrames
-    gal_pd   = mockgal_pd.copy()
-    group_pd = mockgroup_pd.copy()
-
-    ## Changing stellar mass to log
-    gal_pd['{0}'.format(mock_num)] = np.log10(gal_pd['{0}'.format(mock_num)])
-
-    ## Constants
-    Cens     = int(1)
-    Sats     = int(0)
-    n_gals   = len(gal_pd)
-    n_groups = len(group_pd)
-    ## Type of abundance matching
-    if param_dict['catl_type'] == 'mr':
-        prop_gal    = 'M_r'
-        reverse_opt = True
-    elif param_dict['catl_type'] == 'mstar':
-        prop_gal    = '{0}'.format(mock_num)
-        reverse_opt = False
-    # Absolute value of `prop_gal`
-    prop_gal_abs = prop_gal + '_abs'
-    ##
-    ## Selecting only a `few` columns
-    # Galaxies
-    gal_pd = gal_pd.loc[:,[prop_gal, 'groupid', 'index']]
-    # Groups
-    group_pd = group_pd[['ngals']]
-    
-    gal_pd = pd.merge(gal_pd, group_pd[['ngals']],
-                how='left', left_on='groupid', right_index=True)
-    # Renaming `ngals` column
-    gal_pd = gal_pd.rename(columns={'ngals':'g_ngal_{0}'.format(mock_num)})
-    
-    #
-    # Selecting `central` and `satellite` galaxies
-    gal_pd.loc[:, prop_gal_abs] = np.abs(gal_pd[prop_gal])
-    gal_pd.loc[:, 'g_galtype_{0}'.format(mock_num)] = np.ones(n_gals).astype(int)*Sats
-    g_galtype_groups = np.ones(n_groups)*Sats
-    ##
-    ## Looping over galaxy groups
-    for zz in tqdm(range(n_groups)):
-        gals_g = gal_pd.loc[gal_pd['groupid']==zz]
-        ## Determining group galaxy type
-        gals_g_max = gals_g.loc[gals_g[prop_gal_abs]==gals_g[prop_gal_abs].max()]
-        g_galtype_groups[zz] = int(np.random.choice(gals_g_max.index.values))
-    g_galtype_groups = np.asarray(g_galtype_groups).astype(int)
-
-    ## Assigning group galaxy type
-    gal_pd.loc[g_galtype_groups, 'g_galtype_{0}'.format(mock_num)] = Cens
-    
-    ## Renaming 'groupid' column
-    gal_pd = gal_pd.rename(columns={'groupid':'groupid_{0}'.format(mock_num)})
-    ## Dropping 'prop_gal_abs' column
-    gal_pd = gal_pd.loc[:,['{0}'.format(mock_num), \
-        'g_galtype_{0}'.format(mock_num), 'groupid_{0}'.format(mock_num), \
-        'g_ngal_{0}'.format(mock_num), 'index']]
-    ##
-    ## Dropping columns
-    # Galaxies
-    # gal_col_arr = [prop_gal, prop_gal_abs, 'groupid']
-    # gal_pd_temp      = gal_pd_temp.drop(gal_col_arr, axis=1)
-    # Groups
-    # group_col_arr = ['ngals']
-    # group_pd_temp      = group_pd_temp.drop(group_col_arr, axis=1)
-        
-    ## Merging to original DataFrames
-    # Galaxies
-    # col_idxs_new = ['g_galtype_'+str(int(x)) for x in np.linspace(1,101,101)] 
-    # mockgal_pd_new = pd.merge(mockgal_pd, gal_pd[col_idxs_new], how='left', left_index=True,
-    #     right_index=True)
-    # Groups
-    # mockgroup_pd_new = pd.merge(mockgroup_pd, group_pd, how='left',
-    #     left_index=True, right_index=True)
-    # if param_dict['verbose']:
-    #     print('Group Mass Assign. ....Done')
-
-    return gal_pd, group_pd
 
 def group_skycoords(galaxyra, galaxydec, galaxycz, galaxygrpid):
     """
@@ -1105,7 +799,14 @@ def main(args):
         halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
 
     if survey == 'eco':
-        catl_file = path_to_processed + "gal_group_eco_stellar_buffer_volh1_dr3.hdf5"
+        if mf_type == 'smf':
+            catl_file = path_to_processed + \
+                "gal_group_eco_stellar_buffer_volh1_dr3.hdf5"
+        elif mf_type == 'bmf':
+            catl_file = path_to_processed + \
+                "gal_group_eco_bary_buffer_volh1_dr3.hdf5"    
+        else:
+            print("Incorrect mass function chosen")
 
     print('Reading chi-squared file')
     reader = emcee.backends.HDFBackend(
@@ -1127,7 +828,7 @@ def main(args):
 
     print('Reading survey data')
     # No M* cut
-    catl, volume, cvar, z_median = read_data_catl(catl_file, survey)
+    catl, volume, z_median = read_data_catl(catl_file, survey)
 
     print('Populating halos')
     # Populating halos with best fit set of params
@@ -1215,10 +916,6 @@ def main(args):
                         'ps_cen_cz_{0}'.format(col): 'cen_cz_{0}'.format(col)}
         gal_group_df.rename(columns=rename_dict, inplace=True)
 
-        ## No need to run this function since group_finding now returns 
-        ## grp_censat flag
-        # gal_group_df_new, group_df_new = \
-        #     group_mass_assignment_rev(gal_group_df, group_df, param_dict, col)
         gals_rsd_subset_df = pd.merge(gals_rsd_subset_df, gal_group_df, 
             how='left', left_on = gals_rsd_subset_df.index.values, right_on='index')
 
