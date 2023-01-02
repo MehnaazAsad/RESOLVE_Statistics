@@ -779,7 +779,7 @@ def main(args):
         'l_perp': 0.07,
         'l_para': 1.1,
         'nmin': 1,
-        'verbose': True,
+        'verbose': False,
         'catl_type': 'mstar'
     }
 
@@ -844,8 +844,8 @@ def main(args):
 
     # Populating 100 out of the 101 set of params
     i=2
-    for params in mcmc_table_subset[1:]:
-        print(i)
+    for params in tqdm(mcmc_table_subset[1:]):
+        # print(i)
         params = params[:5]
         mock = populate_mock(params, model_init, True)
         mock = mock.sort_values(by='halo_mvir_host_halo')
@@ -865,8 +865,8 @@ def main(args):
     gals_rsd_subset_df = gals_rsd_df.loc[(gals_rsd_df.cz >= cz_inner) & \
         (gals_rsd_df.cz <= cz_outer)].reset_index(drop=True)
     
-    for col in col_idxs:
-        print('{0} out of {1}'.format(col, len(col_idxs)))
+    for col in tqdm(col_idxs):
+        # print('{0} out of {1}'.format(col, len(col_idxs)))
         # Keep track of index from gals_rsd_subset_df
         gals_rsd_grpfinder_df = gals_rsd_subset_df.loc[gals_rsd_subset_df\
             [col]>10**8.6][['{0}'.format(col),'ra','dec','cz']].\
