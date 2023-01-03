@@ -3140,7 +3140,6 @@ def args_parser():
     parser.add_argument('nwalkers', type=int, nargs='?', 
         help='Number of walkers')
     parser.add_argument('nsteps', type=int, nargs='?', help='Number of steps')
-    parser.add_argument('pca', type=bool, help='Options: True/False')
     args = parser.parse_args()
     return args
 
@@ -3168,6 +3167,7 @@ def main(args):
     np.random.seed(rseed)
     level = "group"
     stacked_stat = "both"
+    pca = True
     new_chain = True
 
     survey = args.survey
@@ -3177,7 +3177,6 @@ def main(args):
     nsteps = args.nsteps
     mf_type = args.mf_type
     quenching = args.quenching
-    pca = args.pca
     
     dict_of_paths = cwpaths.cookiecutter_paths()
     path_to_raw = dict_of_paths['raw_dir']
