@@ -1033,7 +1033,7 @@ def split_false_pairs(galra, galde, galcz, galgroupid):
 
 survey = 'eco'
 mf_type = 'smf'
-quenching = 'hybrid'
+quenching = 'halo'
 machine = 'bender'
 level = 'group'
 stacked_stat = True
@@ -1182,8 +1182,8 @@ for i in tqdm(range(100)):
                     mu_s = bf_from_last_chain[3]
 
                 elif quenching == "halo" and stacked_stat:
-                    #from #83 used for chain 86
-                    bf_from_last_chain = [12.01240587, 12.51050784, 1.40100554, 0.44524407]
+                    #from #86
+                    bf_from_last_chain = [11.928341 , 12.60596691, 1.63365685, 0.35175002]
                     Mh_qc = bf_from_last_chain[0] # Msun/h
                     Mh_qs = bf_from_last_chain[1] # Msun/h
                     mu_c = bf_from_last_chain[2]
