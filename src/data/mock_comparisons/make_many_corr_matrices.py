@@ -1032,7 +1032,7 @@ def split_false_pairs(galra, galde, galcz, galgroupid):
 
 
 survey = 'eco'
-mf_type = 'smf'
+mf_type = 'bmf'
 quenching = 'halo'
 machine = 'bender'
 level = 'group'
@@ -1147,39 +1147,14 @@ for i in tqdm(range(100)):
 
 
             if mf_type == "smf":
-                if quenching == "hybrid" and not stacked_stat:
-                    # from #75 used for hybrid sigma-mstar chain 80
-                    bf_from_last_chain = [10.215486, 13.987752, 0.753758, 0.025111]
-
-                    Mstar_q = bf_from_last_chain[0] # Msun/h**2
-                    Mh_q = bf_from_last_chain[1] # Msun/h
-                    mu = bf_from_last_chain[2]
-                    nu = bf_from_last_chain[3]
-
-                elif quenching == "hybrid" and stacked_stat:
+                if quenching == "hybrid" and stacked_stat:
                     # from #84
                     bf_from_last_chain = [10.18868649, 13.23990274, 0.72632304, 0.05996219]
                     
-                    ## This set was not used in this code to make matrices.
-                    ## Using best-fit found for new ECO data using result from chain 59
-                    ## i.e. hybrid quenching model which was the last time M*-sigma was
-                    ## used i.e. stacked_stat = True
-                    # bf_from_last_chain = [10.133745, 13.478087, 0.810922, 0.043523]
-
-
                     Mstar_q = bf_from_last_chain[0] # Msun/h**2
                     Mh_q = bf_from_last_chain[1] # Msun/h
                     mu = bf_from_last_chain[2]
                     nu = bf_from_last_chain[3]
-
-                elif quenching == "halo" and not stacked_stat:
-                    # from #76 used for halo sigma-mstar chain 81
-                    bf_from_last_chain = [11.7784379, 12.1174944, 1.62771601, 0.131290924]
-                   
-                    Mh_qc = bf_from_last_chain[0] # Msun/h
-                    Mh_qs = bf_from_last_chain[1] # Msun/h
-                    mu_c = bf_from_last_chain[2]
-                    mu_s = bf_from_last_chain[3]
 
                 elif quenching == "halo" and stacked_stat:
                     #from #86
@@ -1200,12 +1175,9 @@ for i in tqdm(range(100)):
                     nu = bf_from_last_chain[3]
 
                 elif quenching == "halo" and stacked_stat:
-                    #from #83 used for chain 90 
-                    #These are the same params as used for halo, smf case 
-                    #since this is the very first halo quenching baryonic 
-                    #chain to be run
-                    bf_from_last_chain = [12.01240587, 12.51050784, 1.40100554, 0.44524407]
-                    #! Compare to latest 11.97920231, 12.86108614, 1.75227584, 0.48775956
+                    #from #91
+                    bf_from_last_chain = [11.97920231, 12.86108614, 1.75227584, 0.48775956]
+                    
                     Mh_qc = bf_from_last_chain[0] # Msun/h
                     Mh_qs = bf_from_last_chain[1] # Msun/h
                     mu_c = bf_from_last_chain[2]
