@@ -224,8 +224,6 @@ def blue_frac(catl, h1_bool, data_bool, randint_logmstar=None):
 
         # Not g_galtype anymore after applying pair splitting
         censat_col = 'ps_grp_censat'
-        # censat_col = 'g_galtype'
-        # censat_col = 'cs_flag'
 
         if mf_type == 'smf':
             mass_total_arr = catl.logmstar.values
@@ -362,7 +360,6 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
 
         if level == 'group':
             galtype_col = 'ps_grp_censat'
-            # galtype_col = 'g_galtype'
             id_col = 'ps_groupid'
         elif level == 'halo':
             galtype_col = 'cs_flag'
@@ -482,7 +479,6 @@ def get_stacked_velocity_dispersion(catl, catl_type, randint=None):
 
         if level == 'group':
             galtype_col = 'ps_grp_censat'
-            # galtype_col = 'g_galtype'
             id_col = 'ps_groupid'
         elif level == 'halo':
             galtype_col = 'cs_flag'
@@ -1012,7 +1008,6 @@ def split_false_pairs(galra, galde, galcz, galgroupid):
     groupn = multiplicity_function(galgroupid, return_by_galaxy=True)
     newgroupid = np.copy(galgroupid)
     brokenupids = np.arange(len(newgroupid))+np.max(galgroupid)+100
-    # brokenupids_start = np.max(galgroupid)+1
     r75func = lambda r1,r2: 0.75*(r2-r1)+r1
     n2grps = np.unique(galgroupid[np.where(groupn==2)])
     ## parameters corresponding to Katie's dividing line in cz-rproj space
@@ -1029,10 +1024,7 @@ def split_false_pairs(galra, galde, galcz, galgroupid):
         grprproj = r75func(np.min(rproj),np.max(rproj))
         keepN2 = bool((deltacz<(mm*grprproj+bb)))
         if (not keepN2):
-            # break
             newgroupid[galsel]=brokenupids[galsel]
-            # newgroupid[galsel] = np.array([brokenupids_start, brokenupids_start+1])
-            # brokenupids_start+=2
         else:
             pass
     return newgroupid 
@@ -1040,7 +1032,7 @@ def split_false_pairs(galra, galde, galcz, galgroupid):
 
 
 survey = 'eco'
-mf_type = 'bmf'
+mf_type = 'smf'
 quenching = 'hybrid'
 machine = 'bender'
 level = 'group'
@@ -1058,37 +1050,15 @@ path_to_proc = dict_of_paths['proc_dir']
 path_to_external = dict_of_paths['ext_dir']
 path_to_data = dict_of_paths['data_dir']
     
-if survey == 'eco':
-    path_to_mocks = path_to_data + 'mocks/m200b/eco/'
-elif survey == 'resolvea':
-    path_to_mocks = path_to_external + 'RESOLVE_A_mvir_catls/'
-elif survey == 'resolveb':
-    path_to_mocks = path_to_external + 'RESOLVE_B_mvir_catls/'
+path_to_mocks = path_to_data + 'mocks/m200b/eco/'
 
-if survey == 'eco':
-    mock_name = 'ECO'
-    num_mocks = 8
-    min_cz = 3000
-    max_cz = 7000
-    mag_limit = -17.33
-    mstar_limit = 8.9
-    volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
-elif survey == 'resolvea':
-    mock_name = 'A'
-    num_mocks = 59
-    min_cz = 4500
-    max_cz = 7000
-    mag_limit = -17.33
-    mstar_limit = 8.9
-    volume = 13172.384  # Survey volume without buffer [Mpc/h]^3 
-elif survey == 'resolveb':
-    mock_name = 'B'
-    num_mocks = 104
-    min_cz = 4500
-    max_cz = 7000
-    mag_limit = -17
-    mstar_limit = 8.7
-    volume = 4709.8373  # Survey volume without buffer [Mpc/h]^3
+mock_name = 'ECO'
+num_mocks = 8
+min_cz = 3000
+max_cz = 7000
+mag_limit = -17.33
+mstar_limit = 8.9
+volume = 151829.26 # Survey volume without buffer [Mpc/h]^3
 
 phi_global = []
 fblue_cen_global = []
@@ -1125,6 +1095,9 @@ for i in tqdm(range(100)):
 
             mock_pd["ps_groupid"] = psgrpid
 
+            # Since assigning new groups means that some numbers are removed 
+            # i.e. there are gaps in the range of new groupids, these gaps 
+            # need to be filled 
             arr1 = mock_pd.ps_groupid
             arr1_unq = mock_pd.ps_groupid.drop_duplicates()  
             arr2_unq = np.arange(len(np.unique(mock_pd.ps_groupid))) 
@@ -1152,7 +1125,6 @@ for i in tqdm(range(100)):
                 cens = group.loc[group.ps_grp_censat.values == 1]
                 num_cens = len(cens)
                 final_sat_idx = random.sample(list(cens.index.values), num_cens-1)
-                # mock_pd.ps_grp_censat.loc[mock_pd.index == final_sat_idx] = 0
                 final_sat_idxs.append(final_sat_idx)
             final_sat_idxs = np.hstack(final_sat_idxs)
 
@@ -1185,10 +1157,9 @@ for i in tqdm(range(100)):
                     nu = bf_from_last_chain[3]
 
                 elif quenching == "hybrid" and stacked_stat:
-                    # from #77 used for hybrid mstar-sigma chain 82
-                    bf_from_last_chain = [1.01338019e+01, 1.39737846e+01, 6.87668577e-01,
-                        2.59809323e-02]
-
+                    # from #84
+                    bf_from_last_chain = [10.18868649, 13.23990274, 0.72632304, 0.05996219]
+                    
                     ## This set was not used in this code to make matrices.
                     ## Using best-fit found for new ECO data using result from chain 59
                     ## i.e. hybrid quenching model which was the last time M*-sigma was
@@ -1222,7 +1193,7 @@ for i in tqdm(range(100)):
                 if quenching == "hybrid" and stacked_stat:
                     # from #68 
                     bf_from_last_chain = [10.40868054, 14.06677972,  0.83745589,  0.14406545]
-
+                    #! Compare to latest 10.39975208, 14.37426995, 0.94420486, 0.10782901
                     Mstar_q = bf_from_last_chain[0] # Msun/h**2
                     Mh_q = bf_from_last_chain[1] # Msun/h
                     mu = bf_from_last_chain[2]
@@ -1234,17 +1205,11 @@ for i in tqdm(range(100)):
                     #since this is the very first halo quenching baryonic 
                     #chain to be run
                     bf_from_last_chain = [12.01240587, 12.51050784, 1.40100554, 0.44524407]
+                    #! Compare to latest 11.97920231, 12.86108614, 1.75227584, 0.48775956
                     Mh_qc = bf_from_last_chain[0] # Msun/h
                     Mh_qs = bf_from_last_chain[1] # Msun/h
                     mu_c = bf_from_last_chain[2]
                     mu_s = bf_from_last_chain[3]
-
-            # Copied from chain 67
-            min_chi2_params = [10.194299, 14.545483, 0.708014, 0.007226] #chi2=35
-            max_chi2_params = [10.582321, 14.119958, 0.745622, 0.233953] #chi2=1839
-            
-            # From chain 61
-            min_chi2_params = [10.143908, 13.630966, 0.825897, 0.042685] #chi2=13.66
 
             if quenching == 'hybrid':
                 theta = [Mstar_q, Mh_q, mu, nu]
@@ -1389,6 +1354,120 @@ else:
     hf.close()
 
 # Read in datasets from h5 file and calculate corr matrix
+
+def calc_corr_mat(df):
+    num_cols = df.shape[1]
+    corr_mat = np.zeros((num_cols, num_cols))
+    for i in range(num_cols):
+        for j in range(num_cols):
+            num = df.values[i][j]
+            denom = np.sqrt(df.values[i][i] * df.values[j][j])
+            corr_mat[i][j] = num/denom
+    return corr_mat
+
+
+hf_read = h5py.File(path_to_proc + 'corr_matrices_28stats_{0}_{1}.h5'.
+    format(quenching, mf_type), 'r')
+hf_read = h5py.File('/Users/asadm2/Desktop/corr_matrices_28stats_{0}_{1}.h5'.
+    format(quenching, mf_type), 'r')
+
+hf_read.keys()
+smf = hf_read.get('smf')
+smf = np.squeeze(np.array(smf))
+fblue_cen = hf_read.get('fblue_cen')
+fblue_cen = np.array(fblue_cen)
+fblue_sat = hf_read.get('fblue_sat')
+fblue_sat = np.array(fblue_sat)
+mean_mstar_red = hf_read.get('mean_mstar_red')
+mean_mstar_red = np.array(mean_mstar_red)
+mean_mstar_blue = hf_read.get('mean_mstar_blue')
+mean_mstar_blue = np.array(mean_mstar_blue)
+sigma_red = hf_read.get('sigma_red')
+sigma_red = np.array(sigma_red)
+sigma_blue = hf_read.get('sigma_blue')
+sigma_blue = np.array(sigma_blue)
+
+for i in range(100):
+    phi_total_0 = smf[i][:,0]
+    phi_total_1 = smf[i][:,1]
+    phi_total_2 = smf[i][:,2]
+    phi_total_3 = smf[i][:,3]
+
+    f_blue_cen_0 = fblue_cen[i][:,0]
+    f_blue_cen_1 = fblue_cen[i][:,1]
+    f_blue_cen_2 = fblue_cen[i][:,2]
+    f_blue_cen_3 = fblue_cen[i][:,3]
+
+    f_blue_sat_0 = fblue_sat[i][:,0]
+    f_blue_sat_1 = fblue_sat[i][:,1]
+    f_blue_sat_2 = fblue_sat[i][:,2]
+    f_blue_sat_3 = fblue_sat[i][:,3]
+
+    mstar_red_cen_0 = mean_mstar_red[i][:,0]
+    mstar_red_cen_1 = mean_mstar_red[i][:,1]
+    mstar_red_cen_2 = mean_mstar_red[i][:,2]
+    mstar_red_cen_3 = mean_mstar_red[i][:,3]
+
+    mstar_blue_cen_0 = mean_mstar_blue[i][:,0]
+    mstar_blue_cen_1 = mean_mstar_blue[i][:,1]
+    mstar_blue_cen_2 = mean_mstar_blue[i][:,2]
+    mstar_blue_cen_3 = mean_mstar_blue[i][:,3]
+
+    sigma_red_0 = sigma_red[i][:,0]
+    sigma_red_1 = sigma_red[i][:,1]
+    sigma_red_2 = sigma_red[i][:,2]
+    sigma_red_3 = sigma_red[i][:,3]
+
+    sigma_blue_0 = sigma_blue[i][:,0]
+    sigma_blue_1 = sigma_blue[i][:,1]
+    sigma_blue_2 = sigma_blue[i][:,2]
+    sigma_blue_3 = sigma_blue[i][:,3]
+
+    combined_df = pd.DataFrame({
+        'phi_tot_0':phi_total_0, 'phi_tot_1':phi_total_1, 
+        'phi_tot_2':phi_total_2, 'phi_tot_3':phi_total_3,
+        'f_blue_cen_0':f_blue_cen_0, 'f_blue_cen_1':f_blue_cen_1, 
+        'f_blue_cen_2':f_blue_cen_2, 'f_blue_cen_3':f_blue_cen_3,
+        'f_blue_sat_0':f_blue_sat_0, 'f_blue_sat_1':f_blue_sat_1, 
+        'f_blue_sat_2':f_blue_sat_2, 'f_blue_sat_3':f_blue_sat_3,
+        'mstar_red_cen_0':mstar_red_cen_0, 'mstar_red_cen_1':mstar_red_cen_1, 
+        'mstar_red_cen_2':mstar_red_cen_2, 'mstar_red_cen_3':mstar_red_cen_3,
+        'mstar_blue_cen_0':mstar_blue_cen_0, 'mstar_blue_cen_1':mstar_blue_cen_1, 
+        'mstar_blue_cen_2':mstar_blue_cen_2, 'mstar_blue_cen_3':mstar_blue_cen_3,
+        'sigma_red_0':sigma_red_0, 'sigma_red_1':sigma_red_1, 
+        'sigma_red_2':sigma_red_2, 'sigma_red_3':sigma_red_3,
+        'sigma_blue_0':sigma_blue_0, 'sigma_blue_1':sigma_blue_1, 
+        'sigma_blue_2':sigma_blue_2, 'sigma_blue_3':sigma_blue_3})
+
+    if i == 0:
+        # Correlation matrix of phi and deltav colour measurements combined
+        corr_mat_global = combined_df.corr()
+        cov_mat_global = combined_df.cov()
+
+        corr_mat_average = corr_mat_global
+        cov_mat_average = cov_mat_global
+    else:
+        corr_mat_average = pd.concat([corr_mat_average, combined_df.corr()]).groupby(level=0, sort=False).mean()
+        cov_mat_average = pd.concat([cov_mat_average, combined_df.cov()]).groupby(level=0, sort=False).mean()
+        
+
+# Using average cov mat to get correlation matrix
+corr_mat_average = calc_corr_mat(cov_mat_average)
+corr_mat_inv_colour_average = np.linalg.inv(corr_mat_average) 
+sigma_average = np.sqrt(np.diag(cov_mat_average))
+
+fig1 = plt.figure()
+ax1 = fig1.add_subplot(111)
+cmap = cm.get_cmap('Spectral_r')
+cax = ax1.matshow(corr_mat_average, cmap=cmap, vmin=-1, vmax=1)
+plt.gca().invert_yaxis() 
+plt.gca().xaxis.tick_bottom()
+plt.colorbar(cax)
+plt.title('{0}'.format(quenching))
+plt.show()
+
+
+###################################################################
 if stacked_stat:
     hf_read = h5py.File(path_to_proc + 'corr_matrices_xy_mstarsigma_oldbins_{0}.h5'.format(quenching), 'r')
 else:
