@@ -724,3 +724,78 @@ for key in keys:
     if gal_group_df_new['g_galtype'][id_biggest_baryonic] != 1:
         counter+=1
 '''
+
+#* Making plot of ECO data stellar vs baryonic coloured by red/blue
+'''
+# colour_arr = ['indianred' if x == 'R' else 'cornflowerblue' for x in catl.colour_label.values]
+# plt.scatter(catl.logmstar.values, catl.logmbary_a23.values, s=5, c=colour_arr)
+
+cz_inner = 2530
+cz_outer = 7470
+
+catl_file = path_to_raw + "eco/ecodr3.csv"
+duplicate_file = path_to_raw + "ECO_duplicate_classification.csv"
+catl_colours_file = path_to_raw + "eco_dr3_colours.csv"
+
+eco_buff = pd.read_csv(catl_file, delimiter=",", header=0) 
+eco_duplicates = pd.read_csv(duplicate_file, header=0)
+eco_colours = pd.read_csv(catl_colours_file, header=0, index_col=0) 
+
+# Removing duplicate entries
+duplicate_names = eco_duplicates.NAME.loc[eco_duplicates.DUP > 0]
+eco_buff = eco_buff[~eco_buff.name.isin(duplicate_names)].reset_index(drop=True)
+
+# Combining colour information
+catl = pd.merge(eco_buff, eco_colours, left_on='name', right_on='galname')\
+    .drop(columns=["galname"])
+
+catl['logmbary_a23'] = calc_bary(catl.logmstar.values, 
+    catl.logmgas.values)
+
+catl = catl.loc[(catl.cz >= cz_inner) & (catl.cz <= cz_outer) & 
+    (catl.absrmag <= -17.33)].\
+    reset_index(drop=True)
+
+catl = assign_colour_label_data(catl)
+
+if survey == 'eco':
+    if mf_type == 'smf':
+        catl_file = path_to_proc + "gal_group_eco_stellar_buffer_volh1_dr3.hdf5"
+    elif mf_type == 'bmf':
+        catl_file = path_to_proc + \
+            "gal_group_eco_bary_buffer_volh1_dr3.hdf5"    
+    else:
+        print("Incorrect mass function chosen")
+elif survey == 'resolvea' or survey == 'resolveb':
+    catl_file = path_to_raw + "resolve/RESOLVE_liveJune2018.csv"
+
+if survey == 'eco':
+    path_to_mocks = path_to_data + 'mocks/m200b/eco/'
+elif survey == 'resolvea':
+    path_to_mocks = path_to_external + 'RESOLVE_A_mvir_catls/'
+elif survey == 'resolveb':
+    path_to_mocks = path_to_external + 'RESOLVE_B_mvir_catls/'
+
+print('Reading catalog') #No Mstar cut needed as catl_file already has it
+catl, volume, z_median = read_data_catl(catl_file, survey)
+
+print('Assigning colour label to data')
+catl = assign_colour_label_data(catl)
+
+import seaborn as sns
+
+red_mstar = catl.logmstar.loc[catl.colour_label == 'R']
+red_mbary = catl.logmbary_a23.loc[catl.colour_label == 'R']
+blue_mstar = catl.logmstar.loc[catl.colour_label == 'B']
+blue_mbary = catl.logmbary_a23.loc[catl.colour_label == 'B']
+
+sns.kdeplot(x=red_mstar, y=red_mbary, color='indianred', shade=True, zorder=10)
+sns.kdeplot(x=blue_mstar, y=blue_mbary, color='cornflowerblue', shade=True)
+plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=20)
+plt.ylabel(r'\boldmath$\log_{10}\ M_b \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=20)
+# plt.vlines(8.9, 9, 12, ls='--', color='k', lw=2)
+plt.plot(np.linspace(9,12,10), np.linspace(9,12,10), ls='--', color='k', lw=2, 
+    zorder=20)
+plt.title(r'ECO')
+plt.show()
+'''
