@@ -496,8 +496,6 @@ def blue_frac(catl, h1_bool, data_bool, randint_logmstar=None):
 
         # Not g_galtype anymore after applying pair splitting
         censat_col = 'ps_grp_censat'
-        # censat_col = 'g_galtype'
-        # censat_col = 'cs_flag'
 
         if mf_type == 'smf':
             mass_total_arr = catl.logmstar.values
@@ -3167,7 +3165,7 @@ def main(args):
     np.random.seed(rseed)
     level = "group"
     stacked_stat = "both"
-    pca = True
+    pca = False
     new_chain = True
 
     survey = args.survey
