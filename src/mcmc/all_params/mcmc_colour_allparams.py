@@ -636,13 +636,14 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
         if survey == 'eco' or survey == 'resolvea':
             if mf_type == 'smf':
                 catl = catl.loc[catl.logmstar >= mstar_limit]
+                catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
             elif mf_type == 'bmf':
                 catl = catl.loc[catl.logmbary_a23 >= mbary_limit]
+                catl.logmbary_a23 = np.log10((10**catl.logmbary_a23) / 2.041)
         elif survey == 'resolveb':
             catl = catl.loc[catl.logmstar >= 8.7]
 
-        catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
-        catl.logmbary_a23 = np.log10((10**catl.logmbary_a23) / 2.041)
+        print(catl.logmstar.min())
 
         logmstar_col = 'logmstar'
         logmbary_col = 'logmbary_a23'
@@ -837,13 +838,14 @@ def get_stacked_velocity_dispersion(catl, catl_type, randint=None):
         if survey == 'eco' or survey == 'resolvea':
             if mf_type == 'smf':
                 catl = catl.loc[catl.logmstar >= mstar_limit]
+                catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
             elif mf_type == 'bmf':
                 catl = catl.loc[catl.logmbary_a23 >= mbary_limit]
+                catl.logmbary_a23 = np.log10((10**catl.logmbary_a23) / 2.041)
         elif survey == 'resolveb':
             catl = catl.loc[catl.logmstar >= 8.7]
 
-        catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
-        catl.logmbary_a23 = np.log10((10**catl.logmbary_a23) / 2.041)
+        print(catl.logmstar.min())
 
         logmstar_col = 'logmstar'
         logmbary_col = 'logmbary_a23'
