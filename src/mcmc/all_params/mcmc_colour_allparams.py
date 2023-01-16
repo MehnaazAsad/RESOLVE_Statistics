@@ -2101,6 +2101,10 @@ def get_err_data(path_to_proc):
         sigma_blue = hf_read.get('sigma_blue')
         sigma_blue = np.array(sigma_blue)
 
+        #* In bmf halo case, some mocks had -np.inf in some bin(s). 
+        #* Converting to nan so it can be ignored by df.corr/df.cov
+        sigma_blue[sigma_blue == -np.inf] = np.nan
+
     elif stacked_stat:
         hf_read = h5py.File(path_to_proc + 'corr_matrices_xy_mstarsigma_{0}.h5'.format(quenching), 'r')
         hf_read.keys()
@@ -2183,13 +2187,13 @@ def get_err_data(path_to_proc):
 
         if i == 0:
             # Correlation matrix of phi and deltav colour measurements combined
-            corr_mat_global = combined_df.corr()
+            # corr_mat_global = combined_df.corr()
             cov_mat_global = combined_df.cov()
 
-            corr_mat_average = corr_mat_global
+            # corr_mat_average = corr_mat_global
             cov_mat_average = cov_mat_global
         else:
-            corr_mat_average = pd.concat([corr_mat_average, combined_df.corr()]).groupby(level=0, sort=False).mean()
+            # corr_mat_average = pd.concat([corr_mat_average, combined_df.corr()]).groupby(level=0, sort=False).mean()
             cov_mat_average = pd.concat([cov_mat_average, combined_df.cov()]).groupby(level=0, sort=False).mean()
             
 
