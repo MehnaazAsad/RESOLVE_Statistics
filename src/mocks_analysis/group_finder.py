@@ -752,6 +752,7 @@ def main(args):
     survey = 'eco'
     mf_type = 'smf'
     machine = 'bender'
+    quenching = 'hybrid'
     ver = 2.0
     run = args.run
 
@@ -810,14 +811,20 @@ def main(args):
 
     print('Reading chi-squared file')
     reader = emcee.backends.HDFBackend(
-        path_to_processed + "smhm_colour_run{0}/chain.h5".format(run), read_only=True)
+        path_to_processed + "smhm_colour_run{0}/chain_{1}.h5".format(run, 
+            quenching), read_only=True)
     chi2 = reader.get_blobs(flat=True)
 
     print('Reading mcmc chain file')
-    names=['Mhalo_c', 'Mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter',
+    names_hybrid=['Mhalo_c', 'Mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter',
             'Mstar_q','Mhalo_q','mu','nu']
+    names_halo=['Mhalo_c', 'Mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter',
+        'Mh_qc','Mh_qs','mu_c','mu_s']
     flatchain = reader.get_chain(flat=True)
-    mcmc_table = pd.DataFrame(flatchain, columns=names)
+    if quenching == 'hybrid':
+        mcmc_table = pd.DataFrame(flatchain, columns=names_hybrid)
+    elif quenching == 'halo':
+        mcmc_table = pd.DataFrame(flatchain, columns=names_halo)
 
     print('Getting subset of 200 Behroozi parameters')
     mcmc_table_subset = get_paramvals_percentile(mcmc_table, 68, chi2)
@@ -827,7 +834,7 @@ def main(args):
         header=None, index=None, sep=' ', mode='w')
 
     print('Reading survey data')
-    # No M* cut
+    # No M* cut needed
     catl, volume, z_median = read_data_catl(catl_file, survey)
 
     print('Populating halos')
