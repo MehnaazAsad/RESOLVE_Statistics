@@ -643,8 +643,6 @@ def get_velocity_dispersion(catl, catl_type, randint=None):
         elif survey == 'resolveb':
             catl = catl.loc[catl.logmstar >= 8.7]
 
-        print(catl.logmbary_a23.min())
-
         logmstar_col = 'logmstar'
         logmbary_col = 'logmbary_a23'
 
@@ -844,8 +842,6 @@ def get_stacked_velocity_dispersion(catl, catl_type, randint=None):
                 catl.logmbary_a23 = np.log10((10**catl.logmbary_a23) / 2.041)
         elif survey == 'resolveb':
             catl = catl.loc[catl.logmstar >= 8.7]
-
-        print(catl.logmbary_a23.min())
 
         logmstar_col = 'logmstar'
         logmbary_col = 'logmbary_a23'
