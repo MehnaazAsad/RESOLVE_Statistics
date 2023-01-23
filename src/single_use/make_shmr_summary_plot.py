@@ -738,11 +738,13 @@ catl_file = path_to_processed + "gal_group_eco_stellar_buffer_volh1_dr3.hdf5"
 catl, volume, z_median = read_data_catl(catl_file, survey)
 model_init = halocat_init(halo_catalog, z_median)
 
-bf_params_hybrid = [12.64869191, 10.68374592, 0.4640583 , 0.43375466, 0.22177846,
-10.18868649, 13.23990274, 0.72632304, 0.05996219]
+#Chain 94
+bf_params_hybrid = [1.26632241e+01, 1.07344687e+01, 4.71665151e-01, 4.38727758e-01,
+1.75729744e-01, 1.01866377e+01, 1.40519871e+01, 7.36798732e-01,
+1.56442233e-02]
 bf_params_halo = [12.45003142, 10.49533185, 0.42905612, 0.49491889, 0.38661993,
 11.928341 , 12.60596691, 1.63365685, 0.35175002]
-gals_df_ = populate_mock(bf_params_halo[:5], model_init, False)
+gals_df_ = populate_mock(bf_params_hybrid[:5], model_init, False)
 gals_df_['cs_flag'] = np.where(gals_df_['halo_hostid'] == \
     gals_df_['halo_id'], 1, 0)
 gals_df_.rename(columns={'stellar_mass':'logmstar'}, inplace=True)
@@ -837,28 +839,28 @@ gals_rsd_subset_df = gals_rsd_subset_df.loc[\
     (gals_rsd_subset_df['cen_cz'] >= cz_inner_mod) &
     (gals_rsd_subset_df['cen_cz'] <= cz_outer)].reset_index(drop=True)
 
-extra_halo_masses_df = pd.read_csv('/Users/asadm2/Desktop/extra_halo_masses.csv')
-extra_halo_masses_df = extra_halo_masses_df.drop(columns='Unnamed: 0')
-subset = extra_halo_masses_df[['halo_id', 'halo_mpeak']]
-gals_rsd_subset_df = gals_rsd_subset_df.merge(subset, how='left', on='halo_id')
+# Adding mpeak column
+# extra_halo_masses_df = pd.read_csv('/Users/asadm2/Desktop/extra_halo_masses.csv')
+# extra_halo_masses_df = extra_halo_masses_df.drop(columns='Unnamed: 0')
+# subset = extra_halo_masses_df[['halo_id', 'halo_mpeak']]
+# gals_rsd_subset_df = gals_rsd_subset_df.merge(subset, how='left', on='halo_id')
 
 cen_halos = gals_rsd_subset_df.halo_mvir.loc[gals_rsd_subset_df.cs_flag == 1].values
 cen_gals = gals_rsd_subset_df.logmstar.loc[gals_rsd_subset_df.cs_flag == 1].values
 cen_gals = H100_to_H70(cen_gals, -2)
 cen_halos = H100_to_H70(np.log10(cen_halos), -1)
 
-sat_halos = gals_rsd_subset_df.halo_macc.loc[gals_rsd_subset_df.cs_flag == 0].values
-sat_gals = gals_rsd_subset_df.logmstar.loc[gals_rsd_subset_df.cs_flag == 0].values
-sat_gals = H100_to_H70(sat_gals, -2)
-sat_halos = H100_to_H70(np.log10(sat_halos), -1)
+# sat_halos = gals_rsd_subset_df.halo_macc.loc[gals_rsd_subset_df.cs_flag == 0].values
+# sat_gals = gals_rsd_subset_df.logmstar.loc[gals_rsd_subset_df.cs_flag == 0].values
+# sat_gals = H100_to_H70(sat_gals, -2)
+# sat_halos = H100_to_H70(np.log10(sat_halos), -1)
+# halos = np.hstack((cen_halos, sat_halos))
+# gals = np.hstack((cen_gals, sat_gals))
 
-halos = np.hstack((cen_halos, sat_halos))
-gals = np.hstack((cen_gals, sat_gals))
+mock_ratio = np.log10((10**cen_gals)/(10**cen_halos))
 
-mock_ratio = np.log10((10**gals)/(10**halos))
-
-my_binned_shmr = bs(halos, mock_ratio, statistic='median',
-    bins=np.linspace(10.6, 14.6, 10))
+my_binned_shmr = bs(cen_halos, mock_ratio, statistic='median',
+    bins=np.linspace(10.6, 14.6, 15))
 bin_centers = 0.5 * (my_binned_shmr[1][1:] + my_binned_shmr[1][:-1])
 
 
@@ -877,8 +879,8 @@ def behroozi10(logmstar, bf_params):
     return logmh
 
 
-mstar_min = 8.9
-mstar_max = 11.8
+mstar_min = cen_gals.min()
+mstar_max = cen_gals.max()
 logmstar_behroozi10 = np.linspace(mstar_min, mstar_max, 500)
 logmh_behroozi10 = behroozi10(logmstar_behroozi10, bf_params_hybrid)
 analytical_ratio = np.log10((10**logmstar_behroozi10)/(10**logmh_behroozi10))
@@ -899,6 +901,235 @@ for shmr_idx in range(num_shmrs):
     all_shmr_data.append(res)
 
 
+########################################
+#200 models
+import pickle
+from tqdm import tqdm
+run = 94
+
+def get_centrals_mock(gals_df, randint=None):
+    """
+    Get centrals from mock catalog
+
+    Parameters
+    ----------
+    gals_df: pandas dataframe
+        Mock catalog
+
+    randint (optional): int
+        Mock number in the case where many Behroozi mocks were used.
+        Defaults to None.
+
+    Returns
+    ---------
+    cen_gals: array
+        Array of central galaxy masses
+
+    cen_halos: array
+        Array of central halo masses
+
+    cen_gals_red: array
+        Array of red central galaxy masses
+
+    cen_halos_red: array
+        Array of red central halo masses
+
+    cen_gals_blue: array
+        Array of blue central galaxy masses
+
+    cen_halos_blue: array
+        Array of blue central halo masses
+
+    f_red_cen_gals_red: array
+        Array of red fractions for red central galaxies
+
+    f_red_cen_gals_blue: array
+        Array of red fractions for blue central galaxies
+    """
+    cen_gals = []
+    cen_halos = []
+    # cen_gals_red = []
+    # cen_halos_red = []
+    # cen_gals_blue = []
+    # cen_halos_blue = []
+    # f_red_cen_gals_red = []
+    # f_red_cen_gals_blue = []
+
+    if randint != 1:
+        for idx,value in enumerate(gals_df['cs_flag']):
+            if value == 1:
+                cen_gals.append(gals_df['{0}'.format(randint)][idx])
+                cen_halos.append(gals_df['halo_mvir'][idx])
+                # if gals_df['colour_label'][idx] == 'R':
+                #     cen_gals_red.append(gals_df['{0}'.format(randint)][idx])
+                #     cen_halos_red.append(gals_df['halo_mvir'][idx])
+                #     f_red_cen_gals_red.append(gals_df['f_red'][idx])
+                # elif gals_df['colour_label'][idx] == 'B':
+                #     cen_gals_blue.append(gals_df['{0}'.format(randint)][idx])
+                #     cen_halos_blue.append(gals_df['halo_mvir'][idx])
+                #     f_red_cen_gals_blue.append(gals_df['f_red'][idx])
+    elif randint == 1:
+        for idx,value in enumerate(gals_df['cs_flag']):
+            if value == 1:
+                cen_gals.append(gals_df['behroozi_bf'][idx])
+                cen_halos.append(gals_df['halo_mvir'][idx])
+                if gals_df['colour_label'][idx] == 'R':
+                    cen_gals_red.append(gals_df['behroozi_bf'][idx])
+                    cen_halos_red.append(gals_df['halo_mvir'][idx])
+                    f_red_cen_gals_red.append(gals_df['f_red'][idx])
+                elif gals_df['colour_label'][idx] == 'B':
+                    cen_gals_blue.append(gals_df['behroozi_bf'][idx])
+                    cen_halos_blue.append(gals_df['halo_mvir'][idx])
+                    f_red_cen_gals_blue.append(gals_df['f_red'][idx])
+
+    else:
+        for idx,value in enumerate(gals_df['cs_flag']):
+            if value == 1:
+                cen_gals.append(gals_df['stellar_mass'][idx])
+                cen_halos.append(gals_df['halo_mvir'][idx])
+                # if gals_df['colour_label'][idx] == 'R':
+                #     cen_gals_red.append(gals_df['stellar_mass'][idx])
+                #     cen_halos_red.append(gals_df['halo_mvir'][idx])
+                #     f_red_cen_gals_red.append(gals_df['f_red'][idx])
+                # elif gals_df['colour_label'][idx] == 'B':
+                #     cen_gals_blue.append(gals_df['stellar_mass'][idx])
+                #     cen_halos_blue.append(gals_df['halo_mvir'][idx])
+                #     f_red_cen_gals_blue.append(gals_df['f_red'][idx])
+
+    cen_gals = np.array(cen_gals)
+    cen_halos = np.log10(np.array(cen_halos))
+    # cen_gals_red = np.array(cen_gals_red)
+    # cen_halos_red = np.log10(np.array(cen_halos_red))
+    # cen_gals_blue = np.array(cen_gals_blue)
+    # cen_halos_blue = np.log10(np.array(cen_halos_blue))
+
+    return cen_gals, cen_halos
+
+def get_satellites_mock(gals_df, randint=None):
+    """
+    Get satellites and their host halos from mock catalog
+
+    Parameters
+    ----------
+    gals_df: pandas dataframe
+        Mock catalog
+        
+    randint (optional): int
+        Mock number in the case where many Behroozi mocks were used. 
+        Defaults to None.
+
+    Returns
+    ---------
+    sat_gals_red: array
+        Array of red satellite galaxy masses
+
+    sat_halos_red: array
+        Array of red satellite host halo masses
+
+    sat_gals_blue: array
+        Array of blue satellite galaxy masses
+
+    sat_halos_blue: array
+        Array of blue satellite host halo masses
+
+    f_red_sat_gals_red: array
+        Array of red fractions for red satellite galaxies
+
+    f_red_sat_gals_blue: array
+        Array of red fractions for blue satellite galaxies
+
+    """
+    sat_gals_red = []
+    sat_halos_red = []
+    sat_gals_blue = []
+    sat_halos_blue = []
+    f_red_sat_gals_red = []
+    f_red_sat_gals_blue = []
+
+    if randint != 1:
+        for idx,value in enumerate(gals_df['cs_flag']):
+            if value == 0:
+                if gals_df['colour_label'][idx] == 'R':
+                    sat_gals_red.append(gals_df['{0}'.format(randint)][idx])
+                    sat_halos_red.append(gals_df['halo_mvir_host_halo'][idx])
+                    f_red_sat_gals_red.append(gals_df['f_red'][idx])
+                elif gals_df['colour_label'][idx] == 'B':
+                    sat_gals_blue.append(gals_df['{0}'.format(randint)][idx])
+                    sat_halos_blue.append(gals_df['halo_mvir_host_halo'][idx])
+                    f_red_sat_gals_blue.append(gals_df['f_red'][idx])
+    elif randint == 1:
+        for idx,value in enumerate(gals_df['cs_flag']):
+            if value == 0:
+                if gals_df['colour_label'][idx] == 'R':
+                    sat_gals_red.append(gals_df['behroozi_bf'][idx])
+                    sat_halos_red.append(gals_df['halo_mvir_host_halo'][idx])
+                    f_red_sat_gals_red.append(gals_df['f_red'][idx])
+                elif gals_df['colour_label'][idx] == 'B':
+                    sat_gals_blue.append(gals_df['behroozi_bf'][idx])
+                    sat_halos_blue.append(gals_df['halo_mvir_host_halo'][idx])
+                    f_red_sat_gals_blue.append(gals_df['f_red'][idx])
+
+    else:
+        for idx,value in enumerate(gals_df['cs_flag']):
+            if value == 0:
+                if gals_df['colour_label'][idx] == 'R':
+                    sat_gals_red.append(gals_df['stellar_mass'][idx])
+                    sat_halos_red.append(gals_df['halo_mvir_host_halo'][idx])
+                    f_red_sat_gals_red.append(gals_df['f_red'][idx])
+                elif gals_df['colour_label'][idx] == 'B':
+                    sat_gals_blue.append(gals_df['stellar_mass'][idx])
+                    sat_halos_blue.append(gals_df['halo_mvir_host_halo'][idx])
+                    f_red_sat_gals_blue.append(gals_df['f_red'][idx])
+
+
+    sat_gals_red = np.array(sat_gals_red)
+    sat_halos_red = np.log10(np.array(sat_halos_red))
+    sat_gals_blue = np.array(sat_gals_blue)
+    sat_halos_blue = np.log10(np.array(sat_halos_blue))
+
+    return sat_gals_red, sat_halos_red, sat_gals_blue, sat_halos_blue, \
+        f_red_sat_gals_red, f_red_sat_gals_blue
+
+
+file = open(path_to_processed + \
+    "gal_group_run{0}.pickle".format(run), 'rb')
+gal_group_df_subset = pickle.load(file) 
+
+# Renaming the "1_y" column kept from line 1896 because of case where it was
+# also in mcmc_table_ptcl.mock_num and was selected twice
+gal_group_df_subset.columns.values[24] = "behroozi_bf"
+
+### Removing "_y" from column names for stellar mass
+# Have to remove the first element because it is 'halo_y' column name
+cols_with_y = np.array([[idx, s] for idx, s in enumerate(
+    gal_group_df_subset.columns.values) if '_y' in s][1:])
+colnames_without_y = [s.replace("_y", "") for s in cols_with_y[:,1]]
+gal_group_df_subset.columns.values[cols_with_y[:,0].\
+    astype(int)] = colnames_without_y
+
+mod_y_arr = []
+for randint_logmstar in tqdm(np.arange(2, 202, 1)):
+    cen_halos = gal_group_df_subset.halo_mvir.loc[gal_group_df_subset.cs_flag == 1].values
+    cen_gals = gal_group_df_subset['{0}'.format(randint_logmstar)].loc[gal_group_df_subset.cs_flag == 1].values
+
+    idxs_to_remove = np.argwhere(np.isnan(cen_gals))
+    cen_gals = np.delete(cen_gals, idxs_to_remove)
+    cen_halos = np.delete(cen_halos, idxs_to_remove)
+
+    cen_gals = H100_to_H70(np.log10(cen_gals), -2)
+    cen_halos = H100_to_H70(np.log10(cen_halos), -1)
+
+    mock_ratio = np.log10((10**cen_gals)/(10**cen_halos))
+
+    binned_shmr = bs(cen_halos, mock_ratio, statistic='median',
+        bins=np.linspace(10.6, 14.6, 15))
+
+    mod_y_arr.append(binned_shmr[0])
+
+y_max = np.nanmax(mod_y_arr, axis=0)
+y_min = np.nanmin(mod_y_arr, axis=0)
+
+########################################
 palette = cm.get_cmap('Paired', num_shmrs)
 palette = np.array([[0.65098039, 0.80784314, 0.89019608, 1.        ],
                     [0.12156863, 0.47058824, 0.70588235, 1.        ],
@@ -915,6 +1146,8 @@ for plot_idx in range(num_shmrs):
         ls="-.", lw=4, c=palette[plot_idx], label=names[plot_idx])
 plt.plot(bin_centers, my_binned_shmr[0], ls='-', lw=4, c='k', label='Mock (Asad2023)')
 plt.plot(logmh_behroozi10, analytical_ratio, ls='--', lw=4, c='k', label='Analytical (Asad2023)')
+plt.fill_between(x=bin_centers, y1=y_max, 
+    y2=y_min, color='lightgray',alpha=0.7,label='Models')
 plt.xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot} \right]$',fontsize=30)
 plt.ylabel(r'\boldmath$\log_{10}(\ M_\star / M_h)$',fontsize=30)
 plt.legend(loc='best',prop={'size': 20})
