@@ -41,7 +41,7 @@ class Settings():
         if self.quenching == 'halo':
             self.run = 62
         elif self.quenching == 'hybrid':
-            self.run = 67
+            self.run = 94
 
         if self.run >= 37:
             self.chi2_file = self.path_to_proc + \
