@@ -81,13 +81,12 @@ class Experiments():
             if settings.survey == 'eco' or settings.survey == 'resolvea':
                 if settings.mf_type == 'smf':
                     catl = catl.loc[catl.logmstar >= mstar_limit]
+                    catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
                 elif settings.mf_type == 'bmf':
                     catl = catl.loc[catl.logmbary_a23 >= mbary_limit]
+                    catl.logmbary_a23 = np.log10((10**catl.logmbary_a23) / 2.041)
             elif settings.survey == 'resolveb':
                 catl = catl.loc[catl.logmstar >= 8.7]
-
-            catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
-            catl.logmbary_a23 = np.log10((10**catl.logmbary_a23) / 2.041)
 
             logmstar_col = 'logmstar'
             logmbary_col = 'logmbary_a23'
@@ -368,13 +367,12 @@ class Experiments():
             if settings.survey == 'eco' or settings.survey == 'resolvea':
                 if settings.mf_type == 'smf':
                     catl = catl.loc[catl.logmstar >= mstar_limit]
+                    catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
                 elif settings.mf_type == 'bmf':
                     catl = catl.loc[catl.logmbary_a23 >= mbary_limit]
+                    catl.logmbary_a23 = np.log10((10**catl.logmbary_a23) / 2.041)
             elif settings.survey == 'resolveb':
                 catl = catl.loc[catl.logmstar >= 8.7]
-
-            catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
-            catl.logmbary_a23 = np.log10((10**catl.logmbary_a23) / 2.041)
 
             logmstar_col = 'logmstar'
             logmbary_col = 'logmbary_a23'
@@ -492,7 +490,9 @@ class Experiments():
         if settings.mf_type == 'smf':
             red_cen_stellar_mass_arr = red_subset_df[logmstar_col].loc[red_subset_df[galtype_col] == 1]
         elif settings.mf_type == 'bmf':
-            red_cen_bary_mass_arr = red_subset_df[logmbary_col].loc[red_subset_df[galtype_col] == 1]        red_g_ngal_arr = red_subset_df.groupby([id_col]).size()
+            red_cen_bary_mass_arr = red_subset_df[logmbary_col].loc[red_subset_df[galtype_col] == 1]        
+        
+        red_g_ngal_arr = red_subset_df.groupby([id_col]).size()
         
         if settings.mf_type == 'smf':
             red_cen_stellar_mass_arr = np.repeat(red_cen_stellar_mass_arr, red_g_ngal_arr)
@@ -550,13 +550,12 @@ class Experiments():
             if settings.survey == 'eco' or settings.survey == 'resolvea':
                 if settings.mf_type == 'smf':
                     catl = catl.loc[catl.logmstar >= mstar_limit]
+                    catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
                 elif settings.mf_type == 'bmf':
                     catl = catl.loc[catl.logmbary_a23 >= mbary_limit]
+                    catl.logmbary_a23 = np.log10((10**catl.logmbary_a23) / 2.041)
             elif settings.survey == 'resolveb':
                 catl = catl.loc[catl.logmstar >= 8.7]
-
-            catl.logmstar = np.log10((10**catl.logmstar) / 2.041)
-            catl.logmbary_a23 = np.log10((10**catl.logmbary_a23) / 2.041)
 
             logmstar_col = 'logmstar'
             logmbary_col = 'logmbary_a23'
