@@ -43,34 +43,7 @@ def assign_colour_label_data(catl):
         Data catalog with colour label assigned as new column
     """
 
-    logmstar_arr = catl.logmstar.values
-    u_r_arr = catl.modelu_rcorr.values
-
-    colour_label_arr = np.empty(len(catl), dtype='str')
-    for idx, value in enumerate(logmstar_arr):
-
-        # Divisions taken from Moffett et al. 2015 equation 1
-        if value <= 9.1:
-            if u_r_arr[idx] > 1.457:
-                colour_label = 'R'
-            else:
-                colour_label = 'B'
-
-        if value > 9.1 and value < 10.1:
-            divider = 0.24 * value - 0.7
-            if u_r_arr[idx] > divider:
-                colour_label = 'R'
-            else:
-                colour_label = 'B'
-
-        if value >= 10.1:
-            if u_r_arr[idx] > 1.7:
-                colour_label = 'R'
-            else:
-                colour_label = 'B'
-            
-        colour_label_arr[idx] = colour_label
-    
+    colour_label_arr = np.array(['R' if x==1 else 'B' for x in catl.red.values])    
     catl['colour_label'] = colour_label_arr
 
     return catl
@@ -155,16 +128,30 @@ path_to_data = dict_of_paths['data_dir']
 
 path_to_mocks = path_to_data + 'mocks/m200b/eco/'
 
-eco = pd.read_csv(path_to_raw + 'eco/eco_all.csv', delimiter=',', header=0)
-eco_dr2 = pd.read_csv(path_to_raw + 'eco/ecodr2.csv')
-eco_dr2 = eco_dr2.loc[eco_dr2.name != 'ECO13860']
-eco_nobuff = eco_dr2.loc[(eco_dr2.grpcz_e16.values >= 3000) & 
-    (eco_dr2.grpcz_e16.values <= 7000) & (eco_dr2.absrmag.values <= -17.33) &
-    (eco_dr2.logmstar.values >= 8.9)]
+catl_file = path_to_raw + "eco/ecodr3.csv"
+duplicate_file = path_to_raw + "ECO_duplicate_classification.csv"
+catl_colours_file = path_to_raw + "eco_dr3_colours.csv"
+
+eco_buff = pd.read_csv(catl_file, delimiter=",", header=0) 
+eco_duplicates = pd.read_csv(duplicate_file, header=0)
+eco_colours = pd.read_csv(catl_colours_file, header=0, index_col=0) 
+
+# Removing duplicate entries
+duplicate_names = eco_duplicates.NAME.loc[eco_duplicates.DUP > 0]
+eco_buff = eco_buff[~eco_buff.name.isin(duplicate_names)].reset_index(drop=True)
+
+# Combining colour information
+eco_buff = pd.merge(eco_buff, eco_colours, left_on='name', right_on='galname')\
+    .drop(columns=["galname"])
+
+
+eco_nobuff = eco_buff.loc[(eco_buff.grpcz.values >= 3000) & 
+    (eco_buff.grpcz.values <= 7000) & (eco_buff.absrmag.values <= -17.33) &
+    (eco_buff.logmstar.values >= 8.9)]
 
 eco_nobuff = assign_colour_label_data(eco_nobuff)
 
-eco_groups = eco_nobuff.groupby('grp_e16')
+eco_groups = eco_nobuff.groupby('grp')
 eco_keys = eco_groups.groups.keys()
 deltav_arr = []
 cen_stellar_mass_arr = []
@@ -175,18 +162,18 @@ no_group_cen_counter = 0
 for index,key in enumerate(eco_keys):
     group = eco_groups.get_group(key)
     # Since some groups don't have a central
-    if 1 in group.fc_e16.values:
+    if 1 in group.fc.values:
         cz_arr = group.cz.values
-        cen_cz_grp = group.cz.loc[group['fc_e16'].values == 1].values[0]
+        cen_cz_grp = group.cz.loc[group['fc'].values == 1].values[0]
         av_cz_grp = np.average(cz_arr)
         deltav = cz_arr - av_cz_grp
 
-        cen_stellar_mass = group.logmstar.loc[group.fc_e16.values == 1].values[0]
+        cen_stellar_mass = group.logmstar.loc[group.fc.values == 1].values[0]
         
-        cen_colour_label = group.colour_label.loc[group.fc_e16.values == 1].values[0]
-        cen_colour = group.modelu_rcorr.loc[group.fc_e16.values == 1].values[0]
+        cen_colour_label = group.colour_label.loc[group.fc.values == 1].values[0]
+        cen_colour = group.modelu_rcorr.loc[group.fc.values == 1].values[0]
         
-        grp_N = group.grpn_e16.loc[group.fc_e16.values == 1].values[0]
+        grp_N = group.grpn.loc[group.fc.values == 1].values[0]
     # if 1 not in group.fc.values:
     #     no_group_cen_counter+=1 #14 groups out of 4427
         for val in deltav:
@@ -261,7 +248,7 @@ count_stats_red_data = bs(red_cen_mstar_data, deltav_red_data,
 count_stats_blue_data = bs(blue_cen_mstar_data, deltav_blue_data,
     statistic='count', bins=np.linspace(8.9,11.5,5))
 
-bins=np.linspace(8.9,11.5,5)
+bins=np.linspace(8.9,11.5co,5)
 bins = 0.5 * (bins[1:] + bins[:-1])
 
 poiss_err_red = std_stats_red_data[0]/np.sqrt(count_stats_red_data[0])
@@ -273,13 +260,14 @@ ax1 = plt.subplot(gs[0,0])
 plt.scatter(cen_stellar_mass_arr, deltav_arr, s=50, c=cen_colour_arr, 
     cmap='coolwarm')
 cbar = plt.colorbar()
-cbar.set_label(r'$\mathbf{(u-r)^e_{group\ cen}}$', labelpad=15, fontsize=20)
+cbar.set_label(r'$\mathbf{(u-r)_{group\ cen}}$', labelpad=15, fontsize=20)
 plt.xlabel(r'$\mathbf{log_{10}\ M_{*,group\ cen}}\ [\mathbf{M_{\odot}}]$', 
     labelpad=10, fontsize=20)
 plt.ylabel(r'$\mathbf{\Delta v\ \left[km/s\right]}$', labelpad=10, fontsize=20)
 # plt.ylim(-2000, 2000)
 plt.minorticks_on()
-plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_deltav.pdf', 
+# plt.show()
+plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/ecodr3_deltav.pdf', 
     bbox_inches="tight", dpi=1200)
 
 # left, bottom, width, height = [0.25, 0.28, 0.25, 0.25]
@@ -691,9 +679,9 @@ red_deltav, red_cen_mstar_sigma, blue_deltav, \
     blue_cen_mstar_sigma = get_stacked_velocity_dispersion(eco_nobuff, 'data')
 
 sigma_red_data = bs(red_cen_mstar_sigma, red_deltav,
-    statistic='std', bins=np.linspace(8.9,11.5,5))
+    statistic='std', bins=np.linspace(8.9,11.1,5))
 sigma_blue_data = bs( blue_cen_mstar_sigma, blue_deltav,
-    statistic='std', bins=np.linspace(8.9,11.5,5))
+    statistic='std', bins=np.linspace(8.9,11.1,5))
 
 # counter = Counter(sigma_red_data[2]).most_common()
 # red_poisson_error = np.log10(np.sqrt(np.flip(np.array(list(counter)))[:,0]))
@@ -711,9 +699,9 @@ red_sigma = np.log10(red_sigma)
 blue_sigma = np.log10(blue_sigma)
 
 mean_mstar_red_data = bs(red_sigma, red_cen_mstar_sigma, 
-    statistic=average_of_log, bins=np.linspace(1,3,5))
+    statistic=average_of_log, bins=np.linspace(1,2.8,5))
 mean_mstar_blue_data = bs(blue_sigma, blue_cen_mstar_sigma, 
-    statistic=average_of_log, bins=np.linspace(1,3,5))
+    statistic=average_of_log, bins=np.linspace(1,2.5,5))
 
 #* Bootstrap errors
 from tqdm import tqdm
@@ -736,9 +724,9 @@ for i in tqdm(range(iterations)):
         blue_cen_mstar_sigma = get_stacked_velocity_dispersion(df, 'data')
 
     sigma_red = bs(red_cen_mstar_sigma, red_deltav,
-        statistic='std', bins=np.linspace(8.9,11.5,5))
+        statistic='std', bins=np.linspace(8.9,11.1,5))
     sigma_blue = bs( blue_cen_mstar_sigma, blue_deltav,
-        statistic='std', bins=np.linspace(8.9,11.5,5))
+        statistic='std', bins=np.linspace(8.9,11.1,5))
 
     sigma_red = np.log10(sigma_red[0])
     sigma_blue = np.log10(sigma_blue[0])
@@ -753,14 +741,14 @@ for i in tqdm(range(iterations)):
     blue_sigma = np.log10(blue_sigma)
 
     mean_mstar_red = bs(red_sigma, red_cen_mstar_sigma, 
-        statistic=average_of_log, bins=np.linspace(1,3,5))
+        statistic=average_of_log, bins=np.linspace(1,2.8,5))
     mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
-        statistic=average_of_log, bins=np.linspace(1,3,5))
+        statistic=average_of_log, bins=np.linspace(1,2.5,5))
 
     mean_mstar_red_counts = bs(red_sigma, red_cen_mstar_sigma, 
-        statistic='count', bins=np.linspace(1,3,5))
+        statistic='count', bins=np.linspace(1,2.8,5))
     mean_mstar_blue_counts = bs(blue_sigma, blue_cen_mstar_sigma, 
-        statistic='count', bins=np.linspace(1,3,5))
+        statistic='count', bins=np.linspace(1,2.5,5))
 
     mean_mstar_red_data_global.append(mean_mstar_red[0])
     mean_mstar_blue_data_global.append(mean_mstar_blue[0])
@@ -777,7 +765,7 @@ rc('axes', linewidth=4)
 fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
     gridspec_kw={'wspace':0.25})
 
-bins = np.linspace(8.9,11.5,5)
+bins = np.linspace(8.9,11.1,5)
 bin_centers = 0.5 * (bins[1:] + bins[:-1])
 
 
@@ -843,9 +831,6 @@ ax[1].minorticks_on()
 
 plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_sigma_mstar_panel.pdf', 
     bbox_inches="tight", dpi=1200)
-
-# plt.savefig('/Users/asadm2/Desktop/eco_sigma_mstar_panel_origbin.pdf', 
-#     bbox_inches="tight", dpi=1200)
 
 plt.show()
 
