@@ -83,6 +83,7 @@ src/tutorials
 /data/
 src/single_use/figures
 .vscode
+src/fof
 
 # File extensions
 *.DS_Store
