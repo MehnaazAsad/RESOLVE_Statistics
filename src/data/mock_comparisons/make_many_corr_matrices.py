@@ -7,19 +7,19 @@ import random
 import h5py
 import os
 
-# from matplotlib.legend_handler import HandlerTuple
-# import matplotlib.pyplot as plt
-# from matplotlib import rc
-# from matplotlib import cm
+from matplotlib.legend_handler import HandlerTuple
+import matplotlib.pyplot as plt
+from matplotlib import rc
+from matplotlib import cm
 
-# rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=20)
-# rc('text', usetex=True)
-# rc('text.latex', preamble=r"\usepackage{amsmath}")
-# rc('axes', linewidth=2)
-# rc('xtick.major', width=4, size=7)
-# rc('ytick.major', width=4, size=7)
-# rc('xtick.minor', width=2, size=7)
-# rc('ytick.minor', width=2, size=7)
+rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=20)
+rc('text', usetex=True)
+rc('text.latex', preamble=r"\usepackage{amsmath}")
+rc('axes', linewidth=2)
+rc('xtick.major', width=4, size=7)
+rc('ytick.major', width=4, size=7)
+rc('xtick.minor', width=2, size=7)
+rc('ytick.minor', width=2, size=7)
 
 def reading_catls(filename, catl_format='.hdf5'):
     """
@@ -1033,7 +1033,7 @@ def split_false_pairs(galra, galde, galcz, galgroupid):
 
 survey = 'eco'
 mf_type = 'bmf'
-quenching = 'halo'
+quenching = 'hybrid'
 machine = 'bender'
 level = 'group'
 stacked_stat = True
@@ -1166,9 +1166,13 @@ for i in tqdm(range(100)):
 
             elif mf_type == "bmf":
                 if quenching == "hybrid" and stacked_stat:
+                    # from 90
+                    bf_from_last_chain = [10.39975208, 14.37426995, 0.94420486, 0.10782901]
                     # from #68 
-                    bf_from_last_chain = [10.40868054, 14.06677972,  0.83745589,  0.14406545]
-                    #! Compare to latest 10.39975208, 14.37426995, 0.94420486, 0.10782901
+                    # bf_from_last_chain = [10.40868054, 14.06677972,  0.83745589,  0.14406545]
+                    #* Used animation website to see how much this difference affects
+                    #* figures and the change was insignificant so hybrid bmf will not 
+                    #* be re-run
                     Mstar_q = bf_from_last_chain[0] # Msun/h**2
                     Mh_q = bf_from_last_chain[1] # Msun/h
                     mu = bf_from_last_chain[2]
@@ -1338,10 +1342,10 @@ def calc_corr_mat(df):
     return corr_mat
 
 
-hf_read = h5py.File(path_to_proc + 'corr_matrices_28stats_{0}_{1}.h5'.
+hf_read = h5py.File(path_to_proc + 'final_matrices/corr_matrices_28stats_{0}_{1}.h5'.
     format(quenching, mf_type), 'r')
-hf_read = h5py.File('/Users/asadm2/Desktop/corr_matrices_28stats_{0}_{1}.h5'.
-    format(quenching, mf_type), 'r')
+# hf_read = h5py.File('/Users/asadm2/Desktop/corr_matrices_28stats_{0}_{1}_nonps.h5'.
+#     format(quenching, mf_type), 'r')
 
 hf_read.keys()
 smf = hf_read.get('smf')
@@ -1424,18 +1428,22 @@ for i in range(100):
         
 
 # Using average cov mat to get correlation matrix
-corr_mat_average = calc_corr_mat(cov_mat_average)
+corr_mat_average_nonps = calc_corr_mat(cov_mat_average)
+corr_mat_average_ps = calc_corr_mat(cov_mat_average)
+corr_mat_average_nops_ps_difference = corr_mat_average_nonps - corr_mat_average_ps
+
 corr_mat_inv_colour_average = np.linalg.inv(corr_mat_average) 
 sigma_average = np.sqrt(np.diag(cov_mat_average))
 
 fig1 = plt.figure()
 ax1 = fig1.add_subplot(111)
 cmap = cm.get_cmap('Spectral_r')
-cax = ax1.matshow(corr_mat_average, cmap=cmap, vmin=-1, vmax=1)
+cax = ax1.matshow(corr_mat_average_nops_ps_difference, cmap=cmap, vmin=-1, vmax=1)
 plt.gca().invert_yaxis() 
 plt.gca().xaxis.tick_bottom()
 plt.colorbar(cax)
-plt.title('{0}'.format(quenching))
+# plt.title('{0}'.format(quenching))
+plt.title('Difference between average hybrid non-ps and ps matrix')
 plt.show()
 
 
@@ -1906,7 +1914,6 @@ corr_mat_inv_colour_average = np.linalg.inv(corr_mat_average)
 sigma_average = np.sqrt(np.diag(cov_mat_average))
 
 
-from matplotlib.legend_handler import HandlerTuple
 import matplotlib.pyplot as plt
 from matplotlib import rc
 from matplotlib import cm
@@ -1914,7 +1921,7 @@ from matplotlib import cm
 rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=20)
 rc('text', usetex=True)
 rc('text.latex', preamble=r"\usepackage{amsmath}")
-rc('axes', linewidth=2)
+rc('axes', linewidth=4)
 rc('xtick.major', width=4, size=7)
 rc('ytick.major', width=4, size=7)
 rc('xtick.minor', width=2, size=7)
@@ -1936,18 +1943,18 @@ r'$sigma\ blue_1$', r'$blue_2$', r'$blue_3$', r'$blue_4$']
 
 tick_marks=[0, 4, 8, 12, 16, 20, 24]
 names = [
-    r"$\boldsymbol\phi$",
+    r"$\boldsymbol{\phi}$",
     r"$\boldsymbol{f_{blue}^{c}}$",
     r"$\boldsymbol{f_{blue}^{s}}$",
     r"$\boldsymbol{\overline{M_{*,red}^{c}}}$",
     r"$\boldsymbol{\overline{M_{*,blue}^{c}}}$",
-    r"$\boldsymbol{\sigma_{red}}$",
-    r"$\boldsymbol{\sigma_{blue}}$"]
+    r"$\boldsymbol{\overline{\sigma_{red}}}$",
+    r"$\boldsymbol{\overline{\sigma_{blue}}}$"]
 
-plt.xticks(tick_marks, names, fontsize=10)#, rotation='vertical')
-plt.yticks(tick_marks, names, fontsize=10)    
+plt.xticks(tick_marks, names, fontsize=20)#, rotation='vertical')
+plt.yticks(tick_marks, names, fontsize=20)    
 plt.gca().invert_yaxis() 
 plt.gca().xaxis.tick_bottom()
 plt.colorbar(cax)
-plt.title('{0}'.format(quenching))
+# plt.title('{0}'.format(quenching))
 plt.show()
