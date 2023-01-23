@@ -64,7 +64,7 @@ class Plotting():
         quenching = settings.quenching
 
         smf_total = data[0] #x, y, error, counts
-        error = data[6][0:4]
+        error = data[8][0:4]
 
         x_phi_total_data, y_phi_total_data = smf_total[0], smf_total[1]
         x_phi_total_model = models[0][0]['smf_total']['max_total'][0]
@@ -72,7 +72,7 @@ class Plotting():
         x_phi_total_bf, y_phi_total_bf = best_fit[0]['smf_total']['max_total'],\
             best_fit[0]['smf_total']['phi_total']
 
-        dof = data[8]
+        dof = data[10]
 
         i_outer = 0
         mod_arr = []
@@ -130,7 +130,7 @@ class Plotting():
         tot_phi_max = np.amax(mod_arr, axis=0)
         tot_phi_min = np.amin(mod_arr, axis=0)
         
-        fig1= plt.figure(figsize=(10,10))
+        fig1= plt.figure(figsize=(10,8))
         mt = plt.fill_between(x=x_phi_total_model, y1=tot_phi_max, 
             y2=tot_phi_min, color='silver', alpha=0.4)
 
@@ -148,7 +148,7 @@ class Plotting():
             zorder=10)
 
         
-        plt.ylim(-4,-1)
+        # plt.ylim(-4,-1)
         if settings.mf_type == 'smf':
             plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=30)
         elif settings.mf_type == 'bmf':
@@ -174,17 +174,8 @@ class Plotting():
 
         plt.legend([(dt), (mt), (bft)], ['Data','Models','Best-fit'],
             handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, loc='lower left')
-
-        # if settings.survey == 'eco':
-        #     if quenching == 'hybrid':
-        #         plt.title('Hybrid quenching model | ECO')
-        #     elif quenching == 'halo':
-        #         plt.title('Halo quenching model | ECO')
-        # plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/smf_total_emcee_{0}.pdf'.format(quenching), 
-            # bbox_inches="tight", dpi=1200)
-        # plt.savefig('/Users/asadm2/Desktop/smf_total_emcee.pdf', 
-        #     bbox_inches="tight", dpi=1200)
-        plt.show()
+        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/smf_total_emcee_{0}.pdf'.format(quenching), 
+            bbox_inches="tight", dpi=1200)
 
     def plot_colour_mf(self, models, data, best_fit):
         """
@@ -227,21 +218,21 @@ class Plotting():
 
         # x axis values same as those used in blue fraction for both red and 
         # blue since colour MFs were reconstructed from blue fraction
-        fblue_data = data[1]
+        smf_data = data[0]
 
         error_red = data[7]['std_phi_colour']['std_phi_red']
         error_blue = data[7]['std_phi_colour']['std_phi_blue']
 
-        x_phi_red_model = fblue_data[0]
+        x_phi_red_model = smf_data[0]
         x_phi_red_data, y_phi_red_data = x_phi_red_model, data[4]
 
-        x_phi_blue_model = fblue_data[0]
+        x_phi_blue_model = smf_data[0]
         x_phi_blue_data, y_phi_blue_data = x_phi_blue_model, data[5]
 
-        x_phi_red_bf, y_phi_red_bf = fblue_data[0],\
+        x_phi_red_bf, y_phi_red_bf = smf_data[0],\
             best_fit[0]['phi_colour']['phi_red']
 
-        x_phi_blue_bf, y_phi_blue_bf = fblue_data[0],\
+        x_phi_blue_bf, y_phi_blue_bf = smf_data[0],\
             best_fit[0]['phi_colour']['phi_blue']
 
         dof = data[8]
@@ -375,12 +366,12 @@ class Plotting():
         quenching = settings.quenching
 
         fblue_data = data[1]
-        error_total = data[7]['std_fblue']['std_fblue']
+        # error_total = data[7]['std_fblue']['std_fblue']
         # error_cen = data[5]['std_fblue']['std_fblue_cen']
         # error_sat = data[5]['std_fblue']['std_fblue_sat']
-        error_cen = data[6][4:8]
-        error_sat = data[6][8:12]
-        dof = data[8]
+        error_cen = data[8][4:8]
+        error_sat = data[8][8:12]
+        dof = data[10]
 
         x_fblue_total_data, y_fblue_total_data = fblue_data[0], fblue_data[1]
         y_fblue_cen_data = fblue_data[2]
@@ -496,50 +487,50 @@ class Plotting():
         fblue_sat_min = np.nanmin(sat_mod_arr, axis=0)
 
         
-        fig1= plt.figure(figsize=(10,10))
-        mt = plt.fill_between(x=x_fblue_model, y1=fblue_total_max, 
-            y2=fblue_total_min, color='silver', alpha=0.4)
+        # fig1= plt.figure(figsize=(10,10))
+        # mt = plt.fill_between(x=x_fblue_model, y1=fblue_total_max, 
+        #     y2=fblue_total_min, color='silver', alpha=0.4)
 
-        dt = plt.errorbar(x_fblue_total_data, y_fblue_total_data, yerr=error_total,
-            color='k', fmt='s', ecolor='k', markersize=12, capsize=7,
-            capthick=1.5, zorder=10, marker='^')
-        # dt = plt.scatter(x_fblue_total_data, y_fblue_total_data,
-        #     color='k', s=120, zorder=10, marker='^')
-        # Best-fit
-        # Need a comma after 'bfr' and 'bfb' to solve this:
-        #   AttributeError: 'NoneType' object has no attribute 'create_artists'
-        bft, = plt.plot(x_fblue_total_bf, y_fblue_total_bf, color='k', ls='--', lw=4, 
-            zorder=10)
+        # dt = plt.errorbar(x_fblue_total_data, y_fblue_total_data, yerr=error_total,
+        #     color='k', fmt='s', ecolor='k', markersize=12, capsize=7,
+        #     capthick=1.5, zorder=10, marker='^')
+        # # dt = plt.scatter(x_fblue_total_data, y_fblue_total_data,
+        # #     color='k', s=120, zorder=10, marker='^')
+        # # Best-fit
+        # # Need a comma after 'bfr' and 'bfb' to solve this:
+        # #   AttributeError: 'NoneType' object has no attribute 'create_artists'
+        # bft, = plt.plot(x_fblue_total_bf, y_fblue_total_bf, color='k', ls='--', lw=4, 
+        #     zorder=10)
 
-        if settings.mf_type == 'smf':
-            plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
-        elif settings.mf_type == 'bmf':
-            plt.xlabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
-        plt.ylabel(r'\boldmath$f_{blue}$', fontsize=30)
+        # if settings.mf_type == 'smf':
+        #     plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
+        # elif settings.mf_type == 'bmf':
+        #     plt.xlabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
+        # plt.ylabel(r'\boldmath$f_{blue}$', fontsize=30)
 
-        plt.legend([(dt), (mt), (bft)], ['Data','Models','Best-fit'],
-            handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)})
+        # plt.legend([(dt), (mt), (bft)], ['Data','Models','Best-fit'],
+        #     handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)})
 
-        plt.annotate(r'$\boldsymbol\chi ^2 / dof \approx$ {0}'.
-            format(np.round(preprocess.bf_chi2/dof,2)), 
-            xy=(0.87, 0.75), xycoords='axes fraction', bbox=dict(boxstyle="square", 
-            ec='k', fc='lightgray', alpha=0.5), size=25)
-        plt.annotate(r'$ p \approx$ {0}'.
-            format(np.round((1 - chi2.cdf(preprocess.bf_chi2, dof)),2)), 
-            xy=(0.87, 0.69), xycoords='axes fraction', bbox=dict(boxstyle="square", 
-            ec='k', fc='lightgray', alpha=0.5), size=25)
+        # plt.annotate(r'$\boldsymbol\chi ^2 / dof \approx$ {0}'.
+        #     format(np.round(preprocess.bf_chi2/dof,2)), 
+        #     xy=(0.87, 0.75), xycoords='axes fraction', bbox=dict(boxstyle="square", 
+        #     ec='k', fc='lightgray', alpha=0.5), size=25)
+        # plt.annotate(r'$ p \approx$ {0}'.
+        #     format(np.round((1 - chi2.cdf(preprocess.bf_chi2, dof)),2)), 
+        #     xy=(0.87, 0.69), xycoords='axes fraction', bbox=dict(boxstyle="square", 
+        #     ec='k', fc='lightgray', alpha=0.5), size=25)
 
-        if settings.survey == 'eco':
-            if settings.quenching == 'hybrid':
-                plt.title('Hybrid quenching model | ECO')
-            elif settings.quenching == 'halo':
-                plt.title('Halo quenching model | ECO')
-        # plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fblue_total_emcee.pdf', 
-        #     bbox_inches="tight", dpi=1200)
+        # if settings.survey == 'eco':
+        #     if settings.quenching == 'hybrid':
+        #         plt.title('Hybrid quenching model | ECO')
+        #     elif settings.quenching == 'halo':
+        #         plt.title('Halo quenching model | ECO')
+        # # plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fblue_total_emcee.pdf', 
+        # #     bbox_inches="tight", dpi=1200)
 
-        plt.show()
+        # plt.show()
 
-        fig2= plt.figure(figsize=(10,10))
+        fig2= plt.figure(figsize=(10,8))
         mc = plt.fill_between(x=x_fblue_model, y1=fblue_cen_max, 
             y2=fblue_cen_min, color='thistle', alpha=0.5)
         ms = plt.fill_between(x=x_fblue_model, y1=fblue_sat_max, 
@@ -576,29 +567,11 @@ class Plotting():
         plt.legend([(dc), (mc), (bfc), (ds), (ms), (bfs)], 
             ['Data - cen','Models - cen','Best-fit - cen',
             'Data - sat','Models - sat','Best-fit - sat'],
-            handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, prop={'size':25})
+            handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, 
+            prop={'size':22})
 
-        # plt.annotate(r'$\boldsymbol\chi ^2 / dof \approx$ {0}'.
-        #     format(np.round(preprocess.bf_chi2/dof,2)),
-        #     xy=(0.87, 0.55), xycoords='axes fraction', bbox=dict(boxstyle="square", 
-        #     ec='k', fc='lightgray', alpha=0.5), size=25)
-        # plt.annotate(r'$ p \approx$ {0}'.
-        #     format(np.round((1 - chi2.cdf(preprocess.bf_chi2, dof)),2)), 
-        #     xy=(0.87, 0.49), xycoords='axes fraction', bbox=dict(boxstyle="square", 
-        #     ec='k', fc='lightgray', alpha=0.5), size=25)
-
-        # if settings.survey == 'eco':
-        #     if quenching == 'hybrid':
-        #         plt.title('Hybrid quenching model | ECO')
-        #     elif quenching == 'halo':
-        #         plt.title('Halo quenching model | ECO')
-        # plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fblue_censat_emcee_{0}.pdf'.format(quenching), 
-        #     bbox_inches="tight", dpi=1200)
-
-        # plt.savefig('/Users/asadm2/Desktop/fblue_censat_emcee.pdf', 
-        #     bbox_inches="tight", dpi=1200)
-
-        plt.show()
+        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fblue_censat_emcee_{0}.pdf'.format(quenching), 
+            bbox_inches="tight", dpi=1200)
 
     def plot_xmhm(self, models, data, best_fit):
         """
@@ -634,15 +607,15 @@ class Plotting():
         elif settings.survey == 'eco':
             line_label = 'ECO'
 
-        dof = data[8]
+        dof = data[10]
 
-        halos_bf = best_fit[0]['centrals']['halos']
-        gals_bf = best_fit[0]['centrals']['gals']
+        halos_bf = best_fit[0]['centrals']['halos'][0]
+        gals_bf = best_fit[0]['centrals']['gals'][0]
         # halos_bf = np.round(np.log10((10**halos_bf)*1.429), 1)
         # gals_bf = np.round(np.log10((10**gals_bf)*1.429), 1)
 
         y_bf,x_bf,binnum = bs(halos_bf,
-            gals_bf,'mean',bins=np.linspace(10, 15, 15))
+            gals_bf, statistic='mean', bins=np.linspace(10, 15, 15))
 
 
         i_outer = 0
@@ -650,8 +623,8 @@ class Plotting():
         mod_y_arr = []
         while i_outer < 10:
             for idx in range(len(models[i_outer][0]['centrals']['halos'])):
-                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx]
-                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx]
+                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx][0]
+                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx][0]
                
                 # mod_x_ii = np.round(np.log10((10**mod_x_ii)*1.429), 1)
                 # mod_y_ii = np.round(np.log10((10**mod_y_ii)*1.429), 1)
@@ -663,8 +636,8 @@ class Plotting():
             i_outer += 1
 
             for idx in range(len(models[i_outer][0]['centrals']['halos'])):
-                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx]
-                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx]
+                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx][0]
+                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx][0]
 
                 # mod_x_ii = np.round(np.log10((10**mod_x_ii)*1.429), 1)
                 # mod_y_ii = np.round(np.log10((10**mod_y_ii)*1.429), 1)
@@ -676,8 +649,8 @@ class Plotting():
             i_outer += 1
 
             for idx in range(len(models[i_outer][0]['centrals']['halos'])):
-                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx]
-                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx]
+                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx][0]
+                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx][0]
                 
                 # mod_x_ii = np.round(np.log10((10**mod_x_ii)*1.429), 1)
                 # mod_y_ii = np.round(np.log10((10**mod_y_ii)*1.429), 1)
@@ -689,8 +662,8 @@ class Plotting():
             i_outer += 1
 
             for idx in range(len(models[i_outer][0]['centrals']['halos'])):
-                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx]
-                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx]
+                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx][0]
+                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx][0]
                 
                 # mod_x_ii = np.round(np.log10((10**mod_x_ii)*1.429), 1)
                 # mod_y_ii = np.round(np.log10((10**mod_y_ii)*1.429), 1)
@@ -702,8 +675,8 @@ class Plotting():
             i_outer += 1
 
             for idx in range(len(models[i_outer][0]['centrals']['halos'])):
-                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx]
-                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx]
+                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx][0]
+                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx][0]
 
                 # mod_x_ii = np.round(np.log10((10**mod_x_ii)*1.429), 1)
                 # mod_y_ii = np.round(np.log10((10**mod_y_ii)*1.429), 1)
@@ -715,8 +688,8 @@ class Plotting():
             i_outer += 1
 
             for idx in range(len(models[i_outer][0]['centrals']['halos'])):
-                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx]
-                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx]
+                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx][0]
+                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx][0]
                
                 # mod_x_ii = np.round(np.log10((10**mod_x_ii)*1.429), 1)
                 # mod_y_ii = np.round(np.log10((10**mod_y_ii)*1.429), 1)
@@ -728,8 +701,8 @@ class Plotting():
             i_outer += 1
 
             for idx in range(len(models[i_outer][0]['centrals']['halos'])):
-                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx]
-                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx]
+                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx][0]
+                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx][0]
                
                 # mod_x_ii = np.round(np.log10((10**mod_x_ii)*1.429), 1)
                 # mod_y_ii = np.round(np.log10((10**mod_y_ii)*1.429), 1)
@@ -741,8 +714,8 @@ class Plotting():
             i_outer += 1
 
             for idx in range(len(models[i_outer][0]['centrals']['halos'])):
-                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx]
-                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx]
+                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx][0]
+                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx][0]
                
                 # mod_x_ii = np.round(np.log10((10**mod_x_ii)*1.429), 1)
                 # mod_y_ii = np.round(np.log10((10**mod_y_ii)*1.429), 1)
@@ -754,8 +727,8 @@ class Plotting():
             i_outer += 1
 
             for idx in range(len(models[i_outer][0]['centrals']['halos'])):
-                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx]
-                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx]
+                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx][0]
+                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx][0]
                
                 # mod_x_ii = np.round(np.log10((10**mod_x_ii)*1.429), 1)
                 # mod_y_ii = np.round(np.log10((10**mod_y_ii)*1.429), 1)
@@ -767,8 +740,8 @@ class Plotting():
             i_outer += 1
 
             for idx in range(len(models[i_outer][0]['centrals']['halos'])):
-                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx]
-                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx]
+                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx][0]
+                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx][0]
                
                 # mod_x_ii = np.round(np.log10((10**mod_x_ii)*1.429), 1)
                 # mod_y_ii = np.round(np.log10((10**mod_y_ii)*1.429), 1)
@@ -840,11 +813,11 @@ class Plotting():
         behroozi13_params = np.array([-1.777, 11.514, -1.412, 3.508, 0.316])
         behroozi10_params_bf = list(preprocess.bf_params[:4]) + [1.54]
 
-        mstar_min = 8.9
+        mstar_min = 8.6
         mstar_max = 12
 
         mhalo_min = 10
-        mhalo_max = 13.5
+        mhalo_max = 15
 
         logmstar_arr_or = np.linspace(mstar_min, mstar_max, 500)
         logmh_behroozi10 = behroozi10(logmstar_arr_or, behroozi10_params)
@@ -854,7 +827,7 @@ class Plotting():
         logmstar_moster = moster(logmhalo_arr_or, moster_params)
         logmstar_behroozi13 = behroozi13(logmhalo_arr_or, behroozi13_params)
         
-        fig1 = plt.figure(figsize=(10,10))
+        fig1 = plt.figure(figsize=(10,8))
 
         x_cen =  0.5 * (mod_x_arr[0][1:] + mod_x_arr[0][:-1])
 
@@ -869,8 +842,8 @@ class Plotting():
         plt.plot(x_cen, y_bf, color='k', lw=4, label='Best-fit', zorder=10)
         plt.plot(H70_to_H100(logmh_behroozi10, -1), H70_to_H100(logmstar_arr_or, -2), 
             ls='--', lw=4, label='Behroozi+10', zorder=11)
-        plt.plot(H70_to_H100(logmh_behroozi10_bf, -1), H70_to_H100(logmstar_arr_or, -2), 
-            ls='--', lw=4, label='Behroozi+10 bf analytical', zorder=12)
+        # plt.plot(H70_to_H100(logmh_behroozi10_bf, -1), H70_to_H100(logmstar_arr_or, -2), 
+        #     ls='--', lw=4, label='Behroozi+10 bf analytical', zorder=12)
         plt.plot(H70_to_H100(logmhalo_arr_or, -1), H70_to_H100(logmstar_moster, -2), 
             ls='-.', lw=4, label='Moster+10', zorder=13)
         plt.plot(H70_to_H100(logmhalo_arr_or, -1), H70_to_H100(logmstar_behroozi13, -2), 
@@ -884,43 +857,34 @@ class Plotting():
         if settings.survey == 'resolvea' and settings.mf_type == 'smf':
             plt.xlim(10,14)
         else:
-            plt.xlim(10,14.5)
+            plt.xlim(10,15)
         plt.xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
         if settings.mf_type == 'smf':
             if settings.survey == 'eco' and settings.quenching == 'hybrid':
-                plt.ylim(np.log10((10**8.9)/2.041),11.9)
+                plt.ylim(np.log10((10**8.9)/2.041),12)
             elif settings.survey == 'eco' and settings.quenching == 'halo':
                 plt.ylim(np.log10((10**8.9)/2.041),11.56)
             elif settings.survey == 'resolvea':
                 plt.ylim(np.log10((10**8.9)/2.041),13)
             elif settings.survey == 'resolveb':
                 plt.ylim(np.log10((10**8.7)/2.041),)
-            plt.ylabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
+            plt.ylabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=30)
         elif settings.mf_type == 'bmf':
             if settings.survey == 'eco' or settings.survey == 'resolvea':
                 plt.ylim(np.log10((10**9.4)/2.041),)
             elif settings.survey == 'resolveb':
                 plt.ylim(np.log10((10**9.1)/2.041),)
-            plt.ylabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
+            plt.ylabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=30)
         handles, labels = plt.gca().get_legend_handles_labels()
         by_label = OrderedDict(zip(labels, handles))
-        plt.legend(by_label.values(), by_label.keys(), loc='best',prop={'size': 30})
+        plt.legend(by_label.values(), by_label.keys(), loc='best',prop={'size': 22})
         # plt.annotate(r'$\boldsymbol\chi ^2 / dof \approx$ {0}'.
         #     format(np.round(preprocess.bf_chi2/dof,2)), 
         #     xy=(0.02, 0.8), xycoords='axes fraction', bbox=dict(boxstyle="square", 
         #     ec='k', fc='lightgray', alpha=0.5), size=25)
 
-        # if quenching == 'hybrid':
-        #     plt.title('Hybrid quenching model | ECO')
-        # elif quenching == 'halo':
-        #     plt.title('Halo quenching model | ECO')
-        # plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/shmr_total_emcee_{0}.pdf'.format(quenching), 
-        #     bbox_inches="tight", dpi=1200)
-
-        # plt.savefig('/Users/asadm2/Desktop/shmr_total_emcee.pdf'.format(quenching), 
-        #     bbox_inches="tight", dpi=1200)
-
-        plt.show()
+        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/shmr_total_emcee_{0}.pdf'.format(quenching), 
+            bbox_inches="tight", dpi=1200)
 
     def plot_colour_xmhm(self, models, data, best_fit):
         """
@@ -1346,14 +1310,14 @@ class Plotting():
         preprocess = self.preprocess
         quenching = settings.quenching
 
-        halos_bf_red = best_fit[0]['centrals']['halos_red']
-        gals_bf_red = best_fit[0]['centrals']['gals_red']
+        halos_bf_red = best_fit[0]['centrals']['halos_red'][0]
+        gals_bf_red = best_fit[0]['centrals']['gals_red'][0]
 
-        halos_bf_blue = best_fit[0]['centrals']['halos_blue']
-        gals_bf_blue = best_fit[0]['centrals']['gals_blue']
+        halos_bf_blue = best_fit[0]['centrals']['halos_blue'][0]
+        gals_bf_blue = best_fit[0]['centrals']['gals_blue'][0]
 
-        fred_bf_red = best_fit[0]['f_red']['cen_red']
-        fred_bf_blue = best_fit[0]['f_red']['cen_blue']
+        fred_bf_red = best_fit[0]['f_red']['cen_red'][0]
+        fred_bf_blue = best_fit[0]['f_red']['cen_blue'][0]
 
         cen_gals_arr = []
         cen_halos_arr = []
@@ -1364,12 +1328,12 @@ class Plotting():
             cen_halos_idx_arr = []
             fred_idx_arr = []
             for idx in range(len(models[i_outer][0]['centrals']['halos_red'])):
-                red_cen_gals_idx = models[i_outer][0]['centrals']['gals_red'][idx]
-                red_cen_halos_idx = models[i_outer][0]['centrals']['halos_red'][idx]
-                blue_cen_gals_idx = models[i_outer][0]['centrals']['gals_blue'][idx]
-                blue_cen_halos_idx = models[i_outer][0]['centrals']['halos_blue'][idx]
-                fred_red_cen_idx = models[i_outer][0]['f_red']['cen_red'][idx]
-                fred_blue_cen_idx = models[i_outer][0]['f_red']['cen_blue'][idx]
+                red_cen_gals_idx = models[i_outer][0]['centrals']['gals_red'][idx][0]
+                red_cen_halos_idx = models[i_outer][0]['centrals']['halos_red'][idx][0]
+                blue_cen_gals_idx = models[i_outer][0]['centrals']['gals_blue'][idx][0]
+                blue_cen_halos_idx = models[i_outer][0]['centrals']['halos_blue'][idx][0]
+                fred_red_cen_idx = models[i_outer][0]['f_red']['cen_red'][idx][0]
+                fred_blue_cen_idx = models[i_outer][0]['f_red']['cen_blue'][idx][0]
 
                 cen_gals_idx_arr = list(red_cen_gals_idx) + list(blue_cen_gals_idx)
                 cen_gals_arr.append(cen_gals_idx_arr)
@@ -1475,7 +1439,7 @@ class Plotting():
 
             # antonio_data = pd.read_csv('/Users/asadm2/Documents/Grad_School/Research/Repositories/resolve_statistics/data/external/fq_cen_SM_DS_TNG_Salim_z0.csv',
             #     header=None, skiprows=1, usecols=[1,2,3,4], names=['fred_ds','fred_salim','fred_tng','logmstar'])
-            antonio_data = pd.read_csv("/Users/asadm2/Desktop/fquench_stellar/fqlogTSM_cen_DS_TNG_Salim_z0.csv", 
+            antonio_data = pd.read_csv(settings.path_to_proc + "../external/fquench_stellar/fqlogTSM_cen_DS_TNG_Salim_z0.csv", 
                 index_col=0, skiprows=1, names=['fred_ds','logmstar','fred_tng','fred_salim'])
             plt.plot(antonio_data.logmstar.values, antonio_data.fred_ds.values, lw=5, c='k', ls='dashed', label='Dark Sage')
             plt.plot(antonio_data.logmstar.values, antonio_data.fred_salim.values, lw=5, c='k', ls='dotted', label='Salim+18')
@@ -1484,8 +1448,8 @@ class Plotting():
             cen_stellar_mass_arr = np.linspace(8.6, 12, 200)
             an_fred_cen, an_fred_sat = hybrid_quenching_model(preprocess.bf_params[5:])
 
-            plt.plot(cen_stellar_mass_arr, an_fred_cen, lw=5, c='peru', 
-                ls='dotted', label='analytical')
+            # plt.plot(cen_stellar_mass_arr, an_fred_cen, lw=5, c='peru', 
+            #     ls='dotted', label='analytical')
 
         elif settings.quenching == 'halo':
             for idx in range(len(cen_halos_arr)):
@@ -1501,7 +1465,7 @@ class Plotting():
 
             # antonio_data = pd.read_csv('/Users/asadm2/Documents/Grad_School/Research/Repositories/resolve_statistics/data/external/fq_cen_SM_DS_TNG_Salim_z0.csv',
             #     header=None, skiprows=1, usecols=[1,2,3,4], names=['fred_ds','fred_salim','fred_tng','logmstar'])
-            antonio_data = pd.read_csv("/Users/asadm2/Desktop/fquench_halo/fqlogMvir_cen_DS_TNG_z0.csv", 
+            antonio_data = pd.read_csv(settings.path_to_proc + "../external/fquench_halo/fqlogMvir_cen_DS_TNG_z0.csv", 
                 index_col=0, skiprows=1, names=['fred_ds','logmhalo','fred_tng'])
             plt.plot(antonio_data.logmhalo.values, antonio_data.fred_ds.values, lw=5, c='k', ls='dashed', label='Dark Sage')
             plt.plot(antonio_data.logmhalo.values, antonio_data.fred_tng.values, lw=5, c='k', ls='dashdot', label='TNG')
@@ -1513,23 +1477,17 @@ class Plotting():
             cen_hosthalo_mass_arr = np.linspace(10, 15, 200)
             an_fred_cen, an_fred_sat = halo_quenching_model(preprocess.bf_params[5:])
 
-            plt.plot(cen_hosthalo_mass_arr, an_fred_cen, lw=5, c='peru', 
-                ls='dotted', label='analytical')
+            # plt.plot(cen_hosthalo_mass_arr, an_fred_cen, lw=5, c='peru', 
+            #     ls='dotted', label='analytical')
 
         plt.ylabel(r'\boldmath$f_{red, cen}$', fontsize=30)
         if quenching == 'hybrid':
-            plt.legend(loc='best', prop={'size':25})
+            plt.legend(loc='best', prop={'size':22})
         elif quenching == 'halo':
-            plt.legend(loc='best', prop={'size':30})
+            plt.legend(loc='best', prop={'size':22})
 
-        # if quenching == 'hybrid':
-        #     plt.title('Hybrid quenching model | ECO')
-        # elif quenching == 'halo':
-        #     plt.title('Halo quenching model | ECO')
-        # plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fred_cen_emcee_{0}.pdf'.format(quenching), 
-        #     bbox_inches="tight", dpi=1200)
-
-        plt.show()
+        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fred_cen_emcee_{0}.pdf'.format(quenching), 
+            bbox_inches="tight", dpi=1200)
 
     def plot_red_fraction_sat(self, models, best_fit):
         """
@@ -1567,14 +1525,14 @@ class Plotting():
         quenching = settings.quenching
         preprocess = self.preprocess
 
-        halos_bf_red = best_fit[0]['satellites']['halos_red']
-        gals_bf_red = best_fit[0]['satellites']['gals_red']
+        halos_bf_red = best_fit[0]['satellites']['halos_red'][0]
+        gals_bf_red = best_fit[0]['satellites']['gals_red'][0]
 
-        halos_bf_blue = best_fit[0]['satellites']['halos_blue']
-        gals_bf_blue = best_fit[0]['satellites']['gals_blue']
+        halos_bf_blue = best_fit[0]['satellites']['halos_blue'][0]
+        gals_bf_blue = best_fit[0]['satellites']['gals_blue'][0]
 
-        fred_bf_red = best_fit[0]['f_red']['sat_red']
-        fred_bf_blue = best_fit[0]['f_red']['sat_blue']
+        fred_bf_red = best_fit[0]['f_red']['sat_red'][0]
+        fred_bf_blue = best_fit[0]['f_red']['sat_blue'][0]
 
         sat_gals_arr = []
         sat_halos_arr = []
@@ -1585,12 +1543,12 @@ class Plotting():
             sat_halos_idx_arr = []
             fred_idx_arr = []
             for idx in range(len(models[i_outer][0]['satellites']['halos_red'])):
-                red_sat_gals_idx = models[i_outer][0]['satellites']['gals_red'][idx]
-                red_sat_halos_idx = models[i_outer][0]['satellites']['halos_red'][idx]
-                blue_sat_gals_idx = models[i_outer][0]['satellites']['gals_blue'][idx]
-                blue_sat_halos_idx = models[i_outer][0]['satellites']['halos_blue'][idx]
-                fred_red_sat_idx = models[i_outer][0]['f_red']['sat_red'][idx]
-                fred_blue_sat_idx = models[i_outer][0]['f_red']['sat_blue'][idx]
+                red_sat_gals_idx = models[i_outer][0]['satellites']['gals_red'][idx][0]
+                red_sat_halos_idx = models[i_outer][0]['satellites']['halos_red'][idx][0]
+                blue_sat_gals_idx = models[i_outer][0]['satellites']['gals_blue'][idx][0]
+                blue_sat_halos_idx = models[i_outer][0]['satellites']['halos_blue'][idx][0]
+                fred_red_sat_idx = models[i_outer][0]['f_red']['sat_red'][idx][0]
+                fred_blue_sat_idx = models[i_outer][0]['f_red']['sat_blue'][idx][0]
 
                 sat_gals_idx_arr = list(red_sat_gals_idx) + list(blue_sat_gals_idx)
                 sat_gals_arr.append(sat_gals_idx_arr)
@@ -1705,16 +1663,16 @@ class Plotting():
             plt.xlabel(r'\boldmath$\log_{10}\ M_{*, sat} \left[\mathrm{M_\odot}\,'\
                         r' \mathrm{h}^{-2} \right]$',fontsize=30)
 
-            # bfe = plt.scatter(sat_gals_bf, fred_bf, alpha=0.4, s=150, c=sat_halos_bf, 
-            #     cmap='viridis' ,label='Best-fit')
+            bfe = plt.scatter(sat_gals_bf, fred_bf, alpha=0.4, s=150, c=sat_halos_bf, 
+                cmap='viridis' ,label='Best-fit')
             # plt.colorbar(label=r'\boldmath$\log_{10}\ M_{h, host}$')
 
             # antonio_data = pd.read_csv('/Users/asadm2/Documents/Grad_School/Research/Repositories/resolve_statistics/data/external/fq_cen_SM_DS_TNG_Salim_z0.csv',
             #     header=None, skiprows=1, usecols=[1,2,3,4], names=['fred_ds','fred_salim','fred_tng','logmstar'])
-            antonio_data = pd.read_csv("/Users/asadm2/Desktop/fquench_stellar/fqlogTSM_sat_DS_TNG_Salim_z0.csv", 
+            antonio_data = pd.read_csv(settings.path_to_proc + "../external/fquench_stellar/fqlogTSM_sat_DS_TNG_Salim_z0.csv", 
                 index_col=0, skiprows=1, 
                 names=['fred_ds','logmstar','fred_tng'])
-            hosthalo_data = pd.read_csv("/Users/asadm2/Desktop/fquench_halo/fqlogMvirhost_sat_DS_TNG_z0.csv", 
+            hosthalo_data = pd.read_csv(settings.path_to_proc + "../external/fquench_halo/fqlogMvirhost_sat_DS_TNG_z0.csv", 
                 index_col=0, skiprows=1, names=['fred_ds','logmhalo','fred_tng'])
 
             dss = plt.scatter(antonio_data.logmstar.values, antonio_data.fred_ds.values, 
@@ -1730,9 +1688,9 @@ class Plotting():
             sat_stellar_mass_arr = np.linspace(8.6, 12, 200)
             an_fred_cen, an_fred_sat = hybrid_quenching_model(preprocess.bf_params[5:])
 
-            plt.scatter(sat_stellar_mass_arr, an_fred_sat, alpha=0.4, s=150,
-                c=sat_hosthalo_mass_arr, cmap='viridis',
-                label='analytical')
+            # plt.scatter(sat_stellar_mass_arr, an_fred_sat, alpha=0.4, s=150,
+            #     c=sat_hosthalo_mass_arr, cmap='viridis',
+            #     label='analytical')
 
             plt.colorbar(label=r'\boldmath$\log_{10}\ M_{h, host}$')
 
@@ -1763,7 +1721,7 @@ class Plotting():
 
             # antonio_data = pd.read_csv('/Users/asadm2/Documents/Grad_School/Research/Repositories/resolve_statistics/data/external/fq_cen_SM_DS_TNG_Salim_z0.csv',
             #     header=None, skiprows=1, usecols=[1,2,3,4], names=['fred_ds','fred_salim','fred_tng','logmstar'])
-            antonio_data = pd.read_csv("/Users/asadm2/Desktop/fquench_halo/fqlogMvirhost_sat_DS_TNG_z0.csv", 
+            antonio_data = pd.read_csv(settings.path_to_proc + "../external/fquench_halo/fqlogMvirhost_sat_DS_TNG_z0.csv", 
                 index_col=0, skiprows=1, names=['fred_ds','logmhalo','fred_tng'])
             dsp, = plt.plot(antonio_data.logmhalo.values, antonio_data.fred_ds.values, lw=5, c='k', ls='dashed', label='Dark Sage')
             tngp, = plt.plot(antonio_data.logmhalo.values, antonio_data.fred_tng.values, lw=5, c='k', ls='dashdot', label='TNG')
@@ -1771,8 +1729,8 @@ class Plotting():
             sat_hosthalo_mass_arr = np.linspace(10, 15, 200)
             an_fred_cen, an_fred_sat = halo_quenching_model(preprocess.bf_params[5:])
 
-            plt.plot(sat_hosthalo_mass_arr, an_fred_sat, lw=5, c='peru', 
-                ls='dotted', label='analytical')
+            # plt.plot(sat_hosthalo_mass_arr, an_fred_sat, lw=5, c='peru', 
+            #     ls='dotted', label='analytical')
 
         plt.ylabel(r'\boldmath$f_{red, sat}$', fontsize=30)
         # plt.legend(loc='best', prop={'size':30})
@@ -1780,21 +1738,19 @@ class Plotting():
         if quenching == 'hybrid':
             plt.legend([(tngs, tngp), (dss, dsp), (me), (bfe)], 
                 ['TNG', 'Dark Sage', 'Model average', 'Best-fit'],
-                handler_map={tuple: HandlerTuple(ndivide=1, pad=0)}, prop={'size':30})
+                handler_map={tuple: HandlerTuple(ndivide=1, pad=0)}, loc='best', prop={'size':22})
         elif quenching == 'halo':
             plt.legend([(tngp), (dsp), (mp), (bfp)], 
                 ['TNG','Dark Sage', 'Models', 'Best-fit'],
-                handler_map={tuple: HandlerTuple(ndivide=4, pad=0.3)}, prop={'size':30})
+                handler_map={tuple: HandlerTuple(ndivide=4, pad=0.3)}, prop={'size':22})
 
         # if quenching == 'hybrid':
         #     plt.title('Hybrid quenching model | ECO')
         # elif quenching == 'halo':
         #     plt.title('Halo quenching model | ECO')
 
-        # plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fred_sat_emcee_{0}.pdf'.format(quenching), 
-        #     bbox_inches="tight", dpi=1200)
-
-        plt.show()
+        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fred_sat_emcee_{0}.pdf'.format(quenching), 
+            bbox_inches="tight", dpi=1200)
 
     def plot_zumand_fig4(self, models, data, best_fit):
         """
@@ -1830,7 +1786,7 @@ class Plotting():
         preprocess = self.preprocess
         quenching = settings.quenching
 
-        dof = data[8]
+        dof = data[10]
 
         # logmhalo_mod_arr = models[0][0]['centrals']['halos_red']
         # for idx in range(5):
@@ -1862,14 +1818,14 @@ class Plotting():
         #     fred_mod_arr = np.insert(fred_mod_arr, -1, models[idx][0]['f_red']['cen_blue'])
         # fred_mod_arr_flat = np.hstack(fred_mod_arr)
 
-        halos_bf_red = best_fit[0]['centrals']['halos_red']
-        gals_bf_red = best_fit[0]['centrals']['gals_red']
+        halos_bf_red = best_fit[0]['centrals']['halos_red'][0]
+        gals_bf_red = best_fit[0]['centrals']['gals_red'][0]
 
-        halos_bf_blue = best_fit[0]['centrals']['halos_blue']
-        gals_bf_blue = best_fit[0]['centrals']['gals_blue']
+        halos_bf_blue = best_fit[0]['centrals']['halos_blue'][0]
+        gals_bf_blue = best_fit[0]['centrals']['gals_blue'][0]
 
-        fred_bf_red = best_fit[0]['f_red']['cen_red']
-        fred_bf_blue = best_fit[0]['f_red']['cen_blue']
+        fred_bf_red = best_fit[0]['f_red']['cen_red'][0]
+        fred_bf_blue = best_fit[0]['f_red']['cen_blue'][0]
 
         y_bf_red,x_bf_red,binnum_red = bs(halos_bf_red,\
         gals_bf_red,'mean',bins=np.linspace(10, 15, 15))
@@ -1905,17 +1861,17 @@ class Plotting():
         bfr, = plt.plot(red_x_cen,y_bf_red,color='darkred',lw=5,zorder=10)
         bfb, = plt.plot(blue_x_cen,y_bf_blue,color='darkblue',lw=5, zorder=10)
 
-        plt.annotate(r'$\boldsymbol\chi ^2 / dof \approx$ {0}'.
-            format(np.round(preprocess.bf_chi2/dof,2)), 
-            xy=(0.02, 0.85), xycoords='axes fraction', bbox=dict(boxstyle="square", 
-            ec='k', fc='lightgray', alpha=0.5), size=25)
+        # plt.annotate(r'$\boldsymbol\chi ^2 / dof \approx$ {0}'.
+        #     format(np.round(preprocess.bf_chi2/dof,2)), 
+        #     xy=(0.02, 0.85), xycoords='axes fraction', bbox=dict(boxstyle="square", 
+        #     ec='k', fc='lightgray', alpha=0.5), size=25)
 
-        plt.annotate(r'$ p \approx$ {0}'.
-            format(np.round((1 - chi2.cdf(preprocess.bf_chi2, dof)),2)), 
-            xy=(0.02, 0.75), xycoords='axes fraction', bbox=dict(boxstyle="square", 
-            ec='k', fc='lightgray', alpha=0.5), size=25)
+        # plt.annotate(r'$ p \approx$ {0}'.
+        #     format(np.round((1 - chi2.cdf(preprocess.bf_chi2, dof)),2)), 
+        #     xy=(0.02, 0.75), xycoords='axes fraction', bbox=dict(boxstyle="square", 
+        #     ec='k', fc='lightgray', alpha=0.5), size=25)
 
-        plt.ylim(8.45, 12.3)
+        plt.ylim(8.6, 12)
         plt.xlim(10, 14.5)
 
         plt.fill([13.5, plt.gca().get_xlim()[1], plt.gca().get_xlim()[1], 13.5], 
@@ -1924,23 +1880,16 @@ class Plotting():
             hatch='\\')
 
         plt.xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$')
-        plt.ylabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$')
+        plt.ylabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$')
 
         plt.legend([(bfr, bfb)], ['Best-fit'], 
             handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='best', 
             prop={'size': 30})
 
-        if quenching == 'hybrid':
-            plt.title('Hybrid quenching model | ECO')
-        elif quenching == 'halo':
-            plt.title('Halo quenching model | ECO')
-
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/zumand_emcee_{0}.pdf'.format(quenching), 
             bbox_inches="tight", dpi=1200)
 
-        plt.show()
-
-    def plot_mean_grpcen_vs_sigma(self, models, data, data_experiments, best_fit):
+    def plot_mean_sigma_vs_grpcen(self, models, data, data_experiments, best_fit):
         """
         Plot average group central stellar mass vs. velocity dispersion from data, 
         best fit param values and param values corresponding to 68th percentile 100 
@@ -1995,38 +1944,19 @@ class Plotting():
         settings = self.settings
         preprocess = self.preprocess
         quenching = settings.quenching
-        analysis = self.analysis
+        # analysis = self.analysis
 
-        # error_red = data[5]['vel_disp']['std_mean_mstar_red']
-        # error_blue = data[5]['vel_disp']['std_mean_mstar_blue']
+        error_red = data[8][12:16]
+        error_blue = data[8][16:20]
+        dof = data[10]
 
-        error_red = data[6][12:16]
-        error_blue = data[6][16:]
-        dof = data[8]
+        x_sigma_red_data, y_mean_mstar_red_data = data[4][1], data[4][0]
+        x_sigma_blue_data, y_mean_mstar_blue_data = data[5][1], data[5][0]
 
-        # x_sigma_red_data, y_sigma_red_data = data_experiments['vel_disp']['red_sigma'],\
-        #     data_experiments['vel_disp']['red_cen_mstar']
-        # x_sigma_blue_data, y_sigma_blue_data = data_experiments['vel_disp']['blue_sigma'],\
-        #     data_experiments['vel_disp']['blue_cen_mstar']
-
-        #* data[2] and data[3]  = [log_sigma, log_mstar_cen_red]
-        x_sigma_red_data, y_sigma_red_data = data[2][0], data[2][1]
-        x_sigma_blue_data, y_sigma_blue_data = data[3][0], data[3][1]
-
-        mean_mstar_red_data = bs(x_sigma_red_data, y_sigma_red_data, 
-            statistic=analysis.average_of_log, bins=np.linspace(1,3,5))
-        mean_mstar_blue_data = bs(x_sigma_blue_data, y_sigma_blue_data, 
-            statistic=analysis.average_of_log, bins=np.linspace(1,3,5))
-
-        x_sigma_red_bf, y_sigma_red_bf = best_fit[1]['vel_disp']['red_sigma'],\
-            best_fit[1]['vel_disp']['red_cen_mstar']
-        x_sigma_blue_bf, y_sigma_blue_bf = best_fit[1]['vel_disp']['blue_sigma'],\
-            best_fit[1]['vel_disp']['blue_cen_mstar']
-
-        mean_mstar_red_bf = bs(x_sigma_red_bf, y_sigma_red_bf, 
-            statistic=analysis.average_of_log, bins=np.linspace(1,3,5))
-        mean_mstar_blue_bf = bs(x_sigma_blue_bf, y_sigma_blue_bf, 
-            statistic=analysis.average_of_log, bins=np.linspace(1,3,5))
+        x_sigma_red_bf, y_mean_mstar_red_bf = best_fit[1]['mean_mstar']['red_sigma'],\
+            best_fit[1]['mean_mstar']['red_cen_mstar']
+        x_sigma_blue_bf, y_mean_mstar_blue_bf = best_fit[1]['mean_mstar']['blue_sigma'],\
+            best_fit[1]['mean_mstar']['blue_cen_mstar']
 
         mean_grp_red_cen_gals_arr = []
         mean_grp_blue_cen_gals_arr = []
@@ -2034,20 +1964,11 @@ class Plotting():
         blue_sigma_arr = []
         chunk_counter = 0 # There are 5 chunks of all 16 statistics each with len 20
         while chunk_counter < 10:
-            for idx in range(len(models[chunk_counter][1]['vel_disp'])):
-                grp_red_cen_gals_idx = models[chunk_counter][1]['vel_disp']['red_cen_mstar'][idx]
-                grp_blue_cen_gals_idx = models[chunk_counter][1]['vel_disp']['blue_cen_mstar'][idx]
-                red_sigma_idx = models[chunk_counter][1]['vel_disp']['red_sigma'][idx]
-                blue_sigma_idx = models[chunk_counter][1]['vel_disp']['blue_sigma'][idx]
-
-                mean_stats_red = bs(red_sigma_idx, grp_red_cen_gals_idx, 
-                    statistic=analysis.average_of_log, bins=np.linspace(1,3,5))
-                mean_stats_blue = bs(blue_sigma_idx, grp_blue_cen_gals_idx, 
-                    statistic=analysis.average_of_log, bins=np.linspace(1,3,5))
-                red_sigma_arr.append(mean_stats_red[1])
-                blue_sigma_arr.append(mean_stats_blue[1])
-                mean_grp_red_cen_gals_arr.append(mean_stats_red[0])
-                mean_grp_blue_cen_gals_arr.append(mean_stats_blue[0])
+            for idx in range(len(models[chunk_counter][1]['mean_mass'])):
+                mean_grp_red_cen_gals_arr.append(models[chunk_counter][1]['mean_mass']['red_cen_mass'][idx])
+                mean_grp_blue_cen_gals_arr.append(models[chunk_counter][1]['mean_mass']['blue_cen_mass'][idx])
+                red_sigma_arr.append(models[chunk_counter][1]['mean_mass']['red_sigma'][idx])
+                blue_sigma_arr.append(models[chunk_counter][1]['mean_mass']['blue_sigma'][idx])
 
             chunk_counter+=1
 
@@ -2056,8 +1977,8 @@ class Plotting():
         blue_models_max = np.nanmax(mean_grp_blue_cen_gals_arr, axis=0)
         blue_models_min = np.nanmin(mean_grp_blue_cen_gals_arr, axis=0)
 
-        bins_red = mean_mstar_red_data[1]
-        bins_blue = mean_mstar_blue_data[1]
+        bins_red = x_sigma_red_data
+        bins_blue = x_sigma_blue_data
         ## Same centers used for all sets of lines since binning is the same for 
         ## models, bf and data
         mean_centers_red = 0.5 * (bins_red[1:] + \
@@ -2077,10 +1998,10 @@ class Plotting():
 
         fig1 = plt.subplots(figsize=(10,8))
 
-        dr = plt.errorbar(mean_centers_red,mean_mstar_red_data[0],yerr=error_red,
+        dr = plt.errorbar(mean_centers_red,y_mean_mstar_red_data,yerr=error_red,
                 color='darkred',fmt='^',ecolor='darkred',markersize=12,capsize=10,
                 capthick=1.0,zorder=10)
-        db = plt.errorbar(mean_centers_blue,mean_mstar_blue_data[0],yerr=error_blue,
+        db = plt.errorbar(mean_centers_blue, y_mean_mstar_blue_data, yerr=error_blue,
                 color='darkblue',fmt='^',ecolor='darkblue',markersize=12,capsize=10,
                 capthick=1.0,zorder=10)
 
@@ -2094,66 +2015,27 @@ class Plotting():
         mb = plt.fill_between(x=mean_centers_blue, y1=blue_models_max, 
             y2=blue_models_min, color='cornflowerblue',alpha=0.4)
 
-        bfr, = plt.plot(mean_centers_red, mean_mstar_red_bf[0], c='indianred', 
+        bfr, = plt.plot(mean_centers_red, y_mean_mstar_red_bf, c='indianred', 
             zorder=9, ls='--', lw=4)
-        bfb, = plt.plot(mean_centers_blue, mean_mstar_blue_bf[0], 
+        bfb, = plt.plot(mean_centers_blue, y_mean_mstar_blue_bf, 
             c='cornflowerblue', zorder=9, ls='--', lw=4)
 
         l = plt.legend([(dr, db), (mr, mb), (bfr, bfb)], 
             ['Data','Models','Best-fit'],
-            handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, markerscale=1.5, loc='lower right')
+            handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, 
+            markerscale=1.5, loc='best', prop={'size':22})
 
-        plt.ylim(8.9,)
+        # plt.ylim(8.9,)
 
         plt.xlabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km/s} \right]$', fontsize=30)
         plt.ylabel(r'\boldmath$\overline{\log_{10}\ M_{*,group\ cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=30)
 
-        plt.show()
+        # plt.show()
 
-        # plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/{0}_grpcen_sigma_emcee.pdf'.format(quenching), 
-        #     bbox_inches="tight", dpi=1200)
+        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/{0}_sigma_grpcen_emcee.pdf'.format(quenching), 
+            bbox_inches="tight", dpi=1200)
 
-        # chi_squared_red = np.nansum((mean_stats_red_data[0] - 
-        #     mean_stats_red_bf[0])**2 / (error_red**2))
-        # chi_squared_blue = np.nansum((mean_stats_blue_data[0] - 
-        #     mean_stats_blue_bf[0])**2 / (error_blue**2))
-
-        # plt.annotate(r'$\boldsymbol\chi ^2_{{red}} \approx$ {0}''\n'\
-        #     r'$\boldsymbol\chi ^2_{{blue}} \approx$ {1}'.format(np.round(\
-        #     chi_squared_red,2),np.round(chi_squared_blue,2)), 
-        #     xy=(0.015, 0.65), xycoords='axes fraction', bbox=dict(boxstyle="square", 
-        #     ec='k', fc='lightgray', alpha=0.5), size=25)
-
-        # plt.annotate(r'$\boldsymbol\chi ^2 / dof \approx$ {0}'.
-        #     format(np.round(preprocess.bf_chi2/dof,2)),
-        #     xy=(0.17, 0.11), xycoords='axes fraction', bbox=dict(boxstyle="square", 
-        #     ec='k', fc='lightgray', alpha=0.5), size=25)
-
-        # dof_red = 5 # Nparams=0, Nbins=5
-        # dof_blue = 5 
-        # plt.annotate(r'$ p \approx$ {0}''\n'\
-        #     r'$ p \approx$ {1}'.format(
-        #     np.round((1 - chi2.cdf(chi_squared_red, dof_red)),2),
-        #     np.round((1 - chi2.cdf(chi_squared_blue, dof_blue)),2)), 
-        #     xy=(0.015, 0.55), xycoords='axes fraction', bbox=dict(boxstyle="square", 
-        #     ec='k', fc='lightgray', alpha=0.5), size=25)
-
-        # plt.annotate(r'$ p \approx$ {0}'.format(
-        #     np.round((1 - chi2.cdf(preprocess.bf_chi2, dof)),2)),
-        #     xy=(0.17, 0.05), xycoords='axes fraction', bbox=dict(boxstyle="square", 
-        #     ec='k', fc='lightgray', alpha=0.5), size=25)
-
-
-        
-        # if quenching == 'hybrid':
-        #     plt.title('Hybrid quenching model | ECO')
-        # elif quenching == 'halo':
-        #     plt.title('Halo quenching model | ECO')
-
-        # plt.savefig('/Users/asadm2/Desktop/grpcen_sigma_emcee.pdf', 
-        #     bbox_inches="tight", dpi=1200)
-
-    def plot_mean_sigma_vs_grpcen(self, models, data, data_experiments, best_fit):
+    def plot_mean_grpcen_vs_sigma(self, models, data, data_experiments, best_fit):
         """[summary]
 
         Args:
@@ -2172,20 +2054,9 @@ class Plotting():
         quenching = settings.quenching
         preprocess = self.preprocess
 
-
-        # error_red = data[7]['vel_disp']['std_mean_sigma_red']
-        # error_blue = data[7]['vel_disp']['std_mean_sigma_blue']
-
-        #* Using these instead of above since now this measurement is used in 
-        #* modeling
-        error_red = data[6][12:16]
-        error_blue = data[6][16:]
-        dof = data[8]
-
-        # x_sigma_red_data, y_sigma_red_data = data_experiments['vel_disp']['red_cen_mstar'],\
-        #     data_experiments['vel_disp']['red_sigma']
-        # x_sigma_blue_data, y_sigma_blue_data = data_experiments['vel_disp']['blue_cen_mstar'],\
-        #     data_experiments['vel_disp']['blue_sigma']
+        error_red = data[8][20:24]
+        error_blue = data[8][24:]
+        dof = data[10]
 
         x_sigma_red_data, y_sigma_red_data = data[2][1], data[2][0]
         x_sigma_blue_data, y_sigma_blue_data = data[3][1], data[3][0]
@@ -2195,19 +2066,6 @@ class Plotting():
         x_sigma_blue_bf, y_sigma_blue_bf = best_fit[1]['vel_disp']['blue_cen_mstar'],\
             best_fit[1]['vel_disp']['blue_sigma']
 
-        if settings.survey == 'eco' or settings.survey == 'resolvea':
-            # TODO : check if this is actually correct for resolve a
-            red_stellar_mass_bins = np.linspace(8.6,11,5)
-        elif settings.survey == 'resolveb':
-            red_stellar_mass_bins = np.linspace(8.4,11,5)
-
-        if settings.survey == 'eco' or settings.survey == 'resolvea':
-            # TODO : check if this is actually correct for resolve a
-            blue_stellar_mass_bins = np.linspace(8.6,11,5)
-        elif settings.survey == 'resolveb':
-            blue_stellar_mass_bins = np.linspace(8.4,11,5)
-
-
         grp_red_cen_gals_arr = []
         grp_blue_cen_gals_arr = []
         mean_red_sigma_arr = []
@@ -2215,19 +2073,10 @@ class Plotting():
         chunk_counter = 0 # There are 5 chunks of all 16 statistics each with len 20
         while chunk_counter < 5:
             for idx in range(len(models[chunk_counter][1]['vel_disp'])):
-                grp_red_cen_gals_idx = models[chunk_counter][1]['vel_disp']['red_cen_mstar'][idx]
-                grp_blue_cen_gals_idx = models[chunk_counter][1]['vel_disp']['blue_cen_mstar'][idx]
-                red_sigma_idx = models[chunk_counter][1]['vel_disp']['red_sigma'][idx]
-                blue_sigma_idx = models[chunk_counter][1]['vel_disp']['blue_sigma'][idx]
-
-                mean_stats_red = bs(grp_red_cen_gals_idx, red_sigma_idx,
-                    statistic='std', bins=red_stellar_mass_bins)
-                mean_stats_blue = bs(grp_blue_cen_gals_idx, blue_sigma_idx,
-                    statistic='std', bins=blue_stellar_mass_bins)
-                mean_red_sigma_arr.append(np.log10(mean_stats_red[0]))
-                mean_blue_sigma_arr.append(np.log10(mean_stats_blue[0]))
-                grp_red_cen_gals_arr.append(mean_stats_red[1])
-                grp_blue_cen_gals_arr.append(mean_stats_blue[1])
+                grp_red_cen_gals_arr.append(models[chunk_counter][1]['vel_disp']['red_cen_mass'][idx])
+                grp_blue_cen_gals_arr.append(models[chunk_counter][1]['vel_disp']['blue_cen_mass'][idx])
+                mean_red_sigma_arr.append(models[chunk_counter][1]['vel_disp']['red_sigma'][idx])
+                mean_blue_sigma_arr.append(models[chunk_counter][1]['vel_disp']['blue_sigma'][idx])
 
             chunk_counter+=1
 
@@ -2238,90 +2087,47 @@ class Plotting():
 
         ## Same centers used for all sets of lines since binning is the same for 
         ## models, bf and data
-        mean_centers_red = 0.5 * (mean_stats_red[1][1:] + \
-            mean_stats_red[1][:-1])
-        mean_centers_blue = 0.5 * (mean_stats_blue[1][1:] + \
-            mean_stats_blue[1][:-1])
-
-        mean_stats_red_bf = bs(x_sigma_red_bf, y_sigma_red_bf, 
-            statistic='std', bins=red_stellar_mass_bins)
-        mean_stats_blue_bf = bs(x_sigma_blue_bf, y_sigma_blue_bf, 
-            statistic='std', bins=blue_stellar_mass_bins)
+        mean_centers_red = 0.5 * (x_sigma_red_data[1:] + \
+            x_sigma_red_data[:-1])
+        mean_centers_blue = 0.5 * (x_sigma_blue_data[1:] + \
+            x_sigma_blue_data[:-1])
 
         #* One -inf in y_sigma_red_data
         inf_idx = np.where(y_sigma_red_data == -np.inf)
-        for idx in inf_idx:
-            x_sigma_red_data = np.delete(x_sigma_red_data, idx)
-            y_sigma_red_data = np.delete(y_sigma_red_data, idx)
+        if len(inf_idx) > 0:
+            for idx in inf_idx:
+                x_sigma_red_data = np.delete(x_sigma_red_data, idx)
+                y_sigma_red_data = np.delete(y_sigma_red_data, idx)
 
-        mean_stats_red_data = bs(x_sigma_red_data, y_sigma_red_data, 
-            statistic='std', bins=red_stellar_mass_bins)
-        mean_stats_blue_data = bs(x_sigma_blue_data, y_sigma_blue_data,
-            statistic='std', bins=blue_stellar_mass_bins)
-
-        fig1= plt.figure(figsize=(10,10))
+        fig1= plt.figure(figsize=(10,8))
 
         mr = plt.fill_between(x=mean_centers_red, y1=red_models_min, 
-            y2=red_models_max, color='lightcoral',alpha=0.4)
+            y2=red_models_max, color='indianred',alpha=0.4)
         mb = plt.fill_between(x=mean_centers_blue, y1=blue_models_min, 
             y2=blue_models_max, color='cornflowerblue',alpha=0.4)
 
-        dr = plt.errorbar(mean_centers_red,np.log10(mean_stats_red_data[0]),
+        dr = plt.errorbar(mean_centers_red,y_sigma_red_data,
             yerr=error_red, color='darkred',fmt='^',ecolor='darkred', 
             markersize=12,capsize=10,capthick=1.0,zorder=10)
-        db = plt.errorbar(mean_centers_blue,np.log10(mean_stats_blue_data[0]),
+        db = plt.errorbar(mean_centers_blue,y_sigma_blue_data,
             yerr=error_blue, color='darkblue',fmt='^',ecolor='darkblue',
             markersize=12,capsize=10,capthick=1.0,zorder=10)
 
-        bfr, = plt.plot(mean_centers_red,np.log10(mean_stats_red_bf[0]),
-            color='maroon',ls='-',lw=3,zorder=10)
-        bfb, = plt.plot(mean_centers_blue,np.log10(mean_stats_blue_bf[0]),
-            color='mediumblue',ls='-',lw=3,zorder=10)
+        bfr, = plt.plot(mean_centers_red,y_sigma_red_bf,
+            color='indianred',ls='--',lw=4,zorder=9)
+        bfb, = plt.plot(mean_centers_blue,y_sigma_blue_bf,
+            color='cornflowerblue',ls='--',lw=4,zorder=9)
 
-        plt.xlabel(r'\boldmath$\log_{10}\ M_{* , group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=25)
+        plt.xlabel(r'\boldmath$\log_{10}\ M_{* , group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=30)
         plt.ylabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km/s} \right]$', fontsize=30)
 
         plt.legend([(dr, db), (mr, mb), (bfr, bfb)], 
             ['Data','Models','Best-fit'],
             handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, markerscale=1.5, 
-            loc='upper left')
+            loc='best', prop={'size':22})
 
-        # chi_squared_red = np.nansum((mean_stats_red_data[0] - 
-        #     mean_stats_red_bf[0])**2 / (error_red**2))
-        # chi_squared_blue = np.nansum((mean_stats_blue_data[0] - 
-        #     mean_stats_blue_bf[0])**2 / (error_blue**2))
-
-        # plt.annotate(r'$\boldsymbol\chi ^2_{{red}} \approx$ {0}''\n'\
-        #     r'$\boldsymbol\chi ^2_{{blue}} \approx$ {1}'.format(np.round(\
-        #     chi_squared_red,2),np.round(chi_squared_blue,2)), 
-        #     xy=(0.015, 0.65), xycoords='axes fraction', bbox=dict(boxstyle="square", 
-        #     ec='k', fc='lightgray', alpha=0.5), size=25)
-
-        plt.annotate(r'$\boldsymbol\chi ^2 / dof \approx$ {0}'.
-            format(np.round(preprocess.bf_chi2/dof,2)),
-            xy=(0.17, 0.11), xycoords='axes fraction', bbox=dict(boxstyle="square", 
-            ec='k', fc='lightgray', alpha=0.5), size=25)
-
-        plt.annotate(r'$ p \approx$ {0}'.format(
-            np.round((1 - chi2.cdf(preprocess.bf_chi2, dof)),2)),
-            xy=(0.17, 0.05), xycoords='axes fraction', bbox=dict(boxstyle="square", 
-            ec='k', fc='lightgray', alpha=0.5), size=25)
-
-        # plt.annotate(r'$ p \approx$ {0}''\n'\
-        #     r'$ p \approx$ {1}'.format(
-        #     np.round((1 - chi2.cdf(chi_squared_red, dof)),2),
-        #     np.round((1 - chi2.cdf(chi_squared_blue, dof)),2)), 
-        #     xy=(0.015, 0.55), xycoords='axes fraction', bbox=dict(boxstyle="square", 
-        #     ec='k', fc='lightgray', alpha=0.5), size=25)
-
-        if quenching == 'hybrid':
-            plt.title('Hybrid quenching model | ECO')
-        elif quenching == 'halo':
-            plt.title('Halo quenching model | ECO')
-
-        # if survey == 'eco':
-        #     plt.title('ECO')
-        plt.show()
+        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/{0}_grpcen_sigma_emcee.pdf'.format(quenching), 
+            bbox_inches="tight", dpi=1200)
 
     def plot_sigma_host_halo_mass_vishnu(self, models, best_fit):
 
@@ -3282,13 +3088,13 @@ class Plotting():
 
         self.plot_fblue(models, data, best_fit)
 
-        self.plot_colour_mf(models, data, best_fit)
+        # self.plot_colour_mf(models, data, best_fit)
 
         self.plot_xmhm(models, data, best_fit)
 
-        self.plot_colour_xmhm(models, data, best_fit)
+        # self.plot_colour_xmhm(models, data, best_fit)
 
-        self.plot_colour_hmxm(models, data, best_fit)
+        # self.plot_colour_hmxm(models, data, best_fit)
 
         self.plot_red_fraction_cen(models, data, best_fit)
 
@@ -3297,14 +3103,12 @@ class Plotting():
         self.plot_zumand_fig4(models, data, best_fit)
 
     def Plot_Experiments(self, data, data_experiments, models, best_fit):
-        if self.settings.stacked_stat:
-            self.plot_mean_sigma_vs_grpcen(models, data, data_experiments, 
-                best_fit)
-        else:
-            self.plot_mean_grpcen_vs_sigma(models, data, data_experiments, 
-                best_fit)
+        self.plot_mean_sigma_vs_grpcen(models, data, data_experiments, 
+            best_fit)
+        self.plot_mean_grpcen_vs_sigma(models, data, data_experiments, 
+            best_fit)
 
-        self.plot_sigma_host_halo_mass_vishnu(models, best_fit)
+        # self.plot_sigma_host_halo_mass_vishnu(models, best_fit)
 
         # self.plot_N_host_halo_mass_vishnu(models, best_fit)
 
