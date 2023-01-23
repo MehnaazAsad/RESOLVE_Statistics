@@ -777,31 +777,65 @@ class Analysis():
         f_red_cen_gals_blue = []
 
         if randint != 1:
-            for idx,value in enumerate(gals_df['cs_flag']):
-                if value == 1:
-                    cen_gals.append(gals_df['{0}'.format(randint)][idx])
-                    cen_halos.append(gals_df['halo_mvir'][idx])
-                    if gals_df['colour_label'][idx] == 'R':
-                        cen_gals_red.append(gals_df['{0}'.format(randint)][idx])
-                        cen_halos_red.append(gals_df['halo_mvir'][idx])
-                        f_red_cen_gals_red.append(gals_df['f_red'][idx])
-                    elif gals_df['colour_label'][idx] == 'B':
-                        cen_gals_blue.append(gals_df['{0}'.format(randint)][idx])
-                        cen_halos_blue.append(gals_df['halo_mvir'][idx])
-                        f_red_cen_gals_blue.append(gals_df['f_red'][idx])
+            cen_halos.append(gals_df.halo_mvir.loc[gals_df.cs_flag == 1].values)
+            cen_gals.append(gals_df['{0}'.format(randint)].loc[gals_df.cs_flag == 1].values)
+            
+            cen_gals_red.append(gals_df['{0}'.format(randint)].loc[(
+                gals_df.cs_flag == 1) & (gals_df.colour_label == 'R')].values)
+            cen_halos_red.append(gals_df.halo_mvir.loc[(
+                gals_df.cs_flag == 1) & (gals_df.colour_label == 'R')].values)
+            f_red_cen_gals_red.append(gals_df.f_red.loc[(
+                gals_df.cs_flag == 1) & (gals_df.colour_label == 'R')].values)
+            
+            cen_gals_blue.append(gals_df['{0}'.format(randint)].loc[(
+                gals_df.cs_flag == 1) & (gals_df.colour_label == 'B')].values)
+            cen_halos_blue.append(gals_df.halo_mvir.loc[(
+                gals_df.cs_flag == 1) & (gals_df.colour_label == 'B')].values)
+            f_red_cen_gals_blue.append(gals_df.f_red.loc[(
+                gals_df.cs_flag == 1) & (gals_df.colour_label == 'B')].values)
+
+            # for idx,value in enumerate(gals_df['cs_flag']):
+            #     if value == 1:
+            #         cen_gals.append(gals_df['{0}'.format(randint)][idx])
+            #         cen_halos.append(gals_df['halo_mvir'][idx])
+            #         if gals_df['colour_label'][idx] == 'R':
+            #             cen_gals_red.append(gals_df['{0}'.format(randint)][idx])
+            #             cen_halos_red.append(gals_df['halo_mvir'][idx])
+            #             f_red_cen_gals_red.append(gals_df['f_red'][idx])
+            #         elif gals_df['colour_label'][idx] == 'B':
+            #             cen_gals_blue.append(gals_df['{0}'.format(randint)][idx])
+            #             cen_halos_blue.append(gals_df['halo_mvir'][idx])
+            #             f_red_cen_gals_blue.append(gals_df['f_red'][idx])
         elif randint == 1:
-            for idx,value in enumerate(gals_df['cs_flag']):
-                if value == 1:
-                    cen_gals.append(gals_df['behroozi_bf'][idx])
-                    cen_halos.append(gals_df['halo_mvir'][idx])
-                    if gals_df['colour_label'][idx] == 'R':
-                        cen_gals_red.append(gals_df['behroozi_bf'][idx])
-                        cen_halos_red.append(gals_df['halo_mvir'][idx])
-                        f_red_cen_gals_red.append(gals_df['f_red'][idx])
-                    elif gals_df['colour_label'][idx] == 'B':
-                        cen_gals_blue.append(gals_df['behroozi_bf'][idx])
-                        cen_halos_blue.append(gals_df['halo_mvir'][idx])
-                        f_red_cen_gals_blue.append(gals_df['f_red'][idx])
+            cen_halos.append(gals_df.halo_mvir.loc[gals_df.cs_flag == 1].values)
+            cen_gals.append(gals_df.behroozi_bf.loc[gals_df.cs_flag == 1].values)
+            
+            cen_gals_red.append(gals_df.behroozi_bf.loc[(
+                gals_df.cs_flag == 1) & (gals_df.colour_label == 'R')].values)
+            cen_halos_red.append(gals_df.halo_mvir.loc[(
+                gals_df.cs_flag == 1) & (gals_df.colour_label == 'R')].values)
+            f_red_cen_gals_red.append(gals_df.f_red.loc[(
+                gals_df.cs_flag == 1) & (gals_df.colour_label == 'R')].values)
+            
+            cen_gals_blue.append(gals_df.behroozi_bf.loc[(
+                gals_df.cs_flag == 1) & (gals_df.colour_label == 'B')].values)
+            cen_halos_blue.append(gals_df.halo_mvir.loc[(
+                gals_df.cs_flag == 1) & (gals_df.colour_label == 'B')].values)
+            f_red_cen_gals_blue.append(gals_df.f_red.loc[(
+                gals_df.cs_flag == 1) & (gals_df.colour_label == 'B')].values)
+
+            # for idx,value in enumerate(gals_df['cs_flag']):
+            #     if value == 1:
+            #         cen_gals.append(gals_df['behroozi_bf'][idx])
+            #         cen_halos.append(gals_df['halo_mvir'][idx])
+            #         if gals_df['colour_label'][idx] == 'R':
+            #             cen_gals_red.append(gals_df['behroozi_bf'][idx])
+            #             cen_halos_red.append(gals_df['halo_mvir'][idx])
+            #             f_red_cen_gals_red.append(gals_df['f_red'][idx])
+            #         elif gals_df['colour_label'][idx] == 'B':
+            #             cen_gals_blue.append(gals_df['behroozi_bf'][idx])
+            #             cen_halos_blue.append(gals_df['halo_mvir'][idx])
+            #             f_red_cen_gals_blue.append(gals_df['f_red'][idx])
 
         else:
             for idx,value in enumerate(gals_df['cs_flag']):
@@ -869,27 +903,59 @@ class Analysis():
         f_red_sat_gals_blue = []
 
         if randint != 1:
-            for idx,value in enumerate(gals_df['cs_flag']):
-                if value == 0:
-                    if gals_df['colour_label'][idx] == 'R':
-                        sat_gals_red.append(gals_df['{0}'.format(randint)][idx])
-                        sat_halos_red.append(gals_df['halo_mvir_host_halo'][idx])
-                        f_red_sat_gals_red.append(gals_df['f_red'][idx])
-                    elif gals_df['colour_label'][idx] == 'B':
-                        sat_gals_blue.append(gals_df['{0}'.format(randint)][idx])
-                        sat_halos_blue.append(gals_df['halo_mvir_host_halo'][idx])
-                        f_red_sat_gals_blue.append(gals_df['f_red'][idx])
+
+            sat_gals_red.append(gals_df['{0}'.format(randint)].loc[(
+                gals_df.cs_flag == 0) & (gals_df.colour_label == 'R')].values)
+            sat_halos_red.append(gals_df.halo_mvir_host_halo.loc[(
+                gals_df.cs_flag == 0) & (gals_df.colour_label == 'R')].values)
+            f_red_sat_gals_red.append(gals_df.f_red.loc[(
+                gals_df.cs_flag == 0) & (gals_df.colour_label == 'R')].values)
+            
+            sat_gals_blue.append(gals_df['{0}'.format(randint)].loc[(
+                gals_df.cs_flag == 0) & (gals_df.colour_label == 'B')].values)
+            sat_halos_blue.append(gals_df.halo_mvir_host_halo.loc[(
+                gals_df.cs_flag == 0) & (gals_df.colour_label == 'B')].values)
+            f_red_sat_gals_blue.append(gals_df.f_red.loc[(
+                gals_df.cs_flag == 0) & (gals_df.colour_label == 'B')].values)
+
+            # for idx,value in enumerate(gals_df['cs_flag']):
+            #     if value == 0:
+            #         if gals_df['colour_label'][idx] == 'R':
+            #             sat_gals_red.append(gals_df['{0}'.format(randint)][idx])
+            #             sat_halos_red.append(gals_df['halo_mvir_host_halo'][idx])
+            #             f_red_sat_gals_red.append(gals_df['f_red'][idx])
+            #         elif gals_df['colour_label'][idx] == 'B':
+            #             sat_gals_blue.append(gals_df['{0}'.format(randint)][idx])
+            #             sat_halos_blue.append(gals_df['halo_mvir_host_halo'][idx])
+            #             f_red_sat_gals_blue.append(gals_df['f_red'][idx])
+        
         elif randint == 1:
-            for idx,value in enumerate(gals_df['cs_flag']):
-                if value == 0:
-                    if gals_df['colour_label'][idx] == 'R':
-                        sat_gals_red.append(gals_df['behroozi_bf'][idx])
-                        sat_halos_red.append(gals_df['halo_mvir_host_halo'][idx])
-                        f_red_sat_gals_red.append(gals_df['f_red'][idx])
-                    elif gals_df['colour_label'][idx] == 'B':
-                        sat_gals_blue.append(gals_df['behroozi_bf'][idx])
-                        sat_halos_blue.append(gals_df['halo_mvir_host_halo'][idx])
-                        f_red_sat_gals_blue.append(gals_df['f_red'][idx])
+
+            sat_gals_red.append(gals_df.behroozi_bf.loc[(
+                gals_df.cs_flag == 0) & (gals_df.colour_label == 'R')].values)
+            sat_halos_red.append(gals_df.halo_mvir_host_halo.loc[(
+                gals_df.cs_flag == 0) & (gals_df.colour_label == 'R')].values)
+            f_red_sat_gals_red.append(gals_df.f_red.loc[(
+                gals_df.cs_flag == 0) & (gals_df.colour_label == 'R')].values)
+            
+            sat_gals_blue.append(gals_df.behroozi_bf.loc[(
+                gals_df.cs_flag == 0) & (gals_df.colour_label == 'B')].values)
+            sat_halos_blue.append(gals_df.halo_mvir_host_halo.loc[(
+                gals_df.cs_flag == 0) & (gals_df.colour_label == 'B')].values)
+            f_red_sat_gals_blue.append(gals_df.f_red.loc[(
+                gals_df.cs_flag == 0) & (gals_df.colour_label == 'B')].values)
+
+
+            # for idx,value in enumerate(gals_df['cs_flag']):
+            #     if value == 0:
+            #         if gals_df['colour_label'][idx] == 'R':
+            #             sat_gals_red.append(gals_df['behroozi_bf'][idx])
+            #             sat_halos_red.append(gals_df['halo_mvir_host_halo'][idx])
+            #             f_red_sat_gals_red.append(gals_df['f_red'][idx])
+            #         elif gals_df['colour_label'][idx] == 'B':
+            #             sat_gals_blue.append(gals_df['behroozi_bf'][idx])
+            #             sat_halos_blue.append(gals_df['halo_mvir_host_halo'][idx])
+            #             f_red_sat_gals_blue.append(gals_df['f_red'][idx])
 
         else:
             for idx,value in enumerate(gals_df['cs_flag']):
@@ -921,7 +987,7 @@ class Analysis():
 
         if best_fit_mocknum:
             cols_to_use = ['halo_hostid', 'halo_id', 'halo_mvir', \
-                'halo_mvir_host_halo', 'cz', \
+                'halo_mvir_host_halo', 'galid', 'cz', \
                 '{0}'.format(best_fit_mocknum), \
                 'grp_censat_{0}'.format(best_fit_mocknum), \
                 'groupid_{0}'.format(best_fit_mocknum)]
@@ -950,7 +1016,7 @@ class Analysis():
 
             randint_logmstar = 1
             cols_to_use = ['halo_hostid', 'halo_id', 'halo_mvir', \
-            'halo_mvir_host_halo', 'cz', 'cs_flag', \
+            'halo_mvir_host_halo', 'galid', 'cz', 'cs_flag', \
             'behroozi_bf', \
             'grp_censat_{0}'.format(randint_logmstar), \
             'groupid_{0}'.format(randint_logmstar),\
@@ -1020,12 +1086,12 @@ class Analysis():
                     statistic=self.average_of_log, bins=np.linspace(1,2.8,5))
                 mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
                     statistic=self.average_of_log, bins=np.linspace(1,2.5,5))
+                
+                red_sigma = mean_mstar_red[1]
+                blue_sigma = mean_mstar_blue[1]
 
                 mean_mstar_red = mean_mstar_red[0]
                 mean_mstar_blue = mean_mstar_blue[0]
-
-                red_sigma = mean_mstar_red[1]
-                blue_sigma = mean_mstar_blue[1]
 
                 best_fit_experimentals["mean_mstar"] = {'red_sigma':red_sigma,
                     'red_cen_mstar':mean_mstar_red,
@@ -1063,11 +1129,11 @@ class Analysis():
                 mean_mbary_blue = bs(blue_sigma, blue_cen_mbary_sigma, 
                     statistic=self.average_of_log, bins=np.linspace(1,2.5,5))
 
-                mean_mbary_red = mean_mbary_red[0]
-                mean_mbary_blue = mean_mbary_blue[0]
-
                 red_sigma = mean_mbary_red[1]
                 blue_sigma = mean_mbary_blue[1]
+
+                mean_mbary_red = mean_mbary_red[0]
+                mean_mbary_blue = mean_mbary_blue[0]
 
                 best_fit_experimentals["mean_mbary"] = {'red_sigma':red_sigma,
                     'red_cen_mbary':mean_mbary_red,
@@ -1762,7 +1828,7 @@ class Analysis():
         settings = self.settings 
 
         # Read in datasets from h5 file and calculate corr matrix
-        hf_read = h5py.File(path_to_proc + 'corr_matrices_28stats_{0}_{1}.h5'.
+        hf_read = h5py.File(path_to_proc + 'final_matrices/corr_matrices_28stats_{0}_{1}.h5'.
             format(settings.quenching, settings.mf_type), 'r')
         hf_read.keys()
         smf = hf_read.get('smf')
@@ -2009,7 +2075,7 @@ class Analysis():
             if settings.many_behroozi_mocks:
                 randint_logmstar = int(theta[4])
                 cols_to_use = ['halo_hostid', 'halo_id', 'halo_mvir', \
-                'halo_mvir_host_halo', 'cz', \
+                'halo_mvir_host_halo', 'galid', 'cz', \
                 '{0}'.format(randint_logmstar), \
                 'grp_censat_{0}'.format(randint_logmstar), \
                 'groupid_{0}'.format(randint_logmstar),\
@@ -2037,7 +2103,7 @@ class Analysis():
                     continue
 
                 cols_to_use = ['halo_hostid', 'halo_id', 'halo_mvir', \
-                'halo_mvir_host_halo', 'cz', 'cs_flag', \
+                'halo_mvir_host_halo', 'galid', 'cz', 'cs_flag', \
                 '{0}'.format(randint_logmstar), \
                 'grp_censat_{0}'.format(randint_logmstar), \
                 'groupid_{0}'.format(randint_logmstar), \
@@ -2116,11 +2182,11 @@ class Analysis():
                     mean_mstar_blue = bs(blue_sigma, blue_cen_mstar_sigma, 
                         statistic=self.average_of_log, bins=np.linspace(1,2.5,5))
 
-                    mean_mstar_red = mean_mstar_red[0]
-                    mean_mstar_blue = mean_mstar_blue[0]
-
                     red_sigma = mean_mstar_red[1]
                     blue_sigma = mean_mstar_blue[1]
+
+                    mean_mstar_red = mean_mstar_red[0]
+                    mean_mstar_blue = mean_mstar_blue[0]
 
                     model_experimentals["mean_mass"]["red_sigma"].append(red_sigma)
                     model_experimentals["mean_mass"]["red_cen_mass"].append(mean_mstar_red)
@@ -2160,11 +2226,11 @@ class Analysis():
                     mean_mbary_blue = bs(blue_sigma, blue_cen_mbary_sigma, 
                         statistic=self.average_of_log, bins=np.linspace(1,2.5,5))
 
-                    mean_mbary_red = mean_mbary_red[0]
-                    mean_mbary_blue = mean_mbary_blue[0]
-
                     red_sigma = mean_mbary_red[1]
                     blue_sigma = mean_mbary_blue[1]
+
+                    mean_mbary_red = mean_mbary_red[0]
+                    mean_mbary_blue = mean_mbary_blue[0]
 
                     model_experimentals["mean_mass"]["red_sigma"].append(red_sigma)
                     model_experimentals["mean_mass"]["red_cen_mass"].append(mean_mbary_red)
@@ -2338,7 +2404,7 @@ class Analysis():
         self.model_init = self.halocat_init(settings.halo_catalog, preprocess.z_median)
 
         print('Measuring error in data from mocks')
-        self.error_data, self.mocks_stdevs = self.get_err_data(settings.path_to_mocks, experiments)
+        self.error_data, self.mocks_stdevs = self.get_err_data(settings.path_to_proc)
         self.dof = len(self.error_data) - len(preprocess.bf_params)
 
         # return [self.total_data, self.f_blue, self.mean_mstar_red_data, self.mean_mstar_blue_data, self.phi_red_data, self.phi_blue_data, self.error_data, self.mocks_stdevs, self.dof]
