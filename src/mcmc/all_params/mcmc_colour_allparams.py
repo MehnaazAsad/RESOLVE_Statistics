@@ -1793,8 +1793,11 @@ def get_err_data_legacy(survey, path):
 
     fig1 = plt.figure()
 
-    mt = plt.fill_between(x=max_total, y1=np.log10(10**phi_min + phi_data_midpoint_diff), 
-        y2=np.log10(10**phi_max + phi_data_midpoint_diff), color='silver', alpha=0.4)
+    # mt = plt.fill_between(x=max_total, y1=np.log10(10**phi_min + phi_data_midpoint_diff), 
+    #     y2=np.log10(10**phi_max + phi_data_midpoint_diff), color='silver', alpha=0.4)
+
+    mt = plt.fill_between(x=max_total, y1=total_data[1]+sigma_average[:4], 
+        y2=total_data[1]-sigma_average[:4], color='silver', alpha=0.4)
 
     # mt = plt.fill_between(x=max_total, y1=phi_max, 
     #     y2=phi_min, color='silver', alpha=0.4)
@@ -1811,7 +1814,6 @@ def get_err_data_legacy(survey, path):
     plt.legend([(dt), (mt)], ['ECO','Mocks'],
         handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='lower left', prop={'size':20})
     plt.minorticks_on()
-    # plt.title(r'SMFs from mocks')
     if mf_type == 'smf':
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_smf_total_offsetmocks.pdf', 
             bbox_inches="tight", dpi=1200)
@@ -1871,10 +1873,16 @@ def get_err_data_legacy(survey, path):
     # mt_sat = plt.fill_between(x=f_blue_data[0], y1=sat_max + (f_blue_data[3] - sat_max), 
     #     y2=sat_min + (f_blue_data[3] - sat_min) - (np.array(sat_max) - np.array(sat_min)), color='goldenrod', alpha=0.4)
 
-    mt_cen = plt.fill_between(x=f_blue_data[0], y1=cen_max + cen_data_midpoint_diff, 
-        y2=cen_min + cen_data_midpoint_diff, color='rebeccapurple', alpha=0.4)
-    mt_sat = plt.fill_between(x=f_blue_data[0], y1=sat_max + sat_data_midpoint_diff, 
-        y2=sat_min + sat_data_midpoint_diff, color='goldenrod', alpha=0.4)
+    #* Used this when only had one df instead of average of 100
+    # mt_cen = plt.fill_between(x=f_blue_data[0], y1=cen_max + cen_data_midpoint_diff, 
+    #     y2=cen_min + cen_data_midpoint_diff, color='rebeccapurple', alpha=0.4)
+    # mt_sat = plt.fill_between(x=f_blue_data[0], y1=sat_max + sat_data_midpoint_diff, 
+    #     y2=sat_min + sat_data_midpoint_diff, color='goldenrod', alpha=0.4)
+
+    mt_cen = plt.fill_between(x=f_blue_data[0], y1=f_blue_data[2]+sigma_average[4:8], 
+        y2=f_blue_data[2]-sigma_average[4:8], color='rebeccapurple', alpha=0.4)
+    mt_sat = plt.fill_between(x=f_blue_data[0], y1=f_blue_data[3]+sigma_average[8:12], 
+        y2=f_blue_data[3]-sigma_average[8:12], color='goldenrod', alpha=0.4)
 
     dt_cen = plt.scatter(f_blue_data[0], f_blue_data[2],
         color='rebeccapurple', s=150, zorder=10, marker='^')
@@ -1950,10 +1958,15 @@ def get_err_data_legacy(survey, path):
     blue_data_midpoint_diff = 10**mean_mstar_blue_data[0] - 10**midpoint_blue_err
 
     fig3 = plt.figure()
-    mt_red = plt.fill_between(x=bins_red, y1=np.log10(np.abs(10**red_min + red_data_midpoint_diff)), 
-        y2=np.log10(10**red_max + red_data_midpoint_diff), color='indianred', alpha=0.4)
-    mt_blue = plt.fill_between(x=bins_blue, y1=np.log10(10**blue_min + blue_data_midpoint_diff), 
-        y2=np.log10(10**blue_max + blue_data_midpoint_diff), color='cornflowerblue', alpha=0.4)
+    # mt_red = plt.fill_between(x=bins_red, y1=np.log10(np.abs(10**red_min + red_data_midpoint_diff)), 
+    #     y2=np.log10(10**red_max + red_data_midpoint_diff), color='indianred', alpha=0.4)
+    # mt_blue = plt.fill_between(x=bins_blue, y1=np.log10(10**blue_min + blue_data_midpoint_diff), 
+    #     y2=np.log10(10**blue_max + blue_data_midpoint_diff), color='cornflowerblue', alpha=0.4)
+
+    mt_red = plt.fill_between(x=bins_red, y1=mean_mstar_red_data[0]+sigma_average[12:16], 
+        y2=mean_mstar_red_data[0]-sigma_average[12:16], color='indianred', alpha=0.4)
+    mt_blue = plt.fill_between(x=bins_blue, y1=mean_mstar_blue_data[0]+sigma_average[16:20], 
+        y2=mean_mstar_blue_data[0]-sigma_average[16:20], color='cornflowerblue', alpha=0.4)
 
     dt_red = plt.scatter(bins_red, mean_mstar_red_data[0], 
         color='indianred', s=150, zorder=10, marker='^')
@@ -1984,7 +1997,7 @@ def get_err_data_legacy(survey, path):
     if mf_type == 'smf':
         bin_min = 8.6
     elif mf_type == 'bmf':
-        bin_min = 9.1
+        bin_min = 9.0
     bins_red=np.linspace(bin_min,10.8,5)
     bins_blue=np.linspace(bin_min,10.8,5)
     bins_red = 0.5 * (bins_red[1:] + bins_red[:-1])
@@ -2032,10 +2045,15 @@ def get_err_data_legacy(survey, path):
     blue_data_midpoint_diff = 10**sigma_blue_data - 10**midpoint_blue_err
 
     fig3 = plt.figure()
-    mt_red = plt.fill_between(x=bins_red, y1=np.log10(np.abs(10**red_min + red_data_midpoint_diff)), 
-        y2=np.log10(10**red_max + red_data_midpoint_diff), color='indianred', alpha=0.4)
-    mt_blue = plt.fill_between(x=bins_blue, y1=np.log10(10**blue_min + blue_data_midpoint_diff), 
-        y2=np.log10(10**blue_max + blue_data_midpoint_diff), color='cornflowerblue', alpha=0.4)
+    # mt_red = plt.fill_between(x=bins_red, y1=np.log10(np.abs(10**red_min + red_data_midpoint_diff)), 
+    #     y2=np.log10(10**red_max + red_data_midpoint_diff), color='indianred', alpha=0.4)
+    # mt_blue = plt.fill_between(x=bins_blue, y1=np.log10(10**blue_min + blue_data_midpoint_diff), 
+    #     y2=np.log10(10**blue_max + blue_data_midpoint_diff), color='cornflowerblue', alpha=0.4)
+
+    mt_red = plt.fill_between(x=bins_red, y1=sigma_red_data+sigma_average[20:24], 
+        y2=sigma_red_data-sigma_average[20:24], color='indianred', alpha=0.4)
+    mt_blue = plt.fill_between(x=bins_blue, y1=sigma_blue_data+sigma_average[24:28], 
+        y2=sigma_blue_data-sigma_average[24:28], color='cornflowerblue', alpha=0.4)
 
     dt_red = plt.scatter(bins_red, sigma_red_data, 
         color='indianred', s=150, zorder=10, marker='^')
