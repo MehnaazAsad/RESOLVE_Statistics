@@ -97,13 +97,13 @@ def get_samples(chain_file, nsteps, nwalkers, ndim, burnin):
     return samples
 
 survey = 'eco'
-quenching = 'halo'
+quenching = 'hybrid'
 mf_type = 'bmf'
 nwalkers = 500
 nsteps = 200
 burnin = 125
 ndim = 9
-run = 96
+run = 97
 
 if run >= 37:
     if mf_type == 'smf':
@@ -137,7 +137,7 @@ if quenching == 'hybrid':
 
 elif quenching == 'halo':
     run = 95
-    burnin = 125
+    burnin = 140
 
     reader = emcee.backends.HDFBackend(
         path_to_proc + "smhm_colour_run{0}/chain.h5".format(run), 
@@ -205,7 +205,7 @@ if quenching == 'hybrid':
         name=r"Hybrid stellar", color='#663399', zorder=-20)
 
     c.add_marker(best_fit_94, parameters=param_names_hybrid, 
-        name ='', marker_style="*", marker_size=200, 
+        name="", marker_style="*", marker_size=200, 
         color='#29015F')
 
     # c.add_marker(best_fit_88, parameters=param_names_hybrid, 
@@ -280,7 +280,7 @@ elif quenching == 'halo':
 # sigma levels for 1D gaussian showing 68%,95% conf intervals
 c.configure(kde=2.0, shade_gradient = 1.0, shade_alpha=0.8, label_font_size=15, 
     tick_font_size=10, summary=True, sigma2d=False, diagonal_tick_labels=False, 
-    max_ticks=4, linewidths=2, legend_kwargs={"fontsize": 15})
+    max_ticks=3, linewidths=2, legend_kwargs={"fontsize": 15})
 c.configure_truth(color='#B1862D', lw=1.7)
 # fig1 = c.plotter.plot(display=True)
 # c.configure(label_font_size=15, tick_font_size=10, summary=True, 
