@@ -584,6 +584,32 @@ with plt.xkcd():
     plt.ylabel(r'$\overline{M}$',fontsize=20)
     plt.savefig('/Users/asadm2/Desktop/cartoon_sigma_mstar.pdf')
 
+with plt.xkcd():
+    #Velocity dispersion around red and blue group centrals - values copied 
+    #from data
+    fig4 = plt.figure(figsize=(6,6))
+    x_red = np.linspace(8.6,10.8,5)
+    x_blue = np.linspace(8.6,10.8,5)
+    x_red = 0.5 * (x_red[1:] + x_red[:-1])
+    x_blue = 0.5 * (x_blue[1:] + x_blue[:-1])
+
+    y_red = [ 1.9  , 2.0, 1.92, 2.1]
+    y_blue = [1.74,  1.8, 1.9, 1.94]
+    plt.plot(x_red, y_red, ls='-', lw=2, c='r')
+    plt.plot(x_blue, y_blue, ls='-', lw=2, c='b')
+    plt.tick_params(
+        axis='both',       # changes apply to the x-axis
+        which='both',      # both major and minor ticks are affected
+        bottom=False,      # ticks along the bottom edge are off
+        top=False,         # ticks along the top edge are off
+        left=False,
+        right=False,
+        labelleft=False,
+        labelbottom=False) # labels along the bottom edge are off
+    plt.xlabel(r'$M$', fontsize=20)
+    plt.ylabel(r'$\overline{\sigma}$',fontsize=20)
+    plt.savefig('/Users/asadm2/Desktop/cartoon_mstar_sigma.pdf')
+
 rc('text', usetex=True)
 # SHMR plot to show all 5 parameters
 fig4 = plt.figure(figsize=(7,5))
