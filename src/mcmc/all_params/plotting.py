@@ -1060,6 +1060,234 @@ class Plotting():
 
         plt.show()
 
+        #* Comparison plot between my colour SHMRs and those from Fig 16 in 
+        #* ZM15
+        halos_bf_red = best_fit[0]['centrals']['halos_red'][0]
+        gals_bf_red = best_fit[0]['centrals']['gals_red'][0]
+
+        halos_bf_blue = best_fit[0]['centrals']['halos_blue'][0]
+        gals_bf_blue = best_fit[0]['centrals']['gals_blue'][0]
+
+        y_bf_red,x_bf_red,binnum_red = bs(gals_bf_red,\
+        halos_bf_red,'mean',bins=np.linspace(8.6, 11.4, 15))
+        y_bf_blue,x_bf_blue,binnum_blue = bs(gals_bf_blue,\
+        halos_bf_blue,'mean',bins=np.linspace(8.6, 11.4, 15))
+
+        i_outer = 0
+        red_mod_x_arr = []
+        red_mod_y_arr = []
+        blue_mod_x_arr = []
+        blue_mod_y_arr = []
+        while i_outer < 5:
+            for idx in range(len(models[i_outer][0]['centrals']['gals_red'])):
+                red_mod_x_ii = models[i_outer][0]['centrals']['gals_red'][idx][0]
+                red_mod_y_ii = models[i_outer][0]['centrals']['halos_red'][idx][0]
+                red_y,red_x,binnum = bs(red_mod_x_ii,red_mod_y_ii,'mean',
+                    bins=np.linspace(8.6, 11.4, 15))
+                red_mod_x_arr.append(red_x)
+                red_mod_y_arr.append(red_y)
+                blue_mod_x_ii = models[i_outer][0]['centrals']['gals_blue'][idx][0]
+                blue_mod_y_ii = models[i_outer][0]['centrals']['halos_blue'][idx][0]
+                blue_y,blue_x,binnum = bs(blue_mod_x_ii,blue_mod_y_ii,'mean',
+                    bins=np.linspace(8.6, 11.4, 15))
+                blue_mod_x_arr.append(blue_x)
+                blue_mod_y_arr.append(blue_y)
+            i_outer += 1
+
+            for idx in range(len(models[i_outer][0]['centrals']['gals_red'])):
+                red_mod_x_ii = models[i_outer][0]['centrals']['gals_red'][idx][0]
+                red_mod_y_ii = models[i_outer][0]['centrals']['halos_red'][idx][0]
+                red_y,red_x,binnum = bs(red_mod_x_ii,red_mod_y_ii,'mean',
+                    bins=np.linspace(8.6, 11.4, 15))
+                red_mod_x_arr.append(red_x)
+                red_mod_y_arr.append(red_y)
+                blue_mod_x_ii = models[i_outer][0]['centrals']['gals_blue'][idx][0]
+                blue_mod_y_ii = models[i_outer][0]['centrals']['halos_blue'][idx][0]
+                blue_y,blue_x,binnum = bs(blue_mod_x_ii,blue_mod_y_ii,'mean',
+                    bins=np.linspace(8.6, 11.4, 15))
+                blue_mod_x_arr.append(blue_x)
+                blue_mod_y_arr.append(blue_y)
+            i_outer += 1
+
+            for idx in range(len(models[i_outer][0]['centrals']['gals_red'])):
+                red_mod_x_ii = models[i_outer][0]['centrals']['gals_red'][idx][0]
+                red_mod_y_ii = models[i_outer][0]['centrals']['halos_red'][idx][0]
+                red_y,red_x,binnum = bs(red_mod_x_ii,red_mod_y_ii,'mean',
+                    bins=np.linspace(8.6, 11.4, 15))
+                red_mod_x_arr.append(red_x)
+                red_mod_y_arr.append(red_y)
+                blue_mod_x_ii = models[i_outer][0]['centrals']['gals_blue'][idx][0]
+                blue_mod_y_ii = models[i_outer][0]['centrals']['halos_blue'][idx][0]
+                blue_y,blue_x,binnum = bs(blue_mod_x_ii,blue_mod_y_ii,'mean',
+                    bins=np.linspace(8.6, 11.4, 15))
+                blue_mod_x_arr.append(blue_x)
+                blue_mod_y_arr.append(blue_y)
+            i_outer += 1
+
+            for idx in range(len(models[i_outer][0]['centrals']['gals_red'])):
+                red_mod_x_ii = models[i_outer][0]['centrals']['gals_red'][idx][0]
+                red_mod_y_ii = models[i_outer][0]['centrals']['halos_red'][idx][0]
+                red_y,red_x,binnum = bs(red_mod_x_ii,red_mod_y_ii,'mean',
+                    bins=np.linspace(8.6, 11.4, 15))
+                red_mod_x_arr.append(red_x)
+                red_mod_y_arr.append(red_y)
+                blue_mod_x_ii = models[i_outer][0]['centrals']['gals_blue'][idx][0]
+                blue_mod_y_ii = models[i_outer][0]['centrals']['halos_blue'][idx][0]
+                blue_y,blue_x,binnum = bs(blue_mod_x_ii,blue_mod_y_ii,'mean',
+                    bins=np.linspace(8.6, 11.4, 15))
+                blue_mod_x_arr.append(blue_x)
+                blue_mod_y_arr.append(blue_y)
+            i_outer += 1
+
+            for idx in range(len(models[i_outer][0]['centrals']['gals_red'])):
+                red_mod_x_ii = models[i_outer][0]['centrals']['gals_red'][idx][0]
+                red_mod_y_ii = models[i_outer][0]['centrals']['halos_red'][idx][0]
+                red_y,red_x,binnum = bs(red_mod_x_ii,red_mod_y_ii,'mean',
+                    bins=np.linspace(8.6, 11.4, 15))
+                red_mod_x_arr.append(red_x)
+                red_mod_y_arr.append(red_y)
+                blue_mod_x_ii = models[i_outer][0]['centrals']['gals_blue'][idx][0]
+                blue_mod_y_ii = models[i_outer][0]['centrals']['halos_blue'][idx][0]
+                blue_y,blue_x,binnum = bs(blue_mod_x_ii,blue_mod_y_ii,'mean',
+                    bins=np.linspace(8.6, 11.4, 15))
+                blue_mod_x_arr.append(blue_x)
+                blue_mod_y_arr.append(blue_y)
+            i_outer += 1
+
+        red_y_max = np.nanmax(red_mod_y_arr, axis=0)
+        red_y_min = np.nanmin(red_mod_y_arr, axis=0)
+        blue_y_max = np.nanmax(blue_mod_y_arr, axis=0)
+        blue_y_min = np.nanmin(blue_mod_y_arr, axis=0)
+
+        # In the original plot, mean shmr is measured in bins of M* not Mh. 
+        colour_shmrs_lit_df = pd.read_csv('/Users/asadm2/Desktop/shmr_colour_datasets.csv')
+        
+        red_hearin2013 = colour_shmrs_lit_df.iloc[:,0:2]
+        red_hearin2013.columns = ['X','Y']
+        red_hearin2013 = red_hearin2013.drop(red_hearin2013.index[0])
+        cols = red_hearin2013.columns
+        red_hearin2013[cols] = red_hearin2013[cols].apply(pd.to_numeric, errors='coerce')
+
+        blue_hearin2013 = colour_shmrs_lit_df.iloc[:,2:4]
+        blue_hearin2013.columns = ['X','Y']
+        blue_hearin2013 = blue_hearin2013.drop(blue_hearin2013.index[0])
+        cols = blue_hearin2013.columns
+        blue_hearin2013[cols] = blue_hearin2013[cols].apply(pd.to_numeric, errors='coerce')
+
+        red_z0_1_rp2015 = colour_shmrs_lit_df.iloc[:,4:6]
+        red_z0_1_rp2015.columns = ['X','Y']
+        red_z0_1_rp2015 = red_z0_1_rp2015.drop(red_z0_1_rp2015.index[0])
+        cols = red_z0_1_rp2015.columns
+        red_z0_1_rp2015[cols] = red_z0_1_rp2015[cols].apply(pd.to_numeric, errors='coerce')
+
+        blue_z0_1_rp2015 = colour_shmrs_lit_df.iloc[:,6:8]
+        blue_z0_1_rp2015.columns = ['X','Y']
+        blue_z0_1_rp2015 = blue_z0_1_rp2015.drop(blue_z0_1_rp2015.index[0])
+        cols = blue_z0_1_rp2015.columns
+        blue_z0_1_rp2015[cols] = blue_z0_1_rp2015[cols].apply(pd.to_numeric, errors='coerce')
+
+        red_z0_3_tinker2013 = colour_shmrs_lit_df.iloc[:,8:10]
+        red_z0_3_tinker2013.columns = ['X','Y']
+        red_z0_3_tinker2013 = red_z0_3_tinker2013.drop(red_z0_3_tinker2013.index[0])
+        cols = red_z0_3_tinker2013.columns
+        red_z0_3_tinker2013[cols] = red_z0_3_tinker2013[cols].apply(pd.to_numeric, errors='coerce')
+
+        blue_z0_3_tinker2013 = colour_shmrs_lit_df.iloc[:,10:12]
+        blue_z0_3_tinker2013.columns = ['X','Y']
+        blue_z0_3_tinker2013 = blue_z0_3_tinker2013.drop(blue_z0_3_tinker2013.index[0])
+        cols = blue_z0_3_tinker2013.columns
+        blue_z0_3_tinker2013[cols] = blue_z0_3_tinker2013[cols].apply(pd.to_numeric, errors='coerce')
+
+        red_lbg_mandelbaum2015 = colour_shmrs_lit_df.iloc[:,12:14]
+        red_lbg_mandelbaum2015.columns = ['X','Y']
+        red_lbg_mandelbaum2015 = red_lbg_mandelbaum2015.drop(red_lbg_mandelbaum2015.index[0])
+        cols = red_lbg_mandelbaum2015.columns
+        red_lbg_mandelbaum2015[cols] = red_lbg_mandelbaum2015[cols].apply(pd.to_numeric, errors='coerce')
+
+        blue_lbg_mandelbaum2015 = colour_shmrs_lit_df.iloc[:,14:16]
+        blue_lbg_mandelbaum2015.columns = ['X','Y']
+        blue_lbg_mandelbaum2015 = blue_lbg_mandelbaum2015.drop(blue_lbg_mandelbaum2015.index[0])
+        cols = blue_lbg_mandelbaum2015.columns
+        blue_lbg_mandelbaum2015[cols] = blue_lbg_mandelbaum2015[cols].apply(pd.to_numeric, errors='coerce')
+
+        red_sat_kin_more2011 = colour_shmrs_lit_df.iloc[:,16:18]
+        red_sat_kin_more2011.columns = ['X','Y']
+        red_sat_kin_more2011 = red_sat_kin_more2011.drop(red_sat_kin_more2011.index[0])
+        cols = red_sat_kin_more2011.columns
+        red_sat_kin_more2011[cols] = red_sat_kin_more2011[cols].apply(pd.to_numeric, errors='coerce')
+
+        blue_sat_kin_more2011 = colour_shmrs_lit_df.iloc[:,18:20]
+        blue_sat_kin_more2011.columns = ['X','Y']
+        blue_sat_kin_more2011 = blue_sat_kin_more2011.drop(blue_sat_kin_more2011.index[0])
+        cols = blue_sat_kin_more2011.columns
+        blue_sat_kin_more2011[cols] = blue_sat_kin_more2011[cols].apply(pd.to_numeric, errors='coerce')
+
+        fig2 = plt.figure(figsize=(10,10))
+
+        red_x_cen =  0.5 * (red_mod_x_arr[0][1:] + red_mod_x_arr[0][:-1])
+        blue_x_cen = 0.5 * (blue_mod_x_arr[0][1:] + blue_mod_x_arr[0][:-1])
+
+        mr = plt.fill_between(x=red_x_cen, y1=red_y_max, 
+            y2=red_y_min, color='indianred',alpha=0.4,label='Models')
+        mb = plt.fill_between(x=blue_x_cen, y1=blue_y_max, 
+            y2=blue_y_min, color='cornflowerblue',alpha=0.4,label='Models')
+
+        red_x_cen =  0.5 * (x_bf_red[1:] + x_bf_red[:-1])
+        blue_x_cen = 0.5 * (x_bf_blue[1:] + x_bf_blue[:-1])
+
+        # REMOVED ERROR BAR ON BEST FIT
+        bfr, = plt.plot(red_x_cen,y_bf_red,color='indianred',lw=4,
+            label='Best-fit',zorder=10)
+        bfb, = plt.plot(blue_x_cen,y_bf_blue,color='cornflowerblue',lw=4,
+            label='Best-fit',zorder=10)
+
+        hr, = plt.plot(np.log10(red_hearin2013.X), np.log10(red_hearin2013.Y), 
+            lw=4, ls='--', 
+            color='indianred', label='Age-matching, Hearin2013')
+        hb, = plt.plot(np.log10(blue_hearin2013.X), np.log10(blue_hearin2013.Y), 
+            lw=4, ls='--', 
+            color='cornflowerblue', label='Age-matching, Hearin2013')
+
+        rpr, = plt.plot(np.log10(red_z0_1_rp2015.X), np.log10(red_z0_1_rp2015.Y), 
+            lw=4, ls='dotted', 
+            color='indianred', label='HOD, z~0.1, Rodriguez-Puebla2015')
+        rpb, = plt.plot(np.log10(blue_z0_1_rp2015.X), np.log10(blue_z0_1_rp2015.Y), 
+            lw=4, ls='dotted', 
+            color='cornflowerblue', label='HOD, z~0.1, Rodriguez-Puebla2015')
+
+        tr, = plt.plot(np.log10(red_z0_3_tinker2013.X), 
+            np.log10(red_z0_3_tinker2013.Y), lw=4, ls='-.', 
+            color='indianred', label='HOD, z>0.3, Tinker2013')
+        tb, = plt.plot(np.log10(blue_z0_3_tinker2013.X), 
+            np.log10(blue_z0_3_tinker2013.Y), lw=4, ls='-.', 
+            color='cornflowerblue', label='HOD, z>0.3, Tinker2013')
+
+        mandr = plt.scatter(np.log10(red_lbg_mandelbaum2015.X), 
+            np.log10(red_lbg_mandelbaum2015.Y), c='indianred', marker='s', 
+            s=200)
+        mandb = plt.scatter(np.log10(blue_lbg_mandelbaum2015.X), 
+            np.log10(blue_lbg_mandelbaum2015.Y), c='cornflowerblue', marker='s', 
+            s=200)
+
+        morer = plt.scatter(np.log10(red_sat_kin_more2011.X), 
+            np.log10(red_sat_kin_more2011.Y), c='indianred', marker='p', 
+            s=200)
+        moreb = plt.scatter(np.log10(blue_sat_kin_more2011.X), 
+            np.log10(blue_sat_kin_more2011.Y), c='cornflowerblue', marker='p', 
+            s=200)
+
+        plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=30)
+        plt.ylabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
+        plt.legend([(mr, mb), (bfr, bfb), (hr, hb), (rpr, rpb), (tr, tb), 
+            (mandr, mandb), (morer, moreb)], 
+            ['Models','Best-fit','Age-matching, Hearin2013',
+            'HOD, z$~$0.1, Rodriguez-Puebla2015', 'HOD, z$>$0.3, Tinker2013', 
+            'LBG, Mandelbaum2015', 'Sat. Kin., More2011'],
+            handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, 
+            loc='best',prop={'size': 30})
+
+        plt.show()
+
     def plot_colour_hmxm(self, models, data, best_fit):
         """
         Plot SMHM from data, best fit param values, param values corresponding to 
