@@ -43,9 +43,9 @@ path_to_figures = dict_of_paths['plot_dir']
 
 survey = 'eco'
 mf_type = 'smf'
-quenching = 'halo'
+quenching = 'hybrid'
 nwalkers = 500
-run = 99
+run = 100
 
 if mf_type == 'smf':
     path_to_proc = path_to_proc + 'smhm_colour_run{0}/'.format(run)
@@ -56,7 +56,7 @@ if run >= 37:
     # reader = emcee.backends.HDFBackend(
     #     path_to_proc + "chain_{0}_pca.h5".format(quenching), read_only=True)
     reader = emcee.backends.HDFBackend(
-        "/Users/asadm2/Desktop/chain_halo_pca.h5", read_only=True)
+        "/Users/asadm2/Desktop/chain_{0}_pca.h5".format(quenching), read_only=True)
     flatchain = reader.get_chain(flat=True)
 
     names_hybrid=['Mhalo_c', 'Mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter',
