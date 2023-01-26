@@ -35,6 +35,16 @@ def find_nearest(array, value):
     idx = (np.abs(array - value)).argmin() 
     return array[idx] 
 
+def get_median_and_percs(df):
+    param_subset = df.iloc[:,:9]
+    medians = param_subset.median(axis=0)
+    percs = param_subset.quantile([0.16, 0.84],axis=0)
+    lower_limits = medians - percs.iloc[0,:]
+    upper_limits = percs.iloc[1,:] - medians
+    medians, lower_limits, upper_limits = np.round(medians, 2), \
+        np.round(lower_limits, 2), np.round(upper_limits, 2)
+    return medians, lower_limits, upper_limits
+
 dict_of_paths = cwpaths.cookiecutter_paths()
 path_to_raw = dict_of_paths['raw_dir']
 path_to_proc = dict_of_paths['proc_dir']
@@ -42,10 +52,10 @@ path_to_interim = dict_of_paths['int_dir']
 path_to_figures = dict_of_paths['plot_dir']
 
 survey = 'eco'
-mf_type = 'smf'
-quenching = 'hybrid'
+mf_type = 'bmf'
+quenching = 'halo'
 nwalkers = 500
-run = 100
+run = 101
 
 if mf_type == 'smf':
     path_to_proc = path_to_proc + 'smhm_colour_run{0}/'.format(run)
@@ -53,10 +63,10 @@ else:
     path_to_proc = path_to_proc + 'bmhm_colour_run{0}/'.format(run)
 
 if run >= 37:
-    # reader = emcee.backends.HDFBackend(
-    #     path_to_proc + "chain_{0}_pca.h5".format(quenching), read_only=True)
     reader = emcee.backends.HDFBackend(
-        "/Users/asadm2/Desktop/chain_{0}_pca.h5".format(quenching), read_only=True)
+        path_to_proc + "chain.h5".format(quenching), read_only=True)
+    # reader = emcee.backends.HDFBackend(
+    #     "/Users/asadm2/Desktop/chain_{0}_pca.h5".format(quenching), read_only=True)
     flatchain = reader.get_chain(flat=True)
 
     names_hybrid=['Mhalo_c', 'Mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter',
@@ -72,6 +82,7 @@ if run >= 37:
     chi2 = reader.get_blobs(flat=True)
     emcee_table['chi2'] = chi2
 
+    medians, lower_limits, upper_limits = get_median_and_percs(emcee_table)
 else:
     chain_fname = path_to_proc + 'mcmc_{0}_colour_raw.txt'.format(survey)
 
