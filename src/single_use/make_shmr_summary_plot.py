@@ -1145,7 +1145,7 @@ for plot_idx in range(num_shmrs):
     plt.plot(all_shmr_data[plot_idx][:,0], all_shmr_data[plot_idx][:,1], 
         ls="-.", lw=4, c=palette[plot_idx], label=names[plot_idx])
 plt.plot(bin_centers, my_binned_shmr[0], ls='-', lw=4, c='k', label='Mock (Asad2023)')
-plt.plot(logmh_behroozi10, analytical_ratio, ls='--', lw=4, c='k', label='Analytical (Asad2023)')
+# plt.plot(logmh_behroozi10, analytical_ratio, ls='--', lw=4, c='k', label='Analytical (Asad2023)')
 plt.fill_between(x=bin_centers, y1=y_max, 
     y2=y_min, color='lightgray',alpha=0.7,label='Models')
 plt.xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot} \right]$',fontsize=30)
