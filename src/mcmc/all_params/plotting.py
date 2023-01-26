@@ -824,14 +824,14 @@ class Plotting():
         # y_bf = np.round(np.log10((10**y_bf)*1.429), 1)
 
         plt.plot(x_cen, y_bf, color='k', lw=4, label='Best-fit', zorder=10)
-        plt.plot(H70_to_H100(logmh_behroozi10, -1), H70_to_H100(logmstar_arr_or, -2), 
-            ls='-.', lw=4, label='Behroozi+10', zorder=11)
+        # plt.plot(H70_to_H100(logmh_behroozi10, -1), H70_to_H100(logmstar_arr_or, -2), 
+        #     ls='-.', lw=4, label='Behroozi+10', zorder=11)
         # plt.plot(H70_to_H100(logmh_behroozi10_bf, -1), H70_to_H100(logmstar_arr_or, -2), 
         #     ls='--', lw=4, label='Behroozi+10 bf analytical', zorder=12)
-        plt.plot(H70_to_H100(logmhalo_arr_or, -1), H70_to_H100(logmstar_moster, -2), 
-            ls='-.', lw=4, label='Moster+10', zorder=13)
-        plt.plot(H70_to_H100(logmhalo_arr_or, -1), H70_to_H100(logmstar_behroozi13, -2), 
-            ls='-.', lw=4, label='Behroozi+13', zorder=15)
+        # plt.plot(H70_to_H100(logmhalo_arr_or, -1), H70_to_H100(logmstar_moster, -2), 
+        #     ls='-.', lw=4, label='Moster+10', zorder=13)
+        # plt.plot(H70_to_H100(logmhalo_arr_or, -1), H70_to_H100(logmstar_behroozi13, -2), 
+        #     ls='-.', lw=4, label='Behroozi+13', zorder=15)
 
         if settings.survey == 'resolvea' and settings.mf_type == 'smf':
             plt.xlim(10,14)
@@ -2042,7 +2042,8 @@ class Plotting():
         logmhalo_bf_arr_flat = np.hstack((halos_bf_red, halos_bf_blue))
         logmstar_bf_arr_flat = np.hstack((gals_bf_red, gals_bf_blue))
         fred_bf_arr_flat = np.hstack((fred_bf_red, fred_bf_blue))
-
+        
+        kde=False
         fig1 = plt.figure(figsize=(10,8))
         n = len(logmstar_bf_arr_flat)
         idx_perc = int(np.round(0.68 * n))
@@ -2054,11 +2055,23 @@ class Plotting():
         # cb = plt.colorbar()
         # cb.set_label(r'\boldmath\ $f_{red}$')
 
-        plt.scatter(logmhalo_bf_arr_flat[idxs],
-            logmstar_bf_arr_flat[idxs], 
-            c=fred_bf_arr_flat[idxs], cmap='rainbow', s=20)
-        cb = plt.colorbar()
-        cb.set_label(r'\boldmath\ $f_{red}$')
+        # plt.scatter(logmhalo_bf_arr_flat[idxs],
+        #     logmstar_bf_arr_flat[idxs], 
+        #     c=fred_bf_arr_flat[idxs], cmap='rainbow', s=20)
+        # cb = plt.colorbar()
+        # cb.set_label(r'\boldmath\ $f_{red}$')
+
+        if kde:
+            import seaborn as sns
+            df_red = pd.DataFrame({'x_red':halos_bf_red, 'y_red':gals_bf_red})
+            df_blue = pd.DataFrame({'x_blue':halos_bf_blue, 'y_blue':gals_bf_blue})
+            sns.kdeplot(data=df_red, x='x_red', y='y_red', palette="Reds", shade=True)
+            sns.kdeplot(data=df_blue, x='x_blue', y='y_blue', palette="Blues", shade=True)
+        else:
+            plt.scatter(halos_bf_red, gals_bf_red, 
+                c='indianred', s=1)
+            plt.scatter(halos_bf_blue, gals_bf_blue,
+                c='cornflowerblue', s=1)
 
         red_x_cen =  0.5 * (x_bf_red[1:] + x_bf_red[:-1])
         blue_x_cen = 0.5 * (x_bf_blue[1:] + x_bf_blue[:-1])
@@ -2066,16 +2079,6 @@ class Plotting():
         # REMOVED ERROR BAR ON BEST FIT
         bfr, = plt.plot(red_x_cen,y_bf_red,color='maroon',lw=5,zorder=10)
         bfb, = plt.plot(blue_x_cen,y_bf_blue,color='midnightblue',lw=5, zorder=10)
-
-        # plt.annotate(r'$\boldsymbol\chi ^2 / dof \approx$ {0}'.
-        #     format(np.round(preprocess.bf_chi2/dof,2)), 
-        #     xy=(0.02, 0.85), xycoords='axes fraction', bbox=dict(boxstyle="square", 
-        #     ec='k', fc='lightgray', alpha=0.5), size=25)
-
-        # plt.annotate(r'$ p \approx$ {0}'.
-        #     format(np.round((1 - chi2.cdf(preprocess.bf_chi2, dof)),2)), 
-        #     xy=(0.02, 0.75), xycoords='axes fraction', bbox=dict(boxstyle="square", 
-        #     ec='k', fc='lightgray', alpha=0.5), size=25)
 
         plt.ylim(8.6, 12)
         plt.xlim(10, 14.5)
@@ -2091,8 +2094,9 @@ class Plotting():
         plt.legend([(bfr, bfb)], ['Best-fit'], 
             handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='best', 
             prop={'size': 30})
-        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/zumand_emcee_{0}.pdf'.format(quenching), 
+        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/zumand_emcee_{0}_mod.pdf'.format(quenching), 
             bbox_inches="tight", dpi=1200)
+        plt.show()
 
     def plot_mean_sigma_vs_grpcen(self, models, data, data_experiments, best_fit):
         """
