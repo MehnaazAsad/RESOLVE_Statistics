@@ -752,7 +752,7 @@ def main(args):
     survey = 'eco'
     mf_type = 'smf'
     machine = 'bender'
-    quenching = 'hybrid'
+    quenching = 'halo'
     ver = 2.0
     run = args.run
 
