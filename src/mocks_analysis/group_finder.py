@@ -750,9 +750,9 @@ def main(args):
     global ver
     global run
     survey = 'eco'
-    mf_type = 'smf'
+    mf_type = 'bmf'
     machine = 'bender'
-    quenching = 'halo'
+    quenching = 'hybrid'
     ver = 2.0
     run = args.run
 
@@ -810,9 +810,14 @@ def main(args):
             print("Incorrect mass function chosen")
 
     print('Reading chi-squared file')
-    reader = emcee.backends.HDFBackend(
-        path_to_processed + "smhm_colour_run{0}/chain_{1}.h5".format(run, 
-            quenching), read_only=True)
+    if mf_type == 'smf':
+        reader = emcee.backends.HDFBackend(
+            path_to_processed + "smhm_colour_run{0}/chain_{1}.h5".format(run, 
+                quenching), read_only=True)
+    elif mf_type == 'bmf':
+        reader = emcee.backends.HDFBackend(
+            path_to_processed + "bmhm_colour_run{0}/chain_{1}.h5".format(run, 
+                quenching), read_only=True)
     chi2 = reader.get_blobs(flat=True)
 
     print('Reading mcmc chain file')
@@ -871,12 +876,16 @@ def main(args):
     col_idxs = [str(int(x)) for x in np.linspace(1,201,201)]   
     gals_rsd_subset_df = gals_rsd_df.loc[(gals_rsd_df.cz >= cz_inner) & \
         (gals_rsd_df.cz <= cz_outer)].reset_index(drop=True)
-    
+
+    if mf_type == 'smf':
+        mass_cut = 8.6
+    elif mf_type == 'bmf':
+        mass_cut = 9.0
     for col in tqdm(col_idxs):
         # print('{0} out of {1}'.format(col, len(col_idxs)))
         # Keep track of index from gals_rsd_subset_df
         gals_rsd_grpfinder_df = gals_rsd_subset_df.loc[gals_rsd_subset_df\
-            [col]>10**8.6][['{0}'.format(col),'ra','dec','cz']].\
+            [col]>10**mass_cut][['{0}'.format(col),'ra','dec','cz']].\
             reset_index(drop=False)
         # * Make sure that df that group finding is run on has its indices reset
         gal_group_df, group_df_or = group_finding(gals_rsd_grpfinder_df, col, 
@@ -923,8 +932,12 @@ def main(args):
                         'ps_cen_cz_{0}'.format(col): 'cen_cz_{0}'.format(col)}
         gal_group_df.rename(columns=rename_dict, inplace=True)
 
-        gals_rsd_subset_df = pd.merge(gals_rsd_subset_df, gal_group_df, 
-            how='left', left_on = gals_rsd_subset_df.index.values, right_on='index')
+        # gals_rsd_subset_df = pd.merge(gals_rsd_subset_df, gal_group_df, 
+        #     how='left', left_on = gals_rsd_subset_df.index.values, right_on='index')
+
+        gals_rsd_subset_df = gals_rsd_subset_df.join(
+            gal_group_df.set_index('index'), how='left', rsuffix='_y', 
+            lsuffix='_x')
 
         rename_dict = {'ra_x': 'ra',
                         'dec_x': 'dec',
@@ -934,7 +947,7 @@ def main(args):
         ## are calculated for all 101 mocks and the information is only needed
         ## for group finding so those columns can be dropped.
         if int(col) > 1:
-            gals_rsd_subset_df.drop(columns=['index_x','index_y','ra_y','dec_y',
+            gals_rsd_subset_df.drop(columns=['ra_y','dec_y',
                 'cz_y'], inplace=True)
 
     print('Writing to output files')
