@@ -10,6 +10,7 @@ from scipy.stats import binned_statistic as bs
 from pathos.multiprocessing import ProcessingPool as Pool
 import numpy as np
 import pandas as pd
+pd.options.mode.chained_assignment = None
 import globals
 import random
 import time
@@ -401,13 +402,14 @@ class Analysis():
             if settings.mf_type == 'smf':
                 mstar_limit = 8.9
                 bin_min = np.round(np.log10((10**mstar_limit) / 2.041), 1)
+                #* Changed max bin from 11.5 to 11.1 to be the same as mstar-sigma (10.8)
+                bin_max = np.round(np.log10((10**11.1) / 2.041), 1)
 
             elif settings.mf_type == 'bmf':
                 mbary_limit = 9.3
                 bin_min = np.round(np.log10((10**mbary_limit) / 2.041), 1)
-
-            #* Changed max bin from 11.5 to 11.1 to be the same as mstar-sigma (10.8)
-            bin_max = np.round(np.log10((10**11.1) / 2.041), 1)
+                bin_max = np.round(np.log10((10**11.5) / 2.041), 1)
+            
             bin_num = 5
             bins = np.linspace(bin_min, bin_max, bin_num)
 
@@ -436,7 +438,7 @@ class Analysis():
  
         return maxis, f_blue_total, f_blue_cen, f_blue_sat
 
-    def get_colour_smf_from_fblue(self, df, frac_arr, bin_centers, volume, h1_bool, 
+    def get_colour_mf_from_fblue(self, df, frac_arr, bin_centers, volume, h1_bool, 
         randint_logmstar=None):
         """Reconstruct red and blue SMFs from blue fraction measurement
 
@@ -453,19 +455,24 @@ class Analysis():
             phi_red (array): Array of phi values for red galaxies
             phi_blue (array): Array of phi values for blue galaxies
         """
+        settings = self.settings
+
         if h1_bool and randint_logmstar != 1:
-            logmstar_arr = df['{0}'.format(randint_logmstar)].values
+            mass_arr = df['{0}'.format(randint_logmstar)].values
         elif h1_bool and randint_logmstar == 1:
-            logmstar_arr = df['behroozi_bf'].values
+            mass_arr = df['behroozi_bf'].values
         if not h1_bool:
-            mstar_arr = df.logmstar.values
-            logmstar_arr = np.log10((10**mstar_arr) / 2.041)
+            if settings.mf_type == 'smf':
+                mass_arr = df.logmstar.values
+            elif settings.mf_type == 'bmf':
+                mass_arr = df.logmbary_a23.values
+            mass_arr = np.log10((10**mass_arr) / 2.041)
 
         bin_width = bin_centers[1] - bin_centers[0]
         bin_edges = bin_centers - (0.5 * bin_width)
         # Done to include the right side of the last bin
         bin_edges = np.insert(bin_edges, len(bin_edges), bin_edges[-1]+bin_width)
-        counts, edg = np.histogram(logmstar_arr, bins=bin_edges)  
+        counts, edg = np.histogram(mass_arr, bins=bin_edges)  
         
         counts_blue = frac_arr * counts
         counts_red = (1-frac_arr) * counts
@@ -1047,9 +1054,14 @@ class Analysis():
         v_sim = 890641.5172927063  ## cz: 3000-12000
         # v_sim = 165457.21308906242 ## cz: 3000-7000
 
+
         ## Observable #1 - Total SMF
-        total_model = self.measure_all_smf(gals_df, v_sim , False, 
-            randint_logmstar)    
+        if settings.mf_type == 'smf':
+            total_model = self.measure_all_smf(gals_df, v_sim , False, randint_logmstar)    
+        if settings.mf_type == 'bmf':
+            logmbary_col = gals_df['behroozi_bf']
+            total_model = self.diff_bmf(10**(logmbary_col), v_sim , True)    
+
         ## Observable #2 - Blue fraction
         f_blue = self.blue_frac(gals_df, True, False, randint_logmstar)
 
@@ -1148,7 +1160,7 @@ class Analysis():
                 self.get_satellites_mock(gals_df, randint_logmstar)
 
         phi_red_model, phi_blue_model = \
-            self.get_colour_smf_from_fblue(gals_df, f_blue[1], f_blue[0], v_sim, 
+            self.get_colour_mf_from_fblue(gals_df, f_blue[1], f_blue[0], v_sim, 
             True, randint_logmstar)
 
         red_num, red_cen_mstar_richness, blue_num, \
@@ -1583,7 +1595,7 @@ class Analysis():
 
                 ### Statistics for measuring std. dev. to plot error bars
                 phi_red, phi_blue = \
-                    self.get_colour_smf_from_fblue(mock_pd, f_blue, mass, volume, 
+                    self.get_colour_mf_from_fblue(mock_pd, f_blue, mass, volume, 
                     False)
                 phi_red_arr.append(phi_red)
                 phi_blue_arr.append(phi_blue)
@@ -2141,8 +2153,13 @@ class Analysis():
                     'vishnu')
             gals_df = self.assign_colour_label_mock(f_red_cen, f_red_sat, gals_df)
 
-            ## Observable #1 - Total SMF
-            total_model = self.measure_all_smf(gals_df, v_sim , False, randint_logmstar)    
+            ## Observable #1 - Total MF
+            if settings.mf_type == 'smf':
+                total_model = self.measure_all_smf(gals_df, v_sim , False, randint_logmstar)    
+            if settings.mf_type == 'bmf':
+                logmbary_col = gals_df['{0}'.format(randint_logmstar)]
+                total_model = self.diff_bmf(10**(logmbary_col), v_sim , True)    
+      
             ## Observable #2 - Blue fraction
             # print(type(randint_logmstar))
             f_blue = self.blue_frac(gals_df, True, False, randint_logmstar)
@@ -2245,7 +2262,7 @@ class Analysis():
                     self.get_satellites_mock(gals_df, randint_logmstar)
 
             phi_red_model, phi_blue_model = \
-                self.get_colour_smf_from_fblue(gals_df, f_blue[1], f_blue[0], v_sim, 
+                self.get_colour_mf_from_fblue(gals_df, f_blue[1], f_blue[0], v_sim, 
                 True, randint_logmstar)
 
             red_num, red_cen_mstar_richness, blue_num, \
@@ -2305,8 +2322,15 @@ class Analysis():
         print('Assigning colour to data')
         self.catl = self.assign_colour_label_data(preprocess.catl)
 
-        print('Measuring SMF for data')
-        self.total_data, red_data, blue_data = self.measure_all_smf(self.catl, preprocess.volume, True)
+        if settings.mf_type == 'smf':
+            print('Measuring SMF for data')
+            self.total_data, red_data, blue_data = self.measure_all_smf(
+                self.catl, preprocess.volume, True)
+        elif settings.mf_type == 'bmf':
+            print('Measuring BMF for data')
+            logmbary = self.catl.logmbary_a23.values
+            self.total_data = self.diff_bmf(logmbary, 
+                preprocess.volume, False)
 
         print('Measuring blue fraction for data')
         self.f_blue = self.blue_frac(self.catl, False, True)
@@ -2396,8 +2420,8 @@ class Analysis():
                 self.mean_mstar_red_data = [red_cen_mbary_sigma, red_sigma]
                 self.mean_mstar_blue_data = [blue_cen_mbary_sigma, blue_sigma]
 
-        print('Measuring reconstructed red and blue SMF for data')
-        self.phi_red_data, self.phi_blue_data = self.get_colour_smf_from_fblue(self.catl, self.f_blue[1], 
+        print('Measuring reconstructed red and blue MFs for data')
+        self.phi_red_data, self.phi_blue_data = self.get_colour_mf_from_fblue(self.catl, self.f_blue[1], 
             self.f_blue[0], preprocess.volume, False)
 
         print('Initial population of halo catalog')
