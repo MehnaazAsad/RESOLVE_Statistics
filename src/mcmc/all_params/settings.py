@@ -9,7 +9,7 @@ from cosmo_utils.utils import work_paths as cwpaths
 class Settings():
 
     def __init__(self) -> None:
-        self.quenching = 'hybrid'
+        self.quenching = 'halo'
         self.machine = 'mac'
         self.survey = 'eco'
         self.mf_type = 'smf'
@@ -39,17 +39,28 @@ class Settings():
             self.halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
 
         if self.quenching == 'halo':
-            self.run = 62
+            self.run = 95
         elif self.quenching == 'hybrid':
-            self.run = 94
+            if self.mf_type == 'smf':
+                self.run = 94
+            elif self.mf_type == 'bmf':
+                self.run = 97
 
         if self.run >= 37:
-            self.chi2_file = self.path_to_proc + \
-                'smhm_colour_run{0}/chain.h5'.\
-                format(self.run, self.survey)
-            self.chain_file = self.path_to_proc + \
-                'smhm_colour_run{0}/chain.h5'.\
-                format(self.run, self.survey)
+            if self.mf_type == 'smf':
+                self.chi2_file = self.path_to_proc + \
+                    'smhm_colour_run{0}/chain.h5'.\
+                    format(self.run, self.survey)
+                self.chain_file = self.path_to_proc + \
+                    'smhm_colour_run{0}/chain.h5'.\
+                    format(self.run, self.survey)
+            elif self.mf_type == 'bmf':
+                self.chi2_file = self.path_to_proc + \
+                    'bmhm_colour_run{0}/chain.h5'.\
+                    format(self.run, self.survey)
+                self.chain_file = self.path_to_proc + \
+                    'bmhm_colour_run{0}/chain.h5'.\
+                    format(self.run, self.survey)
         elif self.run < 37:
             self.chi2_file = self.path_to_proc + \
                 'smhm_colour_run{0}/{1}_colour_chi2.txt'.\
