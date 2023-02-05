@@ -140,12 +140,16 @@ def main(args):
         "gal_group_run{0}.hdf5".format(run)) 
 
     print('Creating subset')
-    idx_arr = np.insert(np.linspace(1, 20, 20), len(np.linspace(1, 20, 20)), \
-        (22, 223, 224, 225, 226, 227, 228, 229)).\
-        astype(int)
+    # idx_arr = np.insert(np.linspace(1, 20, 20), len(np.linspace(1, 20, 20)), \
+    #     (22, 223, 224, 225, 226, 227, 228, 229)).\
+    #     astype(int)
+    cols_to_subset = ['halo_hostid', 'halo_upid', 'halo_id', 'halo_rvir', 'halo_vz',
+       'halo_vx', 'halo_macc', 'halo_vy', 'halo_z', 'halo_y', 'halo_mvir',
+       'halo_x', 'halo_mvir_host_halo', 'x', 'y', 'z', 'vx', 'vy', 'vz',
+       'galid', 'cs_flag', 'ra', 'dec', 'cz']
 
-    names_arr = [x for x in gal_group.columns.values[idx_arr]]
-    for idx in np.arange(2, 202, 1):
+    names_arr = [x for x in gal_group[cols_to_subset]]
+    for idx in np.arange(1, 202, 1):
         names_arr.append('{0}_y'.format(idx))
         names_arr.append('groupid_{0}'.format(idx))
         names_arr.append('grp_censat_{0}'.format(idx))
