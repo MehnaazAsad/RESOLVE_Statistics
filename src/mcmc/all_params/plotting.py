@@ -152,12 +152,13 @@ class Plotting():
         if settings.mf_type == 'smf':
             plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=30)
         elif settings.mf_type == 'bmf':
-            plt.xlabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
+            plt.xlabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=30)
         plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=30)
 
         plt.legend([(dt), (mt), (bft)], ['Data','Models','Best-fit'],
             handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, 
             prop={'size':22}, loc='lower left')
+        plt.show()
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/smf_total_emcee_{0}.pdf'.format(quenching), 
             bbox_inches="tight", dpi=1200)
 
@@ -545,7 +546,7 @@ class Plotting():
         if settings.mf_type == 'smf':
             plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=30)
         elif settings.mf_type == 'bmf':
-            plt.xlabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=30)
+            plt.xlabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=30)
         plt.ylabel(r'\boldmath$f_{blue}$', fontsize=30)
 
         plt.legend([(dc), (mc), (bfc), (ds), (ms), (bfs)], 
@@ -553,6 +554,7 @@ class Plotting():
             'Data - sat','Models - sat','Best-fit - sat'],
             handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, 
             prop={'size':20})
+        plt.show()
 
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fblue_censat_emcee_{0}.pdf'.format(quenching), 
             bbox_inches="tight", dpi=1200)
@@ -583,13 +585,6 @@ class Plotting():
         settings = self.settings
         preprocess = self.preprocess
         quenching = settings.quenching
-
-        if settings.survey == 'resolvea':
-            line_label = 'RESOLVE-A'
-        elif settings.survey == 'resolveb':
-            line_label = 'RESOLVE-B'
-        elif settings.survey == 'eco':
-            line_label = 'ECO'
 
         dof = data[10]
 
@@ -850,7 +845,7 @@ class Plotting():
             plt.ylabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=30)
         elif settings.mf_type == 'bmf':
             if settings.survey == 'eco' or settings.survey == 'resolvea':
-                plt.ylim(np.log10((10**9.4)/2.041),)
+                plt.ylim(np.log10((10**9.3)/2.041),)
             elif settings.survey == 'resolveb':
                 plt.ylim(np.log10((10**9.1)/2.041),)
             plt.ylabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=30)
@@ -863,6 +858,7 @@ class Plotting():
         handles, labels = plt.gca().get_legend_handles_labels()
         by_label = OrderedDict(zip(labels, handles))
         plt.legend(by_label.values(), by_label.keys(), loc='best',prop={'size': 22})
+        plt.show()
         # plt.annotate(r'$\boldsymbol\chi ^2 / dof \approx$ {0}'.
         #     format(np.round(preprocess.bf_chi2/dof,2)), 
         #     xy=(0.02, 0.8), xycoords='axes fraction', bbox=dict(boxstyle="square", 
@@ -1635,7 +1631,10 @@ class Plotting():
             for idx in range(len(cen_gals_arr)):
                 x, y = zip(*sorted(zip(cen_gals_arr[idx],fred_arr[idx])))
                 plt.plot(x, y, alpha=0.4, c='cornflowerblue', lw=10, solid_capstyle='round')
-            plt.xlabel(r'\boldmath$\log_{10}\ M_{*, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=30)
+            if settings.mf_type == 'smf':
+                plt.xlabel(r'\boldmath$\log_{10}\ M_{*, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=30)
+            elif settings.mf_type == 'bmf':
+                plt.xlabel(r'\boldmath$\log_{10}\ M_{b, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=30)
 
             x, y = zip(*sorted(zip(cen_gals_arr[0],fred_arr[0])))
             x_bf, y_bf = zip(*sorted(zip(cen_gals_bf,fred_bf)))
@@ -1643,13 +1642,20 @@ class Plotting():
             plt.plot(x, y, alpha=0.4, c='cornflowerblue', label='Models', lw=10, solid_capstyle='round')
             plt.plot(x_bf, y_bf, c='mediumorchid', label='Best-fit', lw=10, solid_capstyle='round')
 
-            # antonio_data = pd.read_csv('/Users/asadm2/Documents/Grad_School/Research/Repositories/resolve_statistics/data/external/fq_cen_SM_DS_TNG_Salim_z0.csv',
-            #     header=None, skiprows=1, usecols=[1,2,3,4], names=['fred_ds','fred_salim','fred_tng','logmstar'])
-            antonio_data = pd.read_csv(settings.path_to_proc + "../external/fquench_stellar/fqlogTSM_cen_DS_TNG_Salim_z0.csv", 
-                index_col=0, skiprows=1, names=['fred_ds','logmstar','fred_tng','fred_salim'])
-            plt.plot(antonio_data.logmstar.values, antonio_data.fred_ds.values, lw=5, c='k', ls='dashed', label='Dark Sage')
-            plt.plot(antonio_data.logmstar.values, antonio_data.fred_salim.values, lw=5, c='k', ls='dotted', label='Salim+18')
-            plt.plot(antonio_data.logmstar.values, antonio_data.fred_tng.values, lw=5, c='k', ls='dashdot', label='TNG')
+            if settings.mf_type == 'smf':
+                antonio_data = pd.read_csv(settings.path_to_proc + \
+                    "../external/fquench_stellar/fqlogTSM_cen_DS_TNG_Salim_z0.csv", 
+                    index_col=0, skiprows=1, 
+                    names=['fred_ds','logmstar','fred_tng','fred_salim'])
+                plt.plot(antonio_data.logmstar.values, 
+                    antonio_data.fred_ds.values, lw=5, c='k', ls='dashed', 
+                    label='Dark Sage')
+                plt.plot(antonio_data.logmstar.values, 
+                    antonio_data.fred_salim.values, lw=5, c='k', ls='dotted', 
+                    label='Salim+18')
+                plt.plot(antonio_data.logmstar.values, 
+                    antonio_data.fred_tng.values, lw=5, c='k', ls='dashdot', 
+                    label='TNG')
 
             cen_stellar_mass_arr = np.linspace(8.6, 12, 200)
             an_fred_cen, an_fred_sat = hybrid_quenching_model(preprocess.bf_params[5:])
@@ -1669,12 +1675,17 @@ class Plotting():
             plt.plot(x, y, alpha=0.4, c='cornflowerblue', label='Models', lw=10, solid_capstyle='round')
             plt.plot(x_bf, y_bf, c='mediumorchid', label='Best-fit', lw=10, solid_capstyle='round')
 
-            # antonio_data = pd.read_csv('/Users/asadm2/Documents/Grad_School/Research/Repositories/resolve_statistics/data/external/fq_cen_SM_DS_TNG_Salim_z0.csv',
-            #     header=None, skiprows=1, usecols=[1,2,3,4], names=['fred_ds','fred_salim','fred_tng','logmstar'])
-            antonio_data = pd.read_csv(settings.path_to_proc + "../external/fquench_halo/fqlogMvir_cen_DS_TNG_z0.csv", 
-                index_col=0, skiprows=1, names=['fred_ds','logmhalo','fred_tng'])
-            plt.plot(antonio_data.logmhalo.values, antonio_data.fred_ds.values, lw=5, c='k', ls='dashed', label='Dark Sage')
-            plt.plot(antonio_data.logmhalo.values, antonio_data.fred_tng.values, lw=5, c='k', ls='dashdot', label='TNG')
+            if settings.mf_type == 'smf':
+                antonio_data = pd.read_csv(settings.path_to_proc + \
+                    "../external/fquench_halo/fqlogMvir_cen_DS_TNG_z0.csv", 
+                    index_col=0, skiprows=1, 
+                    names=['fred_ds','logmhalo','fred_tng'])
+                plt.plot(antonio_data.logmhalo.values, 
+                    antonio_data.fred_ds.values, lw=5, c='k', ls='dashed', 
+                    label='Dark Sage')
+                plt.plot(antonio_data.logmhalo.values, 
+                    antonio_data.fred_tng.values, lw=5, c='k', ls='dashdot', 
+                    label='TNG')
 
             #* Data relation (not needed)
             # data_fred_cen = 1-data[1][2]
@@ -1691,6 +1702,8 @@ class Plotting():
             plt.legend(loc='best', prop={'size':22})
         elif quenching == 'halo':
             plt.legend(loc='best', prop={'size':22})
+        
+        plt.show()
 
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fred_cen_emcee_{0}.pdf'.format(quenching), 
             bbox_inches="tight", dpi=1200)
@@ -1866,33 +1879,36 @@ class Plotting():
                 yerr=sat_std_stats[0], color='navy', fmt='s', 
                 ecolor='navy',markersize=12, capsize=7, capthick=1.5, 
                 zorder=10, marker='p', label='Model average')
-            plt.xlabel(r'\boldmath$\log_{10}\ M_{*, sat} \left[\mathrm{M_\odot}\,'\
-                        r' \mathrm{h}^{-2} \right]$',fontsize=30)
+            if settings.mf_type == 'smf':
+                plt.xlabel(r'\boldmath$\log_{10}\ M_{*, sat} \left[\mathrm{M_\odot}\,'\
+                            r' \mathrm{h}^{-2} \right]$',fontsize=30)
+            elif settings.mf_type == 'bmf':
+                plt.xlabel(r'\boldmath$\log_{10}\ M_{b, sat} \left[\mathrm{M_\odot}\,'\
+                            r' \mathrm{h}^{-2} \right]$',fontsize=30)
 
             bfe = plt.scatter(sat_gals_bf, fred_bf, alpha=0.4, s=150, c=sat_halos_bf, 
                 cmap='viridis' ,label='Best-fit')
             # plt.colorbar(label=r'\boldmath$\log_{10}\ M_{h, host}$')
 
-            # antonio_data = pd.read_csv('/Users/asadm2/Documents/Grad_School/Research/Repositories/resolve_statistics/data/external/fq_cen_SM_DS_TNG_Salim_z0.csv',
-            #     header=None, skiprows=1, usecols=[1,2,3,4], names=['fred_ds','fred_salim','fred_tng','logmstar'])
-            antonio_data = pd.read_csv(settings.path_to_proc + "../external/fquench_stellar/fqlogTSM_sat_DS_TNG_Salim_z0.csv", 
-                index_col=0, skiprows=1, 
-                names=['fred_ds','logmstar','fred_tng'])
-            hosthalo_data = pd.read_csv(settings.path_to_proc + "../external/fquench_halo/fqlogMvirhost_sat_DS_TNG_z0.csv", 
-                index_col=0, skiprows=1, names=['fred_ds','logmhalo','fred_tng'])
+            if settings.mf_type == 'smf':
+                antonio_data = pd.read_csv(settings.path_to_proc + "../external/fquench_stellar/fqlogTSM_sat_DS_TNG_Salim_z0.csv", 
+                    index_col=0, skiprows=1, 
+                    names=['fred_ds','logmstar','fred_tng'])
+                hosthalo_data = pd.read_csv(settings.path_to_proc + "../external/fquench_halo/fqlogMvirhost_sat_DS_TNG_z0.csv", 
+                    index_col=0, skiprows=1, names=['fred_ds','logmhalo','fred_tng'])
 
-            dss = plt.scatter(antonio_data.logmstar.values, antonio_data.fred_ds.values, 
-                lw=5, c=hosthalo_data.logmhalo.values, cmap='viridis', marker='^', 
-                s=120, label='Dark Sage', zorder=10)
-            tngs = plt.scatter(antonio_data.logmstar.values, antonio_data.fred_tng.values, 
-                lw=5, c=hosthalo_data.logmhalo.values, cmap='viridis', marker='s', 
-                s=120, label='TNG', zorder=10)
-            dsp, = plt.plot(antonio_data.logmstar.values, antonio_data.fred_ds.values, lw=3, c='k', ls='dashed')
-            tngp, = plt.plot(antonio_data.logmstar.values, antonio_data.fred_tng.values, lw=3, c='k', ls='dashdot')
+                dss = plt.scatter(antonio_data.logmstar.values, antonio_data.fred_ds.values, 
+                    lw=5, c=hosthalo_data.logmhalo.values, cmap='viridis', marker='^', 
+                    s=120, label='Dark Sage', zorder=10)
+                tngs = plt.scatter(antonio_data.logmstar.values, antonio_data.fred_tng.values, 
+                    lw=5, c=hosthalo_data.logmhalo.values, cmap='viridis', marker='s', 
+                    s=120, label='TNG', zorder=10)
+                dsp, = plt.plot(antonio_data.logmstar.values, antonio_data.fred_ds.values, lw=3, c='k', ls='dashed')
+                tngp, = plt.plot(antonio_data.logmstar.values, antonio_data.fred_tng.values, lw=3, c='k', ls='dashdot')
 
-            sat_hosthalo_mass_arr = np.linspace(10.5, 14.5, 200)
-            sat_stellar_mass_arr = np.linspace(8.6, 12, 200)
-            an_fred_cen, an_fred_sat = hybrid_quenching_model(preprocess.bf_params[5:])
+                sat_hosthalo_mass_arr = np.linspace(10.5, 14.5, 200)
+                sat_stellar_mass_arr = np.linspace(8.6, 12, 200)
+                an_fred_cen, an_fred_sat = hybrid_quenching_model(preprocess.bf_params[5:])
 
             # plt.scatter(sat_stellar_mass_arr, an_fred_sat, alpha=0.4, s=150,
             #     c=sat_hosthalo_mass_arr, cmap='viridis',
@@ -1925,8 +1941,6 @@ class Plotting():
             # plt.scatter(sat_halos_bf, fred_bf, alpha=0.4, s=150, c='mediumorchid',\
             #     label='Best-fit', zorder=10)
 
-            # antonio_data = pd.read_csv('/Users/asadm2/Documents/Grad_School/Research/Repositories/resolve_statistics/data/external/fq_cen_SM_DS_TNG_Salim_z0.csv',
-            #     header=None, skiprows=1, usecols=[1,2,3,4], names=['fred_ds','fred_salim','fred_tng','logmstar'])
             antonio_data = pd.read_csv(settings.path_to_proc + "../external/fquench_halo/fqlogMvirhost_sat_DS_TNG_z0.csv", 
                 index_col=0, skiprows=1, names=['fred_ds','logmhalo','fred_tng'])
             dsp, = plt.plot(antonio_data.logmhalo.values, antonio_data.fred_ds.values, lw=5, c='k', ls='dashed', label='Dark Sage')
@@ -1942,18 +1956,21 @@ class Plotting():
         # plt.legend(loc='best', prop={'size':30})
 
         if quenching == 'hybrid':
-            plt.legend([(tngs, tngp), (dss, dsp), (me), (bfe)], 
-                ['TNG', 'Dark Sage', 'Model average', 'Best-fit'],
-                handler_map={tuple: HandlerTuple(ndivide=1, pad=0)}, loc='best', prop={'size':22})
+            if settings.mf_type == 'smf':
+                plt.legend([(tngs, tngp), (dss, dsp), (me), (bfe)], 
+                    ['TNG', 'Dark Sage', 'Model average', 'Best-fit'],
+                    handler_map={tuple: HandlerTuple(ndivide=1, pad=0)}, loc='best', prop={'size':22})
+            elif settings.mf_type == 'bmf':
+                plt.legend([(me), (bfe)], 
+                    ['Model average', 'Best-fit'],
+                    handler_map={tuple: HandlerTuple(ndivide=1, pad=0)}, loc='best', prop={'size':22})
+        
         elif quenching == 'halo':
             plt.legend([(tngp), (dsp), (mp), (bfp)], 
                 ['TNG','Dark Sage', 'Models', 'Best-fit'],
                 handler_map={tuple: HandlerTuple(ndivide=4, pad=0.3)}, prop={'size':22})
 
-        # if quenching == 'hybrid':
-        #     plt.title('Hybrid quenching model | ECO')
-        # elif quenching == 'halo':
-        #     plt.title('Halo quenching model | ECO')
+        plt.show()
 
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fred_sat_emcee_{0}.pdf'.format(quenching), 
             bbox_inches="tight", dpi=1200)
@@ -2065,13 +2082,13 @@ class Plotting():
             import seaborn as sns
             df_red = pd.DataFrame({'x_red':halos_bf_red, 'y_red':gals_bf_red})
             df_blue = pd.DataFrame({'x_blue':halos_bf_blue, 'y_blue':gals_bf_blue})
-            sns.kdeplot(data=df_red, x='x_red', y='y_red', palette="Reds", shade=True)
-            sns.kdeplot(data=df_blue, x='x_blue', y='y_blue', palette="Blues", shade=True)
+            sns.kdeplot(data=df_red, x='x_red', y='y_red', color='red', 
+                shade=False, levels=[0.68], zorder=10)
+            sns.kdeplot(data=df_blue, x='x_blue', y='y_blue', color='blue', 
+                shade=False, levels=[0.68], zorder=10)
         else:
-            plt.scatter(halos_bf_red, gals_bf_red, 
-                c='indianred', s=1)
-            plt.scatter(halos_bf_blue, gals_bf_blue,
-                c='cornflowerblue', s=1)
+            plt.scatter(halos_bf_red, gals_bf_red,  c='indianred', s=1, zorder=5)
+            plt.scatter(halos_bf_blue, gals_bf_blue, c='cornflowerblue', s=1, zorder=5)
 
         red_x_cen =  0.5 * (x_bf_red[1:] + x_bf_red[:-1])
         blue_x_cen = 0.5 * (x_bf_blue[1:] + x_bf_blue[:-1])
@@ -2079,8 +2096,11 @@ class Plotting():
         # REMOVED ERROR BAR ON BEST FIT
         bfr, = plt.plot(red_x_cen,y_bf_red,color='maroon',lw=5,zorder=10)
         bfb, = plt.plot(blue_x_cen,y_bf_blue,color='midnightblue',lw=5, zorder=10)
-
-        plt.ylim(8.6, 12)
+        
+        if settings.mf_type == 'smf':
+            plt.ylim(8.6, 12)
+        elif settings.mf_type == 'bmf':
+            plt.ylim(9.0, 12)
         plt.xlim(10, 14.5)
 
         plt.fill([13.5, plt.gca().get_xlim()[1], plt.gca().get_xlim()[1], 13.5], 
@@ -2089,13 +2109,16 @@ class Plotting():
             hatch='\\')
 
         plt.xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$')
-        plt.ylabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$')
+        if settings.mf_type == 'smf':
+            plt.ylabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$')
+        elif settings.mf_type == 'bmf':
+            plt.ylabel(r'\boldmath$\log_{10}\ M_b \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$')
 
         plt.legend([(bfr, bfb)], ['Best-fit'], 
             handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='best', 
             prop={'size': 30})
-        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/zumand_emcee_{0}_mod.pdf'.format(quenching), 
-            bbox_inches="tight", dpi=1200)
+        # plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/zumand_emcee_{0}_mod.pdf'.format(quenching), 
+        #     bbox_inches="tight", dpi=1200)
         plt.show()
 
     def plot_mean_sigma_vs_grpcen(self, models, data, data_experiments, best_fit):
@@ -2162,10 +2185,20 @@ class Plotting():
         x_sigma_red_data, y_mean_mstar_red_data = data[4][1], data[4][0]
         x_sigma_blue_data, y_mean_mstar_blue_data = data[5][1], data[5][0]
 
-        x_sigma_red_bf, y_mean_mstar_red_bf = best_fit[1]['mean_mstar']['red_sigma'],\
-            best_fit[1]['mean_mstar']['red_cen_mstar']
-        x_sigma_blue_bf, y_mean_mstar_blue_bf = best_fit[1]['mean_mstar']['blue_sigma'],\
-            best_fit[1]['mean_mstar']['blue_cen_mstar']
+        if settings.mf_type == 'smf':
+            mass_type = 'mean_mstar'
+            red_mass_type = 'red_cen_mstar'
+            blue_mass_type = 'blue_cen_mstar'
+        elif settings.mf_type == 'bmf':
+            mass_type = 'mean_mbary'
+            red_mass_type = 'red_cen_mbary'
+            blue_mass_type = 'blue_cen_mbary'
+
+
+        x_sigma_red_bf, y_mean_mstar_red_bf = best_fit[1][mass_type]['red_sigma'],\
+            best_fit[1][mass_type][red_mass_type]
+        x_sigma_blue_bf, y_mean_mstar_blue_bf = best_fit[1][mass_type]['blue_sigma'],\
+            best_fit[1][mass_type][blue_mass_type]
 
         mean_grp_red_cen_gals_arr = []
         mean_grp_blue_cen_gals_arr = []
@@ -2237,9 +2270,12 @@ class Plotting():
         # plt.ylim(8.9,)
 
         plt.xlabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km/s} \right]$', fontsize=30)
-        plt.ylabel(r'\boldmath$\overline{\log_{10}\ M_{*,group\ cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=30)
+        if settings.mf_type == 'smf':
+            plt.ylabel(r'\boldmath$\overline{\log_{10}\ M_{*,group\ cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=30)
+        elif settings.mf_type == 'bmf':
+            plt.ylabel(r'\boldmath$\overline{\log_{10}\ M_{b,group\ cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=30)
 
-        # plt.show()
+        plt.show()
 
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/{0}_sigma_grpcen_emcee.pdf'.format(quenching), 
             bbox_inches="tight", dpi=1200)
@@ -2270,9 +2306,16 @@ class Plotting():
         x_sigma_red_data, y_sigma_red_data = data[2][1], data[2][0]
         x_sigma_blue_data, y_sigma_blue_data = data[3][1], data[3][0]
 
-        x_sigma_red_bf, y_sigma_red_bf = best_fit[1]['vel_disp']['red_cen_mstar'],\
+        if settings.mf_type == 'smf':
+            red_mass_type = 'red_cen_mstar'
+            blue_mass_type = 'blue_cen_mstar'
+        elif settings.mf_type == 'bmf':
+            red_mass_type = 'red_cen_mbary'
+            blue_mass_type = 'blue_cen_mbary'
+
+        x_sigma_red_bf, y_sigma_red_bf = best_fit[1]['vel_disp'][red_mass_type],\
             best_fit[1]['vel_disp']['red_sigma']
-        x_sigma_blue_bf, y_sigma_blue_bf = best_fit[1]['vel_disp']['blue_cen_mstar'],\
+        x_sigma_blue_bf, y_sigma_blue_bf = best_fit[1]['vel_disp'][blue_mass_type],\
             best_fit[1]['vel_disp']['blue_sigma']
 
         grp_red_cen_gals_arr = []
@@ -2327,13 +2370,18 @@ class Plotting():
         bfb, = plt.plot(mean_centers_blue,y_sigma_blue_bf,
             color='cornflowerblue',ls='--',lw=4,zorder=9)
 
-        plt.xlabel(r'\boldmath$\log_{10}\ M_{* , group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=30)
+        if settings.mf_type == 'smf':
+            plt.xlabel(r'\boldmath$\log_{10}\ M_{* , group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=30)
+        elif settings.mf_type == 'bmf':
+            plt.xlabel(r'\boldmath$\log_{10}\ M_{b , group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=30)
+
         plt.ylabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km/s} \right]$', fontsize=30)
 
         plt.legend([(dr, db), (mr, mb), (bfr, bfb)], 
             ['Data','Models','Best-fit'],
             handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, markerscale=1.5, 
             loc='lower right', prop={'size':22})
+        plt.show()
 
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/{0}_grpcen_sigma_emcee.pdf'.format(quenching), 
             bbox_inches="tight", dpi=1200)
