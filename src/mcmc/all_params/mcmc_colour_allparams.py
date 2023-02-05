@@ -3210,7 +3210,8 @@ def main(args):
 
     if survey == 'eco':
         if mf_type == 'smf':
-            catl_file = path_to_proc + "gal_group_eco_stellar_buffer_volh1_dr3.hdf5"
+            catl_file = path_to_proc + \
+                "gal_group_eco_stellar_buffer_volh1_dr3.hdf5"
         elif mf_type == 'bmf':
             catl_file = path_to_proc + \
                 "gal_group_eco_bary_buffer_volh1_dr3.hdf5"    
