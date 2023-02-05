@@ -1253,7 +1253,7 @@ pca = False
 
 survey = 'eco'
 machine = 'mac'
-mf_type = 'bmf'
+mf_type = 'smf'
 quenching = 'hybrid'
 
 dict_of_paths = cwpaths.cookiecutter_paths()
@@ -1547,6 +1547,7 @@ ax[0].legend([(dt_red, dt_blue), (mt_red, mt_blue)],
 
 ax[0].minorticks_on()
 ax[1].minorticks_on()
+plt.show()
 
 plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_mass_sigma_bothsamples.pdf', 
     bbox_inches="tight", dpi=1200)
