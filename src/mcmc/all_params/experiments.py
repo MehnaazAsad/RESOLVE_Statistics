@@ -153,6 +153,7 @@ class Experiments():
 
             elif isinstance(randint, int) and randint != 1:
                 logmstar_col = '{0}'.format(randint)
+                logmbary_col = '{0}'.format(randint)
                 galtype_col = 'grp_censat_{0}'.format(randint)
                 cencz_col = 'cen_cz_{0}'.format(randint)
                 id_col = 'groupid_{0}'.format(randint)
@@ -167,6 +168,7 @@ class Experiments():
 
             elif isinstance(randint, int) and randint == 1:
                 logmstar_col = 'behroozi_bf'
+                logmbary_col = 'behroozi_bf'
                 galtype_col = 'grp_censat_{0}'.format(randint)
                 cencz_col = 'cen_cz_{0}'.format(randint)
                 id_col = 'groupid_{0}'.format(randint)
@@ -439,6 +441,7 @@ class Experiments():
 
             elif isinstance(randint, int) and randint != 1:
                 logmstar_col = '{0}'.format(randint)
+                logmbary_col = '{0}'.format(randint)
                 galtype_col = 'grp_censat_{0}'.format(randint)
                 cencz_col = 'cen_cz_{0}'.format(randint)
                 id_col = 'groupid_{0}'.format(randint)
@@ -453,6 +456,7 @@ class Experiments():
 
             elif isinstance(randint, int) and randint == 1:
                 logmstar_col = 'behroozi_bf'
+                logmbary_col = 'behroozi_bf'
                 galtype_col = 'grp_censat_{0}'.format(randint)
                 cencz_col = 'cen_cz_{0}'.format(randint)
                 id_col = 'groupid_{0}'.format(randint)
@@ -622,6 +626,7 @@ class Experiments():
 
             elif isinstance(randint, int) and randint != 1:
                 logmstar_col = '{0}'.format(randint)
+                logmbary_col = '{0}'.format(randint)
                 galtype_col = 'grp_censat_{0}'.format(randint)
                 cencz_col = 'cen_cz_{0}'.format(randint)
                 id_col = 'groupid_{0}'.format(randint)
@@ -636,6 +641,7 @@ class Experiments():
 
             elif isinstance(randint, int) and randint == 1:
                 logmstar_col = 'behroozi_bf'
+                logmbary_col = 'behroozi_bf'
                 galtype_col = 'grp_censat_{0}'.format(randint)
                 cencz_col = 'cen_cz_{0}'.format(randint)
                 id_col = 'groupid_{0}'.format(randint)
