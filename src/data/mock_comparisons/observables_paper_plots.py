@@ -1362,6 +1362,20 @@ if mf_type == 'smf':
 elif mf_type == 'bmf':
     sigma_average_bs, mat_bs = get_err_data(path_to_proc)
 
+def eckert_mf(norm, M_star, alpha, mass_arr):
+    # mass_arr = np.log10((10**mass_arr) / 2.041)
+    mass_arr = 10**mass_arr
+    M_star = 10**M_star
+    norm = norm*10**-3
+    result = norm * ((mass_arr / M_star)**(alpha+1))*np.exp(-mass_arr/M_star)
+    mass_arr = np.log10(mass_arr/2.041) #h: 0.7 -> 1
+    result = np.log10(result/0.343) #h: 0.7 -> 1
+    return mass_arr, result
+
+if mf_type == 'smf':
+    eckert_smf_x, eckert_smf_y = eckert_mf(5.95, 10.92, -1.19, catl.logmstar.values)
+elif mf_type == 'bmf':
+    eckert_bmf_x, eckert_bmf_y = eckert_mf(7.48, 10.92, -1.28, catl.logmbary_a23.values)
 
 #* Plots of observables
 rc('axes', linewidth=4)
@@ -1373,13 +1387,16 @@ fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False,
 max_total_ss = total_data_ss[0]
 max_total_bs = total_data_bs[0]
 
-mt = ax[0].fill_between(x=max_total_ss, y1=total_data_ss[1]+sigma_average_ss[:4], 
-    y2=total_data_ss[1]-sigma_average_ss[:4], color='silver', alpha=0.4)
+e16_smf = ax[0].scatter(eckert_smf_x, eckert_smf_y)
+# mt = ax[0].fill_between(x=max_total_ss, y1=total_data_ss[1]+sigma_average_ss[:4], 
+#     y2=total_data_ss[1]-sigma_average_ss[:4], color='silver', alpha=0.4)
 dt = ax[0].scatter(total_data_ss[0], total_data_ss[1],
     color='k', s=150, zorder=10, marker='^')
 
-ax[1].fill_between(x=max_total_bs, y1=total_data_bs[1]+sigma_average_bs[:4], 
-    y2=total_data_bs[1]-sigma_average_bs[:4], color='silver', alpha=0.4)
+# ax[1].fill_between(x=max_total_bs, y1=total_data_bs[1]+sigma_average_bs[:4], 
+#     y2=total_data_bs[1]-sigma_average_bs[:4], color='silver', alpha=0.4)
+e16_bmf = ax[1].scatter(eckert_bmf_x, eckert_bmf_y)
+
 ax[1].scatter(total_data_bs[0], total_data_bs[1],
     color='k', s=150, zorder=10, marker='^')
 
@@ -1389,11 +1406,11 @@ ax[1].set_xlabel(r'\boldmath$\log_{10}\ M_b \left[\mathrm{M_\odot}\, \mathrm{h}^
 ax[0].set_ylabel(r'\boldmath$\Phi \left[\mathrm{dlogM}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=30)
 ax[1].set_ylabel(r'\boldmath$\Phi \left[\mathrm{dlogM}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=30)
 
-ax[0].legend([(dt), (mt)], ['ECO','Mocks'],
+ax[0].legend([dt,  (e16_smf, e16_bmf)], ['ECO', 'E16'],
     handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='lower left', prop={'size':30})
 ax[0].minorticks_on()
 ax[1].minorticks_on()
-
+plt.show()
 plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_mf_total_bothsamples.pdf', 
     bbox_inches="tight", dpi=1200)
 
