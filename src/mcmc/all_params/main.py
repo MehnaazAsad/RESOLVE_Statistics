@@ -1,5 +1,6 @@
 """
-{This script}
+{This script is the entry point to making plots of final results for 
+Asad et al. 2023, in prep.}
 """
 __author__ = '{Mehnaaz Asad}'
 
