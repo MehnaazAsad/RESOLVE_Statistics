@@ -1,10 +1,24 @@
 """
-{This script}
+{This script serves as an experimental ground for testing different 
+statistics used in my analysis.}
 """
 __author__ = '{Mehnaaz Asad}'
 
 from scipy.stats import binned_statistic as bs
 import numpy as np
+
+import matplotlib.pyplot as plt
+from matplotlib import rc
+
+rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=30)
+rc('text', usetex=True)
+rc('text.latex', preamble=r"\usepackage{amsmath}")
+rc('axes', linewidth=2)
+rc('xtick.major', width=4, size=7)
+rc('ytick.major', width=4, size=7)
+rc('xtick.minor', width=2, size=7)
+rc('ytick.minor', width=2, size=7)
+
 
 class Experiments():
 
@@ -65,10 +79,6 @@ class Experiments():
             blue_sigma_arr (numpy array): Velocity dispersion of blue galaxies
             
             blue_cen_stellar_mass_arr (numpy array): Blue central stellar mass
-
-            red_nsat_arr (numpy array): Number of satellites around red centrals
-
-            blue_nsat_arr (numpy array): Number of satellites around blue centrals
 
         """
         settings = self.settings
@@ -233,90 +243,6 @@ class Experiments():
         blue_sigma_arr = blue_subset_df.groupby(['{0}'.format(id_col)])['cz'].\
             apply(lambda x: self.gapper(x)).values
 
-        # if settings.level == 'halo':
-        #     blue_hosthalo_arr = blue_subset_df.groupby(['{0}'.format(id_col)])\
-        #         ['halo_mvir_host_halo'].apply(lambda x: np.unique(x)[0]).values
-
-
-        # red_singleton_counter = 0
-        # red_sigma_arr = []
-        # red_cen_stellar_mass_arr = []
-        # red_group_mass_arr = []
-        # # red_sigmagapper_arr = []
-        # red_nsat_arr = []
-        # red_host_halo_mass_arr = []
-        # for key in red_subset_ids: 
-        #     group = catl.loc[catl[id_col] == key]
-        #     if len(group) == 1:
-        #         red_singleton_counter += 1
-        #     else:
-        #         cen_stellar_mass = group[logmstar_col].loc[group[galtype_col]\
-        #             .values == 1].values[0]
-        #         group_stellar_mass = np.log10(np.sum(10**group[logmstar_col].values))
-        #         if catl_type == 'model':
-        #             host_halo_mass = np.unique(group.halo_mvir_host_halo.values)[0]
-        #         else: 
-        #             #So that the array is returned either way without the need for 
-        #             #two separate return statements
-        #             host_halo_mass = 0 
-        #         nsat = len(group.loc[group[galtype_col].values == 0])
-        #         # Different velocity definitions
-        #         mean_cz_grp = np.round(np.mean(group.cz.values),2)
-        #         cen_cz_grp = group.cz.loc[group[galtype_col].values == 1].values[0]
-        #         # cz_grp = np.unique(group.grpcz.values)[0]
-
-        #         # Velocity difference
-        #         deltav = group.cz.values - len(group)*[cen_cz_grp]
-        #         sigma = deltav.std()
-        #         # red_sigmagapper = np.unique(group.grpsig.values)[0]
-                
-        #         red_sigma_arr.append(sigma)
-        #         red_cen_stellar_mass_arr.append(cen_stellar_mass)
-        #         red_group_mass_arr.append(group_stellar_mass)
-        #         # red_sigmagapper_arr.append(red_sigmagapper)
-        #         red_nsat_arr.append(nsat)
-        #         red_host_halo_mass_arr.append(host_halo_mass)
-
-        # blue_singleton_counter = 0
-        # blue_sigma_arr = []
-        # blue_cen_stellar_mass_arr = []
-        # blue_group_mass_arr = []
-        # # blue_sigmagapper_arr = []
-        # blue_nsat_arr = []
-        # blue_host_halo_mass_arr = []
-        # for key in blue_subset_ids: 
-        #     group = catl.loc[catl[id_col] == key]
-        #     if len(group) == 1:
-        #         blue_singleton_counter += 1
-        #     else:
-        #         cen_stellar_mass = group[logmstar_col].loc[group[galtype_col]\
-        #             .values == 1].values[0]
-        #         group_stellar_mass = np.log10(np.sum(10**group[logmstar_col].values))
-        #         if catl_type == 'model':
-        #             host_halo_mass = np.unique(group.halo_mvir_host_halo.values)[0]
-        #         else: 
-        #             #So that the array is returned either way without the need for 
-        #             #two separate return statements
-        #             host_halo_mass = 0 
-
-        #         nsat = len(group.loc[group[galtype_col].values == 0])
-        #         # Different velocity definitions
-        #         mean_cz_grp = np.round(np.mean(group.cz.values),2)
-        #         cen_cz_grp = group.cz.loc[group[galtype_col].values == 1].values[0]
-        #         # cz_grp = np.unique(group.grpcz.values)[0]
-
-        #         # Velocity difference
-        #         deltav = group.cz.values - len(group)*[cen_cz_grp]
-        #         # sigma = deltav[deltav!=0].std()
-        #         sigma = deltav.std()
-        #         # blue_sigmagapper = np.unique(group.grpsig.values)[0]
-                
-        #         blue_sigma_arr.append(sigma)
-        #         blue_cen_stellar_mass_arr.append(cen_stellar_mass)
-        #         blue_group_mass_arr.append(group_stellar_mass)
-        #         # blue_sigmagapper_arr.append(blue_sigmagapper)
-        #         blue_nsat_arr.append(nsat)
-        #         blue_host_halo_mass_arr.append(host_halo_mass)
 
         if settings.mf_type == 'smf':
             return red_sigma_arr, red_cen_stellar_mass_arr, blue_sigma_arr, \
@@ -324,13 +250,6 @@ class Experiments():
         elif settings.mf_type == 'bmf':
             return red_sigma_arr, red_cen_bary_mass_arr, blue_sigma_arr, \
                 blue_cen_bary_mass_arr
-
-            #, red_nsat_arr, blue_nsat_arr, \
-            #red_host_halo_mass_arr, blue_host_halo_mass_arr
-
-        # return red_sigma_arr, red_group_mass_arr, blue_sigma_arr, \
-        #     blue_group_mass_arr, red_nsat_arr, blue_nsat_arr, \
-        #     red_host_halo_mass_arr, blue_host_halo_mass_arr
 
     def get_stacked_velocity_dispersion(self, catl, catl_type, randint=None):
         """Calculating velocity dispersion of groups from real data, model or 
@@ -352,10 +271,6 @@ class Experiments():
             blue_sigma_arr (numpy array): Velocity dispersion of blue galaxies
             
             blue_cen_stellar_mass_arr (numpy array): Blue central stellar mass
-
-            red_nsat_arr (numpy array): Number of satellites around red centrals
-
-            blue_nsat_arr (numpy array): Number of satellites around blue centrals
 
         """
 
@@ -730,7 +645,6 @@ class Experiments():
                 blue_cen_bary_mass_arr, red_host_halo_mass_arr, \
                 blue_host_halo_mass_arr
 
-
     def get_vdf(self, red_sigma, blue_sigma, volume):
         bins_red=np.linspace(1,2.8,5)
         bins_blue=np.linspace(1,2.5,5)
@@ -747,7 +661,8 @@ class Experiments():
         phi_blue = counts_blue / (volume * dm)  # not a log quantity
         phi_red = np.log10(phi_red)
         phi_blue = np.log10(phi_blue)
-        return maxis, [phi_red, phi_blue], [err_poiss_red, err_poiss_blue], [bins_red, bins_blue], [counts_red, counts_blue]
+        return maxis, [phi_red, phi_blue], [err_poiss_red, err_poiss_blue], \
+            [bins_red, bins_blue], [counts_red, counts_blue]
 
     def Run_Experiments(self):
         analysis = self.analysis
@@ -830,10 +745,9 @@ class Experiments():
             'counts':counts}
 
         return self.data_experimentals
-        
+
+# Test functions       
 def get_richness_test(catl_richness, catl_type, randint=None, central_bool=True):
-    # settings = self.settings
-    # preprocess = self.preprocess
 
     if catl_type == 'data':
         if survey == 'eco' or survey == 'resolvea':
@@ -985,33 +899,6 @@ def get_richness_test(catl_richness, catl_type, randint=None, central_bool=True)
         blue_subset_ids, blue_num_arr, blue_group_halo_mass_arr, blue_group_stellar_mass_arr
 
 def get_velocity_dispersion_test(catl_sigma, catl_type, randint=None):
-    """Calculating velocity dispersion of groups from real data, model or 
-        mock
-
-    Args:
-        catl (pandas.DataFrame): Data catalogue 
-
-        catl_type (string): 'data', 'mock', 'model'
-
-        randint (optional): int
-            Mock number in case many Behroozi mocks were used. Defaults to None.
-
-    Returns:
-        red_sigma_arr (numpy array): Velocity dispersion of red galaxies
-
-        red_cen_stellar_mass_arr (numpy array): Group red central stellar mass
-
-        blue_sigma_arr (numpy array): Velocity dispersion of blue galaxies
-        
-        blue_cen_stellar_mass_arr (numpy array): Blue central stellar mass
-
-        red_nsat_arr (numpy array): Number of satellites around red centrals
-
-        blue_nsat_arr (numpy array): Number of satellites around blue centrals
-
-    """
-    # settings = self.settings
-    # preprocess = self.preprocess
 
     if catl_type == 'data':
         if survey == 'eco' or survey == 'resolvea':
@@ -1169,6 +1056,7 @@ def get_velocity_dispersion_test(catl_sigma, catl_type, randint=None):
         blue_subset_ids, blue_sigma_arr, blue_group_stellar_mass_arr, blue_nsat_arr, blue_keys_arr
 
 def get_mstar_sigma_halomassbins(gals_df, catl, randint_logmstar):
+    
     randint_logmstar=1
     richness_red_ids, N_red, mhalo_red, richness_mstar_red, richness_blue_ids, \
         N_blue, mhalo_blue, richness_mstar_blue = \
@@ -1436,40 +1324,3 @@ def get_mstar_sigma_halomassbins(gals_df, catl, randint_logmstar):
     plt.ylabel(r'\boldmath$\log_{10}\ M_{*, group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
     plt.title('{0} quenching'.format(quenching), pad=40.5)
     plt.show()
-
-
-#* Busy days presentation plot of scatter in halo mass at fixed sigma
-# fig1 = plt.figure(figsize=(10,8))
-# plt.scatter(red_sigma_arr, np.log10(red_hosthalo_arr), 
-#     s=80, c='indianred', marker='o')
-# plt.scatter(blue_sigma_arr, np.log10(blue_hosthalo_arr), 
-#     s=80, c='cornflowerblue', marker='o')
-# plt.xlabel(r'\boldmath$\sigma \left[\mathrm{km/s}\right]$',fontsize=30)
-# plt.ylabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\,'\
-#             r' \mathrm{h}^{-1} \right]$',fontsize=30)
-# plt.savefig('/Users/asadm2/Desktop/sigma_mhalo_scatter_v1.pdf', 
-#     bbox_inches="tight", dpi=1200)
-# plt.show()
-
-# bins=np.linspace(0, 300, 5)
-# red_scatter = bs(red_sigma_arr, np.log10(red_hosthalo_arr), 
-#     statistic='std', bins=bins)
-# red_counts = bs(red_sigma_arr, np.log10(red_hosthalo_arr), 
-#     statistic='count', bins=bins)
-# blue_scatter = bs(blue_sigma_arr, np.log10(blue_hosthalo_arr), 
-#     statistic='std', bins=bins)
-# blue_counts = bs(blue_sigma_arr, np.log10(blue_hosthalo_arr), 
-#     statistic='count', bins=bins)
-
-# bin_cen = 0.5 * (bins[1:] + bins[:-1])
-
-# fig2 = plt.figure(figsize=(10,8))
-# plt.plot(bin_cen, red_scatter[0], lw=4, ls='--', c='indianred')
-# plt.plot(bin_cen, blue_scatter[0], lw=4, ls='--', c='cornflowerblue')
-# plt.scatter(bin_cen, red_scatter[0], s=240, marker='^', c='indianred')
-# plt.scatter(bin_cen, blue_scatter[0], s=240, marker='^', c='cornflowerblue')
-# plt.xlabel(r'\boldmath$\sigma \left[\mathrm{km/s}\right]$',fontsize=30)
-# plt.ylabel(r'\boldmath$\sigma [\log_{10}\ M_h | \sigma]$', fontsize=30)
-# plt.savefig('/Users/asadm2/Desktop/sigma_mhalo_scatter_v2.pdf', 
-#     bbox_inches="tight", dpi=1200)
-# plt.show()
