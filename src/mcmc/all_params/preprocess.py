@@ -350,9 +350,9 @@ class Preprocess():
 
         # globals.gal_group_df_subset = gal_group[names_arr]
 
-        # file = open(settings.path_to_proc + \
-        #     "gal_group_run{0}.pickle".format(settings.run), 'rb')
-        file = open("/Users/asadm2/Downloads/gal_group_run{0}.pickle".format(settings.run), 'rb')
+        file = open(settings.path_to_proc + \
+            "gal_group_run{0}.pickle".format(settings.run), 'rb')
+        # file = open("/Users/asadm2/Downloads/gal_group_run{0}.pickle".format(settings.run), 'rb')
 
         globals.gal_group_df_subset = pickle.load(file) 
 
