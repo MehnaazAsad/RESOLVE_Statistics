@@ -17,7 +17,7 @@ import pandas as pd
 rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=30)
 rc('text', usetex=True)
 rc('text.latex', preamble=r"\usepackage{amsmath}")
-rc('axes', linewidth=2)
+rc('axes', linewidth=4)
 rc('xtick.major', width=4, size=7)
 rc('ytick.major', width=4, size=7)
 rc('xtick.minor', width=2, size=7)
@@ -3383,8 +3383,7 @@ class Plotting_Panels():
         self.preprocess = preprocess
         self.settings = preprocess.settings
 
-    def plot_total_mf(self, models_stellar, models_baryonic, data_stellar,
-                   data_baryonic, best_fit_stellar, best_fit_baryonic):
+    def plot_total_mf(self, models, data, best_fit):
         """
         Plot SMF from data, best fit param values and param values corresponding to 
         68th percentile 100 lowest chi^2 values
@@ -3417,145 +3416,127 @@ class Plotting_Panels():
         preprocess = self.preprocess
         quenching = settings.quenching
 
-        smf_total = data_stellar[0] #x, y, error, counts
-        smf_error = data_stellar[8][0:4]
+        smf_total = data[0] #x, y, error, counts
+        error = data[8][0:4]
 
-        x_stellar_phi_total_data, y_stellar_phi_total_data = smf_total[0], smf_total[1]
-        x_stellar_phi_total_model = models_stellar[0][0]['smf_total']['max_total'][0]
+        x_phi_total_data, y_phi_total_data = smf_total[0], smf_total[1]
+        x_phi_total_model = models[0][0]['smf_total']['max_total'][0]
 
-        x_stellar_phi_total_bf, y_stellar_phi_total_bf = best_fit_stellar[0]['smf_total']['max_total'],\
-            best_fit_stellar[0]['smf_total']['phi_total']
+        x_phi_total_bf, y_phi_total_bf = best_fit[0]['smf_total']['max_total'],\
+            best_fit[0]['smf_total']['phi_total']
 
-        bmf_total = data_baryonic[0] #x, y, error, counts
-        bmf_error = data_baryonic[8][0:4]
-
-        x_baryonic_phi_total_data, y_baryonic_phi_total_data = bmf_total[0], bmf_total[1]
-        x_baryonic_phi_total_model = models_baryonic[0][0]['smf_total']['max_total'][0]
-
-        x_baryonic_phi_total_bf, y_baryonic_phi_total_bf = best_fit_baryonic[0]['smf_total']['max_total'],\
-            best_fit_baryonic[0]['smf_total']['phi_total']
+        dof = data[10]
 
         i_outer = 0
-        stellar_mod_arr = []
-        baryonic_mod_arr = []
+        mod_arr = []
         while i_outer < 10:
-            for idx in range(len(models_stellar[i_outer][0]['smf_total']['max_total'])):
-                tot_mod_ii = models_stellar[i_outer][0]['smf_total']['phi_total'][idx]
-                stellar_mod_arr.append(tot_mod_ii)
-                tot_mod_ii = models_baryonic[i_outer][0]['smf_total']['phi_total'][idx]
-                baryonic_mod_arr.append(tot_mod_ii)
+            for idx in range(len(models[i_outer][0]['smf_total']['max_total'])):
+                tot_mod_ii = models[i_outer][0]['smf_total']['phi_total'][idx]
+                mod_arr.append(tot_mod_ii)
             i_outer += 1
 
-            for idx in range(len(models_stellar[i_outer][0]['smf_total']['max_total'])):
-                tot_mod_ii = models_stellar[i_outer][0]['smf_total']['phi_total'][idx]
-                stellar_mod_arr.append(tot_mod_ii)
-                tot_mod_ii = models_baryonic[i_outer][0]['smf_total']['phi_total'][idx]
-                baryonic_mod_arr.append(tot_mod_ii)
+            for idx in range(len(models[i_outer][0]['smf_total']['max_total'])):
+                tot_mod_ii = models[i_outer][0]['smf_total']['phi_total'][idx]
+                mod_arr.append(tot_mod_ii)
             i_outer += 1
 
-            for idx in range(len(models_stellar[i_outer][0]['smf_total']['max_total'])):
-                tot_mod_ii = models_stellar[i_outer][0]['smf_total']['phi_total'][idx]
-                stellar_mod_arr.append(tot_mod_ii)
-                tot_mod_ii = models_baryonic[i_outer][0]['smf_total']['phi_total'][idx]
-                baryonic_mod_arr.append(tot_mod_ii)
+            for idx in range(len(models[i_outer][0]['smf_total']['max_total'])):
+                tot_mod_ii = models[i_outer][0]['smf_total']['phi_total'][idx]
+                mod_arr.append(tot_mod_ii)
             i_outer += 1
 
-            for idx in range(len(models_stellar[i_outer][0]['smf_total']['max_total'])):
-                tot_mod_ii = models_stellar[i_outer][0]['smf_total']['phi_total'][idx]
-                stellar_mod_arr.append(tot_mod_ii)
-                tot_mod_ii = models_baryonic[i_outer][0]['smf_total']['phi_total'][idx]
-                baryonic_mod_arr.append(tot_mod_ii)
+            for idx in range(len(models[i_outer][0]['smf_total']['max_total'])):
+                tot_mod_ii = models[i_outer][0]['smf_total']['phi_total'][idx]
+                mod_arr.append(tot_mod_ii)
             i_outer += 1
 
-            for idx in range(len(models_stellar[i_outer][0]['smf_total']['max_total'])):
-                tot_mod_ii = models_stellar[i_outer][0]['smf_total']['phi_total'][idx]
-                stellar_mod_arr.append(tot_mod_ii)
-                tot_mod_ii = models_baryonic[i_outer][0]['smf_total']['phi_total'][idx]
-                baryonic_mod_arr.append(tot_mod_ii)
+            for idx in range(len(models[i_outer][0]['smf_total']['max_total'])):
+                tot_mod_ii = models[i_outer][0]['smf_total']['phi_total'][idx]
+                mod_arr.append(tot_mod_ii)
             i_outer += 1
 
-            for idx in range(len(models_stellar[i_outer][0]['smf_total']['max_total'])):
-                tot_mod_ii = models_stellar[i_outer][0]['smf_total']['phi_total'][idx]
-                stellar_mod_arr.append(tot_mod_ii)
-                tot_mod_ii = models_baryonic[i_outer][0]['smf_total']['phi_total'][idx]
-                baryonic_mod_arr.append(tot_mod_ii)
+            for idx in range(len(models[i_outer][0]['smf_total']['max_total'])):
+                tot_mod_ii = models[i_outer][0]['smf_total']['phi_total'][idx]
+                mod_arr.append(tot_mod_ii)
             i_outer += 1
 
-            for idx in range(len(models_stellar[i_outer][0]['smf_total']['max_total'])):
-                tot_mod_ii = models_stellar[i_outer][0]['smf_total']['phi_total'][idx]
-                stellar_mod_arr.append(tot_mod_ii)
-                tot_mod_ii = models_baryonic[i_outer][0]['smf_total']['phi_total'][idx]
-                baryonic_mod_arr.append(tot_mod_ii)
+            for idx in range(len(models[i_outer][0]['smf_total']['max_total'])):
+                tot_mod_ii = models[i_outer][0]['smf_total']['phi_total'][idx]
+                mod_arr.append(tot_mod_ii)
             i_outer += 1
 
-            for idx in range(len(models_stellar[i_outer][0]['smf_total']['max_total'])):
-                tot_mod_ii = models_stellar[i_outer][0]['smf_total']['phi_total'][idx]
-                stellar_mod_arr.append(tot_mod_ii)
-                tot_mod_ii = models_baryonic[i_outer][0]['smf_total']['phi_total'][idx]
-                baryonic_mod_arr.append(tot_mod_ii)
+            for idx in range(len(models[i_outer][0]['smf_total']['max_total'])):
+                tot_mod_ii = models[i_outer][0]['smf_total']['phi_total'][idx]
+                mod_arr.append(tot_mod_ii)
             i_outer += 1
 
-            for idx in range(len(models_stellar[i_outer][0]['smf_total']['max_total'])):
-                tot_mod_ii = models_stellar[i_outer][0]['smf_total']['phi_total'][idx]
-                stellar_mod_arr.append(tot_mod_ii)
-                tot_mod_ii = models_baryonic[i_outer][0]['smf_total']['phi_total'][idx]
-                baryonic_mod_arr.append(tot_mod_ii)
+            for idx in range(len(models[i_outer][0]['smf_total']['max_total'])):
+                tot_mod_ii = models[i_outer][0]['smf_total']['phi_total'][idx]
+                mod_arr.append(tot_mod_ii)
             i_outer += 1
 
-            for idx in range(len(models_stellar[i_outer][0]['smf_total']['max_total'])):
-                tot_mod_ii = models_stellar[i_outer][0]['smf_total']['phi_total'][idx]
-                stellar_mod_arr.append(tot_mod_ii)
-                tot_mod_ii = models_baryonic[i_outer][0]['smf_total']['phi_total'][idx]
-                baryonic_mod_arr.append(tot_mod_ii)
+            for idx in range(len(models[i_outer][0]['smf_total']['max_total'])):
+                tot_mod_ii = models[i_outer][0]['smf_total']['phi_total'][idx]
+                mod_arr.append(tot_mod_ii)
             i_outer += 1
 
-        tot_stellar_phi_max = np.amax(stellar_mod_arr, axis=0)
-        tot_stellar_phi_min = np.amin(stellar_mod_arr, axis=0)
+        tot_phi_max = np.amax(mod_arr, axis=0)
+        tot_phi_min = np.amin(mod_arr, axis=0)
 
-        tot_baryonic_phi_max = np.amax(baryonic_mod_arr, axis=0)
-        tot_baryonic_phi_min = np.amin(baryonic_mod_arr, axis=0)
+        x_stellar = np.array([ 8.875,  9.425,  9.975, 10.525])
+        x_baryonic = np.array([ 9.275,  9.825, 10.375, 10.925])
+
+        stellar_model_max = np.array([-1.40649305, -1.59086857, -1.66668969, -2.01364639])
+        stellar_model_min = np.array([-1.79852817, -1.99774758, -2.14948591, -2.49499663])
+
+        stellar_bf_y = np.array([-1.67824153, -1.85838778, -1.98215496, -2.33807617])
+        stellar_data_y = np.array([-1.50641087, -1.66717009, -1.75855679, -2.14068123])
+
+        stellar_error = np.array([0.11948336, 0.14297549, 0.15293873, 0.17193533])
+
+        baryonic_model_max = np.array([-1.35587333, -1.56179563, -1.89942866, -2.64046001])
+        baryonic_model_min = np.array([-1.51854394, -1.74228892, -2.1166138 , -2.9033142])
+
+        baryonic_bf_y = np.array([-1.5108299 , -1.72973757, -2.11847324, -2.89907715])
+        baryonic_data_y = np.array([-1.37100074, -1.56283196, -1.93629169, -2.66403959])
+
+        baryonic_error = np.array([0.11963659, 0.14568199, 0.16497913, 0.19174008])
 
         fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
-            gridspec_kw={'wspace':0.25})
+            gridspec_kw={'wspace':0.30})
 
-        smt = ax[0].fill_between(x=x_stellar_phi_total_model, y1=tot_stellar_phi_max, 
-            y2=tot_stellar_phi_min, color='silver', alpha=0.4)
+        smt = ax[0].fill_between(x=x_stellar, y1=stellar_model_max, 
+            y2=stellar_model_min, color='silver', alpha=0.4)
 
-        sdt = ax[0].errorbar(x_stellar_phi_total_data, y_stellar_phi_total_data, 
-            yerr=smf_error,
-            color='k', fmt='s', ecolor='k', markersize=12, capsize=7,
+        sdt = ax[0].errorbar(x_stellar, stellar_data_y, 
+            yerr=stellar_error,
+            color='k', fmt='s', ecolor='k', markersize=20, capsize=7,
             capthick=1.5, zorder=10, marker='^')
 
-        bmt = ax[1].fill_between(x=x_baryonic_phi_total_model, 
-            y1=tot_baryonic_phi_max, 
-            y2=tot_baryonic_phi_min, color='silver', alpha=0.4)
-
-        bdt = ax[1].errorbar(x_baryonic_phi_total_data, y_baryonic_phi_total_data, 
-            yerr=bmf_error,
-            color='k', fmt='s', ecolor='k', markersize=12, capsize=7,
-            capthick=1.5, zorder=10, marker='^')
-
-        # dt = plt.scatter(x_phi_total_data, y_phi_total_data,
-        #     color='k', s=240, zorder=10, marker='^')
-
-        # Best-fit
-        # Need a comma after 'bfr' and 'bfb' to solve this:
-        #   AttributeError: 'NoneType' object has no attribute 'create_artists'
-        sbft, = ax[0].plot(x_stellar_phi_total_bf, y_stellar_phi_total_bf, 
+        sbft, = ax[0].plot(x_stellar, stellar_bf_y, 
             color='k', ls='--', lw=4, zorder=10)
 
-        bbft, = plt.plot(x_baryonic_phi_total_bf, y_baryonic_phi_total_bf, 
+        bmt = ax[1].fill_between(x=x_baryonic, 
+            y1=baryonic_model_max, 
+            y2=baryonic_model_min, color='silver', alpha=0.4)
+
+        bdt = ax[1].errorbar(x_baryonic, baryonic_data_y, 
+            yerr=baryonic_error,
+            color='k', fmt='s', ecolor='k', markersize=20, capsize=7,
+            capthick=1.5, zorder=10, marker='^')
+
+        bbft, = ax[1].plot(x_baryonic, baryonic_bf_y, 
             color='k', ls='--', lw=4, zorder=10)
 
         ax[0].set_xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=30)
         ax[1].set_xlabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=30)
         
-        ax[0].set_ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=30)
-        ax[1].set_ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=30)
+        ax[0].set_ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', labelpad=20, fontsize=30)
+        ax[1].set_ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', labelpad=20, fontsize=30)
 
-        ax[0].legend([(sdt, bdt), (smt, bmt), (sbft, bbft)], ['Data','Models','Best-fit'],
+        ax[0].legend([(sdt), (smt), (sbft)], ['Data','Models','Best-fit'],
             handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, 
-            prop={'size':30}, loc='lower left')
+            prop={'size':30}, markerscale=0.5, loc='lower left')
 
         ax[0].minorticks_on()
         ax[1].minorticks_on()
@@ -3564,8 +3545,7 @@ class Plotting_Panels():
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/mf_total_emcee_{0}.pdf'.format(quenching), 
             bbox_inches="tight", dpi=1200)
 
-    def plot_fblue(self, models_stellar, models_baryonic, data_stellar,
-                   data_baryonic, best_fit_stellar, best_fit_baryonic):
+    def plot_fblue(self, models, data, best_fit):
         """
         Plot blue fraction from data, best fit param values and param values 
         corresponding to 68th percentile 100 lowest chi^2 values
@@ -3598,296 +3578,226 @@ class Plotting_Panels():
         preprocess = self.preprocess
         quenching = settings.quenching
 
-        stellar_fblue_data = data_stellar[1]
-        stellar_error_cen = data_stellar[8][4:8]
-        stellar_error_sat = data_stellar[8][8:12]
+        fblue_data = data[1]
+        error_cen = data[8][4:8]
+        error_sat = data[8][8:12]
+        dof = data[10]
 
-        x_stellar_fblue_total_data, y_stellar_fblue_total_data = \
-            stellar_fblue_data[0], stellar_fblue_data[1]
-        y_stellar_fblue_cen_data = stellar_fblue_data[2]
-        y_stellar_fblue_sat_data = stellar_fblue_data[3]
+        x_fblue_total_data, y_fblue_total_data = fblue_data[0], fblue_data[1]
+        y_fblue_cen_data = fblue_data[2]
+        y_fblue_sat_data = fblue_data[3]
 
-        x_stellar_fblue_model = models_stellar[0][0]['f_blue']['max_fblue'][0]
+        x_fblue_model = models[0][0]['f_blue']['max_fblue'][0]
 
-        x_stellar_fblue_total_bf, y_stellar_fblue_total_bf = \
-            best_fit_stellar[0]['f_blue']['max_fblue'],\
-            best_fit_stellar[0]['f_blue']['fblue_total']
-        y_stellar_fblue_cen_bf = best_fit_stellar[0]['f_blue']['fblue_cen']
-        y_stellar_fblue_sat_bf = best_fit_stellar[0]['f_blue']['fblue_sat']
-
-        baryonic_fblue_data = data_baryonic[1]
-        baryonic_error_cen = data_baryonic[8][4:8]
-        baryonic_error_sat = data_baryonic[8][8:12]
-
-        x_baryonic_fblue_total_data, y_baryonic_fblue_total_data = \
-            baryonic_fblue_data[0], baryonic_fblue_data[1]
-        y_baryonic_fblue_cen_data = baryonic_fblue_data[2]
-        y_baryonic_fblue_sat_data = baryonic_fblue_data[3]
-
-        x_baryonic_fblue_model = models_baryonic[0][0]['f_blue']['max_fblue'][0]
-
-        x_baryonic_fblue_total_bf, y_baryonic_fblue_total_bf = \
-            best_fit_baryonic[0]['f_blue']['max_fblue'],\
-            best_fit_baryonic[0]['f_blue']['fblue_total']
-        y_baryonic_fblue_cen_bf = best_fit_baryonic[0]['f_blue']['fblue_cen']
-        y_baryonic_fblue_sat_bf = best_fit_baryonic[0]['f_blue']['fblue_sat']
+        x_fblue_total_bf, y_fblue_total_bf = best_fit[0]['f_blue']['max_fblue'],\
+            best_fit[0]['f_blue']['fblue_total']
+        y_fblue_cen_bf = best_fit[0]['f_blue']['fblue_cen']
+        y_fblue_sat_bf = best_fit[0]['f_blue']['fblue_sat']
 
         i_outer = 0
-        stellar_total_mod_arr = []
-        stellar_cen_mod_arr = []
-        stellar_sat_mod_arr = []
-
-        baryonic_total_mod_arr = []
-        baryonic_cen_mod_arr = []
-        baryonic_sat_mod_arr = []
-
+        total_mod_arr = []
+        cen_mod_arr = []
+        sat_mod_arr = []
         while i_outer < 10:
-            for idx in range(len(models_stellar[i_outer][0]['f_blue']['max_fblue'])):
-                tot_mod_ii = models_stellar[i_outer][0]['f_blue']['fblue_total'][idx]
-                cen_mod_ii = models_stellar[i_outer][0]['f_blue']['fblue_cen'][idx]
-                sat_mod_ii = models_stellar[i_outer][0]['f_blue']['fblue_sat'][idx]
-                stellar_total_mod_arr.append(tot_mod_ii)
-                stellar_cen_mod_arr.append(cen_mod_ii)
-                stellar_sat_mod_arr.append(sat_mod_ii)
-
-                tot_mod_ii = models_baryonic[i_outer][0]['f_blue']['fblue_total'][idx]
-                cen_mod_ii = models_baryonic[i_outer][0]['f_blue']['fblue_cen'][idx]
-                sat_mod_ii = models_baryonic[i_outer][0]['f_blue']['fblue_sat'][idx]
-                baryonic_total_mod_arr.append(tot_mod_ii)
-                baryonic_cen_mod_arr.append(cen_mod_ii)
-                baryonic_sat_mod_arr.append(sat_mod_ii)
-
+            for idx in range(len(models[i_outer][0]['f_blue']['max_fblue'])):
+                tot_mod_ii = models[i_outer][0]['f_blue']['fblue_total'][idx]
+                cen_mod_ii = models[i_outer][0]['f_blue']['fblue_cen'][idx]
+                sat_mod_ii = models[i_outer][0]['f_blue']['fblue_sat'][idx]
+                total_mod_arr.append(tot_mod_ii)
+                cen_mod_arr.append(cen_mod_ii)
+                sat_mod_arr.append(sat_mod_ii)
             i_outer += 1
 
-            for idx in range(len(models_stellar[i_outer][0]['f_blue']['max_fblue'])):
-                tot_mod_ii = models_stellar[i_outer][0]['f_blue']['fblue_total'][idx]
-                cen_mod_ii = models_stellar[i_outer][0]['f_blue']['fblue_cen'][idx]
-                sat_mod_ii = models_stellar[i_outer][0]['f_blue']['fblue_sat'][idx]
-                stellar_total_mod_arr.append(tot_mod_ii)
-                stellar_cen_mod_arr.append(cen_mod_ii)
-                stellar_sat_mod_arr.append(sat_mod_ii)
-
-                tot_mod_ii = models_baryonic[i_outer][0]['f_blue']['fblue_total'][idx]
-                cen_mod_ii = models_baryonic[i_outer][0]['f_blue']['fblue_cen'][idx]
-                sat_mod_ii = models_baryonic[i_outer][0]['f_blue']['fblue_sat'][idx]
-                baryonic_total_mod_arr.append(tot_mod_ii)
-                baryonic_cen_mod_arr.append(cen_mod_ii)
-                baryonic_sat_mod_arr.append(sat_mod_ii)
+            for idx in range(len(models[i_outer][0]['f_blue']['max_fblue'])):
+                tot_mod_ii = models[i_outer][0]['f_blue']['fblue_total'][idx]
+                cen_mod_ii = models[i_outer][0]['f_blue']['fblue_cen'][idx]
+                sat_mod_ii = models[i_outer][0]['f_blue']['fblue_sat'][idx]
+                total_mod_arr.append(tot_mod_ii)
+                cen_mod_arr.append(cen_mod_ii)
+                sat_mod_arr.append(sat_mod_ii)
             i_outer += 1
 
-            for idx in range(len(models_stellar[i_outer][0]['f_blue']['max_fblue'])):
-                tot_mod_ii = models_stellar[i_outer][0]['f_blue']['fblue_total'][idx]
-                cen_mod_ii = models_stellar[i_outer][0]['f_blue']['fblue_cen'][idx]
-                sat_mod_ii = models_stellar[i_outer][0]['f_blue']['fblue_sat'][idx]
-                stellar_total_mod_arr.append(tot_mod_ii)
-                stellar_cen_mod_arr.append(cen_mod_ii)
-                stellar_sat_mod_arr.append(sat_mod_ii)
-
-                tot_mod_ii = models_baryonic[i_outer][0]['f_blue']['fblue_total'][idx]
-                cen_mod_ii = models_baryonic[i_outer][0]['f_blue']['fblue_cen'][idx]
-                sat_mod_ii = models_baryonic[i_outer][0]['f_blue']['fblue_sat'][idx]
-                baryonic_total_mod_arr.append(tot_mod_ii)
-                baryonic_cen_mod_arr.append(cen_mod_ii)
-                baryonic_sat_mod_arr.append(sat_mod_ii)
+            for idx in range(len(models[i_outer][0]['f_blue']['max_fblue'])):
+                tot_mod_ii = models[i_outer][0]['f_blue']['fblue_total'][idx]
+                cen_mod_ii = models[i_outer][0]['f_blue']['fblue_cen'][idx]
+                sat_mod_ii = models[i_outer][0]['f_blue']['fblue_sat'][idx]
+                total_mod_arr.append(tot_mod_ii)
+                cen_mod_arr.append(cen_mod_ii)
+                sat_mod_arr.append(sat_mod_ii)
             i_outer += 1
 
-            for idx in range(len(models_stellar[i_outer][0]['f_blue']['max_fblue'])):
-                tot_mod_ii = models_stellar[i_outer][0]['f_blue']['fblue_total'][idx]
-                cen_mod_ii = models_stellar[i_outer][0]['f_blue']['fblue_cen'][idx]
-                sat_mod_ii = models_stellar[i_outer][0]['f_blue']['fblue_sat'][idx]
-                stellar_total_mod_arr.append(tot_mod_ii)
-                stellar_cen_mod_arr.append(cen_mod_ii)
-                stellar_sat_mod_arr.append(sat_mod_ii)
-
-                tot_mod_ii = models_baryonic[i_outer][0]['f_blue']['fblue_total'][idx]
-                cen_mod_ii = models_baryonic[i_outer][0]['f_blue']['fblue_cen'][idx]
-                sat_mod_ii = models_baryonic[i_outer][0]['f_blue']['fblue_sat'][idx]
-                baryonic_total_mod_arr.append(tot_mod_ii)
-                baryonic_cen_mod_arr.append(cen_mod_ii)
-                baryonic_sat_mod_arr.append(sat_mod_ii)
+            for idx in range(len(models[i_outer][0]['f_blue']['max_fblue'])):
+                tot_mod_ii = models[i_outer][0]['f_blue']['fblue_total'][idx]
+                cen_mod_ii = models[i_outer][0]['f_blue']['fblue_cen'][idx]
+                sat_mod_ii = models[i_outer][0]['f_blue']['fblue_sat'][idx]
+                total_mod_arr.append(tot_mod_ii)
+                cen_mod_arr.append(cen_mod_ii)
+                sat_mod_arr.append(sat_mod_ii)
             i_outer += 1
 
-            for idx in range(len(models_stellar[i_outer][0]['f_blue']['max_fblue'])):
-                tot_mod_ii = models_stellar[i_outer][0]['f_blue']['fblue_total'][idx]
-                cen_mod_ii = models_stellar[i_outer][0]['f_blue']['fblue_cen'][idx]
-                sat_mod_ii = models_stellar[i_outer][0]['f_blue']['fblue_sat'][idx]
-                stellar_total_mod_arr.append(tot_mod_ii)
-                stellar_cen_mod_arr.append(cen_mod_ii)
-                stellar_sat_mod_arr.append(sat_mod_ii)
-
-                tot_mod_ii = models_baryonic[i_outer][0]['f_blue']['fblue_total'][idx]
-                cen_mod_ii = models_baryonic[i_outer][0]['f_blue']['fblue_cen'][idx]
-                sat_mod_ii = models_baryonic[i_outer][0]['f_blue']['fblue_sat'][idx]
-                baryonic_total_mod_arr.append(tot_mod_ii)
-                baryonic_cen_mod_arr.append(cen_mod_ii)
-                baryonic_sat_mod_arr.append(sat_mod_ii)
+            for idx in range(len(models[i_outer][0]['f_blue']['max_fblue'])):
+                tot_mod_ii = models[i_outer][0]['f_blue']['fblue_total'][idx]
+                cen_mod_ii = models[i_outer][0]['f_blue']['fblue_cen'][idx]
+                sat_mod_ii = models[i_outer][0]['f_blue']['fblue_sat'][idx]
+                total_mod_arr.append(tot_mod_ii)
+                cen_mod_arr.append(cen_mod_ii)
+                sat_mod_arr.append(sat_mod_ii)
             i_outer += 1
 
-            for idx in range(len(models_stellar[i_outer][0]['f_blue']['max_fblue'])):
-                tot_mod_ii = models_stellar[i_outer][0]['f_blue']['fblue_total'][idx]
-                cen_mod_ii = models_stellar[i_outer][0]['f_blue']['fblue_cen'][idx]
-                sat_mod_ii = models_stellar[i_outer][0]['f_blue']['fblue_sat'][idx]
-                stellar_total_mod_arr.append(tot_mod_ii)
-                stellar_cen_mod_arr.append(cen_mod_ii)
-                stellar_sat_mod_arr.append(sat_mod_ii)
-
-                tot_mod_ii = models_baryonic[i_outer][0]['f_blue']['fblue_total'][idx]
-                cen_mod_ii = models_baryonic[i_outer][0]['f_blue']['fblue_cen'][idx]
-                sat_mod_ii = models_baryonic[i_outer][0]['f_blue']['fblue_sat'][idx]
-                baryonic_total_mod_arr.append(tot_mod_ii)
-                baryonic_cen_mod_arr.append(cen_mod_ii)
-                baryonic_sat_mod_arr.append(sat_mod_ii)
+            for idx in range(len(models[i_outer][0]['f_blue']['max_fblue'])):
+                tot_mod_ii = models[i_outer][0]['f_blue']['fblue_total'][idx]
+                cen_mod_ii = models[i_outer][0]['f_blue']['fblue_cen'][idx]
+                sat_mod_ii = models[i_outer][0]['f_blue']['fblue_sat'][idx]
+                total_mod_arr.append(tot_mod_ii)
+                cen_mod_arr.append(cen_mod_ii)
+                sat_mod_arr.append(sat_mod_ii)
             i_outer += 1
 
-            for idx in range(len(models_stellar[i_outer][0]['f_blue']['max_fblue'])):
-                tot_mod_ii = models_stellar[i_outer][0]['f_blue']['fblue_total'][idx]
-                cen_mod_ii = models_stellar[i_outer][0]['f_blue']['fblue_cen'][idx]
-                sat_mod_ii = models_stellar[i_outer][0]['f_blue']['fblue_sat'][idx]
-                stellar_total_mod_arr.append(tot_mod_ii)
-                stellar_cen_mod_arr.append(cen_mod_ii)
-                stellar_sat_mod_arr.append(sat_mod_ii)
-
-                tot_mod_ii = models_baryonic[i_outer][0]['f_blue']['fblue_total'][idx]
-                cen_mod_ii = models_baryonic[i_outer][0]['f_blue']['fblue_cen'][idx]
-                sat_mod_ii = models_baryonic[i_outer][0]['f_blue']['fblue_sat'][idx]
-                baryonic_total_mod_arr.append(tot_mod_ii)
-                baryonic_cen_mod_arr.append(cen_mod_ii)
-                baryonic_sat_mod_arr.append(sat_mod_ii)
+            for idx in range(len(models[i_outer][0]['f_blue']['max_fblue'])):
+                tot_mod_ii = models[i_outer][0]['f_blue']['fblue_total'][idx]
+                cen_mod_ii = models[i_outer][0]['f_blue']['fblue_cen'][idx]
+                sat_mod_ii = models[i_outer][0]['f_blue']['fblue_sat'][idx]
+                total_mod_arr.append(tot_mod_ii)
+                cen_mod_arr.append(cen_mod_ii)
+                sat_mod_arr.append(sat_mod_ii)
             i_outer += 1
 
-            for idx in range(len(models_stellar[i_outer][0]['f_blue']['max_fblue'])):
-                tot_mod_ii = models_stellar[i_outer][0]['f_blue']['fblue_total'][idx]
-                cen_mod_ii = models_stellar[i_outer][0]['f_blue']['fblue_cen'][idx]
-                sat_mod_ii = models_stellar[i_outer][0]['f_blue']['fblue_sat'][idx]
-                stellar_total_mod_arr.append(tot_mod_ii)
-                stellar_cen_mod_arr.append(cen_mod_ii)
-                stellar_sat_mod_arr.append(sat_mod_ii)
-
-                tot_mod_ii = models_baryonic[i_outer][0]['f_blue']['fblue_total'][idx]
-                cen_mod_ii = models_baryonic[i_outer][0]['f_blue']['fblue_cen'][idx]
-                sat_mod_ii = models_baryonic[i_outer][0]['f_blue']['fblue_sat'][idx]
-                baryonic_total_mod_arr.append(tot_mod_ii)
-                baryonic_cen_mod_arr.append(cen_mod_ii)
-                baryonic_sat_mod_arr.append(sat_mod_ii)
+            for idx in range(len(models[i_outer][0]['f_blue']['max_fblue'])):
+                tot_mod_ii = models[i_outer][0]['f_blue']['fblue_total'][idx]
+                cen_mod_ii = models[i_outer][0]['f_blue']['fblue_cen'][idx]
+                sat_mod_ii = models[i_outer][0]['f_blue']['fblue_sat'][idx]
+                total_mod_arr.append(tot_mod_ii)
+                cen_mod_arr.append(cen_mod_ii)
+                sat_mod_arr.append(sat_mod_ii)
             i_outer += 1
 
-            for idx in range(len(models_stellar[i_outer][0]['f_blue']['max_fblue'])):
-                tot_mod_ii = models_stellar[i_outer][0]['f_blue']['fblue_total'][idx]
-                cen_mod_ii = models_stellar[i_outer][0]['f_blue']['fblue_cen'][idx]
-                sat_mod_ii = models_stellar[i_outer][0]['f_blue']['fblue_sat'][idx]
-                stellar_total_mod_arr.append(tot_mod_ii)
-                stellar_cen_mod_arr.append(cen_mod_ii)
-                stellar_sat_mod_arr.append(sat_mod_ii)
-
-                tot_mod_ii = models_baryonic[i_outer][0]['f_blue']['fblue_total'][idx]
-                cen_mod_ii = models_baryonic[i_outer][0]['f_blue']['fblue_cen'][idx]
-                sat_mod_ii = models_baryonic[i_outer][0]['f_blue']['fblue_sat'][idx]
-                baryonic_total_mod_arr.append(tot_mod_ii)
-                baryonic_cen_mod_arr.append(cen_mod_ii)
-                baryonic_sat_mod_arr.append(sat_mod_ii)
+            for idx in range(len(models[i_outer][0]['f_blue']['max_fblue'])):
+                tot_mod_ii = models[i_outer][0]['f_blue']['fblue_total'][idx]
+                cen_mod_ii = models[i_outer][0]['f_blue']['fblue_cen'][idx]
+                sat_mod_ii = models[i_outer][0]['f_blue']['fblue_sat'][idx]
+                total_mod_arr.append(tot_mod_ii)
+                cen_mod_arr.append(cen_mod_ii)
+                sat_mod_arr.append(sat_mod_ii)
             i_outer += 1
 
-            for idx in range(len(models_stellar[i_outer][0]['f_blue']['max_fblue'])):
-                tot_mod_ii = models_stellar[i_outer][0]['f_blue']['fblue_total'][idx]
-                cen_mod_ii = models_stellar[i_outer][0]['f_blue']['fblue_cen'][idx]
-                sat_mod_ii = models_stellar[i_outer][0]['f_blue']['fblue_sat'][idx]
-                stellar_total_mod_arr.append(tot_mod_ii)
-                stellar_cen_mod_arr.append(cen_mod_ii)
-                stellar_sat_mod_arr.append(sat_mod_ii)
-
-                tot_mod_ii = models_baryonic[i_outer][0]['f_blue']['fblue_total'][idx]
-                cen_mod_ii = models_baryonic[i_outer][0]['f_blue']['fblue_cen'][idx]
-                sat_mod_ii = models_baryonic[i_outer][0]['f_blue']['fblue_sat'][idx]
-                baryonic_total_mod_arr.append(tot_mod_ii)
-                baryonic_cen_mod_arr.append(cen_mod_ii)
-                baryonic_sat_mod_arr.append(sat_mod_ii)
+            for idx in range(len(models[i_outer][0]['f_blue']['max_fblue'])):
+                tot_mod_ii = models[i_outer][0]['f_blue']['fblue_total'][idx]
+                cen_mod_ii = models[i_outer][0]['f_blue']['fblue_cen'][idx]
+                sat_mod_ii = models[i_outer][0]['f_blue']['fblue_sat'][idx]
+                total_mod_arr.append(tot_mod_ii)
+                cen_mod_arr.append(cen_mod_ii)
+                sat_mod_arr.append(sat_mod_ii)
             i_outer += 1
 
-        stellar_fblue_total_max = np.amax(stellar_total_mod_arr, axis=0)
-        stellar_fblue_total_min = np.amin(stellar_total_mod_arr, axis=0)
-        stellar_fblue_cen_max = np.nanmax(stellar_cen_mod_arr, axis=0)
-        stellar_fblue_cen_min = np.nanmin(stellar_cen_mod_arr, axis=0)
-        stellar_fblue_sat_max = np.nanmax(stellar_sat_mod_arr, axis=0)
-        stellar_fblue_sat_min = np.nanmin(stellar_sat_mod_arr, axis=0)
+        fblue_total_max = np.amax(total_mod_arr, axis=0)
+        fblue_total_min = np.amin(total_mod_arr, axis=0)
+        fblue_cen_max = np.nanmax(cen_mod_arr, axis=0)
+        fblue_cen_min = np.nanmin(cen_mod_arr, axis=0)
+        fblue_sat_max = np.nanmax(sat_mod_arr, axis=0)
+        fblue_sat_min = np.nanmin(sat_mod_arr, axis=0)
 
-        baryonic_fblue_total_max = np.amax(baryonic_total_mod_arr, axis=0)
-        baryonic_fblue_total_min = np.amin(baryonic_total_mod_arr, axis=0)
-        baryonic_fblue_cen_max = np.nanmax(baryonic_cen_mod_arr, axis=0)
-        baryonic_fblue_cen_min = np.nanmin(baryonic_cen_mod_arr, axis=0)
-        baryonic_fblue_sat_max = np.nanmax(baryonic_sat_mod_arr, axis=0)
-        baryonic_fblue_sat_min = np.nanmin(baryonic_sat_mod_arr, axis=0)
+        x_stellar = np.array([ 8.875,  9.425,  9.975, 10.525])
+        x_baryonic = np.array([ 9.275,  9.825, 10.375, 10.925])
+
+        stellar_model_cen_max = np.array([0.85680934, 0.74592391, 0.52844037, 0.27729573])
+        stellar_model_cen_min = np.array([0.78984787, 0.6493089 , 0.42275736, 0.16432978])
+        stellar_model_sat_max = np.array([0.52685661, 0.43925234, 0.33355978, 0.17922078])
+        stellar_model_sat_min = np.array([0.44516439, 0.35151803, 0.23303633, 0.07048458])
+
+        stellar_bf_cen_y = np.array([0.83446115, 0.71072411, 0.46760563, 0.18954248])
+        stellar_bf_sat_y = np.array([0.45949477, 0.39189189, 0.27251185, 0.09230769])
+
+        stellar_data_cen_y = np.array([0.83244838, 0.65177066, 0.40886203, 0.21748401])
+        stellar_data_sat_y = np.array([0.46857773, 0.34697218, 0.26781857, 0.11111111])
+
+        stellar_cen_error = np.array([0.02761067, 0.03908448, 0.03358606, 0.02101262])
+        stellar_sat_error = np.array([0.02126624, 0.01933832, 0.01724711, 0.02441217])
+
+        baryonic_model_cen_max = np.array([0.87305371, 0.74      , 0.45011086, 0.1317734 ])
+        baryonic_model_cen_min = np.array([0.82241515, 0.64424267, 0.34025559, 0.04607721])
+        baryonic_model_sat_max = np.array([0.59414818, 0.49204771, 0.31754386, 0.2       ])
+        baryonic_model_sat_min = np.array([0.52754131, 0.41655658, 0.22953451, 0.        ])
+
+        baryonic_bf_cen_y = np.array([0.85979801, 0.70827149, 0.40085942, 0.07839721])
+        baryonic_bf_sat_y = np.array([0.5826819 , 0.47610723, 0.2611465 , 0.09090909])
+
+        baryonic_data_cen_y = np.array([0.8465711 , 0.62694611, 0.37299465, 0.10691824])
+        baryonic_data_sat_y = np.array([0.55704008, 0.41626016, 0.2283105 , 0.09090909])
+
+        baryonic_cen_error = np.array([0.02318217, 0.04046306, 0.03295486, 0.03116817])
+        baryonic_sat_error = np.array([0.02119533, 0.02008324, 0.0296453 , 0.07140613])
 
         fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
-            gridspec_kw={'wspace':0.25})
-        smc = ax[0].fill_between(x=x_stellar_fblue_model, y1=stellar_fblue_cen_max, 
-            y2=stellar_fblue_cen_min, color='thistle', alpha=0.5)
-        sms = ax[0].fill_between(x=x_stellar_fblue_model, y1=stellar_fblue_sat_max, 
-            y2=stellar_fblue_sat_min, color='khaki', alpha=0.5)
+            gridspec_kw={'wspace':0.30})
+        smc = ax[0].fill_between(x=x_stellar, y1=stellar_model_cen_max, 
+            y2=stellar_model_cen_min, color='thistle', alpha=0.5)
+        sms = ax[0].fill_between(x=x_stellar, y1=stellar_model_sat_max, 
+            y2=stellar_model_sat_min, color='khaki', alpha=0.5)
 
 
-        sdc = ax[0].errorbar(x_stellar_fblue_total_data, 
-            y_stellar_fblue_cen_data, yerr=stellar_error_cen,
+        sdc = ax[0].errorbar(x_stellar, 
+            stellar_data_cen_y, yerr=stellar_cen_error,
             color='rebeccapurple', fmt='s', ecolor='rebeccapurple', 
-            markersize=12, capsize=7,
+            markersize=20, capsize=7,
             capthick=1.5, zorder=10, marker='^')
-        sds = ax[0].errorbar(x_stellar_fblue_total_data, y_stellar_fblue_sat_data, 
-            yerr=stellar_error_sat,
-            color='goldenrod', fmt='s', ecolor='goldenrod', markersize=12, capsize=7,
-            capthick=1.5, zorder=10, marker='^')
-
-        bmc = ax[1].fill_between(x=x_baryonic_fblue_model, y1=baryonic_fblue_cen_max, 
-            y2=baryonic_fblue_cen_min, color='thistle', alpha=0.5)
-        bms = ax[1].fill_between(x=x_baryonic_fblue_model, y1=baryonic_fblue_sat_max, 
-            y2=baryonic_fblue_sat_min, color='khaki', alpha=0.5)
-
-
-        bdc = ax[1].errorbar(x_baryonic_fblue_total_data, y_baryonic_fblue_cen_data, 
-            yerr=baryonic_error_cen,
-            color='rebeccapurple', fmt='s', ecolor='rebeccapurple', 
-            markersize=12, capsize=7,
-            capthick=1.5, zorder=10, marker='^')
-        bds = ax[1].errorbar(x_baryonic_fblue_total_data, y_baryonic_fblue_sat_data, 
-            yerr=baryonic_error_sat,
-            color='goldenrod', fmt='s', ecolor='goldenrod', markersize=12, capsize=7,
+        sds = ax[0].errorbar(x_stellar, stellar_data_sat_y, 
+            yerr=stellar_sat_error,
+            color='goldenrod', fmt='s', ecolor='goldenrod', markersize=20, capsize=7,
             capthick=1.5, zorder=10, marker='^')
 
-        # Best-fit
-        # Need a comma after 'bfr' and 'bfb' to solve this:
-        #   AttributeError: 'NoneType' object has no attribute 'create_artists'
-        sbfc, = ax[0].plot(x_stellar_fblue_total_bf, y_stellar_fblue_cen_bf, 
+        sbfc, = ax[0].plot(x_stellar, stellar_bf_cen_y, 
             color='rebeccapurple', ls='--', lw=4, zorder=10)
-        sbfs, = ax[0].plot(x_stellar_fblue_total_bf, y_stellar_fblue_sat_bf, 
+        sbfs, = ax[0].plot(x_stellar, stellar_bf_sat_y, 
             color='goldenrod', ls='--', lw=4, 
             zorder=10)
 
-        bbfc, = ax[1].plot(x_baryonic_fblue_total_bf, y_baryonic_fblue_cen_bf, 
+        bmc = ax[1].fill_between(x=x_baryonic, y1=baryonic_model_cen_max, 
+            y2=baryonic_model_cen_min, color='thistle', alpha=0.5)
+        bms = ax[1].fill_between(x=x_baryonic, y1=baryonic_model_sat_max, 
+            y2=baryonic_model_sat_min, color='khaki', alpha=0.5)
+
+
+        bdc = ax[1].errorbar(x_baryonic, baryonic_data_cen_y, 
+            yerr=baryonic_cen_error,
+            color='rebeccapurple', fmt='s', ecolor='rebeccapurple', 
+            markersize=12, capsize=7,
+            capthick=1.5, zorder=10, marker='^')
+        bds = ax[1].errorbar(x_baryonic, baryonic_data_sat_y, 
+            yerr=baryonic_sat_error,
+            color='goldenrod', fmt='s', ecolor='goldenrod', markersize=12, capsize=7,
+            capthick=1.5, zorder=10, marker='^')
+
+        bbfc, = ax[1].plot(x_baryonic, baryonic_bf_cen_y, 
             color='rebeccapurple', ls='--', lw=4, 
             zorder=10)
-        bbfs, = ax[1].plot(x_baryonic_fblue_total_bf, y_baryonic_fblue_sat_bf, 
+        bbfs, = ax[1].plot(x_baryonic, baryonic_bf_sat_y, 
             color='goldenrod', ls='--', lw=4, 
             zorder=10)
 
         ax[0].set_xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=30)
         ax[1].set_xlabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=30)
         
-        ax[0].set_ylabel(r'\boldmath$f_{blue}$', fontsize=30)
-        ax[1].set_ylabel(r'\boldmath$f_{blue}$', fontsize=30)
+        ax[0].set_ylabel(r'\boldmath$f_{blue}$', labelpad=20, fontsize=30)
+        ax[1].set_ylabel(r'\boldmath$f_{blue}$', labelpad=20, fontsize=30)
+
+        ax[0].set_ylim(0,1)
+        ax[1].set_ylim(0,1)
 
         ax[0].minorticks_on()
         ax[1].minorticks_on()
 
-        ax[0].legend([(sdc, bdc), (smc, bmc), (sbfc, bbfc), (sds, bds), 
-            (sms, bms), (sbfs, bbfs)], 
+        ax[0].legend([(sdc), (smc), (sbfc), (sds), 
+            (sms), (sbfs)], 
             ['Data - cen','Models - cen','Best-fit - cen',
             'Data - sat','Models - sat','Best-fit - sat'],
             handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, 
-            prop={'size':25}, loc='best')
+            prop={'size':28}, markerscale=0.5, loc='best')
         # plt.show()
 
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fblue_censat_emcee_{0}.pdf'.format(quenching), 
             bbox_inches="tight", dpi=1200)
 
-    def plot_xmhm(self, models_stellar, models_baryonic, best_fit_stellar, best_fit_baryonic):
+    def plot_xmhm(self, models, best_fit):
         """
         Plot SMHM from data, best fit param values, param values corresponding to 
         68th percentile 100 lowest chi^2 values.
@@ -3914,242 +3824,163 @@ class Plotting_Panels():
         preprocess = self.preprocess
         quenching = settings.quenching
 
-        stellar_halos_bf = best_fit_stellar[0]['centrals']['halos'][0]
-        stellar_gals_bf = best_fit_stellar[0]['centrals']['gals'][0]
+        halos_bf = best_fit[0]['centrals']['halos'][0]
+        gals_bf = best_fit[0]['centrals']['gals'][0]
+        # halos_bf = np.round(np.log10((10**halos_bf)*1.429), 1)
+        # gals_bf = np.round(np.log10((10**gals_bf)*1.429), 1)
 
-        y_stellar_bf,x_stellar_bf,binnum = bs(stellar_halos_bf,
-            stellar_gals_bf, statistic='mean', bins=np.linspace(10, 15, 15))
+        y_bf,x_bf,binnum = bs(halos_bf,
+            gals_bf, statistic='mean', bins=np.linspace(10, 15, 15))
 
-        baryonic_halos_bf = best_fit_baryonic[0]['centrals']['halos'][0]
-        baryonic_gals_bf = best_fit_baryonic[0]['centrals']['gals'][0]
-
-        y_baryonic_bf,x_baryonic_bf,binnum = bs(baryonic_halos_bf,
-            baryonic_gals_bf, statistic='mean', bins=np.linspace(10, 15, 15))
 
         i_outer = 0
-        stellar_mod_x_arr = []
-        stellar_mod_y_arr = []
-        baryonic_mod_x_arr = []
-        baryonic_mod_y_arr = []
-
+        mod_x_arr = []
+        mod_y_arr = []
         while i_outer < 10:
-            for idx in range(len(models_stellar[i_outer][0]['centrals']['halos'])):
-                stellar_mod_x_ii = models_stellar[i_outer][0]['centrals']['halos'][idx][0]
-                stellar_mod_y_ii = models_stellar[i_outer][0]['centrals']['gals'][idx][0]
-
-                y,x,binnum = bs(stellar_mod_x_ii,stellar_mod_y_ii,'mean',
+            for idx in range(len(models[i_outer][0]['centrals']['halos'])):
+                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx][0]
+                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx][0]
+               
+                y,x,binnum = bs(mod_x_ii,mod_y_ii,'mean',
                     bins=np.linspace(10, 15, 15))
-                stellar_mod_x_arr.append(x)
-                stellar_mod_y_arr.append(y)
-
-                baryonic_mod_x_ii = models_baryonic[i_outer][0]['centrals']['halos'][idx][0]
-                baryonic_mod_y_ii = models_baryonic[i_outer][0]['centrals']['gals'][idx][0]
-                
-                y,x,binnum = bs(baryonic_mod_x_ii,baryonic_mod_y_ii,'mean',
-                    bins=np.linspace(10, 15, 15))
-                baryonic_mod_x_arr.append(x)
-                baryonic_mod_y_arr.append(y)
-
+                mod_x_arr.append(x)
+                mod_y_arr.append(y)
             i_outer += 1
 
-            for idx in range(len(models_stellar[i_outer][0]['centrals']['halos'])):
-                stellar_mod_x_ii = models_stellar[i_outer][0]['centrals']['halos'][idx][0]
-                stellar_mod_y_ii = models_stellar[i_outer][0]['centrals']['gals'][idx][0]
+            for idx in range(len(models[i_outer][0]['centrals']['halos'])):
+                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx][0]
+                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx][0]
 
-                y,x,binnum = bs(stellar_mod_x_ii,stellar_mod_y_ii,'mean',
+                y,x,binnum = bs(mod_x_ii,mod_y_ii,'mean',
                     bins=np.linspace(10, 15, 15))
-                stellar_mod_x_arr.append(x)
-                stellar_mod_y_arr.append(y)
-
-                baryonic_mod_x_ii = models_baryonic[i_outer][0]['centrals']['halos'][idx][0]
-                baryonic_mod_y_ii = models_baryonic[i_outer][0]['centrals']['gals'][idx][0]
-                
-                y,x,binnum = bs(baryonic_mod_x_ii,baryonic_mod_y_ii,'mean',
-                    bins=np.linspace(10, 15, 15))
-                baryonic_mod_x_arr.append(x)
-                baryonic_mod_y_arr.append(y)
-            
+                mod_x_arr.append(x)
+                mod_y_arr.append(y)
             i_outer += 1
 
-            for idx in range(len(models_stellar[i_outer][0]['centrals']['halos'])):
-                stellar_mod_x_ii = models_stellar[i_outer][0]['centrals']['halos'][idx][0]
-                stellar_mod_y_ii = models_stellar[i_outer][0]['centrals']['gals'][idx][0]
-
-                y,x,binnum = bs(stellar_mod_x_ii,stellar_mod_y_ii,'mean',
+            for idx in range(len(models[i_outer][0]['centrals']['halos'])):
+                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx][0]
+                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx][0]
+                               
+                y,x,binnum = bs(mod_x_ii,mod_y_ii,'mean',
                     bins=np.linspace(10, 15, 15))
-                stellar_mod_x_arr.append(x)
-                stellar_mod_y_arr.append(y)
-
-                baryonic_mod_x_ii = models_baryonic[i_outer][0]['centrals']['halos'][idx][0]
-                baryonic_mod_y_ii = models_baryonic[i_outer][0]['centrals']['gals'][idx][0]
-                
-                y,x,binnum = bs(baryonic_mod_x_ii,baryonic_mod_y_ii,'mean',
-                    bins=np.linspace(10, 15, 15))
-                baryonic_mod_x_arr.append(x)
-                baryonic_mod_y_arr.append(y)
-
+                mod_x_arr.append(x)
+                mod_y_arr.append(y)
             i_outer += 1
 
-            for idx in range(len(models_stellar[i_outer][0]['centrals']['halos'])):
-                stellar_mod_x_ii = models_stellar[i_outer][0]['centrals']['halos'][idx][0]
-                stellar_mod_y_ii = models_stellar[i_outer][0]['centrals']['gals'][idx][0]
-
-                y,x,binnum = bs(stellar_mod_x_ii,stellar_mod_y_ii,'mean',
+            for idx in range(len(models[i_outer][0]['centrals']['halos'])):
+                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx][0]
+                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx][0]
+                                
+                y,x,binnum = bs(mod_x_ii,mod_y_ii,'mean',
                     bins=np.linspace(10, 15, 15))
-                stellar_mod_x_arr.append(x)
-                stellar_mod_y_arr.append(y)
-
-                baryonic_mod_x_ii = models_baryonic[i_outer][0]['centrals']['halos'][idx][0]
-                baryonic_mod_y_ii = models_baryonic[i_outer][0]['centrals']['gals'][idx][0]
-                
-                y,x,binnum = bs(baryonic_mod_x_ii,baryonic_mod_y_ii,'mean',
-                    bins=np.linspace(10, 15, 15))
-                baryonic_mod_x_arr.append(x)
-                baryonic_mod_y_arr.append(y)
-
+                mod_x_arr.append(x)
+                mod_y_arr.append(y)
             i_outer += 1
 
-            for idx in range(len(models_stellar[i_outer][0]['centrals']['halos'])):
-                stellar_mod_x_ii = models_stellar[i_outer][0]['centrals']['halos'][idx][0]
-                stellar_mod_y_ii = models_stellar[i_outer][0]['centrals']['gals'][idx][0]
-
-                y,x,binnum = bs(stellar_mod_x_ii,stellar_mod_y_ii,'mean',
-                    bins=np.linspace(10, 15, 15))
-                stellar_mod_x_arr.append(x)
-                stellar_mod_y_arr.append(y)
-
-                baryonic_mod_x_ii = models_baryonic[i_outer][0]['centrals']['halos'][idx][0]
-                baryonic_mod_y_ii = models_baryonic[i_outer][0]['centrals']['gals'][idx][0]
+            for idx in range(len(models[i_outer][0]['centrals']['halos'])):
+                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx][0]
+                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx][0]
                 
-                y,x,binnum = bs(baryonic_mod_x_ii,baryonic_mod_y_ii,'mean',
+                y,x,binnum = bs(mod_x_ii,mod_y_ii,'mean',
                     bins=np.linspace(10, 15, 15))
-                baryonic_mod_x_arr.append(x)
-                baryonic_mod_y_arr.append(y)
-
+                mod_x_arr.append(x)
+                mod_y_arr.append(y)
             i_outer += 1
 
-            for idx in range(len(models_stellar[i_outer][0]['centrals']['halos'])):
-                stellar_mod_x_ii = models_stellar[i_outer][0]['centrals']['halos'][idx][0]
-                stellar_mod_y_ii = models_stellar[i_outer][0]['centrals']['gals'][idx][0]
-
-                y,x,binnum = bs(stellar_mod_x_ii,stellar_mod_y_ii,'mean',
+            for idx in range(len(models[i_outer][0]['centrals']['halos'])):
+                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx][0]
+                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx][0]
+               
+                y,x,binnum = bs(mod_x_ii,mod_y_ii,'mean',
                     bins=np.linspace(10, 15, 15))
-                stellar_mod_x_arr.append(x)
-                stellar_mod_y_arr.append(y)
-
-                baryonic_mod_x_ii = models_baryonic[i_outer][0]['centrals']['halos'][idx][0]
-                baryonic_mod_y_ii = models_baryonic[i_outer][0]['centrals']['gals'][idx][0]
-                
-                y,x,binnum = bs(baryonic_mod_x_ii,baryonic_mod_y_ii,'mean',
-                    bins=np.linspace(10, 15, 15))
-                baryonic_mod_x_arr.append(x)
-                baryonic_mod_y_arr.append(y)
-
+                mod_x_arr.append(x)
+                mod_y_arr.append(y)
             i_outer += 1
 
-            for idx in range(len(models_stellar[i_outer][0]['centrals']['halos'])):
-                stellar_mod_x_ii = models_stellar[i_outer][0]['centrals']['halos'][idx][0]
-                stellar_mod_y_ii = models_stellar[i_outer][0]['centrals']['gals'][idx][0]
-
-                y,x,binnum = bs(stellar_mod_x_ii,stellar_mod_y_ii,'mean',
+            for idx in range(len(models[i_outer][0]['centrals']['halos'])):
+                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx][0]
+                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx][0]
+               
+                y,x,binnum = bs(mod_x_ii,mod_y_ii,'mean',
                     bins=np.linspace(10, 15, 15))
-                stellar_mod_x_arr.append(x)
-                stellar_mod_y_arr.append(y)
-
-                baryonic_mod_x_ii = models_baryonic[i_outer][0]['centrals']['halos'][idx][0]
-                baryonic_mod_y_ii = models_baryonic[i_outer][0]['centrals']['gals'][idx][0]
-                
-                y,x,binnum = bs(baryonic_mod_x_ii,baryonic_mod_y_ii,'mean',
-                    bins=np.linspace(10, 15, 15))
-                baryonic_mod_x_arr.append(x)
-                baryonic_mod_y_arr.append(y)
-
+                mod_x_arr.append(x)
+                mod_y_arr.append(y)
             i_outer += 1
 
-            for idx in range(len(models_stellar[i_outer][0]['centrals']['halos'])):
-                stellar_mod_x_ii = models_stellar[i_outer][0]['centrals']['halos'][idx][0]
-                stellar_mod_y_ii = models_stellar[i_outer][0]['centrals']['gals'][idx][0]
-
-                y,x,binnum = bs(stellar_mod_x_ii,stellar_mod_y_ii,'mean',
+            for idx in range(len(models[i_outer][0]['centrals']['halos'])):
+                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx][0]
+                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx][0]
+               
+                y,x,binnum = bs(mod_x_ii,mod_y_ii,'mean',
                     bins=np.linspace(10, 15, 15))
-                stellar_mod_x_arr.append(x)
-                stellar_mod_y_arr.append(y)
-
-                baryonic_mod_x_ii = models_baryonic[i_outer][0]['centrals']['halos'][idx][0]
-                baryonic_mod_y_ii = models_baryonic[i_outer][0]['centrals']['gals'][idx][0]
-                
-                y,x,binnum = bs(baryonic_mod_x_ii,baryonic_mod_y_ii,'mean',
-                    bins=np.linspace(10, 15, 15))
-                baryonic_mod_x_arr.append(x)
-                baryonic_mod_y_arr.append(y)
-
+                mod_x_arr.append(x)
+                mod_y_arr.append(y)
             i_outer += 1
 
-            for idx in range(len(models_stellar[i_outer][0]['centrals']['halos'])):
-                stellar_mod_x_ii = models_stellar[i_outer][0]['centrals']['halos'][idx][0]
-                stellar_mod_y_ii = models_stellar[i_outer][0]['centrals']['gals'][idx][0]
-
-                y,x,binnum = bs(stellar_mod_x_ii,stellar_mod_y_ii,'mean',
+            for idx in range(len(models[i_outer][0]['centrals']['halos'])):
+                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx][0]
+                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx][0]
+               
+                y,x,binnum = bs(mod_x_ii,mod_y_ii,'mean',
                     bins=np.linspace(10, 15, 15))
-                stellar_mod_x_arr.append(x)
-                stellar_mod_y_arr.append(y)
-
-                baryonic_mod_x_ii = models_baryonic[i_outer][0]['centrals']['halos'][idx][0]
-                baryonic_mod_y_ii = models_baryonic[i_outer][0]['centrals']['gals'][idx][0]
-                
-                y,x,binnum = bs(baryonic_mod_x_ii,baryonic_mod_y_ii,'mean',
-                    bins=np.linspace(10, 15, 15))
-                baryonic_mod_x_arr.append(x)
-                baryonic_mod_y_arr.append(y)
-
+                mod_x_arr.append(x)
+                mod_y_arr.append(y)
             i_outer += 1
 
-            for idx in range(len(models_stellar[i_outer][0]['centrals']['halos'])):
-                stellar_mod_x_ii = models_stellar[i_outer][0]['centrals']['halos'][idx][0]
-                stellar_mod_y_ii = models_stellar[i_outer][0]['centrals']['gals'][idx][0]
-
-                y,x,binnum = bs(stellar_mod_x_ii,stellar_mod_y_ii,'mean',
+            for idx in range(len(models[i_outer][0]['centrals']['halos'])):
+                mod_x_ii = models[i_outer][0]['centrals']['halos'][idx][0]
+                mod_y_ii = models[i_outer][0]['centrals']['gals'][idx][0]
+               
+                y,x,binnum = bs(mod_x_ii,mod_y_ii,'mean',
                     bins=np.linspace(10, 15, 15))
-                stellar_mod_x_arr.append(x)
-                stellar_mod_y_arr.append(y)
-
-                baryonic_mod_x_ii = models_baryonic[i_outer][0]['centrals']['halos'][idx][0]
-                baryonic_mod_y_ii = models_baryonic[i_outer][0]['centrals']['gals'][idx][0]
-                
-                y,x,binnum = bs(baryonic_mod_x_ii,baryonic_mod_y_ii,'mean',
-                    bins=np.linspace(10, 15, 15))
-                baryonic_mod_x_arr.append(x)
-                baryonic_mod_y_arr.append(y)
-
+                mod_x_arr.append(x)
+                mod_y_arr.append(y)
             i_outer += 1
 
-        stellar_y_max = np.nanmax(stellar_mod_y_arr, axis=0)
-        stellar_y_min = np.nanmin(stellar_mod_y_arr, axis=0)
-
-        baryonic_y_max = np.nanmax(baryonic_mod_y_arr, axis=0)
-        baryonic_y_min = np.nanmin(baryonic_mod_y_arr, axis=0)
-
+        y_max = np.nanmax(mod_y_arr, axis=0)
+        y_min = np.nanmin(mod_y_arr, axis=0)
         
+        x_stellar =  np.array([10.17857143, 10.53571429, 10.89285714, 11.25, 11.60714286,
+            11.96428571, 12.32142857, 12.67857143, 13.03571429, 13.39285714,
+            13.75, 14.10714286, 14.46428571, 14.82142857])
+        x_baryonic = np.array([10.17857143, 10.53571429, 10.89285714, 11.25, 11.60714286,
+            11.96428571, 12.32142857, 12.67857143, 13.03571429, 13.39285714,
+            13.75, 14.10714286, 14.46428571, 14.82142857])
+
+        stellar_model_max = np.array([np.nan,  8.79829025,  8.91214949,  9.44200809,  9.970151  ,
+            10.22883309, 10.41039416, 10.56619626, 10.74019361, 10.88591641,
+            11.05096013, 11.15839237, 11.19591263, np.nan])
+        stellar_model_min = np.array([np.nan,  8.60432529,  8.65091167,  8.7878204 ,  9.1651641 ,
+            9.77198766, 10.13594267, 10.31512604, 10.43739561, 10.5007555 ,
+            10.58300158, 10.58122456, 10.42725263, np.nan])
+
+        stellar_bf_y = np.array([np.nan, np.nan, 8.67370235,  8.90090066,  9.48161463,
+            9.9961121 , 10.28176782, 10.48956534, 10.66428808, 10.80163804,
+            10.95180133, 11.04723823, 11.04416275, np.nan])
+
+        baryonic_model_max = np.array([ 9.05460847,  9.16077967,  9.29273375,  9.57429813,  9.91738612,
+            10.15049832, 10.34002612, 10.51206694, 10.67531463, 10.80939429,
+            10.9702595 , 11.06230235, 11.02271938, np.nan])
+        baryonic_model_min = np.array([ 9.00466824,  9.06361517,  9.14029883,  9.33087962,  9.70699876,
+            9.99281733, 10.1515782 , 10.29937236, 10.43942923, 10.51236968,
+            10.60764526, 10.61144632, 10.44250924, np.nan])
+
+        baryonic_bf_y = np.array([np.nan,  9.07448363,  9.15634833,  9.34593835,  9.70594053,
+            10.02520512, 10.23927815, 10.4343167 , 10.62064607, 10.76992122,
+            10.95189474, 11.06299716, 11.03088679, np.nan])
+
         fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
-            gridspec_kw={'wspace':0.25})
+            gridspec_kw={'wspace':0.30})
 
-        stellar_x_cen =  0.5 * (stellar_mod_x_arr[0][1:] + stellar_mod_x_arr[0][:-1])
+        sm = ax[0].fill_between(x=x_stellar, y1=stellar_model_max, 
+            y2=stellar_model_min, color='lightgray',alpha=0.4)
 
-        sm = ax[0].fill_between(x=stellar_x_cen, y1=stellar_y_max, 
-            y2=stellar_y_min, color='lightgray',alpha=0.4)
+        sbf, = ax[0].plot(x_stellar, stellar_bf_y, color='k', lw=4, zorder=10)
 
-        stellar_x_cen =  0.5 * (x_stellar_bf[1:] + x_stellar_bf[:-1])
+        bm = ax[1].fill_between(x=x_baryonic, y1=baryonic_model_max, 
+            y2=baryonic_model_min, color='lightgray',alpha=0.4)
 
-        sbf, = ax[0].plot(stellar_x_cen, y_stellar_bf, color='k', lw=4, zorder=10)
-
-        baryonic_x_cen =  0.5 * (baryonic_mod_x_arr[0][1:] + baryonic_mod_x_arr[0][:-1])
-
-        bm = ax[1].fill_between(x=baryonic_x_cen, y1=baryonic_y_max, 
-            y2=baryonic_y_min, color='lightgray',alpha=0.4)
-
-        baryonic_x_cen =  0.5 * (x_baryonic_bf[1:] + x_baryonic_bf[:-1])
-
-        bbf, = ax[1].plot(baryonic_x_cen, y_baryonic_bf, color='k', lw=4, 
+        bbf, = ax[1].plot(x_baryonic, baryonic_bf_y, color='k', lw=4, 
             zorder=10)
 
         ax[0].set_xlim(10,14.5)
@@ -4158,11 +3989,11 @@ class Plotting_Panels():
         ax[1].set_xlim(10,14.5)
         ax[1].set_xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
 
-        ax[0].set_ylim(np.log10((10**8.9)/2.041),12)
-        ax[0].set_ylabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=30)
+        ax[0].set_ylim(np.log10((10**8.9)/2.041),11.5)
+        ax[0].set_ylabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=30)
         
-        ax[1].set_ylim(np.log10((10**9.3)/2.041),12)
-        ax[1].set_ylabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=30)
+        ax[1].set_ylim(np.log10((10**9.3)/2.041),11.5)
+        ax[1].set_ylabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=30)
         
         ax[0].fill([13.5, ax[0].get_xlim()[1], ax[0].get_xlim()[1], 13.5], 
             [ax[0].get_ylim()[0], ax[0].get_ylim()[0], 
@@ -4174,13 +4005,13 @@ class Plotting_Panels():
             ax[1].get_ylim()[1], ax[1].get_ylim()[1]], fill=False, 
             hatch='\\')
 
-        ax[0].legend([(sm, bm),  (sbf, bbf)], ['Models', 'Best-fit'],
+        ax[0].legend([(sm),  (sbf)], ['Models', 'Best-fit'],
             handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, 
             loc='best', prop={'size':30})
         ax[0].minorticks_on()
         ax[1].minorticks_on()
 
-        plt.show()
+        # plt.show()
 
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/shmr_total_emcee_{0}.pdf'.format(quenching), 
             bbox_inches="tight", dpi=1200)
@@ -4317,62 +4148,113 @@ class Plotting_Panels():
         blue_y_max = np.nanmax(blue_mod_y_arr, axis=0)
         blue_y_min = np.nanmin(blue_mod_y_arr, axis=0)
 
-        fig1 = plt.figure(figsize=(10,10))
+        x_stellar =  np.array([10.17857143, 10.53571429, 10.89285714, 11.25, 11.60714286,
+            11.96428571, 12.32142857, 12.67857143, 13.03571429, 13.39285714,
+            13.75, 14.10714286, 14.46428571, 14.82142857])
+        x_baryonic = np.array([10.17857143, 10.53571429, 10.89285714, 11.25, 11.60714286,
+            11.96428571, 12.32142857, 12.67857143, 13.03571429, 13.39285714,
+            13.75, 14.10714286, 14.46428571, 14.82142857])
 
-        red_x_cen =  0.5 * (red_mod_x_arr[0][1:] + red_mod_x_arr[0][:-1])
-        blue_x_cen = 0.5 * (blue_mod_x_arr[0][1:] + blue_mod_x_arr[0][:-1])
+        stellar_red_model_max = np.array([np.nan,  8.78282022,  8.99700873,  9.53119123, 10.00528155,
+            10.27854869, 10.44610589, 10.59656844, 10.75868903, 10.90508703,
+            11.0607739 , 11.15575129, 11.19462776, np.nan])
+        stellar_red_model_min = np.array([np.nan,  8.60961246,  8.65162209,  8.82337518,  9.27056983,
+            9.84187458, 10.19257816, 10.40060147, 10.54988333, 10.62984439,
+            10.66436289, 10.65507545, 10.68529243, np.nan])
+        stellar_blue_model_max = np.array([np.nan,  8.79829025,  8.89312613,  9.32828028,  9.84170741,
+            10.15792618, 10.32696606, 10.44604343, 10.59748779, 10.72935629,
+            10.82329162, 10.70417595, 10.66892052, np.nan])
+        stellar_blue_model_min = np.array([np.nan,  8.60432529,  8.65892876,  8.78457609,  9.14492122,
+            9.73335852, 10.01329429, 10.10256606, 10.23122946, 10.24717576,
+            10.25496403, 10.19932652,  9.94131565, np.nan])
 
-        mr = plt.fill_between(x=red_x_cen, y1=red_y_max, 
-            y2=red_y_min, color='indianred',alpha=0.4,label='Models')
-        mb = plt.fill_between(x=blue_x_cen, y1=blue_y_max, 
-            y2=blue_y_min, color='cornflowerblue',alpha=0.4,label='Models')
+        stellar_red_bf_y = np.array([np.nan, np.nan, 8.67556329,  8.96768756,  9.57200841,
+            10.03687634, 10.31140515, 10.51031573, 10.6806836 , 10.81853498,
+            10.96046381, 11.04723823, 11.04416275, np.nan])
+        stellar_blue_bf_y = np.array([np.nan, np.nan,  8.6735805 ,  8.89224166,  9.44830933,
+            9.95253006, 10.21548383, 10.38678304, 10.50315969, 10.66364638,
+            10.68759584, np.nan, np.nan, np.nan])
 
-        red_x_cen =  0.5 * (x_bf_red[1:] + x_bf_red[:-1])
-        blue_x_cen = 0.5 * (x_bf_blue[1:] + x_bf_blue[:-1])
+        baryonic_red_model_max = np.array([ 9.06451845,  9.19514523,  9.41600215,  9.75984543, 10.09770975,
+            10.29538681, 10.44230188, 10.57640112, 10.71676461, 10.85145204,
+            10.9958108 , 11.06230235, 11.11948236, np.nan])
+        baryonic_red_model_min = np.array([ 9.04941416,  9.05371428,  9.16441726,  9.44115129,  9.84408751,
+            10.15473634, 10.33615638, 10.47086298, 10.57517847, 10.68656131,
+            10.6923637 , 10.64884131, 10.66979885, np.nan])
+        baryonic_blue_model_max = np.array([ 9.05330086,  9.15813616,  9.27518956,  9.52601811,  9.82444746,
+            10.05590926, 10.20829801, 10.34517216, 10.4907835 , 10.56341199,
+            10.62287178, 10.69516659, 10.42060089, np.nan])
+        baryonic_blue_model_min = np.array([ 9.00780153,  9.06356299,  9.1404833 ,  9.31871163,  9.66100564,
+            9.86803471,  9.97971068, 10.08066081, 10.18767609, 10.18122001,
+            10.28636229, 10.28628922,  9.83613777, np.nan])
 
-        # REMOVED ERROR BAR ON BEST FIT
-        bfr, = plt.plot(red_x_cen,y_bf_red,color='indianred',lw=4,label='Best-fit',zorder=10)
-        bfb, = plt.plot(blue_x_cen,y_bf_blue,color='cornflowerblue',lw=4,
-            label='Best-fit',zorder=10)
+        baryonic_red_bf_y = np.array([np.nan,  9.06137323,  9.19164498,  9.47289201,  9.85622011,
+            10.14642113, 10.34091901, 10.51689518, 10.68136276, 10.8202588 ,
+            10.97885078, 11.06299716, 11.13655154, np.nan])
+        baryonic_blue_bf_y = np.array([np.nan,  9.07517365,  9.15393038,  9.33041699,  9.66323243,
+            9.95169488, 10.12940522, 10.26877024, 10.42019781, 10.52883073,
+            10.55429316, np.nan, 10.39689827, np.nan])
 
-        if settings.survey == 'resolvea' and settings.mf_type == 'smf':
-            plt.xlim(10,14)
-        else:
-            plt.xlim(10,14.5)
-        plt.xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
+        fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
+            gridspec_kw={'wspace':0.30})
+
+        smr = ax[0].fill_between(x=x_stellar, y1=stellar_red_model_max, 
+            y2=stellar_red_model_min, color='indianred',alpha=0.4)
+
+        sbfr, = ax[0].plot(x_stellar, stellar_red_bf_y, color='indianred', lw=4, zorder=10)
+
+        smb = ax[0].fill_between(x=x_stellar, y1=stellar_blue_model_max, 
+            y2=stellar_blue_model_min, color='cornflowerblue',alpha=0.4)
+
+        sbfb, = ax[0].plot(x_stellar, stellar_blue_bf_y, color='cornflowerblue', lw=4, zorder=10)
+
         
-        if settings.mf_type == 'smf':
-            if settings.survey == 'eco' and settings.quenching == 'hybrid':
-                plt.ylim(np.log10((10**8.9)/2.041),11.9)
-                # plt.title('ECO')
-            elif settings.survey == 'eco' and settings.quenching == 'halo':
-                plt.ylim(np.log10((10**8.9)/2.041),11.56)
-            elif settings.survey == 'resolvea':
-                plt.ylim(np.log10((10**8.9)/2.041),13)
-            elif settings.survey == 'resolveb':
-                plt.ylim(np.log10((10**8.7)/2.041),)
-            plt.ylabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=30)
-        elif settings.mf_type == 'bmf':
-            if settings.survey == 'eco' or settings.survey == 'resolvea':
-                plt.ylim(np.log10((10**9.4)/2.041),)
-                plt.title('ECO')
-            elif settings.survey == 'resolveb':
-                plt.ylim(np.log10((10**9.1)/2.041),)
-            plt.ylabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=30)
+        bmr = ax[1].fill_between(x=x_baryonic, y1=baryonic_red_model_max, 
+            y2=baryonic_red_model_min, color='indianred',alpha=0.4)
 
-        plt.fill([13.5, plt.gca().get_xlim()[1], plt.gca().get_xlim()[1], 13.5], 
-            [plt.gca().get_ylim()[0], plt.gca().get_ylim()[0], 
-            plt.gca().get_ylim()[1], plt.gca().get_ylim()[1]], fill=False, 
+        bbfr, = ax[1].plot(x_baryonic, baryonic_red_bf_y, color='indianred', lw=4, 
+            zorder=10)
+
+        bmb = ax[1].fill_between(x=x_baryonic, y1=baryonic_blue_model_max, 
+            y2=baryonic_blue_model_min, color='cornflowerblue',alpha=0.4)
+
+        bbfb, = ax[1].plot(x_baryonic, baryonic_blue_bf_y, color='cornflowerblue', lw=4, 
+            zorder=10)
+
+        ax[0].set_xlim(10,14.5)
+        ax[0].set_xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
+
+        ax[1].set_xlim(10,14.5)
+        ax[1].set_xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
+
+        ax[0].set_ylim(np.log10((10**8.9)/2.041),11.5)
+        ax[0].set_ylabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=30)
+        
+        ax[1].set_ylim(np.log10((10**9.3)/2.041),11.5)
+        ax[1].set_ylabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',labelpad=20, fontsize=30)
+        
+        ax[0].fill([13.5, ax[0].get_xlim()[1], ax[0].get_xlim()[1], 13.5], 
+            [ax[0].get_ylim()[0], ax[0].get_ylim()[0], 
+            ax[0].get_ylim()[1], ax[0].get_ylim()[1]], fill=False, 
             hatch='\\')
 
-        plt.legend([(mr, mb), (bfr, bfb)], ['Models','Best-fit'],
-            handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, 
-            loc='best',prop={'size': 30})
+        ax[1].fill([13.5, ax[1].get_xlim()[1], ax[1].get_xlim()[1], 13.5], 
+            [ax[1].get_ylim()[0], ax[1].get_ylim()[0], 
+            ax[1].get_ylim()[1], ax[1].get_ylim()[1]], fill=False, 
+            hatch='\\')
+
+        ax[0].legend([(smr, smb),  (sbfr, sbfb)], ['Models', 'Best-fit'],
+            handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, 
+            loc='best', prop={'size':30})
+        
+        ax[0].minorticks_on()
+        ax[1].minorticks_on()
+        
+        # plt.show()
 
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/shmr_colour_emcee_{0}.pdf'.format(quenching), 
             bbox_inches="tight", dpi=1200)
 
-        plt.show()
 
         #* Comparison plot between my colour SHMRs and those from Fig 16 in 
         #* ZM15
@@ -4602,7 +4484,7 @@ class Plotting_Panels():
 
         plt.show()
 
-    def plot_red_fraction_cen(self, models, data, best_fit):
+    def plot_red_fraction_cen(self, models, best_fit):
         """
         Plot red fraction of centrals from best fit param values and param values 
         corresponding to 68th percentile 100 lowest chi^2 values.
@@ -4686,151 +4568,81 @@ class Plotting_Panels():
         cen_halos_bf = list(halos_bf_red) + list(halos_bf_blue)
         fred_bf = list(fred_bf_red) + list(fred_bf_blue)
 
-        def hybrid_quenching_model(theta):
-            """
-            Apply hybrid quenching model from Zu and Mandelbaum 2015
 
-            Parameters
-            ----------
-            gals_df: pandas dataframe
-                Mock catalog
+        df1 = pd.DataFrame(cen_gals_arr)
+        df2 = pd.DataFrame(fred_arr)
+        df3 = pd.DataFrame(zip(cen_gals_bf, fred_bf))
+        df = pd.concat([df1, df2])
 
-            Returns
-            ---------
-            f_red_cen: array
-                Array of central red fractions
-            f_red_sat: array
-                Array of satellite red fractions
-            """
+        df.to_csv("/Users/asadm2/Desktop/stellar_fred_cen_models.csv")
+        df3.to_csv("/Users/asadm2/Desktop/stellar_fred_cen_bf.csv")
 
-            # parameter values from Table 1 of Zu and Mandelbaum 2015 "prior case"
-            Mstar_q = theta[0] # Msun/h
-            Mh_q = theta[1] # Msun/h
-            mu = theta[2]
-            nu = theta[3]
+        df.to_csv("/Users/asadm2/Desktop/baryonic_fred_cen_models.csv")
+        df3.to_csv("/Users/asadm2/Desktop/baryonic_fred_cen_bf.csv")
 
-            sat_hosthalo_mass_arr = 10**(np.linspace(10.5, 14.5, 200))
-            sat_stellar_mass_arr = 10**(np.linspace(8.6, 12, 200))
-            cen_stellar_mass_arr = 10**(np.linspace(8.6, 12, 200))
-
-            f_red_cen = 1 - np.exp(-((cen_stellar_mass_arr/(10**Mstar_q))**mu))
-
-            g_Mstar = np.exp(-((sat_stellar_mass_arr/(10**Mstar_q))**mu))
-            h_Mh = np.exp(-((sat_hosthalo_mass_arr/(10**Mh_q))**nu))
-            f_red_sat = 1 - (g_Mstar * h_Mh)
-
-            return f_red_cen, f_red_sat
-
-        def halo_quenching_model(theta):
-            """
-            Apply halo quenching model from Zu and Mandelbaum 2015
-
-            Parameters
-            ----------
-            gals_df: pandas dataframe
-                Mock catalog
-
-            Returns
-            ---------
-            f_red_cen: array
-                Array of central red fractions
-            f_red_sat: array
-                Array of satellite red fractions
-            """
-
-            # parameter values from Table 1 of Zu and Mandelbaum 2015 "prior case"
-            Mh_qc = theta[0] # Msun/h 
-            Mh_qs = theta[1] # Msun/h
-            mu_c = theta[2]
-            mu_s = theta[3]
-
-            cen_hosthalo_mass_arr = 10**(np.linspace(10, 15, 200))
-            sat_hosthalo_mass_arr = 10**(np.linspace(10, 15, 200))
-
-            f_red_cen = 1 - np.exp(-((cen_hosthalo_mass_arr/(10**Mh_qc))**mu_c))
-            f_red_sat = 1 - np.exp(-((sat_hosthalo_mass_arr/(10**Mh_qs))**mu_s))
-
-            return f_red_cen, f_red_sat
         
-        fig1 = plt.figure(figsize=(10,8))
-        if settings.quenching == 'hybrid':
-            for idx in range(len(cen_gals_arr)):
-                x, y = zip(*sorted(zip(cen_gals_arr[idx],fred_arr[idx])))
-                plt.plot(x, y, alpha=0.4, c='cornflowerblue', lw=10, solid_capstyle='round')
-            if settings.mf_type == 'smf':
-                plt.xlabel(r'\boldmath$\log_{10}\ M_{*, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=30)
-            elif settings.mf_type == 'bmf':
-                plt.xlabel(r'\boldmath$\log_{10}\ M_{b, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=30)
+        stellar_models_df = pd.read_csv("/Users/asadm2/Desktop/stellar_fred_cen_models.csv") 
+        stellar_bf_df = pd.read_csv("/Users/asadm2/Desktop/stellar_fred_cen_bf.csv") 
+        baryonic_models_df = pd.read_csv("/Users/asadm2/Desktop/baryonic_fred_cen_models.csv") 
+        baryonic_bf_df = pd.read_csv("/Users/asadm2/Desktop/baryonic_fred_cen_bf.csv") 
 
-            x, y = zip(*sorted(zip(cen_gals_arr[0],fred_arr[0])))
-            x_bf, y_bf = zip(*sorted(zip(cen_gals_bf,fred_bf)))
-            # Plotting again just so that adding label to legend is easier
-            plt.plot(x, y, alpha=0.4, c='cornflowerblue', label='Models', lw=10, solid_capstyle='round')
-            plt.plot(x_bf, y_bf, c='mediumorchid', label='Best-fit', lw=10, solid_capstyle='round')
 
-            if settings.mf_type == 'smf':
-                antonio_data = pd.read_csv(settings.path_to_proc + \
-                    "../external/fquench_stellar/fqlogTSM_cen_DS_TNG_Salim_z0.csv", 
-                    index_col=0, skiprows=1, 
-                    names=['fred_ds','logmstar','fred_tng','fred_salim'])
-                plt.plot(antonio_data.logmstar.values, 
-                    antonio_data.fred_ds.values, lw=5, c='k', ls='dashed', 
-                    label='Dark Sage')
-                plt.plot(antonio_data.logmstar.values, 
-                    antonio_data.fred_salim.values, lw=5, c='k', ls='dotted', 
-                    label='Salim+18')
-                plt.plot(antonio_data.logmstar.values, 
-                    antonio_data.fred_tng.values, lw=5, c='k', ls='dashdot', 
-                    label='TNG')
+        fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
+            gridspec_kw={'wspace':0.30})
 
-            cen_stellar_mass_arr = np.linspace(8.6, 12, 200)
-            an_fred_cen, an_fred_sat = hybrid_quenching_model(preprocess.bf_params[5:])
+        cen_gals_arr = stellar_models_df.iloc[:200,1:].values
+        fred_arr = stellar_models_df.iloc[200:,1:].values
+        cen_gals_bf = stellar_bf_df.iloc[:,1].values
+        fred_bf = stellar_bf_df.iloc[:,2].values
 
-            # plt.plot(cen_stellar_mass_arr, an_fred_cen, lw=5, c='peru', 
-            #     ls='dotted', label='analytical')
+        for idx in range(len(cen_gals_arr)):
+            x, y = zip(*sorted(zip(cen_gals_arr[idx],fred_arr[idx])))
+            ax[0].plot(x, y, alpha=0.4, c='cornflowerblue', lw=10, solid_capstyle='round')
 
-        elif settings.quenching == 'halo':
-            for idx in range(len(cen_halos_arr)):
-                x, y = zip(*sorted(zip(cen_halos_arr[idx],fred_arr[idx])))
-                plt.plot(x, y, alpha=0.4, c='cornflowerblue', lw=10, solid_capstyle='round')
-            plt.xlabel(r'\boldmath$\log_{10}\ M_{h, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
+        x, y = zip(*sorted(zip(cen_gals_arr[0],fred_arr[0])))
+        x_bf, y_bf = zip(*sorted(zip(cen_gals_bf,fred_bf)))
+        # Plotting again just so that adding label to legend is easier
+        ax[0].plot(x, y, alpha=0.4, c='cornflowerblue', label='Models', lw=10, solid_capstyle='round')
+        ax[0].plot(x_bf, y_bf, c='mediumorchid', label='Best-fit', lw=10, solid_capstyle='round')
 
-            x, y = zip(*sorted(zip(cen_halos_arr[0],fred_arr[0])))
-            x_bf, y_bf = zip(*sorted(zip(cen_halos_bf, fred_bf)))
-            # Plotting again just so that adding label to legend is easier
-            plt.plot(x, y, alpha=0.4, c='cornflowerblue', label='Models', lw=10, solid_capstyle='round')
-            plt.plot(x_bf, y_bf, c='mediumorchid', label='Best-fit', lw=10, solid_capstyle='round')
+        ax[0].set_xlabel(r'\boldmath$\log_{10}\ M_{*, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=30)
+        ax[0].set_ylabel(r'\boldmath$f_{red, cen}$', labelpad=20, fontsize=30)
 
-            if settings.mf_type == 'smf':
-                antonio_data = pd.read_csv(settings.path_to_proc + \
-                    "../external/fquench_halo/fqlogMvir_cen_DS_TNG_z0.csv", 
-                    index_col=0, skiprows=1, 
-                    names=['fred_ds','logmhalo','fred_tng'])
-                plt.plot(antonio_data.logmhalo.values, 
-                    antonio_data.fred_ds.values, lw=5, c='k', ls='dashed', 
-                    label='Dark Sage')
-                plt.plot(antonio_data.logmhalo.values, 
-                    antonio_data.fred_tng.values, lw=5, c='k', ls='dashdot', 
-                    label='TNG')
+        cen_gals_arr = baryonic_models_df.iloc[:200,1:].values
+        fred_arr = baryonic_models_df.iloc[200:,1:].values
+        cen_gals_bf = baryonic_bf_df.iloc[:,1].values
+        fred_bf = baryonic_bf_df.iloc[:,2].values
 
-            #* Data relation (not needed)
-            # data_fred_cen = 1-data[1][2]
-            # plt.plot(data[1][0], data_fred_cen, lw=5, c='k', ls='solid', label='ECO')
+        for idx in range(len(cen_gals_arr)):
+            x, y = zip(*sorted(zip(cen_gals_arr[idx],fred_arr[idx])))
+            ax[1].plot(x, y, alpha=0.4, c='cornflowerblue', lw=10, solid_capstyle='round')
 
-            cen_hosthalo_mass_arr = np.linspace(10, 15, 200)
-            an_fred_cen, an_fred_sat = halo_quenching_model(preprocess.bf_params[5:])
+        x, y = zip(*sorted(zip(cen_gals_arr[0],fred_arr[0])))
+        x_bf, y_bf = zip(*sorted(zip(cen_gals_bf,fred_bf)))
+        # Plotting again just so that adding label to legend is easier
+        ax[1].plot(x, y, alpha=0.4, c='cornflowerblue', label='Models', lw=10, solid_capstyle='round')
+        ax[1].plot(x_bf, y_bf, c='mediumorchid', label='Best-fit', lw=10, solid_capstyle='round')
 
-            # plt.plot(cen_hosthalo_mass_arr, an_fred_cen, lw=5, c='peru', 
-            #     ls='dotted', label='analytical')
+        ax[1].set_xlabel(r'\boldmath$\log_{10}\ M_{b, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=30)
+        ax[1].set_ylabel(r'\boldmath$f_{red, cen}$', labelpad=20, fontsize=30)
 
-        plt.ylabel(r'\boldmath$f_{red, cen}$', fontsize=30)
-        if quenching == 'hybrid':
-            plt.legend(loc='best', prop={'size':22})
-        elif quenching == 'halo':
-            plt.legend(loc='best', prop={'size':22})
-        
-        plt.show()
+        if mf_type == 'smf':
+            antonio_data = pd.read_csv(path_to_proc + \
+                "../external/fquench_stellar/fqlogTSM_cen_DS_TNG_Salim_z0.csv", 
+                index_col=0, skiprows=1, 
+                names=['fred_ds','logmstar','fred_tng','fred_salim'])
+            ax[0].plot(antonio_data.logmstar.values, 
+                antonio_data.fred_ds.values, lw=5, c='k', ls='dashed', 
+                label='Dark Sage')
+            ax[0].plot(antonio_data.logmstar.values, 
+                antonio_data.fred_salim.values, lw=5, c='k', ls='dotted', 
+                label='Salim+18')
+            ax[0].plot(antonio_data.logmstar.values, 
+                antonio_data.fred_tng.values, lw=5, c='k', ls='dashdot', 
+                label='TNG')
 
+        ax[0].legend(loc='best', prop={'size':30})
+        # plt.show()
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fred_cen_emcee_{0}.pdf'.format(quenching), 
             bbox_inches="tight", dpi=1200)
 
@@ -4910,21 +4722,9 @@ class Plotting_Panels():
 
             i_outer+=1
         
-        sat_gals_arr = np.array(sat_gals_arr)
-        sat_halos_arr = np.array(sat_halos_arr)
-        fred_arr = np.array(fred_arr)
-
-        if settings.quenching == 'hybrid':
-            sat_mean_stats = bs(np.hstack(sat_gals_arr), np.hstack(fred_arr), bins=10)
-            sat_std_stats = bs(np.hstack(sat_gals_arr), np.hstack(fred_arr), 
-                statistic='std', bins=10)
-            sat_stats_bincens = 0.5 * (sat_mean_stats[1][1:] + sat_mean_stats[1][:-1])
-
-        elif settings.quenching == 'halo':
-            sat_mean_stats = bs(np.hstack(sat_halos_arr), np.hstack(fred_arr), bins=10)
-            sat_std_stats = bs(np.hstack(sat_halos_arr), np.hstack(fred_arr), 
-                statistic='std', bins=10)
-            sat_stats_bincens = 0.5 * (sat_mean_stats[1][1:] + sat_mean_stats[1][:-1])
+        # sat_gals_arr = np.array(sat_gals_arr)
+        # sat_halos_arr = np.array(sat_halos_arr)
+        # fred_arr = np.array(fred_arr)
 
         sat_gals_bf = []
         sat_halos_bf = []
@@ -4933,173 +4733,160 @@ class Plotting_Panels():
         sat_halos_bf = list(halos_bf_red) + list(halos_bf_blue)
         fred_bf = list(fred_bf_red) + list(fred_bf_blue)
 
-        def hybrid_quenching_model(theta):
-            """
-            Apply hybrid quenching model from Zu and Mandelbaum 2015
+        df1 = pd.DataFrame(sat_gals_arr)
+        df2 = pd.DataFrame(fred_arr)
+        df3 = pd.DataFrame(zip(sat_gals_bf, fred_bf))
+        df = pd.concat([df1, df2])
 
-            Parameters
-            ----------
-            gals_df: pandas dataframe
-                Mock catalog
+        df.to_csv("/Users/asadm2/Desktop/stellar_fred_sat_models.csv")
+        df3.to_csv("/Users/asadm2/Desktop/stellar_fred_sat_bf.csv")
 
-            Returns
-            ---------
-            f_red_cen: array
-                Array of central red fractions
-            f_red_sat: array
-                Array of satellite red fractions
-            """
-
-            # parameter values from Table 1 of Zu and Mandelbaum 2015 "prior case"
-            Mstar_q = theta[0] # Msun/h
-            Mh_q = theta[1] # Msun/h
-            mu = theta[2]
-            nu = theta[3]
-
-            sat_hosthalo_mass_arr = 10**(np.linspace(10.5, 14.5, 200))
-            sat_stellar_mass_arr = 10**(np.linspace(8.6, 12, 200))
-            cen_stellar_mass_arr = 10**(np.linspace(8.6, 12, 200))
-
-            f_red_cen = 1 - np.exp(-((cen_stellar_mass_arr/(10**Mstar_q))**mu))
-
-            g_Mstar = np.exp(-((sat_stellar_mass_arr/(10**Mstar_q))**mu))
-            h_Mh = np.exp(-((sat_hosthalo_mass_arr/(10**Mh_q))**nu))
-            f_red_sat = 1 - (g_Mstar * h_Mh)
-
-            return f_red_cen, f_red_sat
-
-        def halo_quenching_model(theta):
-            """
-            Apply halo quenching model from Zu and Mandelbaum 2015
-
-            Parameters
-            ----------
-            gals_df: pandas dataframe
-                Mock catalog
-
-            Returns
-            ---------
-            f_red_cen: array
-                Array of central red fractions
-            f_red_sat: array
-                Array of satellite red fractions
-            """
-
-            # parameter values from Table 1 of Zu and Mandelbaum 2015 "prior case"
-            Mh_qc = theta[0] # Msun/h 
-            Mh_qs = theta[1] # Msun/h
-            mu_c = theta[2]
-            mu_s = theta[3]
-
-            cen_hosthalo_mass_arr = 10**(np.linspace(10, 15, 200))
-            sat_hosthalo_mass_arr = 10**(np.linspace(10, 15, 200))
-
-            f_red_cen = 1 - np.exp(-((cen_hosthalo_mass_arr/(10**Mh_qc))**mu_c))
-            f_red_sat = 1 - np.exp(-((sat_hosthalo_mass_arr/(10**Mh_qs))**mu_s))
-
-            return f_red_cen, f_red_sat
-        
-        fig1 = plt.figure(figsize=(10,8))
-        if quenching == 'hybrid':
-            me = plt.errorbar(sat_stats_bincens, sat_mean_stats[0], 
-                yerr=sat_std_stats[0], color='navy', fmt='s', 
-                ecolor='navy',markersize=12, capsize=7, capthick=1.5, 
-                zorder=10, marker='p', label='Model average')
-            if settings.mf_type == 'smf':
-                plt.xlabel(r'\boldmath$\log_{10}\ M_{*, sat} \left[\mathrm{M_\odot}\,'\
-                            r' \mathrm{h}^{-2} \right]$',fontsize=30)
-            elif settings.mf_type == 'bmf':
-                plt.xlabel(r'\boldmath$\log_{10}\ M_{b, sat} \left[\mathrm{M_\odot}\,'\
-                            r' \mathrm{h}^{-2} \right]$',fontsize=30)
-
-            bfe = plt.scatter(sat_gals_bf, fred_bf, alpha=0.4, s=150, c=sat_halos_bf, 
-                cmap='viridis' ,label='Best-fit')
-            # plt.colorbar(label=r'\boldmath$\log_{10}\ M_{h, host}$')
-
-            if settings.mf_type == 'smf':
-                antonio_data = pd.read_csv(settings.path_to_proc + "../external/fquench_stellar/fqlogTSM_sat_DS_TNG_Salim_z0.csv", 
-                    index_col=0, skiprows=1, 
-                    names=['fred_ds','logmstar','fred_tng'])
-                hosthalo_data = pd.read_csv(settings.path_to_proc + "../external/fquench_halo/fqlogMvirhost_sat_DS_TNG_z0.csv", 
-                    index_col=0, skiprows=1, names=['fred_ds','logmhalo','fred_tng'])
-
-                dss = plt.scatter(antonio_data.logmstar.values, antonio_data.fred_ds.values, 
-                    lw=5, c=hosthalo_data.logmhalo.values, cmap='viridis', marker='^', 
-                    s=120, label='Dark Sage', zorder=10)
-                tngs = plt.scatter(antonio_data.logmstar.values, antonio_data.fred_tng.values, 
-                    lw=5, c=hosthalo_data.logmhalo.values, cmap='viridis', marker='s', 
-                    s=120, label='TNG', zorder=10)
-                dsp, = plt.plot(antonio_data.logmstar.values, antonio_data.fred_ds.values, lw=3, c='k', ls='dashed')
-                tngp, = plt.plot(antonio_data.logmstar.values, antonio_data.fred_tng.values, lw=3, c='k', ls='dashdot')
-
-                sat_hosthalo_mass_arr = np.linspace(10.5, 14.5, 200)
-                sat_stellar_mass_arr = np.linspace(8.6, 12, 200)
-                an_fred_cen, an_fred_sat = hybrid_quenching_model(preprocess.bf_params[5:])
-
-            # plt.scatter(sat_stellar_mass_arr, an_fred_sat, alpha=0.4, s=150,
-            #     c=sat_hosthalo_mass_arr, cmap='viridis',
-            #     label='analytical')
-
-            plt.colorbar(label=r'\boldmath$\log_{10}\ M_{h, host}$')
-
-        elif quenching == 'halo':
-            # plt.errorbar(sat_stats_bincens, sat_mean_stats[0], 
-            #     yerr=sat_std_stats[0], color='navy', fmt='s', 
-            #     ecolor='navy',markersize=12, capsize=7, capthick=1.5, 
-            #     zorder=10, marker='p', label='Model average')
-            # plt.scatter(sat_halos_arr, fred_arr, alpha=0.4, s=150, c='navy',
-            #     label='Models')
-
-            for idx in range(len(sat_halos_arr)):
-                x, y = zip(*sorted(zip(sat_halos_arr[idx],fred_arr[idx])))
-                plt.plot(x, y, alpha=0.4, c='cornflowerblue', lw=10, solid_capstyle='round')
-
-            x, y = zip(*sorted(zip(sat_halos_arr[0],fred_arr[0])))
-            x_bf, y_bf = zip(*sorted(zip(sat_halos_bf, fred_bf)))
-            # Plotting again just so that adding label to legend is easier
-            mp, = plt.plot(x, y, alpha=0.4, c='cornflowerblue', label='Models', lw=10, 
-                solid_capstyle='round')
-            bfp, = plt.plot(x_bf, y_bf, c='mediumorchid', label='Best-fit', lw=10, 
-                solid_capstyle='round')
-
-            plt.xlabel(r'\boldmath$\log_{10}\ M_{h, host} \left[\mathrm{M_\odot}\,'\
-                        r' \mathrm{h}^{-1} \right]$',fontsize=30)
-            # plt.scatter(sat_halos_bf, fred_bf, alpha=0.4, s=150, c='mediumorchid',\
-            #     label='Best-fit', zorder=10)
-
-            antonio_data = pd.read_csv(settings.path_to_proc + "../external/fquench_halo/fqlogMvirhost_sat_DS_TNG_z0.csv", 
-                index_col=0, skiprows=1, names=['fred_ds','logmhalo','fred_tng'])
-            dsp, = plt.plot(antonio_data.logmhalo.values, antonio_data.fred_ds.values, lw=5, c='k', ls='dashed', label='Dark Sage')
-            tngp, = plt.plot(antonio_data.logmhalo.values, antonio_data.fred_tng.values, lw=5, c='k', ls='dashdot', label='TNG')
-
-            sat_hosthalo_mass_arr = np.linspace(10, 15, 200)
-            an_fred_cen, an_fred_sat = halo_quenching_model(preprocess.bf_params[5:])
-
-            # plt.plot(sat_hosthalo_mass_arr, an_fred_sat, lw=5, c='peru', 
-            #     ls='dotted', label='analytical')
-
-        plt.ylabel(r'\boldmath$f_{red, sat}$', fontsize=30)
-        # plt.legend(loc='best', prop={'size':30})
+        df.to_csv("/Users/asadm2/Desktop/baryonic_fred_sat_models.csv")
+        df3.to_csv("/Users/asadm2/Desktop/baryonic_fred_sat_bf.csv")
 
         if quenching == 'hybrid':
-            if settings.mf_type == 'smf':
-                plt.legend([(tngs, tngp), (dss, dsp), (me), (bfe)], 
-                    ['TNG', 'Dark Sage', 'Model average', 'Best-fit'],
-                    handler_map={tuple: HandlerTuple(ndivide=1, pad=0)}, loc='best', prop={'size':22})
-            elif settings.mf_type == 'bmf':
-                plt.legend([(me), (bfe)], 
-                    ['Model average', 'Best-fit'],
-                    handler_map={tuple: HandlerTuple(ndivide=1, pad=0)}, loc='best', prop={'size':22})
-        
-        elif quenching == 'halo':
-            plt.legend([(tngp), (dsp), (mp), (bfp)], 
-                ['TNG','Dark Sage', 'Models', 'Best-fit'],
-                handler_map={tuple: HandlerTuple(ndivide=4, pad=0.3)}, prop={'size':22})
+            sat_mean_stats = bs(np.hstack(sat_gals_bf), np.hstack(fred_bf), bins=np.linspace(9.0, 12, 10))
+            sat_std_stats = bs(np.hstack(sat_gals_arr), np.hstack(fred_arr), 
+                statistic='std', bins=np.linspace(9.0, 12, 10))
+            sat_stats_bincens = 0.5 * (sat_mean_stats[1][1:] + sat_mean_stats[1][:-1])
 
-        plt.show()
+        elif quenching == 'halo':
+            sat_mean_stats = bs(np.hstack(sat_halos_arr), np.hstack(fred_arr), bins=10)
+            sat_std_stats = bs(np.hstack(sat_halos_arr), np.hstack(fred_arr), 
+                statistic='std', bins=10)
+            sat_stats_bincens = 0.5 * (sat_mean_stats[1][1:] + sat_mean_stats[1][:-1])
+
+        #* When using bins=10
+        # x_stellar = [ 8.734819 ,  9.003975 ,  9.273129 ,  9.542284 ,  9.8114395,
+        #     10.080593 , 10.349749 , 10.618903 , 10.888058 , 11.157213 ]
+        # stellar_bf_mean = [0.64832755, 0.66529764, 0.69120117, 0.72903512, 0.77603136,
+        #     0.83500419, 0.89571355, 0.94836159, 0.98310526, 0.99732491]
+        # stellar_models_std = [0.0462312 , 0.04248074, 0.03900303, 0.03510415, 0.03070705,
+        #     0.02679532, 0.02100911, 0.01240529, 0.0050619 , 0.00116498]
+
+        # x_baryonic = [ 9.126106,  9.378054,  9.630001,  9.881948, 10.133896, 10.385844,
+        #     10.637792, 10.889739, 11.141686, 11.393634]
+        # baryonic_bf_mean = [0.52098262, 0.55425301, 0.59349114, 0.65561065, 0.73145152,
+        #     0.82674526, 0.91662107, 0.97293731, 0.99589235, 0.99984093]
+        # baryonic_models_std = [0.09414305, 0.08624629, 0.0763314 , 0.06522779, 0.05077027,
+        #     0.03996957, 0.02353461, 0.01034778, 0.0025645 , 0.00015419]
+
+        #* When specifying bin range 8.6-12 for stellar and 9.0-12 for baryonic
+        x_stellar = [ 8.788889,  9.166666,  9.544445,  9.922222, 10.299999, 10.677778,
+            11.055555, 11.433333, 11.811111]
+        stellar_bf_mean = [0.65101158, 0.67990708, 0.72933361, 0.79900317, 0.8813311 ,
+            0.95284105, 0.99150349, 0.99946155, np.nan]
+        stellar_models_std = [0.04603505, 0.04185573, 0.03807872, 0.03397289, 0.0298246 ,
+            0.01999644, 0.00842211, 0.00149638, 0.        ]
+
+
+        x_baryonic = [ 9.166666,  9.5     ,  9.833334, 10.166666, 10.5     , 10.833334,
+            11.166666, 11.5     , 11.833334]
+        baryonic_bf_mean = [0.5253415 , 0.57114373, 0.63850572, 0.74087505, 0.86857715,
+            0.95880641, 0.9964849 , 0.99993795, np.nan]
+        baryonic_models_std = [0.09340062, 0.08346824, 0.07023482, 0.05558838, 0.04363577,
+            0.02178294, 0.00548515, 0.00043039, 0.        ]
+
+        fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
+            gridspec_kw={'wspace':0.25})
+
+        sm = ax[0].errorbar(x_stellar, stellar_bf_mean, 
+            yerr=stellar_models_std, color='mediumorchid', fmt='s', 
+            ecolor='mediumorchid',markersize=20, capsize=7, capthick=1.5, 
+            zorder=10, marker='p')
+
+        bm = ax[1].errorbar(x_baryonic, baryonic_bf_mean, 
+            yerr=baryonic_models_std, color='mediumorchid', fmt='s', 
+            ecolor='mediumorchid',markersize=20, capsize=7, capthick=1.5, 
+            zorder=10, marker='p')
+
+        ax[0].set_xlabel(r'\boldmath$\log_{10}\ M_{*, sat} \left[\mathrm{M_\odot}\,'\
+                    r' \mathrm{h}^{-2} \right]$',fontsize=30)
+        ax[1].set_xlabel(r'\boldmath$\log_{10}\ M_{b, sat} \left[\mathrm{M_\odot}\,'\
+                    r' \mathrm{h}^{-2} \right]$',fontsize=30)
+
+        if mf_type == 'smf':
+            antonio_data = pd.read_csv(path_to_proc + "../external/fquench_stellar/fqlogTSM_sat_DS_TNG_Salim_z0.csv", 
+                index_col=0, skiprows=1, 
+                names=['fred_ds','logmstar','fred_tng'])
+
+            dsp, = ax[0].plot(antonio_data.logmstar.values, antonio_data.fred_ds.values, lw=5, c='k', ls='dashed')
+            tngp, = ax[0].plot(antonio_data.logmstar.values, antonio_data.fred_tng.values, lw=5, c='k', ls='dashdot')
+
+
+        ax[0].set_ylabel(r'\boldmath$f_{red, sat}$', labelpad=20, fontsize=30)
+        ax[1].set_ylabel(r'\boldmath$f_{red, sat}$', labelpad=20, fontsize=30)
+
+        ax[0].legend([(tngp), (dsp), (sm, bm)], 
+            ['TNG', 'Dark Sage', 'Best-fit'],
+            handler_map={tuple: HandlerTuple(ndivide=1, pad=0)}, loc='best', prop={'size':30})
+
+        # plt.show()
 
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fred_sat_emcee_{0}.pdf'.format(quenching), 
-            bbox_inches="tight", dpi=1200)
+            bbox_inches="tight", dpi=1200)        
+
+        #* Code below to make this figure look like fred_cen
+        stellar_models_df = pd.read_csv("/Users/asadm2/Desktop/stellar_fred_sat_models.csv") 
+        stellar_bf_df = pd.read_csv("/Users/asadm2/Desktop/stellar_fred_sat_bf.csv") 
+        baryonic_models_df = pd.read_csv("/Users/asadm2/Desktop/baryonic_fred_sat_models.csv") 
+        baryonic_bf_df = pd.read_csv("/Users/asadm2/Desktop/baryonic_fred_sat_bf.csv") 
+
+        fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
+            gridspec_kw={'wspace':0.30})
+
+        sat_gals_arr = stellar_models_df.iloc[:200,1:].values
+        fred_arr = stellar_models_df.iloc[200:,1:].values
+        sat_gals_bf = stellar_bf_df.iloc[:,1].values
+        fred_bf = stellar_bf_df.iloc[:,2].values
+
+        for idx in range(len(sat_gals_arr)):
+            x, y = zip(*sorted(zip(sat_gals_arr[idx],fred_arr[idx])))
+            ax[0].scatter(x, y, alpha=0.4, c='cornflowerblue')
+
+        x, y = zip(*sorted(zip(sat_gals_arr[0],fred_arr[0])))
+        x_bf, y_bf = zip(*sorted(zip(sat_gals_bf,fred_bf)))
+        # Plotting again just so that adding label to legend is easier
+        sm = ax[0].scatter(x, y, alpha=0.4, c='cornflowerblue', label='Models')
+        sbf = ax[0].scatter(x_bf, y_bf, c='mediumorchid', label='Best-fit')
+
+
+        sat_gals_arr = baryonic_models_df.iloc[:200,1:].values
+        fred_arr = baryonic_models_df.iloc[200:,1:].values
+        sat_gals_bf = baryonic_bf_df.iloc[:,1].values
+        fred_bf = baryonic_bf_df.iloc[:,2].values
+
+        for idx in range(len(sat_gals_arr)):
+            x, y = zip(*sorted(zip(sat_gals_arr[idx],fred_arr[idx])))
+            ax[1].scatter(x, y, alpha=0.4, c='cornflowerblue', lw=10)
+
+        x, y = zip(*sorted(zip(sat_gals_arr[0],fred_arr[0])))
+        x_bf, y_bf = zip(*sorted(zip(sat_gals_bf,fred_bf)))
+        # Plotting again just so that adding label to legend is easier
+        ax[1].scatter(x, y, alpha=0.4, c='cornflowerblue', label='Models')
+        ax[1].scatter(x_bf, y_bf, c='mediumorchid', label='Best-fit')
+
+        if mf_type == 'smf':
+            antonio_data = pd.read_csv(path_to_proc + "../external/fquench_stellar/fqlogTSM_sat_DS_TNG_Salim_z0.csv", 
+                index_col=0, skiprows=1, 
+                names=['fred_ds','logmstar','fred_tng'])
+
+            dsp, = ax[0].plot(antonio_data.logmstar.values, antonio_data.fred_ds.values, lw=5, c='k', ls='dashed')
+            tngp, = ax[0].plot(antonio_data.logmstar.values, antonio_data.fred_tng.values, lw=5, c='k', ls='dashdot')
+
+        ax[0].set_xlabel(r'\boldmath$\log_{10}\ M_{*, sat} \left[\mathrm{M_\odot}\,'\
+                    r' \mathrm{h}^{-2} \right]$',fontsize=30)
+        ax[1].set_xlabel(r'\boldmath$\log_{10}\ M_{b, sat} \left[\mathrm{M_\odot}\,'\
+                    r' \mathrm{h}^{-2} \right]$',fontsize=30)
+
+        ax[0].set_ylabel(r'\boldmath$f_{red, sat}$', fontsize=30)
+        ax[1].set_ylabel(r'\boldmath$f_{red, sat}$', fontsize=30)
+
+        ax[0].legend([(tngp), (dsp), (sm), (sbf)], 
+            ['TNG', 'Dark Sage', 'Models', 'Best-fit'],
+            handler_map={tuple: HandlerTuple(ndivide=1, pad=0)}, loc='best', prop={'size':22})
+
+        plt.show()
 
     def plot_mean_sigma_vs_grpcen(self, models, data, data_experiments, best_fit):
         """
@@ -5208,56 +4995,91 @@ class Plotting_Panels():
         mean_centers_blue = 0.5 * (bins_blue[1:] + \
             bins_blue[:-1])
 
-        # mean_stats_red_bf = bs(x_sigma_red_bf, y_sigma_red_bf, 
-        #     statistic='mean', bins=np.linspace(0,250,6))
-        # mean_stats_blue_bf = bs(x_sigma_blue_bf, y_sigma_blue_bf, 
-        #     statistic='mean', bins=np.linspace(0,250,6))
+        x_stellar_red = np.array([1.225, 1.675, 2.125, 2.575])
+        x_stellar_blue = np.array([1.1875, 1.5625, 1.9375, 2.3125])
+        
+        stellar_error_red = np.array([0.06107405, 0.04193928, 0.02663803, 0.06155201])
+        stellar_error_blue = np.array([0.0846875 , 0.05771199, 0.04595508, 0.06640535])
 
-        # mean_stats_red_data = bs(x_sigma_red_data, y_sigma_red_data, 
-        #     statistic='mean', bins=np.linspace(0,250,6))
-        # mean_stats_blue_data = bs(x_sigma_blue_data, y_sigma_blue_data,
-        #     statistic='mean', bins=np.linspace(0,250,6))
+        stellar_red_data_y = np.array([10.33120738, 10.44089237, 10.49140916, 10.90520085])
+        stellar_blue_data_y = np.array([ 9.96134779, 10.02206739, 10.08378187, 10.19648856])
+        
+        stellar_red_bf_y = np.array([10.34039783, 10.41027737, 10.53274822, 10.73955345])
+        stellar_blue_bf_y = np.array([ 9.9297533 ,  9.96402836, 10.07424164, 10.20708847])
 
-        fig1 = plt.subplots(figsize=(10,8))
+        stellar_red_models_max = np.array([10.37172031, 10.43146896, 10.58554745, 10.76822472])
+        stellar_red_models_min = np.array([10.25774288, 10.32569981, 10.47279453, 10.59037876])
+        stellar_blue_models_max = np.array([10.04386997, 10.01224518, 10.14769268, 10.26904297])
+        stellar_blue_models_min = np.array([ 9.8198576 ,  9.91652107, 10.00912952, 10.13320351])
 
-        dr = plt.errorbar(mean_centers_red,y_mean_mstar_red_data,yerr=error_red,
-                color='darkred',fmt='^',ecolor='darkred',markersize=12,capsize=10,
-                capthick=1.0,zorder=10)
-        db = plt.errorbar(mean_centers_blue, y_mean_mstar_blue_data, yerr=error_blue,
-                color='darkblue',fmt='^',ecolor='darkblue',markersize=12,capsize=10,
-                capthick=1.0,zorder=10)
+        x_baryonic_red = np.array([1.225, 1.675, 2.125, 2.575])
+        x_baryonic_blue = np.array([1.1875, 1.5625, 1.9375, 2.3125])
+        
+        baryonic_error_red = np.array([0.05423373, 0.03792254, 0.02150137, 0.06049467])
+        baryonic_error_blue = np.array([0.05358312, 0.03775602, 0.0283695 , 0.043861  ])
 
-        # dr = plt.scatter(mean_centers_red, mean_mstar_red_data[0],
-        #         color='indianred', s=240, zorder=10, marker='^')
-        # db = plt.scatter(mean_centers_blue, mean_mstar_blue_data[0],
-        #         color='cornflowerblue', s=240, zorder=10, marker='^')
-       
-        mr = plt.fill_between(x=mean_centers_red, y1=red_models_max, 
-            y2=red_models_min, color='indianred',alpha=0.4)
-        mb = plt.fill_between(x=mean_centers_blue, y1=blue_models_max, 
-            y2=blue_models_min, color='cornflowerblue',alpha=0.4)
+        baryonic_red_data_y = np.array([10.43607131, 10.48323239, 10.53705475, 10.94332686])
+        baryonic_blue_data_y = np.array([10.0527434 , 10.01044694, 10.08551048, 10.27737551])
 
-        bfr, = plt.plot(mean_centers_red, y_mean_mstar_red_bf, c='indianred', 
+        baryonic_red_bf_y = np.array([10.38263226, 10.46093655, 10.59742928, 10.78822517])
+        baryonic_blue_bf_y = np.array([10.01517773, 10.00086117, 10.09749985, 10.21145153])
+        
+        baryonic_red_models_max = np.array([10.42061424, 10.49357891, 10.63677597, 10.76826668])
+        baryonic_red_models_min = np.array([10.34576321, 10.41626453, 10.56935024, 10.66919422])
+        baryonic_blue_models_max = np.array([10.06588268, 10.06552601, 10.16591644, 10.2776165 ])
+        baryonic_blue_models_min = np.array([ 9.95103168,  9.99954987, 10.05944347, 10.15918922])
+
+        fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
+            gridspec_kw={'wspace':0.30})
+
+        sdr = ax[0].errorbar(x_stellar_red, stellar_red_data_y, yerr=stellar_error_red,
+                color='indianred',fmt='^',ecolor='indianred',markersize=20,capsize=7,
+                capthick=1.5,zorder=10)
+        sdb = ax[0].errorbar(x_stellar_blue, stellar_blue_data_y, yerr=stellar_error_blue,
+                color='cornflowerblue',fmt='^',ecolor='cornflowerblue',markersize=20,capsize=7,
+                capthick=1.5,zorder=10)
+
+        smr = ax[0].fill_between(x=x_stellar_red, y1=stellar_red_models_max, 
+            y2=stellar_red_models_min, color='indianred',alpha=0.4)
+        smb = ax[0].fill_between(x=x_stellar_blue, y1=stellar_blue_models_max, 
+            y2=stellar_blue_models_min, color='cornflowerblue',alpha=0.4)
+
+        sbfr, = ax[0].plot(x_stellar_red, stellar_red_bf_y, c='indianred', 
             zorder=9, ls='--', lw=4)
-        bfb, = plt.plot(mean_centers_blue, y_mean_mstar_blue_bf, 
+        sbfb, = ax[0].plot(x_stellar_blue, stellar_blue_bf_y, 
             c='cornflowerblue', zorder=9, ls='--', lw=4)
 
-        l = plt.legend([(dr, db), (mr, mb), (bfr, bfb)], 
+        bdr = ax[1].errorbar(x_baryonic_red, baryonic_red_data_y, yerr=baryonic_error_red,
+                color='indianred',fmt='^',ecolor='indianred',markersize=20,capsize=7,
+                capthick=1.5,zorder=10)
+        bdb = ax[1].errorbar(x_baryonic_blue, baryonic_blue_data_y, yerr=baryonic_error_blue,
+                color='cornflowerblue',fmt='^',ecolor='cornflowerblue',markersize=20,capsize=7,
+                capthick=1.5,zorder=10)
+
+        bmr = ax[1].fill_between(x=x_baryonic_red, y1=baryonic_red_models_max, 
+            y2=baryonic_red_models_min, color='indianred',alpha=0.4)
+        bmb = ax[1].fill_between(x=x_baryonic_blue, y1=baryonic_blue_models_max, 
+            y2=baryonic_blue_models_min, color='cornflowerblue',alpha=0.4)
+
+        bbfr, = ax[1].plot(x_baryonic_red, baryonic_red_bf_y, c='indianred', 
+            zorder=9, ls='--', lw=4)
+        bbfb, = ax[1].plot(x_baryonic_blue, baryonic_blue_bf_y, 
+            c='cornflowerblue', zorder=9, ls='--', lw=4)
+
+        ax[0].legend([(sdr, sdb), (smr, smb), (sbfr, sbfb)], 
             ['Data','Models','Best-fit'],
             handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, 
-            markerscale=1.5, loc='best', prop={'size':22})
+            markerscale=0.5, loc='best', prop={'size':30})
 
-        # plt.ylim(8.9,)
+        ax[0].set_xlabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km/s} \right]$', fontsize=30)
+        ax[0].set_ylabel(r'\boldmath$\overline{\log_{10}\ M_{*,group\ cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=30)
 
-        plt.xlabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km/s} \right]$', fontsize=30)
-        if settings.mf_type == 'smf':
-            plt.ylabel(r'\boldmath$\overline{\log_{10}\ M_{*,group\ cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=30)
-        elif settings.mf_type == 'bmf':
-            plt.ylabel(r'\boldmath$\overline{\log_{10}\ M_{b,group\ cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=30)
+        ax[1].set_xlabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km/s} \right]$', fontsize=30)
+        ax[1].set_ylabel(r'\boldmath$\overline{\log_{10}\ M_{b,group\ cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=30)
 
-        plt.show()
+        # plt.show()
 
-        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/{0}_sigma_grpcen_emcee.pdf'.format(quenching), 
+        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/sigma_grpcen_emcee_{0}.pdf'.format(quenching), 
             bbox_inches="tight", dpi=1200)
 
     def plot_mean_grpcen_vs_sigma(self, models, data, data_experiments, best_fit):
@@ -5331,39 +5153,91 @@ class Plotting_Panels():
                 x_sigma_red_data = np.delete(x_sigma_red_data, idx)
                 y_sigma_red_data = np.delete(y_sigma_red_data, idx)
 
-        fig1= plt.figure(figsize=(10,8))
+        x_stellar_red = np.array([ 8.875,  9.425,  9.975, 10.525])
+        x_stellar_blue = np.array([ 8.875,  9.425,  9.975, 10.525])
+        
+        stellar_error_red = np.array([0.08168257, 0.04709763, 0.03530005, 0.04988182])
+        stellar_error_blue = np.array([0.05541915, 0.03905993, 0.04079216, 0.0721653 ])
 
-        mr = plt.fill_between(x=mean_centers_red, y1=red_models_min, 
-            y2=red_models_max, color='indianred',alpha=0.4)
-        mb = plt.fill_between(x=mean_centers_blue, y1=blue_models_min, 
-            y2=blue_models_max, color='cornflowerblue',alpha=0.4)
+        stellar_red_data_y = np.array([1.90950953, 2.01440507, 1.94387242, 2.10831986])
+        stellar_blue_data_y = np.array([1.74316835, 1.79926695, 1.93256557, 1.97005728])
+        
+        stellar_red_bf_y = np.array([1.98104873, 2.02702529, 1.97752044, 2.12436811])
+        stellar_blue_bf_y = np.array([1.8154525 , 1.83368137, 1.89866557, 2.03336726])
 
-        dr = plt.errorbar(mean_centers_red,y_sigma_red_data,
-            yerr=error_red, color='darkred',fmt='^',ecolor='darkred', 
-            markersize=12,capsize=10,capthick=1.0,zorder=10)
-        db = plt.errorbar(mean_centers_blue,y_sigma_blue_data,
-            yerr=error_blue, color='darkblue',fmt='^',ecolor='darkblue',
-            markersize=12,capsize=10,capthick=1.0,zorder=10)
+        stellar_red_models_max = np.array([2.06641694, 2.02546797, 2.02176993, 2.19128397])
+        stellar_red_models_min = np.array([1.61879307, 1.85092512, 1.87953372, 2.08012078])
+        stellar_blue_models_max = np.array([1.890858  , 1.86392322, 1.94639726, 2.15490801])
+        stellar_blue_models_min = np.array([1.64139962, 1.75797976, 1.83498716, 2.01565537])
 
-        bfr, = plt.plot(mean_centers_red,y_sigma_red_bf,
-            color='indianred',ls='--',lw=4,zorder=9)
-        bfb, = plt.plot(mean_centers_blue,y_sigma_blue_bf,
-            color='cornflowerblue',ls='--',lw=4,zorder=9)
+        x_baryonic_red = np.array([ 9.275,  9.825, 10.375, 10.925])
+        x_baryonic_blue = np.array([ 9.275,  9.825, 10.375, 10.925])
+        
+        baryonic_error_red = np.array([0.06976874, 0.04908419, 0.04208714, 0.05678691])
+        baryonic_error_blue = np.array([0.03310831, 0.03219513, 0.05243091, 0.14076876])
 
-        if settings.mf_type == 'smf':
-            plt.xlabel(r'\boldmath$\log_{10}\ M_{* , group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=30)
-        elif settings.mf_type == 'bmf':
-            plt.xlabel(r'\boldmath$\log_{10}\ M_{b , group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=30)
+        baryonic_red_data_y = np.array([1.83568257, 1.91195255, 2.07040896, 2.21856796])
+        baryonic_blue_data_y = np.array([1.64732242, 1.88781988, 1.98457075, 2.43277928])
 
-        plt.ylabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km/s} \right]$', fontsize=30)
+        baryonic_red_bf_y = np.array([1.85286859, 1.94598372, 2.07766401, 2.23750569])
+        baryonic_blue_bf_y = np.array([1.72628966, 1.88429082, 1.98873702, 2.22116786])
+        
+        baryonic_red_models_max = np.array([1.90151989, 1.99215877, 2.10862974, 2.2715889 ])
+        baryonic_red_models_min = np.array([1.65129603, 1.91682309, 2.04532362, 2.20808547])
+        baryonic_blue_models_max = np.array([1.72257685, 1.90259593, 2.06224683, 2.24638789])
+        baryonic_blue_models_min = np.array([1.67072591, 1.82761191, 1.96676077, 2.12422599])
 
-        plt.legend([(dr, db), (mr, mb), (bfr, bfb)], 
+        fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
+            gridspec_kw={'wspace':0.30})
+
+        sdr = ax[0].errorbar(x_stellar_red, stellar_red_data_y, yerr=stellar_error_red,
+                color='indianred',fmt='^',ecolor='indianred',markersize=20,capsize=7,
+                capthick=1.5,zorder=10)
+        sdb = ax[0].errorbar(x_stellar_blue, stellar_blue_data_y, yerr=stellar_error_blue,
+                color='cornflowerblue',fmt='^',ecolor='cornflowerblue',markersize=20,capsize=7,
+                capthick=1.5,zorder=10)
+
+        smr = ax[0].fill_between(x=x_stellar_red, y1=stellar_red_models_max, 
+            y2=stellar_red_models_min, color='indianred',alpha=0.4)
+        smb = ax[0].fill_between(x=x_stellar_blue, y1=stellar_blue_models_max, 
+            y2=stellar_blue_models_min, color='cornflowerblue',alpha=0.4)
+
+        sbfr, = ax[0].plot(x_stellar_red, stellar_red_bf_y, c='indianred', 
+            zorder=9, ls='--', lw=4)
+        sbfb, = ax[0].plot(x_stellar_blue, stellar_blue_bf_y, 
+            c='cornflowerblue', zorder=9, ls='--', lw=4)
+
+        bdr = ax[1].errorbar(x_baryonic_red, baryonic_red_data_y, yerr=baryonic_error_red,
+                color='indianred',fmt='^',ecolor='indianred',markersize=20,capsize=7,
+                capthick=1.5,zorder=10)
+        bdb = ax[1].errorbar(x_baryonic_blue, baryonic_blue_data_y, yerr=baryonic_error_blue,
+                color='cornflowerblue',fmt='^',ecolor='cornflowerblue',markersize=20,capsize=7,
+                capthick=1.5,zorder=10)
+
+        bmr = ax[1].fill_between(x=x_baryonic_red, y1=baryonic_red_models_max, 
+            y2=baryonic_red_models_min, color='indianred',alpha=0.4)
+        bmb = ax[1].fill_between(x=x_baryonic_blue, y1=baryonic_blue_models_max, 
+            y2=baryonic_blue_models_min, color='cornflowerblue',alpha=0.4)
+
+        bbfr, = ax[1].plot(x_baryonic_red, baryonic_red_bf_y, c='indianred', 
+            zorder=9, ls='--', lw=4)
+        bbfb, = ax[1].plot(x_baryonic_blue, baryonic_blue_bf_y, 
+            c='cornflowerblue', zorder=9, ls='--', lw=4)
+
+        ax[0].legend([(sdr, sdb), (smr, smb), (sbfr, sbfb)], 
             ['Data','Models','Best-fit'],
-            handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, markerscale=1.5, 
-            loc='lower right', prop={'size':22})
-        plt.show()
+            handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, 
+            markerscale=0.5, loc='best', prop={'size':30})
 
-        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/{0}_grpcen_sigma_emcee.pdf'.format(quenching), 
+        ax[0].set_xlabel(r'\boldmath$\log_{10}\ M_{* , group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=30)
+        ax[0].set_ylabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km/s} \right]$', labelpad=20, fontsize=30)
+
+        ax[1].set_xlabel(r'\boldmath$\log_{10}\ M_{b , group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=30)
+        ax[1].set_ylabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km/s} \right]$', labelpad=20, fontsize=30)
+
+        # plt.show()
+
+        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/grpcen_sigma_emcee_{0}.pdf'.format(quenching), 
             bbox_inches="tight", dpi=1200)
 
     def Plot_Core(self, data, models, best_fit):
