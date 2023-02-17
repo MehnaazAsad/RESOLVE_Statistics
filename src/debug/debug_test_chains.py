@@ -27510,8 +27510,73 @@ plt.ylabel(r'$\chi^2$')
 plt.xticks(tick_marks, names, fontsize=20, rotation='vertical')
 plt.show()
 
+#* Remove all bins one by one (with replacement)
+chi2_arr = []
+chi2 = chi_squared(data_stats, model_stats, sigma, inv_corr_mat)
+chi2_arr.append(chi2)
+bins_to_remove = np.arange(0, 28, 1)
+for bin in bins_to_remove:
+    sigma_mod, inv_corr_mat_mod, corr_mat_mod = get_err_data(path_to_proc, bin)
+    data_stats_mod  = np.delete(data_stats, bin) 
+    model_stats_mod  = np.delete(model_stats, bin) 
+    chi2 = chi_squared(data_stats_mod, model_stats_mod, sigma_mod, inv_corr_mat_mod)
+    chi2_arr.append(chi2)
+
+chi2_arr = [46.12696028847889,
+ 45.30883674912596,
+ 45.91722992014746,
+ 45.95555060576872,
+ 45.81399886066694,
+ 38.88842980989794,
+ 43.37731392604847,
+ 42.55093924668347,
+ 40.48280748903906,
+ 44.59209300042604,
+ 41.856038456469825,
+ 46.10596717485549,
+ 44.70013159200455,
+ 46.025178087686314,
+ 45.92720011200156,
+ 40.977697594006685,
+ 42.22685070392915,
+ 45.99982296150587,
+ 45.60245048859061,
+ 45.48393080016468,
+ 46.01563975122883,
+ 44.121645371937596,
+ 46.04005288203994,
+ 46.12132828166926,
+ 45.77798967803916,
+ 45.511408045678785,
+ 45.911196853616204,
+ 41.5626869241447,
+ 46.103293405551106]
+
+fig1 = plt.figure()
+tick_marks = [i for i in range(len(chi2_arr))]
+names = ['No bins removed',
+r'$\Phi 1$', r'$\Phi 2$', r'$\Phi 3$', r'$\Phi 4$',
+r'$fblue_{cen}\ 1$', r'$fblue_{cen}\ 2$', r'$fblue_{cen}\ 3$', r'$fblue_{cen}\ 4$',
+r'$fblue_{sat}\ 1$', r'$fblue_{sat}\ 2$', r'$fblue_{sat}\ 3$', r'$fblue_{sat}\ 4$',
+r"$\overline{M_{*,red}}\ 1$", r"$\overline{M_{*,red}}\ 2$", r"$\overline{M_{*,red}}\ 3$",
+r"$\overline{M_{*,red}}\ 4$", r"$\overline{M_{*,blue}}\ 1$", r"$\overline{M_{*,blue}}\ 2$",
+r"$\overline{M_{*,blue}}\ 3$", r"$\overline{M_{*,blue}}\ 4$", r'$\sigma_{red}\ 1$', r'$\sigma_{red}\ 2$', 
+r'$\sigma_{red}\ 3$', r'$\sigma_{red}\ 4$',
+r'$\sigma_{blue}\ 1$', r'$\sigma_{blue}\ 2$', 
+r'$\sigma_{blue}\ 3$', r'$\sigma_{blue}\ 4$']
+
+plt.axhline(chi2_arr[0], ls='--', c='k', label=r'$\chi^2$={0}'.format(np.round(chi2_arr[0], 2)))
+
+plt.legend(loc='best', prop={'size':20})
+plt.plot(tick_marks, chi2_arr)
+plt.scatter(tick_marks, chi2_arr)
+plt.xlabel("Bin removed")
+plt.ylabel(r'$\chi^2$')
+plt.xticks(tick_marks, names, fontsize=20, rotation='vertical')
+plt.show()
 
 
+#* Stellar baryonic (97)
 data_stats, z_median = calc_data_stats(catl_file)
 
 print('Initial population of halo catalog')
@@ -27686,6 +27751,72 @@ plt.grid(True, which='both')
 plt.minorticks_on()
 plt.legend(loc='best', prop={'size':30})
 plt.xlabel("Stat removed")
+plt.ylabel(r'$\chi^2$')
+plt.xticks(tick_marks, names, fontsize=20, rotation='vertical')
+plt.show()
+
+
+#* Remove all bins one by one (with replacement)
+chi2_arr = []
+chi2 = chi_squared(data_stats, model_stats, sigma, inv_corr_mat)
+chi2_arr.append(chi2)
+bins_to_remove = np.arange(0, 28, 1)
+for bin in bins_to_remove:
+    sigma_mod, inv_corr_mat_mod, corr_mat_mod = get_err_data(path_to_proc, bin)
+    data_stats_mod  = np.delete(data_stats, bin) 
+    model_stats_mod  = np.delete(model_stats, bin) 
+    chi2 = chi_squared(data_stats_mod, model_stats_mod, sigma_mod, inv_corr_mat_mod)
+    chi2_arr.append(chi2)
+
+chi2_arr = [55.72252684202627,
+ 55.28834322117198,
+ 55.23183774867764,
+ 55.613606750531304,
+ 55.00546712762174,
+ 47.17326542604378,
+ 48.41924010701763,
+ 52.672739731433396,
+ 54.58253785646676,
+ 55.7169348980109,
+ 46.931106376448014,
+ 55.710614190604666,
+ 55.271773821940926,
+ 54.98949256082388,
+ 55.04219979600131,
+ 48.992951074611355,
+ 54.72359230765787,
+ 54.52061663455351,
+ 55.45503553853651,
+ 54.5963803383086,
+ 55.72237225875256,
+ 54.179488212424104,
+ 55.353782719209306,
+ 55.31007489434919,
+ 55.65847621266836,
+ 43.73564563726745,
+ 54.53407216937496,
+ 55.72240570555846,
+ 54.44587930016998]
+
+fig1 = plt.figure()
+tick_marks = [i for i in range(len(chi2_arr))]
+names = ['No bins removed',
+r'$\Phi 1$', r'$\Phi 2$', r'$\Phi 3$', r'$\Phi 4$',
+r'$fblue_{cen}\ 1$', r'$fblue_{cen}\ 2$', r'$fblue_{cen}\ 3$', r'$fblue_{cen}\ 4$',
+r'$fblue_{sat}\ 1$', r'$fblue_{sat}\ 2$', r'$fblue_{sat}\ 3$', r'$fblue_{sat}\ 4$',
+r"$\overline{M_{*,red}}\ 1$", r"$\overline{M_{*,red}}\ 2$", r"$\overline{M_{*,red}}\ 3$",
+r"$\overline{M_{*,red}}\ 4$", r"$\overline{M_{*,blue}}\ 1$", r"$\overline{M_{*,blue}}\ 2$",
+r"$\overline{M_{*,blue}}\ 3$", r"$\overline{M_{*,blue}}\ 4$", r'$\sigma_{red}\ 1$', r'$\sigma_{red}\ 2$', 
+r'$\sigma_{red}\ 3$', r'$\sigma_{red}\ 4$',
+r'$\sigma_{blue}\ 1$', r'$\sigma_{blue}\ 2$', 
+r'$\sigma_{blue}\ 3$', r'$\sigma_{blue}\ 4$']
+
+plt.axhline(chi2_arr[0], ls='--', c='k', label=r'$\chi^2$={0}'.format(np.round(chi2_arr[0], 2)))
+
+plt.legend(loc='best', prop={'size':20})
+plt.plot(tick_marks, chi2_arr)
+plt.scatter(tick_marks, chi2_arr)
+plt.xlabel("Bin removed")
 plt.ylabel(r'$\chi^2$')
 plt.xticks(tick_marks, names, fontsize=20, rotation='vertical')
 plt.show()
