@@ -97,13 +97,13 @@ def get_samples(chain_file, nsteps, nwalkers, ndim, burnin):
     return samples
 
 survey = 'eco'
-quenching = 'halo'
-mf_type = 'bmf'
+quenching = 'hybrid'
+mf_type = 'smf'
 nwalkers = 500
 nsteps = 200
 burnin = 125
 ndim = 9
-run = 101
+run = 94
 
 if run >= 37:
     if mf_type == 'smf':
@@ -211,13 +211,17 @@ param_names_halo = [r"$\mathbf{log_{10}\ M_{1}}$",
 c = ChainConsumer()
 if quenching == 'hybrid':
     c.add_chain(samples[:,:], parameters=param_names_hybrid[:],
-        name=r"Hybrid baryonic pca", color='#B1862D', zorder=-20)
+        name=r"Stellar", color='#B1862D', zorder=-20)
+
+    c.add_marker(best_fit_94, parameters=param_names_hybrid, 
+        name=r"Stellar", marker_style="*", marker_size=200, 
+        color='#523e14')
 
     c.add_chain(samples_97[:,:], parameters=param_names_hybrid[:],
-        name=r"Hybrid baryonic non-pca", color='#663399', zorder=-10)
+        name=r"Baryonic", color='#663399', zorder=-10)
 
     c.add_marker(best_fit_97, parameters=param_names_hybrid, 
-        name="", marker_style="*", marker_size=200, 
+        name=r"Baryonic", marker_style="*", marker_size=200, 
         color='#29015F')
 
 elif quenching == 'halo':
@@ -234,10 +238,11 @@ elif quenching == 'halo':
 # sigma levels for 1D gaussian showing 68%,95% conf intervals
 c.configure(kde=2.0, shade_gradient = 1.0, shade_alpha=0.8, label_font_size=15, 
     tick_font_size=10, summary=True, sigma2d=False, diagonal_tick_labels=False, 
-    max_ticks=3, linewidths=2, legend_kwargs={"fontsize": 15})
-c.configure_truth(color='#B1862D', lw=1.7)
+    max_ticks=3, linewidths=2, legend_kwargs={"fontsize": 30})
+# c.configure_truth(color='#B1862D', lw=1.7)
+c.configure_truth(color='#B1862D', lw=1.7, alpha=0.0)
 if quenching == 'hybrid':
-    fig1 = c.plotter.plot(display=True, truth=best_fit_100)
+    fig1 = c.plotter.plot(display=True, truth=best_fit_94)
 elif quenching == 'halo':
     fig1 = c.plotter.plot(display=True, truth=best_fit_101)
 
