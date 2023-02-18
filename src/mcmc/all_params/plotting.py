@@ -11,6 +11,7 @@ from collections import OrderedDict
 from scipy.stats import chi2
 import matplotlib.pyplot as plt
 from matplotlib import rc
+from matplotlib.offsetbox import AnchoredText
 import pandas as pd
 
 
@@ -3503,7 +3504,7 @@ class Plotting_Panels():
         baryonic_error = np.array([0.11963659, 0.14568199, 0.16497913, 0.19174008])
 
         fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
-            gridspec_kw={'wspace':0.30})
+            gridspec_kw={'wspace':0.15})
 
         smt = ax[0].fill_between(x=x_stellar, y1=stellar_model_max, 
             y2=stellar_model_min, color='silver', alpha=0.4)
@@ -3528,11 +3529,20 @@ class Plotting_Panels():
         bbft, = ax[1].plot(x_baryonic, baryonic_bf_y, 
             color='k', ls='--', lw=4, zorder=10)
 
-        ax[0].set_xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=30)
-        ax[1].set_xlabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=30)
+        sat = AnchoredText("Stellar",
+                        prop=dict(size=30), frameon=False, loc='upper right')
+        # at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
+        ax[0].add_artist(sat)
+
+        bat = AnchoredText("Baryonic",
+                        prop=dict(size=30), frameon=False, loc='upper right')
+        ax[1].add_artist(bat)
+
+        ax[0].set_xlabel(r'\boldmath$\log \ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',labelpad=10, fontsize=40)
+        ax[1].set_xlabel(r'\boldmath$\log \ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',labelpad=10, fontsize=40)
         
-        ax[0].set_ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', labelpad=20, fontsize=30)
-        ax[1].set_ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', labelpad=20, fontsize=30)
+        ax[0].set_ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', labelpad=20, fontsize=40)
+        # ax[1].set_ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', labelpad=20, fontsize=30)
 
         ax[0].legend([(sdt), (smt), (sbft)], ['Data','Models','Best-fit'],
             handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, 
@@ -3728,7 +3738,7 @@ class Plotting_Panels():
         baryonic_sat_error = np.array([0.02119533, 0.02008324, 0.0296453 , 0.07140613])
 
         fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
-            gridspec_kw={'wspace':0.30})
+            gridspec_kw={'wspace':0.15})
         smc = ax[0].fill_between(x=x_stellar, y1=stellar_model_cen_max, 
             y2=stellar_model_cen_min, color='thistle', alpha=0.5)
         sms = ax[0].fill_between(x=x_stellar, y1=stellar_model_sat_max, 
@@ -3760,11 +3770,11 @@ class Plotting_Panels():
         bdc = ax[1].errorbar(x_baryonic, baryonic_data_cen_y, 
             yerr=baryonic_cen_error,
             color='rebeccapurple', fmt='s', ecolor='rebeccapurple', 
-            markersize=12, capsize=7,
+            markersize=20, capsize=7,
             capthick=1.5, zorder=10, marker='^')
         bds = ax[1].errorbar(x_baryonic, baryonic_data_sat_y, 
             yerr=baryonic_sat_error,
-            color='goldenrod', fmt='s', ecolor='goldenrod', markersize=12, capsize=7,
+            color='goldenrod', fmt='s', ecolor='goldenrod', markersize=20, capsize=7,
             capthick=1.5, zorder=10, marker='^')
 
         bbfc, = ax[1].plot(x_baryonic, baryonic_bf_cen_y, 
@@ -3773,12 +3783,21 @@ class Plotting_Panels():
         bbfs, = ax[1].plot(x_baryonic, baryonic_bf_sat_y, 
             color='goldenrod', ls='--', lw=4, 
             zorder=10)
-
-        ax[0].set_xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=30)
-        ax[1].set_xlabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=30)
         
-        ax[0].set_ylabel(r'\boldmath$f_{blue}$', labelpad=20, fontsize=30)
-        ax[1].set_ylabel(r'\boldmath$f_{blue}$', labelpad=20, fontsize=30)
+        sat = AnchoredText("Stellar",
+                        prop=dict(size=30), frameon=False, loc='upper right')
+        # at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
+        ax[0].add_artist(sat)
+
+        bat = AnchoredText("Baryonic",
+                        prop=dict(size=30), frameon=False, loc='upper right')
+        ax[1].add_artist(bat)
+
+        ax[0].set_xlabel(r'\boldmath$\log \ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=10, fontsize=40)
+        ax[1].set_xlabel(r'\boldmath$\log \ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=10, fontsize=40)
+        
+        ax[0].set_ylabel(r'\boldmath$f_{blue}$', labelpad=20, fontsize=40)
+        # ax[1].set_ylabel(r'\boldmath$f_{blue}$', labelpad=20, fontsize=30)
 
         ax[0].set_ylim(0,1)
         ax[1].set_ylim(0,1)
@@ -3786,12 +3805,12 @@ class Plotting_Panels():
         ax[0].minorticks_on()
         ax[1].minorticks_on()
 
-        ax[0].legend([(sdc), (smc), (sbfc), (sds), 
+        ax[1].legend([(sdc), (smc), (sbfc), (sds), 
             (sms), (sbfs)], 
             ['Data - cen','Models - cen','Best-fit - cen',
             'Data - sat','Models - sat','Best-fit - sat'],
             handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, 
-            prop={'size':28}, markerscale=0.5, loc='best')
+            prop={'size':28}, markerscale=0.5, loc='lower left')
         # plt.show()
 
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fblue_censat_emcee_{0}.pdf'.format(quenching), 
@@ -3984,16 +4003,16 @@ class Plotting_Panels():
             zorder=10)
 
         ax[0].set_xlim(10,14.5)
-        ax[0].set_xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
+        ax[0].set_xlabel(r'\boldmath$\log \ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',labelpad=10, fontsize=40)
 
         ax[1].set_xlim(10,14.5)
-        ax[1].set_xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
+        ax[1].set_xlabel(r'\boldmath$\log \ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', labelpad=10, fontsize=40)
 
         ax[0].set_ylim(np.log10((10**8.9)/2.041),11.5)
-        ax[0].set_ylabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=30)
+        ax[0].set_ylabel(r'\boldmath$\log \ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
         
         ax[1].set_ylim(np.log10((10**9.3)/2.041),11.5)
-        ax[1].set_ylabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=30)
+        ax[1].set_ylabel(r'\boldmath$\log \ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
         
         ax[0].fill([13.5, ax[0].get_xlim()[1], ax[0].get_xlim()[1], 13.5], 
             [ax[0].get_ylim()[0], ax[0].get_ylim()[0], 
@@ -4004,6 +4023,15 @@ class Plotting_Panels():
             [ax[1].get_ylim()[0], ax[1].get_ylim()[0], 
             ax[1].get_ylim()[1], ax[1].get_ylim()[1]], fill=False, 
             hatch='\\')
+
+        sat = AnchoredText("Stellar",
+                        prop=dict(size=30), frameon=False, loc='upper center')
+        # at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
+        ax[0].add_artist(sat)
+
+        bat = AnchoredText("Baryonic",
+                        prop=dict(size=30), frameon=False, loc='upper left')
+        ax[1].add_artist(bat)
 
         ax[0].legend([(sm),  (sbf)], ['Models', 'Best-fit'],
             handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, 
@@ -4222,16 +4250,16 @@ class Plotting_Panels():
             zorder=10)
 
         ax[0].set_xlim(10,14.5)
-        ax[0].set_xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
+        ax[0].set_xlabel(r'\boldmath$\log \ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',labelpad=10, fontsize=40)
 
         ax[1].set_xlim(10,14.5)
-        ax[1].set_xlabel(r'\boldmath$\log_{10}\ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',fontsize=30)
+        ax[1].set_xlabel(r'\boldmath$\log \ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',labelpad=10, fontsize=40)
 
         ax[0].set_ylim(np.log10((10**8.9)/2.041),11.5)
-        ax[0].set_ylabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=30)
+        ax[0].set_ylabel(r'\boldmath$\log \ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
         
         ax[1].set_ylim(np.log10((10**9.3)/2.041),11.5)
-        ax[1].set_ylabel(r'\boldmath$\log_{10}\ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',labelpad=20, fontsize=30)
+        ax[1].set_ylabel(r'\boldmath$\log \ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',labelpad=20, fontsize=40)
         
         ax[0].fill([13.5, ax[0].get_xlim()[1], ax[0].get_xlim()[1], 13.5], 
             [ax[0].get_ylim()[0], ax[0].get_ylim()[0], 
@@ -4242,6 +4270,15 @@ class Plotting_Panels():
             [ax[1].get_ylim()[0], ax[1].get_ylim()[0], 
             ax[1].get_ylim()[1], ax[1].get_ylim()[1]], fill=False, 
             hatch='\\')
+
+        sat = AnchoredText("Stellar",
+                        prop=dict(size=30), frameon=False, loc='upper center')
+        # at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
+        ax[0].add_artist(sat)
+
+        bat = AnchoredText("Baryonic",
+                        prop=dict(size=30), frameon=False, loc='upper left')
+        ax[1].add_artist(bat)
 
         ax[0].legend([(smr, smb),  (sbfr, sbfb)], ['Models', 'Best-fit'],
             handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, 
@@ -4588,7 +4625,7 @@ class Plotting_Panels():
 
 
         fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
-            gridspec_kw={'wspace':0.30})
+            gridspec_kw={'wspace':0.15})
 
         cen_gals_arr = stellar_models_df.iloc[:200,1:].values
         fred_arr = stellar_models_df.iloc[200:,1:].values
@@ -4597,16 +4634,16 @@ class Plotting_Panels():
 
         for idx in range(len(cen_gals_arr)):
             x, y = zip(*sorted(zip(cen_gals_arr[idx],fred_arr[idx])))
-            ax[0].plot(x, y, alpha=0.4, c='cornflowerblue', lw=10, solid_capstyle='round')
+            ax[0].plot(x, y, alpha=0.2, c='rebeccapurple', lw=10, solid_capstyle='round')
 
         x, y = zip(*sorted(zip(cen_gals_arr[0],fred_arr[0])))
         x_bf, y_bf = zip(*sorted(zip(cen_gals_bf,fred_bf)))
         # Plotting again just so that adding label to legend is easier
-        ax[0].plot(x, y, alpha=0.4, c='cornflowerblue', label='Models', lw=10, solid_capstyle='round')
-        ax[0].plot(x_bf, y_bf, c='mediumorchid', label='Best-fit', lw=10, solid_capstyle='round')
+        ax[0].plot(x, y, c='rebeccapurple', label='Models', lw=10, solid_capstyle='round')
+        ax[0].plot(x_bf, y_bf, c='goldenrod', label='Best-fit', lw=10, solid_capstyle='round')
 
-        ax[0].set_xlabel(r'\boldmath$\log_{10}\ M_{*, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=30)
-        ax[0].set_ylabel(r'\boldmath$f_{red, cen}$', labelpad=20, fontsize=30)
+        ax[0].set_xlabel(r'\boldmath$\log \ M_{*, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',labelpad=10, fontsize=40)
+        ax[0].set_ylabel(r'\boldmath$f_{red, cen}$', labelpad=20, fontsize=40)
 
         cen_gals_arr = baryonic_models_df.iloc[:200,1:].values
         fred_arr = baryonic_models_df.iloc[200:,1:].values
@@ -4615,16 +4652,16 @@ class Plotting_Panels():
 
         for idx in range(len(cen_gals_arr)):
             x, y = zip(*sorted(zip(cen_gals_arr[idx],fred_arr[idx])))
-            ax[1].plot(x, y, alpha=0.4, c='cornflowerblue', lw=10, solid_capstyle='round')
+            ax[1].plot(x, y, alpha=0.2, c='rebeccapurple', lw=10, solid_capstyle='round')
 
         x, y = zip(*sorted(zip(cen_gals_arr[0],fred_arr[0])))
         x_bf, y_bf = zip(*sorted(zip(cen_gals_bf,fred_bf)))
         # Plotting again just so that adding label to legend is easier
-        ax[1].plot(x, y, alpha=0.4, c='cornflowerblue', label='Models', lw=10, solid_capstyle='round')
-        ax[1].plot(x_bf, y_bf, c='mediumorchid', label='Best-fit', lw=10, solid_capstyle='round')
+        ax[1].plot(x, y, c='rebeccapurple', label='Models', lw=10, solid_capstyle='round')
+        ax[1].plot(x_bf, y_bf, c='goldenrod', label='Best-fit', lw=10, solid_capstyle='round')
 
-        ax[1].set_xlabel(r'\boldmath$\log_{10}\ M_{b, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=30)
-        ax[1].set_ylabel(r'\boldmath$f_{red, cen}$', labelpad=20, fontsize=30)
+        ax[1].set_xlabel(r'\boldmath$\log \ M_{b, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',labelpad=10, fontsize=40)
+        # ax[1].set_ylabel(r'\boldmath$f_{red, cen}$', labelpad=20, fontsize=40)
 
         if mf_type == 'smf':
             antonio_data = pd.read_csv(path_to_proc + \
@@ -4641,8 +4678,18 @@ class Plotting_Panels():
                 antonio_data.fred_tng.values, lw=5, c='k', ls='dashdot', 
                 label='TNG')
 
-        ax[0].legend(loc='best', prop={'size':30})
+        sat = AnchoredText("Stellar",
+                        prop=dict(size=30), frameon=False, loc='upper left')
+        # at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
+        ax[0].add_artist(sat)
+
+        bat = AnchoredText("Baryonic",
+                        prop=dict(size=30), frameon=False, loc='upper left')
+        ax[1].add_artist(bat)
+
+        ax[0].legend(loc='lower right', prop={'size':30})
         # plt.show()
+
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fred_cen_emcee_{0}.pdf'.format(quenching), 
             bbox_inches="tight", dpi=1200)
 
@@ -4744,11 +4791,36 @@ class Plotting_Panels():
         df.to_csv("/Users/asadm2/Desktop/baryonic_fred_sat_models.csv")
         df3.to_csv("/Users/asadm2/Desktop/baryonic_fred_sat_bf.csv")
 
+        stellar_models_df = pd.read_csv("/Users/asadm2/Desktop/stellar_fred_sat_models.csv") 
+        stellar_bf_df = pd.read_csv("/Users/asadm2/Desktop/stellar_fred_sat_bf.csv") 
+        baryonic_models_df = pd.read_csv("/Users/asadm2/Desktop/baryonic_fred_sat_models.csv") 
+        baryonic_bf_df = pd.read_csv("/Users/asadm2/Desktop/baryonic_fred_sat_bf.csv") 
+
+
         if quenching == 'hybrid':
-            sat_mean_stats = bs(np.hstack(sat_gals_bf), np.hstack(fred_bf), bins=np.linspace(9.0, 12, 10))
-            sat_std_stats = bs(np.hstack(sat_gals_arr), np.hstack(fred_arr), 
-                statistic='std', bins=np.linspace(9.0, 12, 10))
-            sat_stats_bincens = 0.5 * (sat_mean_stats[1][1:] + sat_mean_stats[1][:-1])
+            sat_gals_arr = stellar_models_df.iloc[:200,1:].values
+            fred_arr = stellar_models_df.iloc[200:,1:].values
+            sat_gals_bf = stellar_bf_df.iloc[:,1].values
+            fred_bf = stellar_bf_df.iloc[:,2].values
+
+            stellar_mean_models_arr = []
+            for idx in range(len(sat_gals_arr)):
+                sat_mean_model = bs(sat_gals_arr[idx], fred_arr[idx], bins=np.linspace(8.6, 12, 10))
+                stellar_mean_models_arr.append(sat_mean_model[0])
+            stellar_bf_mean = bs(sat_gals_bf, fred_bf, bins=np.linspace(8.6, 12, 10))
+            x_stellar = 0.5 * (stellar_bf_mean[1][1:] + stellar_bf_mean[1][:-1])
+
+            sat_gals_arr = baryonic_models_df.iloc[:200,1:].values
+            fred_arr = baryonic_models_df.iloc[200:,1:].values
+            sat_gals_bf = baryonic_bf_df.iloc[:,1].values
+            fred_bf = baryonic_bf_df.iloc[:,2].values
+
+            baryonic_mean_models_arr = []
+            for idx in range(len(sat_gals_arr)):
+                sat_mean_model = bs(sat_gals_arr[idx], fred_arr[idx], bins=np.linspace(9.0, 12, 10))
+                baryonic_mean_models_arr.append(sat_mean_model[0])
+            baryonic_bf_mean = bs(sat_gals_bf, fred_bf, bins=np.linspace(9.0, 12, 10))
+            x_baryonic = 0.5 * (baryonic_bf_mean[1][1:] + baryonic_bf_mean[1][:-1])
 
         elif quenching == 'halo':
             sat_mean_stats = bs(np.hstack(sat_halos_arr), np.hstack(fred_arr), bins=10)
@@ -4771,55 +4843,77 @@ class Plotting_Panels():
         # baryonic_models_std = [0.09414305, 0.08624629, 0.0763314 , 0.06522779, 0.05077027,
         #     0.03996957, 0.02353461, 0.01034778, 0.0025645 , 0.00015419]
 
-        #* When specifying bin range 8.6-12 for stellar and 9.0-12 for baryonic
-        x_stellar = [ 8.788889,  9.166666,  9.544445,  9.922222, 10.299999, 10.677778,
-            11.055555, 11.433333, 11.811111]
-        stellar_bf_mean = [0.65101158, 0.67990708, 0.72933361, 0.79900317, 0.8813311 ,
-            0.95284105, 0.99150349, 0.99946155, np.nan]
-        stellar_models_std = [0.04603505, 0.04185573, 0.03807872, 0.03397289, 0.0298246 ,
-            0.01999644, 0.00842211, 0.00149638, 0.        ]
+        # #* When specifying bin range 8.6-12 for stellar and 9.0-12 for baryonic
+        # x_stellar = [ 8.788889,  9.166666,  9.544445,  9.922222, 10.299999, 10.677778,
+        #     11.055555, 11.433333, 11.811111]
+        # stellar_bf_mean = [0.65101158, 0.67990708, 0.72933361, 0.79900317, 0.8813311 ,
+        #     0.95284105, 0.99150349, 0.99946155, np.nan]
+        # stellar_models_std = [0.04603505, 0.04185573, 0.03807872, 0.03397289, 0.0298246 ,
+        #     0.01999644, 0.00842211, 0.00149638, 0.        ]
 
 
-        x_baryonic = [ 9.166666,  9.5     ,  9.833334, 10.166666, 10.5     , 10.833334,
-            11.166666, 11.5     , 11.833334]
-        baryonic_bf_mean = [0.5253415 , 0.57114373, 0.63850572, 0.74087505, 0.86857715,
-            0.95880641, 0.9964849 , 0.99993795, np.nan]
-        baryonic_models_std = [0.09340062, 0.08346824, 0.07023482, 0.05558838, 0.04363577,
-            0.02178294, 0.00548515, 0.00043039, 0.        ]
+        # x_baryonic = [ 9.166666,  9.5     ,  9.833334, 10.166666, 10.5     , 10.833334,
+        #     11.166666, 11.5     , 11.833334]
+        # baryonic_bf_mean = [0.5253415 , 0.57114373, 0.63850572, 0.74087505, 0.86857715,
+        #     0.95880641, 0.9964849 , 0.99993795, np.nan]
+        # baryonic_models_std = [0.09340062, 0.08346824, 0.07023482, 0.05558838, 0.04363577,
+        #     0.02178294, 0.00548515, 0.00043039, 0.        ]
 
         fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
-            gridspec_kw={'wspace':0.25})
+            gridspec_kw={'wspace':0.15})
 
-        sm = ax[0].errorbar(x_stellar, stellar_bf_mean, 
-            yerr=stellar_models_std, color='mediumorchid', fmt='s', 
-            ecolor='mediumorchid',markersize=20, capsize=7, capthick=1.5, 
-            zorder=10, marker='p')
+        for idx in range(len(stellar_mean_models_arr)):
+            ax[0].plot(x_stellar, stellar_mean_models_arr[idx], alpha=0.2, 
+                c='rebeccapurple', lw=10, solid_capstyle='round')
 
-        bm = ax[1].errorbar(x_baryonic, baryonic_bf_mean, 
-            yerr=baryonic_models_std, color='mediumorchid', fmt='s', 
-            ecolor='mediumorchid',markersize=20, capsize=7, capthick=1.5, 
-            zorder=10, marker='p')
+        # Plotting again just so that adding label to legend is easier
+        ax[0].plot(x_stellar, stellar_mean_models_arr[idx], c='rebeccapurple', 
+                   label='Models', lw=10, solid_capstyle='round')
+        ax[0].plot(x_stellar, stellar_bf_mean[0], c='goldenrod', 
+                   label='Best-fit', lw=10, solid_capstyle='round')
 
-        ax[0].set_xlabel(r'\boldmath$\log_{10}\ M_{*, sat} \left[\mathrm{M_\odot}\,'\
-                    r' \mathrm{h}^{-2} \right]$',fontsize=30)
-        ax[1].set_xlabel(r'\boldmath$\log_{10}\ M_{b, sat} \left[\mathrm{M_\odot}\,'\
-                    r' \mathrm{h}^{-2} \right]$',fontsize=30)
+        for idx in range(len(baryonic_mean_models_arr)):
+            ax[1].plot(x_baryonic, baryonic_mean_models_arr[idx], alpha=0.2, 
+                c='rebeccapurple', lw=10, solid_capstyle='round')
+
+        # Plotting again just so that adding label to legend is easier
+        ax[1].plot(x_baryonic, baryonic_mean_models_arr[idx], c='rebeccapurple', 
+            label='Models', lw=10, solid_capstyle='round')
+        ax[1].plot(x_baryonic, baryonic_bf_mean[0], c='goldenrod', 
+            label='Best-fit', lw=10, solid_capstyle='round')
+
+        ax[0].set_xlabel(r'\boldmath$\log \ M_{*, sat} \left[\mathrm{M_\odot}\,'\
+                    r' \mathrm{h}^{-2} \right]$', labelpad=10, fontsize=40)
+        ax[1].set_xlabel(r'\boldmath$\log \ M_{b, sat} \left[\mathrm{M_\odot}\,'\
+                    r' \mathrm{h}^{-2} \right]$', labelpad=10, fontsize=40)
 
         if mf_type == 'smf':
-            antonio_data = pd.read_csv(path_to_proc + "../external/fquench_stellar/fqlogTSM_sat_DS_TNG_Salim_z0.csv", 
+            antonio_data = pd.read_csv(path_to_proc + 
+                "../external/fquench_stellar/fqlogTSM_sat_DS_TNG_Salim_z0.csv", 
                 index_col=0, skiprows=1, 
                 names=['fred_ds','logmstar','fred_tng'])
 
-            dsp, = ax[0].plot(antonio_data.logmstar.values, antonio_data.fred_ds.values, lw=5, c='k', ls='dashed')
-            tngp, = ax[0].plot(antonio_data.logmstar.values, antonio_data.fred_tng.values, lw=5, c='k', ls='dashdot')
+            ax[0].plot(antonio_data.logmstar.values, 
+                antonio_data.fred_ds.values, lw=5, c='k', ls='dashed', 
+                label='Dark Sage')
+            ax[0].plot(antonio_data.logmstar.values, 
+                antonio_data.fred_tng.values, lw=5, c='k', ls='dashdot', 
+                label='TNG')
 
 
-        ax[0].set_ylabel(r'\boldmath$f_{red, sat}$', labelpad=20, fontsize=30)
-        ax[1].set_ylabel(r'\boldmath$f_{red, sat}$', labelpad=20, fontsize=30)
+        ax[0].set_ylabel(r'\boldmath$f_{red, sat}$', labelpad=20, fontsize=40)
+        # ax[1].set_ylabel(r'\boldmath$f_{red, sat}$', labelpad=20, fontsize=30)
 
-        ax[0].legend([(tngp), (dsp), (sm, bm)], 
-            ['TNG', 'Dark Sage', 'Best-fit'],
-            handler_map={tuple: HandlerTuple(ndivide=1, pad=0)}, loc='best', prop={'size':30})
+        sat = AnchoredText("Stellar",
+            prop=dict(size=30), frameon=False, loc='upper left')
+        # at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
+        ax[0].add_artist(sat)
+
+        bat = AnchoredText("Baryonic",
+            prop=dict(size=30), frameon=False, loc='upper left')
+        ax[1].add_artist(bat)
+
+        ax[0].legend(loc='lower right', prop={'size':30})
 
         # plt.show()
 
@@ -5071,11 +5165,20 @@ class Plotting_Panels():
             handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, 
             markerscale=0.5, loc='best', prop={'size':30})
 
-        ax[0].set_xlabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km/s} \right]$', fontsize=30)
-        ax[0].set_ylabel(r'\boldmath$\overline{\log_{10}\ M_{*,group\ cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=30)
+        sat = AnchoredText("Stellar",
+            prop=dict(size=30), frameon=False, loc='upper center')
+        # at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
+        ax[0].add_artist(sat)
 
-        ax[1].set_xlabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km/s} \right]$', fontsize=30)
-        ax[1].set_ylabel(r'\boldmath$\overline{\log_{10}\ M_{b,group\ cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=30)
+        bat = AnchoredText("Baryonic",
+            prop=dict(size=30), frameon=False, loc='upper left')
+        ax[1].add_artist(bat)
+
+        ax[0].set_xlabel(r'\boldmath$\log \ \sigma \left[\mathrm{km/s} \right]$', labelpad=10, fontsize=40)
+        ax[0].set_ylabel(r'\boldmath$\overline{\log \ M_{*,group\ cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
+
+        ax[1].set_xlabel(r'\boldmath$\log \ \sigma \left[\mathrm{km/s} \right]$', labelpad=10, fontsize=40)
+        ax[1].set_ylabel(r'\boldmath$\overline{\log \ M_{b,group\ cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
 
         # plt.show()
 
@@ -5188,7 +5291,7 @@ class Plotting_Panels():
         baryonic_blue_models_min = np.array([1.67072591, 1.82761191, 1.96676077, 2.12422599])
 
         fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
-            gridspec_kw={'wspace':0.30})
+            gridspec_kw={'wspace':0.15})
 
         sdr = ax[0].errorbar(x_stellar_red, stellar_red_data_y, yerr=stellar_error_red,
                 color='indianred',fmt='^',ecolor='indianred',markersize=20,capsize=7,
@@ -5224,16 +5327,25 @@ class Plotting_Panels():
         bbfb, = ax[1].plot(x_baryonic_blue, baryonic_blue_bf_y, 
             c='cornflowerblue', zorder=9, ls='--', lw=4)
 
+        sat = AnchoredText("Stellar",
+            prop=dict(size=30), frameon=False, loc='upper center')
+        # at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
+        ax[0].add_artist(sat)
+
+        bat = AnchoredText("Baryonic",
+            prop=dict(size=30), frameon=False, loc='upper left')
+        ax[1].add_artist(bat)
+
         ax[0].legend([(sdr, sdb), (smr, smb), (sbfr, sbfb)], 
             ['Data','Models','Best-fit'],
             handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, 
             markerscale=0.5, loc='best', prop={'size':30})
 
-        ax[0].set_xlabel(r'\boldmath$\log_{10}\ M_{* , group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=30)
-        ax[0].set_ylabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km/s} \right]$', labelpad=20, fontsize=30)
+        ax[0].set_xlabel(r'\boldmath$\log \ M_{* , group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=10, fontsize=40)
+        ax[0].set_ylabel(r'\boldmath$\log \ \sigma \left[\mathrm{km/s} \right]$', labelpad=20, fontsize=40)
 
-        ax[1].set_xlabel(r'\boldmath$\log_{10}\ M_{b , group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=30)
-        ax[1].set_ylabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km/s} \right]$', labelpad=20, fontsize=30)
+        ax[1].set_xlabel(r'\boldmath$\log \ M_{b , group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=10, fontsize=40)
+        # ax[1].set_ylabel(r'\boldmath$\log \ \sigma \left[\mathrm{km/s} \right]$', labelpad=20, fontsize=40)
 
         # plt.show()
 
