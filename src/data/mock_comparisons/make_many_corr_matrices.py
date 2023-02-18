@@ -1425,7 +1425,22 @@ for i in range(100):
     else:
         corr_mat_average = pd.concat([corr_mat_average, combined_df.corr()]).groupby(level=0, sort=False).mean()
         cov_mat_average = pd.concat([cov_mat_average, combined_df.cov()]).groupby(level=0, sort=False).mean()
-        
+
+corr_mat_average = calc_corr_mat(cov_mat_average)
+
+corr_mat_inv_colour_average = np.linalg.inv(corr_mat_average) 
+sigma_average = np.sqrt(np.diag(cov_mat_average))
+
+fig1 = plt.figure()
+ax1 = fig1.add_subplot(111)
+cmap = cm.get_cmap('Spectral_r')
+cax = ax1.matshow(corr_mat_average, cmap=cmap, vmin=-1, vmax=1)
+plt.gca().invert_yaxis() 
+plt.gca().xaxis.tick_bottom()
+plt.colorbar(cax)
+plt.title('{0}-{1}'.format(quenching, mf_type))
+plt.show()
+
 
 # Using average cov mat to get correlation matrix
 corr_mat_average_nonps = calc_corr_mat(cov_mat_average)
