@@ -462,7 +462,7 @@ def group_finding(mock_pd, mock_zz_file, param_dict, file_ext='csv'):
     ## Creating `FoF` command and executing it
     # fof_exe = '/fs1/caldervf/custom_utilities_c/group_finder_fof/fof9_ascii'
     # fof_exe = '/fs1/masad/Research/Repositories/RESOLVE_Statistics/data/interim/fof/fof9_ascii'
-    fof_exe = '/Users/asadm2/Desktop/fof/fof9_ascii'
+    fof_exe = '/Users/asadm2/Documents/Grad_School/Research/Repositories/resolve_statistics/src/fof/fof9_ascii'
     # cu.File_Exists(fof_exe)
     # FoF command
     fof_str = '{0} {1} {2} {3} {4} {5} {6} {7} > {8}'
@@ -742,8 +742,9 @@ model_init = halocat_init(halo_catalog, z_median)
 bf_params_hybrid = [1.26632241e+01, 1.07344687e+01, 4.71665151e-01, 4.38727758e-01,
 1.75729744e-01, 1.01866377e+01, 1.40519871e+01, 7.36798732e-01,
 1.56442233e-02]
-bf_params_halo = [12.45003142, 10.49533185, 0.42905612, 0.49491889, 0.38661993,
-11.928341 , 12.60596691, 1.63365685, 0.35175002]
+bf_params_halo = [ 12.70032071, 10.63389209, 0.4846018 , 0.56831676,
+0.33780695, 12.07912972, 12.66097053, 1.52394392,
+0.54061586]
 gals_df_ = populate_mock(bf_params_hybrid[:5], model_init, False)
 gals_df_['cs_flag'] = np.where(gals_df_['halo_hostid'] == \
     gals_df_['halo_id'], 1, 0)
