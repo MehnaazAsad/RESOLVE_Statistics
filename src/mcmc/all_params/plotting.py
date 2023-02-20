@@ -4,6 +4,7 @@
 __author__ = '{Mehnaaz Asad}'
 
 import numpy as np
+from cosmo_utils.utils import work_paths as cwpaths
 from matplotlib.legend_handler import HandlerTuple
 from scipy.stats import binned_statistic as bs
 from collections import OrderedDict
@@ -11,9 +12,10 @@ from collections import OrderedDict
 from scipy.stats import chi2
 import matplotlib.pyplot as plt
 from matplotlib import rc
+from matplotlib import cm
 from matplotlib.offsetbox import AnchoredText
 import pandas as pd
-
+import json
 
 rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']}, size=30)
 rc('text', usetex=True)
@@ -3737,8 +3739,8 @@ class Plotting_Panels():
         baryonic_cen_error = np.array([0.02318217, 0.04046306, 0.03295486, 0.03116817])
         baryonic_sat_error = np.array([0.02119533, 0.02008324, 0.0296453 , 0.07140613])
 
-        fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
-            gridspec_kw={'wspace':0.15})
+        fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=True, 
+            gridspec_kw={'wspace':0.0})
         smc = ax[0].fill_between(x=x_stellar, y1=stellar_model_cen_max, 
             y2=stellar_model_cen_min, color='thistle', alpha=0.5)
         sms = ax[0].fill_between(x=x_stellar, y1=stellar_model_sat_max, 
@@ -3958,7 +3960,7 @@ class Plotting_Panels():
 
         y_max = np.nanmax(mod_y_arr, axis=0)
         y_min = np.nanmin(mod_y_arr, axis=0)
-        
+
         x_stellar =  np.array([10.17857143, 10.53571429, 10.89285714, 11.25, 11.60714286,
             11.96428571, 12.32142857, 12.67857143, 13.03571429, 13.39285714,
             13.75, 14.10714286, 14.46428571, 14.82142857])
@@ -4002,6 +4004,9 @@ class Plotting_Panels():
         bbf, = ax[1].plot(x_baryonic, baryonic_bf_y, color='k', lw=4, 
             zorder=10)
 
+        ax[0].plot(H70_to_H100(logmh_behroozi10_bf, -1), H70_to_H100(logmstar_arr_or, -2), 
+            ls='--', lw=4, label='Behroozi+10 bf analytical', zorder=12)
+
         ax[0].set_xlim(10,14.5)
         ax[0].set_xlabel(r'\boldmath$\log \ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',labelpad=10, fontsize=40)
 
@@ -4039,10 +4044,210 @@ class Plotting_Panels():
         ax[0].minorticks_on()
         ax[1].minorticks_on()
 
+        plt.show()
+
+        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/shmr_total_emcee_{0}.pdf'.format(quenching), 
+            bbox_inches="tight", dpi=1200)
+
+        def H70_to_H100(arr, h_exp):
+            #Assuming h^-1 units
+            if h_exp == -1:
+                result = np.log10((10**arr) / 1.429)
+            #Assuming h^-2 units
+            elif h_exp == -2:
+                result = np.log10((10**arr) / 2.041)
+            return result
+
+        def H67_to_H100(arr, h_exp):
+            #Assuming h^-1 units
+            if h_exp == -1:
+                result = np.log10((10**arr) / 1.493)
+            #Assuming h^-2 units
+            elif h_exp == -2:
+                result = np.log10((10**arr) / 2.228)
+            return result
+
+        def behroozi10(logmstar, bf_params):
+            """ 
+            This function calculates the B10 stellar to halo mass relation 
+            using the functional form and best-fit parameters 
+            https://arxiv.org/pdf/1001.0015.pdf
+            """
+            M_1, Mstar_0, beta, delta, gamma = bf_params
+            second_term = (beta*np.log10((10**logmstar)/(10**Mstar_0)))
+            third_term_num = (((10**logmstar)/(10**Mstar_0))**delta)
+            third_term_denom = (1 + (((10**logmstar)/(10**Mstar_0))**(-gamma)))
+            logmh = M_1 + second_term + (third_term_num/third_term_denom) - 0.5
+
+            return logmh
+
+        #from chain 94
+        behroozi10_shmr_params_bf = [12.66322412, 10.73446872,  0.47166515,  0.43872776,  1.54]
+        #from chain 97
+        behroozi10_bhmr_params_bf = [12.48745296, 10.58817186, 0.57881048, 0.32534805,  1.54]
+
+        mstar_min = 8.9
+        mstar_max = 11.7
+        logmstar_arr_or = np.linspace(mstar_min, mstar_max, 500)
+        logmh_logmstar_behroozi10_bf = behroozi10(logmstar_arr_or, behroozi10_shmr_params_bf)
+
+        mbary_min = 9.3
+        mbary_max = 11.7
+        logmbary_arr_or = np.linspace(mbary_min, mbary_max, 500)
+        logmh_logmbary_behroozi10_bf = behroozi10(logmbary_arr_or, behroozi10_bhmr_params_bf)
+
+
+        run = 94
+        dict_of_paths = cwpaths.cookiecutter_paths()
+        path_to_proc = dict_of_paths['proc_dir']
+
+        colnames = ['mhalo_c', 'mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter', \
+            'mstar_q', 'mh_q', 'mu', 'nu']
+        mcmc_table_pctl_subset = pd.read_csv(path_to_proc + 
+                    'run{0}_params_subset.txt'.format(run), 
+                    delim_whitespace=True, names=colnames)\
+                    .iloc[1:,:].reset_index(drop=True)
+        gamma_arr = np.array(200*[1.54])
+        mcmc_table_pctl_subset.insert(4, "gamma", gamma_arr, True)
+        mcmc_table_pctl_subset_behroozi = mcmc_table_pctl_subset.iloc[:,:5]
+
+        logmh_behroozi10_shmr_analyticalmodels = []
+        for i in range(len(mcmc_table_pctl_subset_behroozi)):
+            params = mcmc_table_pctl_subset_behroozi.values[i]
+            logmh = behroozi10(logmstar_arr_or, params)
+            logmh = H70_to_H100(logmh, -1)
+            logmh_behroozi10_shmr_analyticalmodels.append(logmh)
+        logmh_behroozi10_shmr_analyticalmodels = np.array(logmh_behroozi10_shmr_analyticalmodels)
+
+        shmr_analytical_max = np.amax(logmh_behroozi10_shmr_analyticalmodels, axis=0)
+        shmr_analytical_min = np.amin(logmh_behroozi10_shmr_analyticalmodels, axis=0)
+
+        run = 97
+        dict_of_paths = cwpaths.cookiecutter_paths()
+        path_to_proc = dict_of_paths['proc_dir']
+
+        colnames = ['mhalo_c', 'mstar_c', 'mlow_slope', 'mhigh_slope', 'scatter', \
+            'mstar_q', 'mh_q', 'mu', 'nu']
+        mcmc_table_pctl_subset = pd.read_csv(path_to_proc + 
+                    'run{0}_params_subset.txt'.format(run), 
+                    delim_whitespace=True, names=colnames)\
+                    .iloc[1:,:].reset_index(drop=True)
+        gamma_arr = np.array(200*[1.54])
+        mcmc_table_pctl_subset.insert(4, "gamma", gamma_arr, True)
+        mcmc_table_pctl_subset_behroozi = mcmc_table_pctl_subset.iloc[:,:5]
+
+        logmh_behroozi10_bhmr_analyticalmodels = []
+        for i in range(len(mcmc_table_pctl_subset_behroozi)):
+            params = mcmc_table_pctl_subset_behroozi.values[i]
+            logmh = behroozi10(logmbary_arr_or, params)
+            logmh = H70_to_H100(logmh, -1)
+            logmh_behroozi10_bhmr_analyticalmodels.append(logmh)
+        logmh_behroozi10_bhmr_analyticalmodels = np.array(logmh_behroozi10_bhmr_analyticalmodels)
+
+        bhmr_analytical_max = np.amax(logmh_behroozi10_bhmr_analyticalmodels, axis=0)
+        bhmr_analytical_min = np.amin(logmh_behroozi10_bhmr_analyticalmodels, axis=0)
+
+        with open('/Users/asadm2/Desktop/behroozi2018_girelli2020_commonshmrs.json', 'r') as f:
+            data = json.load(f)
+
+        data.keys()
+        num_shmrs = np.array(data['datasetColl']).shape[0] #(9,) since there are 9 SHMRs 
+
+        stellar_data = []
+        halo_data = []
+        names = []
+        for shmr_idx in range(num_shmrs):
+            name = data['datasetColl'][shmr_idx]['name']
+            shmr_ratio_data = data['datasetColl'][shmr_idx]['data']
+            shmr_ratio_data_sorted = np.array(sorted([sub['value'] for 
+                sub in shmr_ratio_data], key=lambda x: x[0]))
+            stellar_arr = np.log10((10**shmr_ratio_data_sorted[:,1])*(10**shmr_ratio_data_sorted[:,0]))
+            halo_arr = shmr_ratio_data_sorted[:,0]
+
+            stellar_arr = H67_to_H100(stellar_arr, -2)
+            halo_arr = H67_to_H100(halo_arr, -1)
+            names.append(name)
+            stellar_data.append(stellar_arr)
+            halo_data.append(halo_arr)
+
+        fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
+            gridspec_kw={'wspace':0.30})
+
+        sm = ax[0].fill_betweenx(y=H70_to_H100(logmstar_arr_or, -2), x1=shmr_analytical_max, 
+            x2=shmr_analytical_min, color='lightgray',alpha=0.4, label='Models')
+
+        sbf, = ax[0].plot(H70_to_H100(logmh_logmstar_behroozi10_bf, -1), 
+            H70_to_H100(logmstar_arr_or, -2), color='k', lw=4, zorder=10, label='Best-fit')
+
+        bm = ax[1].fill_betweenx(y=H70_to_H100(logmbary_arr_or, -2), x1=bhmr_analytical_max, 
+            x2=bhmr_analytical_min, color='lightgray',alpha=0.4)
+
+        bbf, = ax[1].plot(H70_to_H100(logmh_logmbary_behroozi10_bf, -1), 
+            H70_to_H100(logmbary_arr_or, -2), color='k', lw=4, 
+            zorder=10)
+
+        palette = cm.get_cmap('Paired', num_shmrs)
+        palette = np.array([[0.65098039, 0.80784314, 0.89019608, 1.        ],
+                            [0.12156863, 0.47058824, 0.70588235, 1.        ],
+                            [0.2       , 0.62745098, 0.17254902, 1.        ],
+                            [0.98431373, 0.60392157, 0.6       , 1.        ],
+                            [0.99215686, 0.74901961, 0.43529412, 1.        ],
+                            [1.        , 0.49803922, 0.        , 1.        ],
+                            [0.41568627, 0.23921569, 0.60392157, 1.        ],
+                            [0.96470588, 0.74509804, 0.        , 1.        ],
+                            [0.69411765, 0.34901961, 0.15686275, 1.        ]])
+        ls_arr = ['dashed', 'dashdot', 'dotted']
+        
+        ls_idx = 0
+        for plot_idx in range(num_shmrs):
+            if plot_idx in [4, 5, 8]:
+                ax[0].plot(halo_data[plot_idx], stellar_data[plot_idx], 
+                    ls=ls_arr[ls_idx], lw=4, c=palette[plot_idx], label=names[plot_idx])
+                ls_idx+=1
+
+        ax[0].set_xlim(10,14.5)
+        ax[0].set_xlabel(r'\boldmath$\log \ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',labelpad=10, fontsize=40)
+
+        ax[1].set_xlim(10,14.5)
+        ax[1].set_xlabel(r'\boldmath$\log \ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', labelpad=10, fontsize=40)
+
+        ax[0].set_ylim(np.log10((10**8.9)/2.041),11.5)
+        ax[0].set_ylabel(r'\boldmath$\log \ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
+        
+        ax[1].set_ylim(np.log10((10**9.3)/2.041),11.5)
+        ax[1].set_ylabel(r'\boldmath$\log \ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
+        
+        ax[0].fill([13.5, ax[0].get_xlim()[1], ax[0].get_xlim()[1], 13.5], 
+            [ax[0].get_ylim()[0], ax[0].get_ylim()[0], 
+            ax[0].get_ylim()[1], ax[0].get_ylim()[1]], fill=False, 
+            hatch='\\')
+
+        ax[1].fill([13.5, ax[1].get_xlim()[1], ax[1].get_xlim()[1], 13.5], 
+            [ax[1].get_ylim()[0], ax[1].get_ylim()[0], 
+            ax[1].get_ylim()[1], ax[1].get_ylim()[1]], fill=False, 
+            hatch='\\')
+
+        # sat = AnchoredText("Stellar",
+        #                 prop=dict(size=30), frameon=False, loc='center left')
+        # # at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
+        # ax[0].add_artist(sat)
+
+        ax[0].annotate('Stellar', xy = (12.5, 11.3), xycoords='data',
+                       xytext=(12.5, 11.3), textcoords='data')
+
+        bat = AnchoredText("Baryonic",
+                        prop=dict(size=30), frameon=False, loc='upper left')
+        ax[1].add_artist(bat)
+
+        ax[0].legend(loc='best', prop={'size':22})
+        ax[0].minorticks_on()
+        ax[1].minorticks_on()
+
         # plt.show()
 
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/shmr_total_emcee_{0}.pdf'.format(quenching), 
             bbox_inches="tight", dpi=1200)
+
 
     def plot_colour_xmhm(self, models, data, best_fit):
         """
@@ -4624,8 +4829,8 @@ class Plotting_Panels():
         baryonic_bf_df = pd.read_csv("/Users/asadm2/Desktop/baryonic_fred_cen_bf.csv") 
 
 
-        fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
-            gridspec_kw={'wspace':0.15})
+        fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=True, 
+            gridspec_kw={'wspace':0.0})
 
         cen_gals_arr = stellar_models_df.iloc[:200,1:].values
         fred_arr = stellar_models_df.iloc[200:,1:].values
@@ -4805,9 +5010,9 @@ class Plotting_Panels():
 
             stellar_mean_models_arr = []
             for idx in range(len(sat_gals_arr)):
-                sat_mean_model = bs(sat_gals_arr[idx], fred_arr[idx], bins=np.linspace(8.6, 12, 10))
+                sat_mean_model = bs(sat_gals_arr[idx], fred_arr[idx], bins=np.linspace(8.6, 12, 25))
                 stellar_mean_models_arr.append(sat_mean_model[0])
-            stellar_bf_mean = bs(sat_gals_bf, fred_bf, bins=np.linspace(8.6, 12, 10))
+            stellar_bf_mean = bs(sat_gals_bf, fred_bf, bins=np.linspace(8.6, 12, 25))
             x_stellar = 0.5 * (stellar_bf_mean[1][1:] + stellar_bf_mean[1][:-1])
 
             sat_gals_arr = baryonic_models_df.iloc[:200,1:].values
@@ -4817,9 +5022,9 @@ class Plotting_Panels():
 
             baryonic_mean_models_arr = []
             for idx in range(len(sat_gals_arr)):
-                sat_mean_model = bs(sat_gals_arr[idx], fred_arr[idx], bins=np.linspace(9.0, 12, 10))
+                sat_mean_model = bs(sat_gals_arr[idx], fred_arr[idx], bins=np.linspace(9.0, 12, 25))
                 baryonic_mean_models_arr.append(sat_mean_model[0])
-            baryonic_bf_mean = bs(sat_gals_bf, fred_bf, bins=np.linspace(9.0, 12, 10))
+            baryonic_bf_mean = bs(sat_gals_bf, fred_bf, bins=np.linspace(9.0, 12, 25))
             x_baryonic = 0.5 * (baryonic_bf_mean[1][1:] + baryonic_bf_mean[1][:-1])
 
         elif quenching == 'halo':
@@ -4859,8 +5064,8 @@ class Plotting_Panels():
         # baryonic_models_std = [0.09340062, 0.08346824, 0.07023482, 0.05558838, 0.04363577,
         #     0.02178294, 0.00548515, 0.00043039, 0.        ]
 
-        fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
-            gridspec_kw={'wspace':0.15})
+        fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=True, 
+            gridspec_kw={'wspace':0.0})
 
         for idx in range(len(stellar_mean_models_arr)):
             ax[0].plot(x_stellar, stellar_mean_models_arr[idx], alpha=0.2, 
