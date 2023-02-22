@@ -240,15 +240,14 @@ c.configure(kde=2.0, shade_gradient = 1.0, shade_alpha=0.8, label_font_size=15,
     tick_font_size=10, summary=True, sigma2d=False, diagonal_tick_labels=False, 
     max_ticks=3, linewidths=2, legend_kwargs={"fontsize": 30})
 # c.configure_truth(color='#B1862D', lw=1.7)
-c.configure_truth(color='#B1862D', lw=1.7, alpha=0.0)
-if quenching == 'hybrid':
-    fig1 = c.plotter.plot(display=True, truth=best_fit_94)
-elif quenching == 'halo':
-    fig1 = c.plotter.plot(display=True, truth=best_fit_101)
+# c.configure_truth(color='#B1862D', lw=1.7, alpha=0.0)
+# if quenching == 'hybrid':
+#     fig1 = c.plotter.plot(display=True, truth=best_fit_94)
+# elif quenching == 'halo':
+#     fig1 = c.plotter.plot(display=True, truth=best_fit_101)
 
 if quenching == 'hybrid':
-    fig1 = c.plotter.plot(filename='/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/contours_{0}.pdf'.format(quenching), 
-    truth=best_fit_97)
+    fig1 = c.plotter.plot(filename='/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/contours_{0}.pdf'.format(quenching))
 elif quenching == 'halo':
     fig1 = c.plotter.plot(filename='/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/contours_{0}.pdf'.format(quenching), 
         truth=best_fit_96)
