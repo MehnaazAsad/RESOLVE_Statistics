@@ -3540,8 +3540,8 @@ class Plotting_Panels():
                         prop=dict(size=30), frameon=False, loc='upper right')
         ax[1].add_artist(bat)
 
-        ax[0].set_xlabel(r'\boldmath$\log \ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',labelpad=10, fontsize=40)
-        ax[1].set_xlabel(r'\boldmath$\log \ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',labelpad=10, fontsize=40)
+        ax[0].set_xlabel(r'\boldmath$\log M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',labelpad=10, fontsize=40)
+        ax[1].set_xlabel(r'\boldmath$\log M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',labelpad=10, fontsize=40)
         
         ax[0].set_ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', labelpad=20, fontsize=40)
         # ax[1].set_ylabel(r'\boldmath$\Phi \left[\mathrm{dex}^{-1}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', labelpad=20, fontsize=30)
@@ -3795,8 +3795,8 @@ class Plotting_Panels():
                         prop=dict(size=30), frameon=False, loc='upper right')
         ax[1].add_artist(bat)
 
-        ax[0].set_xlabel(r'\boldmath$\log \ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=10, fontsize=40)
-        ax[1].set_xlabel(r'\boldmath$\log \ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=10, fontsize=40)
+        ax[0].set_xlabel(r'\boldmath$\log M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=10, fontsize=40)
+        ax[1].set_xlabel(r'\boldmath$\log M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=10, fontsize=40)
         
         ax[0].set_ylabel(r'\boldmath$f_{blue}$', labelpad=20, fontsize=40)
         # ax[1].set_ylabel(r'\boldmath$f_{blue}$', labelpad=20, fontsize=30)
@@ -4206,16 +4206,16 @@ class Plotting_Panels():
                 ls_idx+=1
 
         ax[0].set_xlim(10,14.5)
-        ax[0].set_xlabel(r'\boldmath$\log \ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',labelpad=10, fontsize=40)
+        ax[0].set_xlabel(r'\boldmath$\log M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',labelpad=10, fontsize=40)
 
         ax[1].set_xlim(10,14.5)
-        ax[1].set_xlabel(r'\boldmath$\log \ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', labelpad=10, fontsize=40)
+        ax[1].set_xlabel(r'\boldmath$\log M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', labelpad=10, fontsize=40)
 
         ax[0].set_ylim(np.log10((10**8.9)/2.041),11.5)
-        ax[0].set_ylabel(r'\boldmath$\log \ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
+        ax[0].set_ylabel(r'\boldmath$\log M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
         
         ax[1].set_ylim(np.log10((10**9.3)/2.041),11.5)
-        ax[1].set_ylabel(r'\boldmath$\log \ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
+        ax[1].set_ylabel(r'\boldmath$\log M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
         
         ax[0].fill([13.5, ax[0].get_xlim()[1], ax[0].get_xlim()[1], 13.5], 
             [ax[0].get_ylim()[0], ax[0].get_ylim()[0], 
@@ -4455,16 +4455,16 @@ class Plotting_Panels():
             zorder=10)
 
         ax[0].set_xlim(10,14.5)
-        ax[0].set_xlabel(r'\boldmath$\log \ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',labelpad=10, fontsize=40)
+        ax[0].set_xlabel(r'\boldmath$\log M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',labelpad=10, fontsize=40)
 
         ax[1].set_xlim(10,14.5)
-        ax[1].set_xlabel(r'\boldmath$\log \ M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',labelpad=10, fontsize=40)
+        ax[1].set_xlabel(r'\boldmath$\log M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',labelpad=10, fontsize=40)
 
         ax[0].set_ylim(np.log10((10**8.9)/2.041),11.5)
-        ax[0].set_ylabel(r'\boldmath$\log \ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
+        ax[0].set_ylabel(r'\boldmath$\log M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
         
         ax[1].set_ylim(np.log10((10**9.3)/2.041),11.5)
-        ax[1].set_ylabel(r'\boldmath$\log \ M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',labelpad=20, fontsize=40)
+        ax[1].set_ylabel(r'\boldmath$\log M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',labelpad=20, fontsize=40)
         
         ax[0].fill([13.5, ax[0].get_xlim()[1], ax[0].get_xlim()[1], 13.5], 
             [ax[0].get_ylim()[0], ax[0].get_ylim()[0], 
@@ -4847,7 +4847,7 @@ class Plotting_Panels():
         ax[0].plot(x, y, c='rebeccapurple', label='Models', lw=10, solid_capstyle='round')
         ax[0].plot(x_bf, y_bf, c='goldenrod', label='Best-fit', lw=10, solid_capstyle='round')
 
-        ax[0].set_xlabel(r'\boldmath$\log \ M_{*, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',labelpad=10, fontsize=40)
+        ax[0].set_xlabel(r'\boldmath$\log M_{*, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',labelpad=10, fontsize=40)
         ax[0].set_ylabel(r'\boldmath$f_{red, cen}$', labelpad=20, fontsize=40)
 
         cen_gals_arr = baryonic_models_df.iloc[:200,1:].values
@@ -4865,8 +4865,7 @@ class Plotting_Panels():
         ax[1].plot(x, y, c='rebeccapurple', label='Models', lw=10, solid_capstyle='round')
         ax[1].plot(x_bf, y_bf, c='goldenrod', label='Best-fit', lw=10, solid_capstyle='round')
 
-        ax[1].set_xlabel(r'\boldmath$\log \ M_{b, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',labelpad=10, fontsize=40)
-        # ax[1].set_ylabel(r'\boldmath$f_{red, cen}$', labelpad=20, fontsize=40)
+        ax[1].set_xlabel(r'\boldmath$\log M_{b, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',labelpad=10, fontsize=40)
 
         if mf_type == 'smf':
             antonio_data = pd.read_csv(path_to_proc + \
@@ -4874,13 +4873,13 @@ class Plotting_Panels():
                 index_col=0, skiprows=1, 
                 names=['fred_ds','logmstar','fred_tng','fred_salim'])
             ax[0].plot(antonio_data.logmstar.values, 
-                antonio_data.fred_ds.values, lw=5, c='k', ls='dashed', 
+                antonio_data.fred_ds.values, lw=5, c='#C71585', ls='dashed', 
                 label='Dark Sage')
             ax[0].plot(antonio_data.logmstar.values, 
-                antonio_data.fred_salim.values, lw=5, c='k', ls='dotted', 
+                antonio_data.fred_salim.values, lw=5, c='#FF6347', ls='dotted', 
                 label='Salim+18')
             ax[0].plot(antonio_data.logmstar.values, 
-                antonio_data.fred_tng.values, lw=5, c='k', ls='dashdot', 
+                antonio_data.fred_tng.values, lw=5, c='#228B22', ls='dashdot', 
                 label='TNG')
 
         sat = AnchoredText("Stellar",
@@ -5087,9 +5086,9 @@ class Plotting_Panels():
         ax[1].plot(x_baryonic, baryonic_bf_mean[0], c='goldenrod', 
             label='Best-fit', lw=10, solid_capstyle='round')
 
-        ax[0].set_xlabel(r'\boldmath$\log \ M_{*, sat} \left[\mathrm{M_\odot}\,'\
+        ax[0].set_xlabel(r'\boldmath$\log M_{*, sat} \left[\mathrm{M_\odot}\,'\
                     r' \mathrm{h}^{-2} \right]$', labelpad=10, fontsize=40)
-        ax[1].set_xlabel(r'\boldmath$\log \ M_{b, sat} \left[\mathrm{M_\odot}\,'\
+        ax[1].set_xlabel(r'\boldmath$\log M_{b, sat} \left[\mathrm{M_\odot}\,'\
                     r' \mathrm{h}^{-2} \right]$', labelpad=10, fontsize=40)
 
         if mf_type == 'smf':
@@ -5099,10 +5098,10 @@ class Plotting_Panels():
                 names=['fred_ds','logmstar','fred_tng'])
 
             ax[0].plot(antonio_data.logmstar.values, 
-                antonio_data.fred_ds.values, lw=5, c='k', ls='dashed', 
+                antonio_data.fred_ds.values, lw=5, c='#C71585', ls='dashed', 
                 label='Dark Sage')
             ax[0].plot(antonio_data.logmstar.values, 
-                antonio_data.fred_tng.values, lw=5, c='k', ls='dashdot', 
+                antonio_data.fred_tng.values, lw=5, c='#228B22', ls='dashdot', 
                 label='TNG')
 
 
@@ -5379,11 +5378,11 @@ class Plotting_Panels():
             prop=dict(size=30), frameon=False, loc='upper left')
         ax[1].add_artist(bat)
 
-        ax[0].set_xlabel(r'\boldmath$\log \ \sigma \left[\mathrm{km/s} \right]$', labelpad=10, fontsize=40)
-        ax[0].set_ylabel(r'\boldmath$\overline{\log \ M_{*,group\ cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
+        ax[0].set_xlabel(r'\boldmath$\log \sigma \left[\mathrm{km/s} \right]$', labelpad=10, fontsize=40)
+        ax[0].set_ylabel(r'\boldmath$\langle\log M_{*,group\ cen}\rangle \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
 
-        ax[1].set_xlabel(r'\boldmath$\log \ \sigma \left[\mathrm{km/s} \right]$', labelpad=10, fontsize=40)
-        ax[1].set_ylabel(r'\boldmath$\overline{\log \ M_{b,group\ cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
+        ax[1].set_xlabel(r'\boldmath$\log \sigma \left[\mathrm{km/s} \right]$', labelpad=10, fontsize=40)
+        ax[1].set_ylabel(r'\boldmath$\langle\log M_{b,group\ cen}\rangle \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
 
         # plt.show()
 
@@ -5546,10 +5545,10 @@ class Plotting_Panels():
             handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, 
             markerscale=0.5, loc='best', prop={'size':30})
 
-        ax[0].set_xlabel(r'\boldmath$\log \ M_{* , group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=10, fontsize=40)
-        ax[0].set_ylabel(r'\boldmath$\log \ \sigma \left[\mathrm{km/s} \right]$', labelpad=20, fontsize=40)
+        ax[0].set_xlabel(r'\boldmath$\log M_{* , group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=10, fontsize=40)
+        ax[0].set_ylabel(r'\boldmath$\log \sigma \left[\mathrm{km/s} \right]$', labelpad=20, fontsize=40)
 
-        ax[1].set_xlabel(r'\boldmath$\log \ M_{b , group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=10, fontsize=40)
+        ax[1].set_xlabel(r'\boldmath$\log M_{b , group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=10, fontsize=40)
         # ax[1].set_ylabel(r'\boldmath$\log \ \sigma \left[\mathrm{km/s} \right]$', labelpad=20, fontsize=40)
 
         # plt.show()
