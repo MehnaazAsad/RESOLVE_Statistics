@@ -1805,9 +1805,9 @@ def get_err_data_legacy(survey, path):
         color='k', s=150, zorder=10, marker='^')
 
     if mf_type == 'smf':
-        plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=20)
+        plt.xlabel(r'\boldmath$\log M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=20)
     elif mf_type == 'bmf':
-        plt.xlabel(r'\boldmath$\log_{10}\ M_b \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=20)
+        plt.xlabel(r'\boldmath$\log\ M_b \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=20)
 
     plt.ylabel(r'\boldmath$\Phi \left[\mathrm{dlogM}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=20)
 
@@ -1890,9 +1890,9 @@ def get_err_data_legacy(survey, path):
         color='goldenrod', s=150, zorder=10, marker='^')
 
     if mf_type == 'smf':
-        plt.xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=20)
+        plt.xlabel(r'\boldmath$\log M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=20)
     elif mf_type == 'bmf':
-        plt.xlabel(r'\boldmath$\log_{10}\ M_b \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=20)
+        plt.xlabel(r'\boldmath$\log M_b \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=20)
     plt.ylabel(r'\boldmath$f_{blue}$', fontsize=20)
     plt.ylim(0,1)
     # plt.title(r'Blue fractions from mocks and data')
@@ -1973,11 +1973,12 @@ def get_err_data_legacy(survey, path):
     dt_blue = plt.scatter(bins_blue, mean_mstar_blue_data[0],
         color='cornflowerblue', s=150, zorder=10, marker='^')
 
-    plt.xlabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km\ s^{-1}} \right]$', fontsize=20)
+    plt.xlabel(r'\boldmath$\log \sigma \left[\mathrm{km\ s^{-1}} \right]$', fontsize=20)
     if mf_type == 'smf':
-        plt.ylabel(r'\boldmath$\overline{\log_{10}\ M_{*, group\ cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=20)
+        plt.ylabel(r'\boldmath$\langle\log M_{*, group\ cen}\rangle \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=20)
+        # plt.ylabel(r'\boldmath$\overline{\log_{10}\ M_{*, group\ cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=20)
     elif mf_type == 'bmf':
-        plt.ylabel(r'\boldmath$\overline{\log_{10}\ M_{b, group\ cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=20)
+        plt.ylabel(r'\boldmath$\langle\log M_{b, group\ cen}\rangle \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=20)
     # plt.title(r'Velocity dispersion from mocks and data')
     plt.legend([(dt_red, dt_blue), (mt_red, mt_blue)], 
         ['ECO','Mocks'],
@@ -1990,8 +1991,8 @@ def get_err_data_legacy(survey, path):
     elif mf_type == 'bmf':
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_avmstar_bary.pdf', 
             bbox_inches="tight", dpi=1200)
-
     plt.show()
+
     ############################################################################
     ## Stacked sigma from mocks and data for paper
     if mf_type == 'smf':
@@ -2060,11 +2061,11 @@ def get_err_data_legacy(survey, path):
     dt_blue = plt.scatter(bins_blue, sigma_blue_data,
         color='cornflowerblue', s=150, zorder=10, marker='^')
 
-    plt.ylabel(r'\boldmath$\overline{\log_{10}\ \sigma} \left[\mathrm{km\ s^{-1}} \right]$', fontsize=20)
+    plt.ylabel(r'\boldmath$\log \sigma \left[\mathrm{km\ s^{-1}} \right]$', fontsize=20)
     if mf_type == 'smf':
-        plt.xlabel(r'\boldmath$\log_{10}\ M_{*, group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=20)
+        plt.xlabel(r'\boldmath$\log M_{*, group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=20)
     elif mf_type == 'bmf':
-        plt.xlabel(r'\boldmath$\log_{10}\ M_{b, group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=20)
+        plt.xlabel(r'\boldmath$\log M_{b, group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=20)
     plt.legend([(dt_red, dt_blue), (mt_red, mt_blue)], 
         ['ECO','Mocks'],
         handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='lower right', 
@@ -2096,6 +2097,7 @@ def calc_corr_mat(df):
 
 def get_err_data(path_to_proc):
     # Read in datasets from h5 file and calculate corr matrix
+    #* Need to add final_matrices folder if running locally on mac
     if stacked_stat == 'both':
         hf_read = h5py.File(path_to_proc + 'corr_matrices_28stats_{0}_{1}.h5'.
             format(quenching, mf_type), 'r')
@@ -3185,7 +3187,7 @@ def main(args):
     np.random.seed(rseed)
     level = "group"
     stacked_stat = "both"
-    pca = True
+    pca = False
     new_chain = True
 
     survey = args.survey
