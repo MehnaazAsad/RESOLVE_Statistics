@@ -260,10 +260,10 @@ ax1 = plt.subplot(gs[0,0])
 plt.scatter(cen_stellar_mass_arr, deltav_arr, s=50, c=cen_colour_arr, 
     cmap='coolwarm')
 cbar = plt.colorbar()
-cbar.set_label(r'$\mathbf{(u-r)_{group\ cen}}$', labelpad=15, fontsize=20)
-plt.xlabel(r'$\mathbf{log_{10}\ M_{*,group\ cen}}\ [\mathbf{M_{\odot}}]$', 
+cbar.set_label(r'\boldmath$(u-r)_{group\ cen}$', labelpad=15, fontsize=20)
+plt.xlabel(r'\boldmath$\log M_{*,group\ cen}\ [\mathbf{M_{\odot}}]$', 
     labelpad=10, fontsize=20)
-plt.ylabel(r'$\mathbf{\Delta v\ \left[km/s\right]}$', labelpad=10, fontsize=20)
+plt.ylabel(r'\boldmath$\Delta v\ \left[km/s\right]$', labelpad=10, fontsize=20)
 # plt.ylim(-2000, 2000)
 plt.minorticks_on()
 # plt.show()
@@ -820,15 +820,14 @@ ax[1].errorbar(bin_centers_blue, mean_mstar_blue_data[0],
 # ax[1].scatter(bin_centers_blue, mean_mstar_blue_data[0],
 #     color='cornflowerblue', marker='s', s=400)
 
-ax[0].set_xlabel(r'\boldmath$\log_{10}\ M_{*, group\ cen} \left[\mathrm{M_\odot}\ \right]$', fontsize=35, labelpad=15)
-ax[1].set_xlabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km\ s^{-1}} \right]$', fontsize=35, labelpad=15)
+ax[0].set_xlabel(r'\boldmath$\log M_{*, group\ cen} \left[\mathrm{M_\odot}\ \right]$', fontsize=35, labelpad=15)
+ax[1].set_xlabel(r'\boldmath$\log \sigma \left[\mathrm{km\ s^{-1}} \right]$', fontsize=35, labelpad=15)
 
-ax[0].set_ylabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km/s} \right]$', fontsize=35, labelpad=15)
-ax[1].set_ylabel(r'\boldmath$\overline{\log_{10}\ M_{*, group\ cen}} \left[\mathrm{M_\odot}\ \right]$', fontsize=35, labelpad=15)
+ax[0].set_ylabel(r'\boldmath$\log \sigma \left[\mathrm{km/s} \right]$', fontsize=35, labelpad=15)
+ax[1].set_ylabel(r'\boldmath$\langle\log M_{*, group\ cen}\rangle \left[\mathrm{M_\odot}\ \right]$', fontsize=35, labelpad=15)
 
 ax[0].minorticks_on()
 ax[1].minorticks_on()
-
 plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/eco_sigma_mstar_panel.pdf', 
     bbox_inches="tight", dpi=1200)
 
