@@ -1253,7 +1253,7 @@ pca = False
 
 survey = 'eco'
 machine = 'mac'
-mf_type = 'smf'
+mf_type = 'bmf'
 quenching = 'hybrid'
 
 dict_of_paths = cwpaths.cookiecutter_paths()
@@ -1575,3 +1575,208 @@ plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statist
 
 
 
+###############################################################################
+#Plots of mock measurements and ECO
+
+hf_read = h5py.File(path_to_proc + 'final_matrices/corr_matrices_28stats_{0}_{1}.h5'.
+    format(quenching, mf_type), 'r')
+hf_read.keys()
+if mf_type == 'smf':
+    mf_s = hf_read.get('smf')
+    mf_s = np.squeeze(np.array(mf_s))
+    fblue_cen_s = hf_read.get('fblue_cen')
+    fblue_cen_s = np.array(fblue_cen_s)
+    fblue_sat_s = hf_read.get('fblue_sat')
+    fblue_sat_s = np.array(fblue_sat_s)
+    mean_mstar_red_s = hf_read.get('mean_mstar_red')
+    mean_mstar_red_s = np.array(mean_mstar_red_s)
+    mean_mstar_blue_s = hf_read.get('mean_mstar_blue')
+    mean_mstar_blue_s = np.array(mean_mstar_blue_s)
+    sigma_red_s = hf_read.get('sigma_red')
+    sigma_red_s = np.array(sigma_red_s)
+    sigma_blue_s = hf_read.get('sigma_blue')
+    sigma_blue_s = np.array(sigma_blue_s)
+
+    #* In bmf halo case, some mocks had -np.inf in some bin(s). 
+    #* Converting to nan so it can be ignored by df.corr/df.cov
+    sigma_blue_s[sigma_blue_s == -np.inf] = np.nan
+elif mf_type == 'bmf':
+    mf_b = hf_read.get('smf')
+    mf_b = np.squeeze(np.array(mf_b))
+    fblue_cen_b = hf_read.get('fblue_cen')
+    fblue_cen_b = np.array(fblue_cen_b)
+    fblue_sat_b = hf_read.get('fblue_sat')
+    fblue_sat_b = np.array(fblue_sat_b)
+    mean_mstar_red_b = hf_read.get('mean_mstar_red')
+    mean_mstar_red_b = np.array(mean_mstar_red_b)
+    mean_mstar_blue_b = hf_read.get('mean_mstar_blue')
+    mean_mstar_blue_b = np.array(mean_mstar_blue_b)
+    sigma_red_b = hf_read.get('sigma_red')
+    sigma_red_b = np.array(sigma_red_b)
+    sigma_blue_b = hf_read.get('sigma_blue')
+    sigma_blue_b = np.array(sigma_blue_b)
+
+    #* In bmf halo case, some mocks had -np.inf in some bin(s). 
+    #* Converting to nan so it can be ignored by df.corr/df.cov
+    sigma_blue_b[sigma_blue_b == -np.inf] = np.nan
+
+#* Plots of observables
+rc('axes', linewidth=4)
+
+#* Mass functions
+fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
+    gridspec_kw={'wspace':0.25})
+
+max_total_ss = total_data_ss[0]
+max_total_bs = total_data_bs[0]
+
+for i in range(len(mf_s[0])):
+    mt, = ax[0].plot(max_total_ss, mf_s[0][i], alpha=0.4)
+dt, = ax[0].plot(total_data_ss[0], total_data_ss[1], color='k', zorder=10, lw=3)
+
+for i in range(len(mf_b[0])):
+    mt, = ax[1].plot(max_total_bs, mf_b[0][i], alpha=0.4)
+dt, = ax[1].plot(total_data_bs[0], total_data_bs[1], color='k', zorder=10, lw=3)
+
+ax[0].set_xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=30)
+ax[1].set_xlabel(r'\boldmath$\log_{10}\ M_b \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=30)
+
+ax[0].set_ylabel(r'\boldmath$\Phi \left[\mathrm{dlogM}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=30)
+ax[1].set_ylabel(r'\boldmath$\Phi \left[\mathrm{dlogM}\,\mathrm{Mpc}^{-3}\,\mathrm{h}^{3} \right]$', fontsize=30)
+
+ax[0].legend([dt,  mt], ['ECO', 'Mocks'],
+    handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='lower left', prop={'size':30})
+ax[0].minorticks_on()
+ax[1].minorticks_on()
+plt.show()
+
+#* Blue fractions
+fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
+    gridspec_kw={'wspace':0.25})
+
+for i in range(len(fblue_cen_s[0])):
+    mt_cen, = ax[0].plot(f_blue_data_ss[0], fblue_cen_s[0][i], color='rebeccapurple', alpha=0.4)
+dt_cen, = ax[0].plot(f_blue_data_ss[0], f_blue_data_ss[2], color='k', zorder=10, lw=3, ls='-')
+
+for i in range(len(fblue_sat_s[0])):
+    mt_sat, = ax[0].plot(f_blue_data_ss[0], fblue_sat_s[0][i], color='goldenrod', alpha=0.4)
+dt_sat, = ax[0].plot(f_blue_data_ss[0], f_blue_data_ss[3], color='k', zorder=10, lw=3, ls='--')
+
+for i in range(len(fblue_cen_b[0])):
+    mt_cen, = ax[1].plot(f_blue_data_bs[0], fblue_cen_b[0][i], color='rebeccapurple', alpha=0.4)
+dt_cen, = ax[1].plot(f_blue_data_bs[0], f_blue_data_bs[2], color='k', zorder=10, lw=3, ls='-')
+
+for i in range(len(fblue_sat_b[0])):
+    mt_sat, = ax[1].plot(f_blue_data_bs[0], fblue_sat_b[0][i], color='goldenrod', alpha=0.4)
+dt_sat, = ax[1].plot(f_blue_data_bs[0], f_blue_data_bs[3], color='k', zorder=10, lw=3, ls='--')
+
+
+ax[0].set_xlabel(r'\boldmath$\log_{10}\ M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=30)
+ax[1].set_xlabel(r'\boldmath$\log_{10}\ M_b \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', fontsize=30)
+
+ax[0].set_ylabel(r'\boldmath$f_{blue}$', fontsize=30)
+ax[1].set_ylabel(r'\boldmath$f_{blue}$', fontsize=30)
+
+ax[0].set_ylim(0,1)
+ax[1].set_ylim(0,1)
+
+ax[0].legend([dt_cen, dt_sat, mt_cen, mt_sat], 
+    ['ECO cen', 'ECO sat', 'Mocks cen', 'Mocks sat'],
+    handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='upper right', prop={'size':30})
+
+ax[0].minorticks_on()
+ax[1].minorticks_on()
+plt.show()
+
+#* sigma-mass
+fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
+    gridspec_kw={'wspace':0.25})
+
+bins_red=np.linspace(1,2.8,5)
+bins_blue=np.linspace(1,2.5,5)
+bins_red = 0.5 * (bins_red[1:] + bins_red[:-1])
+bins_blue = 0.5 * (bins_blue[1:] + bins_blue[:-1])
+
+for i in range(len(mean_mstar_red_s[0])):
+    mt_red, = ax[0].plot(bins_red, mean_mstar_red_s[0][i], color='indianred', alpha=0.4)
+dt_red, = ax[0].plot(bins_red, mean_mstar_red_data_ss[0], color='k', zorder=10, lw=3, ls='-')
+
+for i in range(len(mean_mstar_blue_s[0])):
+    mt_blue, = ax[0].plot(bins_blue, mean_mstar_blue_s[0][i], color='cornflowerblue', alpha=0.4)
+dt_blue, = ax[0].plot(bins_blue, mean_mstar_blue_data_ss[0], color='k', zorder=10, lw=3, ls='--')
+
+for i in range(len(mean_mstar_red_b[0])):
+    mt_red, = ax[1].plot(bins_red, mean_mstar_red_b[0][i], color='indianred', alpha=0.4)
+dt_red, = ax[1].plot(bins_red, mean_mstar_red_data_bs[0], color='k', zorder=10, lw=3, ls='-')
+
+for i in range(len(mean_mstar_blue_b[0])):
+    mt_blue, = ax[1].plot(bins_blue, mean_mstar_blue_b[0][i], color='cornflowerblue', alpha=0.4)
+dt_blue, = ax[1].plot(bins_blue, mean_mstar_blue_data_bs[0], color='k', zorder=10, lw=3, ls='--')
+
+
+ax[0].set_xlabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km\ s^{-1}} \right]$', fontsize=30)
+ax[1].set_xlabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km\ s^{-1}} \right]$', fontsize=30)
+
+ax[0].set_ylabel(r'\boldmath$\overline{\log_{10}\ M_{*, group\ cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=30)
+ax[1].set_ylabel(r'\boldmath$\overline{\log_{10}\ M_{b, group\ cen}} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=30)
+
+ax[0].legend([dt_red, dt_blue, mt_red, mt_blue], 
+    ['ECO red', 'ECO blue', 'Mocks red', 'Mocks blue'],
+    handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='upper left', 
+    prop={'size':30})
+
+# ax[0].set_ylim(9.8,11.05)
+# ax[1].set_ylim(9.8,11.05)
+
+ax[0].minorticks_on()
+ax[1].minorticks_on()
+plt.show()
+
+#* mass-sigma
+fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
+    gridspec_kw={'wspace':0.25})
+
+bin_min = 8.6
+bin_max = 10.8
+bins_red=np.linspace(bin_min,bin_max,5)
+bins_blue=np.linspace(bin_min,bin_max,5)
+bins_red_ss = 0.5 * (bins_red[1:] + bins_red[:-1])
+bins_blue_ss = 0.5 * (bins_blue[1:] + bins_blue[:-1])
+
+bin_min = 9.0
+bin_max = 11.2
+bins_red=np.linspace(bin_min,bin_max,5)
+bins_blue=np.linspace(bin_min,bin_max,5)
+bins_red_bs = 0.5 * (bins_red[1:] + bins_red[:-1])
+bins_blue_bs = 0.5 * (bins_blue[1:] + bins_blue[:-1])
+
+for i in range(len(sigma_red_s[0])):
+    mt_red, = ax[0].plot(bins_red_ss, sigma_red_s[0][i], color='indianred', alpha=0.4)
+dt_red, = ax[0].plot(bins_red_ss, sigma_red_data_ss, color='k', zorder=10, lw=3, ls='-')
+
+for i in range(len(sigma_blue_s[0])):
+    mt_blue, = ax[0].plot(bins_blue_ss, sigma_blue_s[0][i], color='cornflowerblue', alpha=0.4)
+dt_blue, = ax[0].plot(bins_blue_ss, sigma_blue_data_ss, color='k', zorder=10, lw=3, ls='--')
+
+for i in range(len(sigma_red_b[0])):
+    mt_red, = ax[1].plot(bins_red_bs, sigma_red_b[0][i], color='indianred', alpha=0.4)
+dt_red, = ax[1].plot(bins_red_bs, sigma_red_data_bs, color='k', zorder=10, lw=3, ls='-')
+
+for i in range(len(sigma_blue_b[0])):
+    mt_blue, = ax[1].plot(bins_blue_bs, sigma_blue_b[0][i], color='cornflowerblue', alpha=0.4)
+dt_blue, = ax[1].plot(bins_blue_bs, sigma_blue_data_bs, color='k', zorder=10, lw=3, ls='--')
+
+ax[0].set_ylabel(r'\boldmath$\overline{\log_{10}\ \sigma} \left[\mathrm{km\ s^{-1}} \right]$', fontsize=30)
+ax[1].set_ylabel(r'\boldmath$\overline{\log_{10}\ \sigma} \left[\mathrm{km\ s^{-1}} \right]$', fontsize=30)
+
+ax[0].set_xlabel(r'\boldmath$\log_{10}\ M_{*, group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=30)
+ax[1].set_xlabel(r'\boldmath$\log_{10}\ M_{b, group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=30)
+
+ax[0].legend([dt_red, dt_blue, mt_red, mt_blue], 
+    ['ECO red', 'ECO blue', 'Mocks red', 'Mocks blue'],
+    handler_map={tuple: HandlerTuple(ndivide=2, pad=0.3)}, loc='lower right', 
+    prop={'size':30})
+
+ax[0].minorticks_on()
+ax[1].minorticks_on()
+plt.show()
