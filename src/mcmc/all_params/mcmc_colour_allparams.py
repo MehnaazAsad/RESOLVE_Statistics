@@ -2392,7 +2392,7 @@ def mcmc(nproc, nwalkers, nsteps, data, err, corr_mat_inv):
             multi_time = end - start
             print("Multiprocessing took {0:.1f} seconds".format(multi_time))
 
-    return new_sampler
+    return sampler
 
 def populate_mock(theta, model):
     """
@@ -3205,8 +3205,8 @@ def main(args):
     np.random.seed(rseed)
     level = "group"
     stacked_stat = "both"
-    pca = True
-    new_chain = False
+    pca = False
+    new_chain = True
 
     survey = args.survey
     machine = args.machine
