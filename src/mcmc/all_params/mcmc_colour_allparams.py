@@ -2321,11 +2321,11 @@ def mcmc(nproc, nwalkers, nsteps, data, err, corr_mat_inv):
     mu_c = 0.40
     mu_s = 0.148
 
-    Mhalo_c = 11.0
-    Mstar_c = 9.3
-    mlow_slope = 0.2
-    mhigh_slope = 0.75
-    scatter = 0.30
+    Mhalo_c = 13
+    Mstar_c = 11.5
+    mlow_slope = 0.35
+    mhigh_slope = 0.45
+    scatter = 0.25
 
     # ## Starting at best-fit values found in optimize_hybridqm_eco.py
     # Mstar_q = 10.49 # Msun/h
@@ -3205,7 +3205,7 @@ def main(args):
     np.random.seed(rseed)
     level = "group"
     stacked_stat = "both"
-    pca = True
+    pca = False
     new_chain = True
 
     survey = args.survey
