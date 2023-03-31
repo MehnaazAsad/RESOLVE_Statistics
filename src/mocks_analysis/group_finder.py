@@ -753,6 +753,7 @@ def main(args):
     mf_type = 'bmf'
     machine = 'bender'
     quenching = 'hybrid'
+    pca = True
     ver = 2.0
     run = args.run
 
@@ -811,13 +812,25 @@ def main(args):
 
     print('Reading chi-squared file')
     if mf_type == 'smf':
-        reader = emcee.backends.HDFBackend(
-            path_to_processed + "smhm_colour_run{0}/chain_{1}.h5".format(run, 
-                quenching), read_only=True)
+        if pca:
+            reader = emcee.backends.HDFBackend(
+                path_to_processed + "smhm_colour_run{0}/chain_{1}_pca.h5".format(run, 
+                    quenching), read_only=True)
+        else:
+            reader = emcee.backends.HDFBackend(
+                path_to_processed + "smhm_colour_run{0}/chain_{1}.h5".format(run, 
+                    quenching), read_only=True)
+   
     elif mf_type == 'bmf':
-        reader = emcee.backends.HDFBackend(
-            path_to_processed + "bmhm_colour_run{0}/chain_{1}.h5".format(run, 
-                quenching), read_only=True)
+        if pca:
+            reader = emcee.backends.HDFBackend(
+                path_to_processed + "bmhm_colour_run{0}/chain_{1}_pca.h5".format(run, 
+                    quenching), read_only=True)
+        else:
+            reader = emcee.backends.HDFBackend(
+                path_to_processed + "bmhm_colour_run{0}/chain_{1}.h5".format(run, 
+                    quenching), read_only=True)
+
     chi2 = reader.get_blobs(flat=True)
 
     print('Reading mcmc chain file')
@@ -835,8 +848,12 @@ def main(args):
     mcmc_table_subset = get_paramvals_percentile(mcmc_table, 68, chi2)
 
     params_df = pd.DataFrame(mcmc_table_subset)
-    params_df.to_csv(path_to_processed + 'run{0}_params_subset.txt'.format(run), 
-        header=None, index=None, sep=' ', mode='w')
+    if pca:
+        params_df.to_csv(path_to_processed + 'run{0}_params_subset_pca.txt'.format(run), 
+            header=None, index=None, sep=' ', mode='w')
+    else:
+        params_df.to_csv(path_to_processed + 'run{0}_params_subset.txt'.format(run), 
+            header=None, index=None, sep=' ', mode='w')
 
     print('Reading survey data')
     # No M* cut needed
@@ -865,7 +882,10 @@ def main(args):
         i+=1
     gals_df_.reset_index(inplace=True, drop=True)
 
-    h5File = path_to_processed + "mocks101_run{0}.h5".format(run)
+    if pca:
+        h5File = path_to_processed + "mocks101_run{0}_pca.h5".format(run)
+    else:
+        h5File = path_to_processed + "mocks101_run{0}.h5".format(run)
     gals_df_.to_hdf(h5File, "/gals_df_/d1")
 
     print('Applying RSD')
@@ -951,9 +971,14 @@ def main(args):
                 'cz_y'], inplace=True)
 
     print('Writing to output files')
-    pandas_df_to_hdf5_file(data=gals_rsd_subset_df,
-        hdf5_file=path_to_processed + 'gal_group_run{0}.hdf5'.format(run), 
-        key='gal_group_df')
+    if pca:
+        pandas_df_to_hdf5_file(data=gals_rsd_subset_df,
+            hdf5_file=path_to_processed + 'gal_group_run{0}_pca.hdf5'.format(run), 
+            key='gal_group_df')
+    else:
+        pandas_df_to_hdf5_file(data=gals_rsd_subset_df,
+            hdf5_file=path_to_processed + 'gal_group_run{0}.hdf5'.format(run), 
+            key='gal_group_df')
     # pandas_df_to_hdf5_file(data=group_df_new,
     #     hdf5_file=path_to_processed + 'group.hdf5', key='group_df')
 
