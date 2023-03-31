@@ -9,12 +9,12 @@ from cosmo_utils.utils import work_paths as cwpaths
 class Settings():
 
     def __init__(self) -> None:
-        self.quenching = 'halo'
+        self.quenching = 'hybrid'
         self.machine = 'mac'
         self.survey = 'eco'
-        self.mf_type = 'smf'
+        self.mf_type = 'bmf'
         self.level = 'group'
-        self.pca = False
+        self.pca = True
         self.stacked_stat = True
         self.nproc = 2
         self.run = 0
@@ -42,9 +42,9 @@ class Settings():
             self.run = 95
         elif self.quenching == 'hybrid':
             if self.mf_type == 'smf':
-                self.run = 94
+                self.run = 98
             elif self.mf_type == 'bmf':
-                self.run = 97
+                self.run = 100
 
         if self.run >= 37:
             if self.mf_type == 'smf':
