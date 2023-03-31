@@ -134,10 +134,15 @@ def main(args):
     dict_of_paths = cwpaths.cookiecutter_paths()
     path_to_proc = dict_of_paths['proc_dir']
     run = args.run
+    pca = True
 
     print('Reading file')
-    gal_group = read_mock_catl(path_to_proc + \
-        "gal_group_run{0}.hdf5".format(run)) 
+    if pca:
+        gal_group = read_mock_catl(path_to_proc + \
+            "gal_group_run{0}_pca.hdf5".format(run)) 
+    else:
+        gal_group = read_mock_catl(path_to_proc + \
+            "gal_group_run{0}.hdf5".format(run)) 
 
     print('Creating subset')
     # idx_arr = np.insert(np.linspace(1, 20, 20), len(np.linspace(1, 20, 20)), \
@@ -159,9 +164,14 @@ def main(args):
     gal_group_df_subset = gal_group[names_arr]
 
     print('Writing to output files')
-    with open(path_to_proc + 'gal_group_run{0}.pickle'.format(run), 'wb') as handle:
-        pickle.dump(gal_group_df_subset, handle, 
-        protocol=pickle.HIGHEST_PROTOCOL)
+    if pca:
+        with open(path_to_proc + 'gal_group_run{0}_pca.pickle'.format(run), 'wb') as handle:
+            pickle.dump(gal_group_df_subset, handle, 
+            protocol=pickle.HIGHEST_PROTOCOL)
+    else:
+        with open(path_to_proc + 'gal_group_run{0}.pickle'.format(run), 'wb') as handle:
+            pickle.dump(gal_group_df_subset, handle, 
+            protocol=pickle.HIGHEST_PROTOCOL)
 
 if __name__ == '__main__':
     args = args_parser()
