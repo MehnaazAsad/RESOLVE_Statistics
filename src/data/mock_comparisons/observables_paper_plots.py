@@ -1766,8 +1766,8 @@ for i in range(len(sigma_blue_b[0])):
     mt_blue, = ax[1].plot(bins_blue_bs, sigma_blue_b[0][i], color='cornflowerblue', alpha=0.4)
 dt_blue, = ax[1].plot(bins_blue_bs, sigma_blue_data_bs, color='k', zorder=10, lw=3, ls='--')
 
-ax[0].set_ylabel(r'\boldmath$\overline{\log_{10}\ \sigma} \left[\mathrm{km\ s^{-1}} \right]$', fontsize=30)
-ax[1].set_ylabel(r'\boldmath$\overline{\log_{10}\ \sigma} \left[\mathrm{km\ s^{-1}} \right]$', fontsize=30)
+ax[0].set_ylabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km\ s^{-1}} \right]$', fontsize=30)
+ax[1].set_ylabel(r'\boldmath$\log_{10}\ \sigma \left[\mathrm{km\ s^{-1}} \right]$', fontsize=30)
 
 ax[0].set_xlabel(r'\boldmath$\log_{10}\ M_{*, group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=30)
 ax[1].set_xlabel(r'\boldmath$\log_{10}\ M_{b, group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',fontsize=30)
