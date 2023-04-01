@@ -2311,10 +2311,10 @@ def mcmc(nproc, nwalkers, nsteps, data, err, corr_mat_inv):
     """
 
     ## Starting at different location than usual
-    Mstar_q = 9.0 # Msun/h
-    Mh_q = 12.5 # Msun/h
-    mu = 0.5
-    nu = 0.3
+    Mstar_q = 9.5 # Msun/h
+    Mh_q = 13.0 # Msun/h
+    mu = 0.59
+    nu = 0.2
 
     Mh_qc = 12.61 # Msun/h
     Mh_qs = 13.5 # Msun/h
@@ -2323,9 +2323,9 @@ def mcmc(nproc, nwalkers, nsteps, data, err, corr_mat_inv):
 
     Mhalo_c = 13
     Mstar_c = 11.5
-    mlow_slope = 0.35
-    mhigh_slope = 0.45
-    scatter = 0.25
+    mlow_slope = 0.38
+    mhigh_slope = 0.48
+    scatter = 0.24
 
     # ## Starting at best-fit values found in optimize_hybridqm_eco.py
     # Mstar_q = 10.49 # Msun/h
