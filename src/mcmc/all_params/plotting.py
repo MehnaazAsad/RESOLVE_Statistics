@@ -3499,20 +3499,24 @@ class Plotting_Panels():
         if settings.pca:
             stellar_model_max = np.array([-1.14841151, -1.39156187, -1.57448839, -1.78163423])
             stellar_model_min = np.array([-1.57856788, -1.75698346, -1.88178712, -2.29596432])
-            stellar_bf_y = np.array([-1.44069603, -1.63549087, -1.76146497, -2.17379474])
+            # stellar_bf_y = np.array([-1.44069603, -1.63549087, -1.76146497, -2.17379474])
+            #* Best-fit relation is now the median of 200 models (mod_arr)
+            stellar_bf_y = np.array([-1.37407467, -1.59794183, -1.72876339, -2.04190089])
 
             baryonic_model_max = np.array([-1.37678911, -1.57652335, -1.80691543, -2.33442258])
             baryonic_model_min = np.array([-1.86515915, -2.01926334, -2.33749724, -3.52571277])
-            baryonic_bf_y = np.array([-1.70915369, -1.76775546, -2.1327991 , -3.02261267])
+            # baryonic_bf_y = np.array([-1.70915369, -1.76775546, -2.1327991 , -3.02261267])
+            #* Best-fit relation is now the median of 200 models (mod_arr)
+            baryonic_bf_y = np.array([-1.52267448, -1.67386828, -1.88996745, -2.62710779])
 
         else:
             stellar_model_max = np.array([-1.40649305, -1.59086857, -1.66668969, -2.01364639])
             stellar_model_min = np.array([-1.79852817, -1.99774758, -2.14948591, -2.49499663])
-            stellar_bf_y = np.array([-1.67824153, -1.85838778, -1.98215496, -2.33807617])
+            # stellar_bf_y = np.array([-1.67824153, -1.85838778, -1.98215496, -2.33807617])
 
             baryonic_model_max = np.array([-1.35587333, -1.56179563, -1.89942866, -2.64046001])
             baryonic_model_min = np.array([-1.51854394, -1.74228892, -2.1166138 , -2.9033142])
-            baryonic_bf_y = np.array([-1.5108299 , -1.72973757, -2.11847324, -2.89907715])
+            # baryonic_bf_y = np.array([-1.5108299 , -1.72973757, -2.11847324, -2.89907715])
 
         fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
             gridspec_kw={'wspace':0.15})
@@ -3738,16 +3742,25 @@ class Plotting_Panels():
             stellar_model_sat_max = np.array([0.71418325, 0.61858476, 0.49100257, 0.29850746])
             stellar_model_sat_min = np.array([0.51586345, 0.40726644, 0.28428797, 0.1237525 ])
 
-            stellar_bf_cen_y = np.array([0.87973837, 0.7785205 , 0.57244419, 0.26430048])
-            stellar_bf_sat_y = np.array([0.51847548, 0.44138807, 0.3252929 , 0.16010499])
+            # stellar_bf_cen_y = np.array([0.87973837, 0.7785205 , 0.57244419, 0.26430048])
+            # stellar_bf_sat_y = np.array([0.51847548, 0.44138807, 0.3252929 , 0.16010499])
+            
+            #* Median of 200 models
+            stellar_bf_cen_y = np.array([0.88387344, 0.79686895, 0.62805951, 0.36584485])
+            stellar_bf_sat_y = np.array([0.63483793, 0.5399652 , 0.42864857, 0.24952107])
 
             baryonic_model_cen_max = np.array([0.90196774, 0.79566918, 0.60475091, 0.29787234])
             baryonic_model_cen_min = np.array([0.76028826, 0.58694787, 0.32573856, 0.05436014])
             baryonic_model_sat_max = np.array([0.77282531, 0.63691932, 0.45144628, 0.27906977])
             baryonic_model_sat_min = np.array([0.47341115, 0.36671725, 0.2393736 , 0.        ])
 
-            baryonic_bf_cen_y = np.array([0.85588471, 0.68171057, 0.3562341 , 0.05022831])
-            baryonic_bf_sat_y = np.array([0.60597303, 0.50872818, 0.25646552, 0.07407407])
+            # baryonic_bf_cen_y = np.array([0.85588471, 0.68171057, 0.3562341 , 0.05022831])
+            # baryonic_bf_sat_y = np.array([0.60597303, 0.50872818, 0.25646552, 0.07407407])
+            
+            #* Median of 200 models
+            baryonic_bf_cen_y = np.array([0.83901522, 0.6979866 , 0.45602096, 0.16272868])
+            baryonic_bf_sat_y = np.array([0.59254699, 0.48839883, 0.32184591, 0.13750963])
+
         else:
             stellar_model_cen_max = np.array([0.85680934, 0.74592391, 0.52844037, 0.27729573])
             stellar_model_cen_min = np.array([0.78984787, 0.6493089 , 0.42275736, 0.16432978])
@@ -4001,10 +4014,14 @@ class Plotting_Panels():
             9.77198766, 10.13594267, 10.31512604, 10.43739561, 10.5007555 ,
             10.58300158, 10.58122456, 10.42725263, np.nan])
 
-        stellar_bf_y = np.array([np.nan, np.nan, 8.67370235,  8.90090066,  9.48161463,
-            9.9961121 , 10.28176782, 10.48956534, 10.66428808, 10.80163804,
-            10.95180133, 11.04723823, 11.04416275, np.nan])
-
+        # stellar_bf_y = np.array([np.nan, np.nan, 8.67370235,  8.90090066,  9.48161463,
+        #     9.9961121 , 10.28176782, 10.48956534, 10.66428808, 10.80163804,
+        #     10.95180133, 11.04723823, 11.04416275, np.nan])
+        #* Median of 200 models
+        stellar_bf_y = np.array([8.6328938 ,  8.69129072,  8.86714307,  9.35381319,  9.9221408 ,
+            10.2495158 , 10.44280786, 10.6003572 , 10.73799212, 10.82947323,
+            10.94042708, 10.99374175, 10.93939161, np.nan])
+        
         baryonic_model_max = np.array([ 9.05460847,  9.16077967,  9.29273375,  9.57429813,  9.91738612,
             10.15049832, 10.34002612, 10.51206694, 10.67531463, 10.80939429,
             10.9702595 , 11.06230235, 11.02271938, np.nan])
@@ -4012,9 +4029,13 @@ class Plotting_Panels():
             9.99281733, 10.1515782 , 10.29937236, 10.43942923, 10.51236968,
             10.60764526, 10.61144632, 10.44250924, np.nan])
 
-        baryonic_bf_y = np.array([np.nan,  9.07448363,  9.15634833,  9.34593835,  9.70594053,
-            10.02520512, 10.23927815, 10.4343167 , 10.62064607, 10.76992122,
-            10.95189474, 11.06299716, 11.03088679, np.nan])
+        # baryonic_bf_y = np.array([np.nan,  9.07448363,  9.15634833,  9.34593835,  9.70594053,
+        #     10.02520512, 10.23927815, 10.4343167 , 10.62064607, 10.76992122,
+        #     10.95189474, 11.06299716, 11.03088679, np.nan])
+        #* Median of 200 models
+        baryonic_bf_y = np.array([9.04016709,  9.08733873,  9.15249742,  9.44873247,  9.94929919,
+            10.26515197, 10.45211918, 10.60047194, 10.73627519, 10.82872054,
+            10.93513536, 10.98291475, 10.92114231, np.nan])
 
         fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
             gridspec_kw={'wspace':0.30})
@@ -4434,12 +4455,21 @@ class Plotting_Panels():
                 9.88598469, 10.05074301, 10.22537676, 10.33023551, 10.40878198,
                 10.53099336, 10.56303978, 10.14929581, np.nan])
 
-            stellar_red_bf_y = np.array([np.nan, 8.71408844,  8.87485837,  9.39343971,  9.90681715,
-                10.20073979, 10.39362659, 10.5512593 , 10.70327991, 10.82165844,
-                10.94077165, 11.00029904, 11.04486275, np.nan])
-            stellar_blue_bf_y = np.array([np.nan,  8.67330776,  8.82085191,  9.2227342 ,  9.76355069,
-                10.0749308 , 10.2454367 , 10.37523362, 10.49197816, 10.57953688,
-                10.69663024, np.nan, 10.44705963, np.nan])
+            # stellar_red_bf_y = np.array([np.nan, 8.71408844,  8.87485837,  9.39343971,  9.90681715,
+            #     10.20073979, 10.39362659, 10.5512593 , 10.70327991, 10.82165844,
+            #     10.94077165, 11.00029904, 11.04486275, np.nan])
+            # stellar_blue_bf_y = np.array([np.nan,  8.67330776,  8.82085191,  9.2227342 ,  9.76355069,
+            #     10.0749308 , 10.2454367 , 10.37523362, 10.49197816, 10.57953688,
+            #     10.69663024, np.nan, 10.44705963, np.nan])
+
+            #* Median of 200 models
+            stellar_red_bf_y = np.array([8.67173481,  8.69439824,  8.93154694,  9.50014624, 10.01095696,
+                10.3019722 , 10.49103969, 10.63676795, 10.77065054, 10.87240932,
+                10.96658581, 11.01705322, 11.03583506, np.nan])
+            
+            stellar_blue_bf_y = np.array([8.63372612,  8.68847081,  8.86700838,  9.33453169,  9.8951366 ,
+                10.2015724 , 10.37097542, 10.50433195, 10.6283184 , 10.69340915,
+                10.78149889, 10.75665045, 10.50548553, np.nan])
 
             baryonic_red_model_max = np.array([ 9.04986477,  9.15805888,  9.33915603,  9.71899762, 10.1638747 ,
                 10.43938068, 10.61532824, 10.75757882, 10.89524488, 11.00118541,
@@ -4454,12 +4484,21 @@ class Plotting_Panels():
                 9.79838763, 10.08994277, 10.2039919 , 10.26832985, 10.30525099,
                 10.45928038, 10.5193882 , 10.04602003, np.nan])
 
-            baryonic_red_bf_y = np.array([np.nan, np.nan,  9.11761777,  9.43032567,  9.84050111,
-                10.12570863, 10.29704134, 10.44495312, 10.57756666, 10.68222479,
-                10.77839483, 10.82554779, 10.83195496, np.nan])
-            baryonic_blue_bf_y = np.array([np.nan, np.nan,  9.10319151,  9.2914429 ,  9.64783634,
-                9.93082071, 10.08509616, 10.20284335, 10.32861552, 10.401215  ,
-                10.45487165, 10.50052071, 10.12001896, np.nan])
+            # baryonic_red_bf_y = np.array([np.nan, np.nan,  9.11761777,  9.43032567,  9.84050111,
+            #     10.12570863, 10.29704134, 10.44495312, 10.57756666, 10.68222479,
+            #     10.77839483, 10.82554779, 10.83195496, np.nan])
+            # baryonic_blue_bf_y = np.array([np.nan, np.nan,  9.10319151,  9.2914429 ,  9.64783634,
+            #     9.93082071, 10.08509616, 10.20284335, 10.32861552, 10.401215  ,
+            #     10.45487165, 10.50052071, 10.12001896, np.nan])
+
+            #* Median of 200 models
+            baryonic_red_bf_y = np.array([ 9.04986477,  9.0611167 ,  9.17725573,  9.55282947, 10.03843054,
+                10.32495755, 10.50615643, 10.64836646, 10.77991989, 10.87701605,
+                10.96428608, 11.00926269, 11.02721349, np.nan])
+            baryonic_blue_bf_y = np.array([ 9.03014374,  9.09073794,  9.15046388,  9.43242881,  9.91003887,
+                10.21209421, 10.36995776, 10.49558574, 10.61607597, 10.67393099,
+                10.76635212, 10.74302864, 10.47785997, np.nan])
+
         else:
             stellar_red_model_max = np.array([np.nan,  8.78282022,  8.99700873,  9.53119123, 10.00528155,
                 10.27854869, 10.44610589, 10.59656844, 10.75868903, 10.90508703,
@@ -4896,11 +4935,13 @@ class Plotting_Panels():
         df3.to_csv("/Users/asadm2/Desktop/baryonic_fred_cen_bf_pca.csv")
 
         
-        stellar_models_df = pd.read_csv("/Users/asadm2/Desktop/stellar_fred_cen_models_pca.csv") 
-        stellar_bf_df = pd.read_csv("/Users/asadm2/Desktop/stellar_fred_cen_bf_pca.csv") 
-        baryonic_models_df = pd.read_csv("/Users/asadm2/Desktop/baryonic_fred_cen_models_pca.csv") 
-        baryonic_bf_df = pd.read_csv("/Users/asadm2/Desktop/baryonic_fred_cen_bf_pca.csv") 
+        stellar_models_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/stellar_fred_cen_models_pca.csv") 
+        stellar_bf_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/stellar_fred_cen_bf_pca.csv") 
+        baryonic_models_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/baryonic_fred_cen_models_pca.csv") 
+        baryonic_bf_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/baryonic_fred_cen_bf_pca.csv") 
 
+        def nanmedian(arr):
+            return np.nanmedian(arr)
 
         fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=True, 
             gridspec_kw={'wspace':0.0})
@@ -4910,15 +4951,24 @@ class Plotting_Panels():
         cen_gals_bf = stellar_bf_df.iloc[:,1].values
         fred_bf = stellar_bf_df.iloc[:,2].values
 
+        # stellar_median_models_arr = []
+        # for idx in range(len(cen_gals_arr)):
+        #     cen_median_model = bs(cen_gals_arr[idx], fred_arr[idx], 
+        #                         bins=np.linspace(8.6, 12, 15), statistic=nanmedian)
+        #     stellar_median_models_arr.append(cen_median_model[0])
+        #* Median of 200 models
+        y_bf = bs(np.ravel(cen_gals_arr), np.ravel(fred_arr), bins=np.linspace(8.6, 12, 15), statistic=nanmedian)
+        x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
+
         for idx in range(len(cen_gals_arr)):
             x, y = zip(*sorted(zip(cen_gals_arr[idx],fred_arr[idx])))
             ax[0].plot(x, y, alpha=0.2, c='rebeccapurple', lw=10, solid_capstyle='round')
 
         x, y = zip(*sorted(zip(cen_gals_arr[0],fred_arr[0])))
-        x_bf, y_bf = zip(*sorted(zip(cen_gals_bf,fred_bf)))
+        # x_bf, y_bf = zip(*sorted(zip(cen_gals_bf,fred_bf)))
         # Plotting again just so that adding label to legend is easier
         ax[0].plot(x, y, c='rebeccapurple', label='Models', lw=10, solid_capstyle='round')
-        ax[0].plot(x_bf, y_bf, c='goldenrod', label='Best-fit', lw=10, solid_capstyle='round')
+        ax[0].plot(x_bf, y_bf[0], c='goldenrod', label='Best-fit', lw=10, solid_capstyle='round')
 
         ax[0].set_xlabel(r'\boldmath$\log M_{*, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',labelpad=10, fontsize=40)
         ax[0].set_ylabel(r'\boldmath$f_{red, cen}$', labelpad=20, fontsize=40)
@@ -4928,15 +4978,19 @@ class Plotting_Panels():
         cen_gals_bf = baryonic_bf_df.iloc[:,1].values
         fred_bf = baryonic_bf_df.iloc[:,2].values
 
+        #* Median of 200 models
+        y_bf = bs(np.ravel(cen_gals_arr), np.ravel(fred_arr), bins=np.linspace(9.0, 12, 15), statistic=nanmedian)
+        x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
+
         for idx in range(len(cen_gals_arr)):
             x, y = zip(*sorted(zip(cen_gals_arr[idx],fred_arr[idx])))
             ax[1].plot(x, y, alpha=0.2, c='rebeccapurple', lw=10, solid_capstyle='round')
 
         x, y = zip(*sorted(zip(cen_gals_arr[0],fred_arr[0])))
-        x_bf, y_bf = zip(*sorted(zip(cen_gals_bf,fred_bf)))
+        # x_bf, y_bf = zip(*sorted(zip(cen_gals_bf,fred_bf)))
         # Plotting again just so that adding label to legend is easier
         ax[1].plot(x, y, c='rebeccapurple', label='Models', lw=10, solid_capstyle='round')
-        ax[1].plot(x_bf, y_bf, c='goldenrod', label='Best-fit', lw=10, solid_capstyle='round')
+        ax[1].plot(x_bf, y_bf[0], c='goldenrod', label='Best-fit', lw=10, solid_capstyle='round')
 
         ax[1].set_xlabel(r'\boldmath$\log M_{b, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',labelpad=10, fontsize=40)
 
@@ -5068,11 +5122,13 @@ class Plotting_Panels():
         df.to_csv("/Users/asadm2/Desktop/baryonic_fred_sat_models_pca.csv")
         df3.to_csv("/Users/asadm2/Desktop/baryonic_fred_sat_bf_pca.csv")
 
-        stellar_models_df = pd.read_csv("/Users/asadm2/Desktop/stellar_fred_sat_models_pca.csv") 
-        stellar_bf_df = pd.read_csv("/Users/asadm2/Desktop/stellar_fred_sat_bf_pca.csv") 
-        baryonic_models_df = pd.read_csv("/Users/asadm2/Desktop/baryonic_fred_sat_models_pca.csv") 
-        baryonic_bf_df = pd.read_csv("/Users/asadm2/Desktop/baryonic_fred_sat_bf_pca.csv") 
+        stellar_models_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/stellar_fred_sat_models_pca.csv") 
+        stellar_bf_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/stellar_fred_sat_bf_pca.csv") 
+        baryonic_models_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/baryonic_fred_sat_models_pca.csv") 
+        baryonic_bf_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/baryonic_fred_sat_bf_pca.csv") 
 
+        def nanmedian(arr):
+            return np.nanmedian(arr)
 
         if quenching == 'hybrid':
             sat_gals_arr = stellar_models_df.iloc[:200,1:].values
@@ -5080,24 +5136,24 @@ class Plotting_Panels():
             sat_gals_bf = stellar_bf_df.iloc[:,1].values
             fred_bf = stellar_bf_df.iloc[:,2].values
 
-            stellar_mean_models_arr = []
+            stellar_median_models_arr = []
             for idx in range(len(sat_gals_arr)):
-                sat_mean_model = bs(sat_gals_arr[idx], fred_arr[idx], bins=np.linspace(8.6, 12, 15))
-                stellar_mean_models_arr.append(sat_mean_model[0])
-            stellar_bf_mean = bs(sat_gals_bf, fred_bf, bins=np.linspace(8.6, 12, 15))
-            x_stellar = 0.5 * (stellar_bf_mean[1][1:] + stellar_bf_mean[1][:-1])
+                sat_median_model = bs(sat_gals_arr[idx], fred_arr[idx], bins=np.linspace(8.6, 12, 15), statistic=nanmedian)
+                stellar_median_models_arr.append(sat_median_model[0])
+            stellar_bf_median = bs(np.ravel(sat_gals_arr), np.ravel(fred_arr), bins=np.linspace(8.6, 12, 15), statistic=nanmedian)
+            x_stellar = 0.5 * (stellar_bf_median[1][1:] + stellar_bf_median[1][:-1])
 
             sat_gals_arr = baryonic_models_df.iloc[:200,1:].values
             fred_arr = baryonic_models_df.iloc[200:,1:].values
             sat_gals_bf = baryonic_bf_df.iloc[:,1].values
             fred_bf = baryonic_bf_df.iloc[:,2].values
 
-            baryonic_mean_models_arr = []
+            baryonic_median_models_arr = []
             for idx in range(len(sat_gals_arr)):
-                sat_mean_model = bs(sat_gals_arr[idx], fred_arr[idx], bins=np.linspace(9.0, 12, 15))
-                baryonic_mean_models_arr.append(sat_mean_model[0])
-            baryonic_bf_mean = bs(sat_gals_bf, fred_bf, bins=np.linspace(9.0, 12, 15))
-            x_baryonic = 0.5 * (baryonic_bf_mean[1][1:] + baryonic_bf_mean[1][:-1])
+                sat_median_model = bs(sat_gals_arr[idx], fred_arr[idx], bins=np.linspace(9.0, 12, 15), statistic=nanmedian)
+                baryonic_median_models_arr.append(sat_median_model[0])
+            baryonic_bf_median = bs(np.ravel(sat_gals_arr), np.ravel(fred_arr), bins=np.linspace(9.0, 12, 15), statistic=nanmedian)
+            x_baryonic = 0.5 * (baryonic_bf_median[1][1:] + baryonic_bf_median[1][:-1])
 
         elif quenching == 'halo':
             sat_mean_stats = bs(np.hstack(sat_halos_arr), np.hstack(fred_arr), bins=10)
@@ -5139,24 +5195,24 @@ class Plotting_Panels():
         fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=True, 
             gridspec_kw={'wspace':0.0})
 
-        for idx in range(len(stellar_mean_models_arr)):
-            ax[0].plot(x_stellar, stellar_mean_models_arr[idx], alpha=0.2, 
+        for idx in range(len(stellar_median_models_arr)):
+            ax[0].plot(x_stellar, stellar_median_models_arr[idx], alpha=0.2, 
                 c='rebeccapurple', lw=10, solid_capstyle='round')
 
         # Plotting again just so that adding label to legend is easier
-        ax[0].plot(x_stellar, stellar_mean_models_arr[idx], c='rebeccapurple', 
+        ax[0].plot(x_stellar, stellar_median_models_arr[idx], c='rebeccapurple', 
                    label='Models', lw=10, solid_capstyle='round')
-        ax[0].plot(x_stellar, stellar_bf_mean[0], c='goldenrod', 
+        ax[0].plot(x_stellar, stellar_bf_median[0], c='goldenrod', 
                    label='Best-fit', lw=10, solid_capstyle='round')
 
-        for idx in range(len(baryonic_mean_models_arr)):
-            ax[1].plot(x_baryonic, baryonic_mean_models_arr[idx], alpha=0.2, 
+        for idx in range(len(baryonic_median_models_arr)):
+            ax[1].plot(x_baryonic, baryonic_median_models_arr[idx], alpha=0.2, 
                 c='rebeccapurple', lw=10, solid_capstyle='round')
 
         # Plotting again just so that adding label to legend is easier
-        ax[1].plot(x_baryonic, baryonic_mean_models_arr[idx], c='rebeccapurple', 
+        ax[1].plot(x_baryonic, baryonic_median_models_arr[idx], c='rebeccapurple', 
             label='Models', lw=10, solid_capstyle='round')
-        ax[1].plot(x_baryonic, baryonic_bf_mean[0], c='goldenrod', 
+        ax[1].plot(x_baryonic, baryonic_bf_median[0], c='goldenrod', 
             label='Best-fit', lw=10, solid_capstyle='round')
 
         ax[0].set_xlabel(r'\boldmath$\log M_{*, sat} \left[\mathrm{M_\odot}\,'\
@@ -5385,18 +5441,25 @@ class Plotting_Panels():
         baryonic_blue_data_y = np.array([10.0527434 , 10.01044694, 10.08551048, 10.27737551])
 
         if settings.pca:
-            stellar_red_bf_y = np.array([10.30319214, 10.36895466, 10.54911804, 10.7234726 ])
-            stellar_blue_bf_y = np.array([ 9.94223404,  9.96987724, 10.07430458, 10.18058681])
+            # stellar_red_bf_y = np.array([10.30319214, 10.36895466, 10.54911804, 10.7234726 ])
+            # stellar_blue_bf_y = np.array([ 9.94223404,  9.96987724, 10.07430458, 10.18058681])
+
+            #* Median of 200 models
+            stellar_red_bf_y = np.array([10.35999727, 10.42999172, 10.6013422 , 10.77315521])
+            stellar_blue_bf_y = np.array([10.03212643, 10.05847979, 10.19456291, 10.30260038])
 
             stellar_red_models_max = np.array([10.43276024, 10.50314903, 10.65653706, 10.83451557])
             stellar_red_models_min = np.array([10.2299366 , 10.30419636, 10.49847698, 10.66553211])
             stellar_blue_models_max = np.array([10.07915783, 10.09753609, 10.23810101, 10.38259697])
             stellar_blue_models_min = np.array([ 9.86748123,  9.91094208, 10.04547691, 10.21590424])
 
-
-            baryonic_red_bf_y = np.array([10.36285877, 10.44231129, 10.51769066, 10.65682602])
-            baryonic_blue_bf_y = np.array([ 9.9825449 , 10.03792   , 10.10307789, 10.19065857])
+            # baryonic_red_bf_y = np.array([10.36285877, 10.44231129, 10.51769066, 10.65682602])
+            # baryonic_blue_bf_y = np.array([ 9.9825449 , 10.03792   , 10.10307789, 10.19065857])
             
+            #* Median of 200 models
+            baryonic_red_bf_y = np.array([10.46528387, 10.51416922, 10.64754725, 10.78643894])
+            baryonic_blue_bf_y = np.array([10.16742802, 10.19056749, 10.30535126, 10.41932869])
+
             baryonic_red_models_max = np.array([10.58190918, 10.63659   , 10.76942348, 10.91011238])
             baryonic_red_models_min = np.array([10.21540928, 10.26915359, 10.4067173 , 10.50336552])
             baryonic_blue_models_max = np.array([10.27394676, 10.28551769, 10.38111496, 10.49815273])
@@ -5476,7 +5539,7 @@ class Plotting_Panels():
         ax[1].set_xlabel(r'\boldmath$\log \sigma \left[\mathrm{km/s} \right]$', labelpad=10, fontsize=40)
         ax[1].set_ylabel(r'\boldmath$\langle\log M_{b,group\ cen}\rangle \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
 
-        # plt.show()
+        plt.show()
 
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/sigma_grpcen_emcee_{0}.pdf'.format(quenching), 
             bbox_inches="tight", dpi=1200)
@@ -5571,18 +5634,25 @@ class Plotting_Panels():
         baryonic_blue_data_y = np.array([1.64732242, 1.88781988, 1.98457075, 2.43277928])
 
         if settings.pca:
-            stellar_red_bf_y = np.array([1.81269945, 1.9825401 , 1.91242613, 2.10429801])
-            stellar_blue_bf_y = np.array([1.7182738 , 1.79158445, 1.87465213, 1.99825786])
+            # stellar_red_bf_y = np.array([1.81269945, 1.9825401 , 1.91242613, 2.10429801])
+            # stellar_blue_bf_y = np.array([1.7182738 , 1.79158445, 1.87465213, 1.99825786])
+
+            #* Median of 200 models
+            stellar_red_bf_y = np.array([1.92111434, 1.94112651, 1.91282321, 2.05139215])
+            stellar_blue_bf_y = np.array([1.73340169, 1.76779126, 1.83383443, 1.98222902])
 
             stellar_red_models_max = np.array([1.97100584, 1.96149251, 1.95502712, 2.12458593])
             stellar_red_models_min = np.array([1.83589976, 1.89494217, 1.87593421, 2.026969  ])
             stellar_blue_models_max = np.array([1.77170537, 1.83208896, 1.90500531, 2.11753356])
             stellar_blue_models_min = np.array([1.70468575, 1.74061012, 1.79506325, 1.95074773])
+            
+            # baryonic_red_bf_y = np.array([1.89661712, 1.9674864 , 2.13836604, 2.28242477])
+            # baryonic_blue_bf_y = np.array([1.74606644, 1.92225559, 2.06115362, 2.30063897])
+            
+            #* Median of 200 models
+            baryonic_red_bf_y = np.array([1.74940706, 1.89987025, 2.03293736, 2.22471916])
+            baryonic_blue_bf_y = np.array([1.72470211, 1.81275193, 1.95693729, 2.15684003])
 
-            
-            baryonic_red_bf_y = np.array([1.89661712, 1.9674864 , 2.13836604, 2.28242477])
-            baryonic_blue_bf_y = np.array([1.74606644, 1.92225559, 2.06115362, 2.30063897])
-            
             baryonic_red_models_max = np.array([1.88782247, 1.97775139, 2.12206882, 2.28662266])
             baryonic_red_models_min = np.array([1.63275624, 1.86748795, 2.01067687, 2.17202758])
             baryonic_blue_models_max = np.array([1.78451843, 1.850398  , 2.07551116, 2.21774692])
