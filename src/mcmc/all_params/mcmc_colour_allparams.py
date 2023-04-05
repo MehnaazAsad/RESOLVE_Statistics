@@ -2249,6 +2249,8 @@ def get_err_data(path_to_proc):
         n_elements = len(s[s>min_eigen])
         VT = VT[:n_elements, :]
 
+        # sigma_mat = sigma_mat[:, :n_elements]
+
         print("Number of principle components kept: {0}".format(n_elements))
 
         ## reconstruct
@@ -2311,9 +2313,9 @@ def mcmc(nproc, nwalkers, nsteps, data, err, corr_mat_inv):
     """
 
     ## Starting at different location than usual
-    Mstar_q = 9.5 # Msun/h
-    Mh_q = 13.0 # Msun/h
-    mu = 0.59
+    Mstar_q = 10.1 # Msun/h
+    Mh_q = 13.6 # Msun/h
+    mu = 0.62
     nu = 0.2
 
     Mh_qc = 12.61 # Msun/h
@@ -2321,10 +2323,10 @@ def mcmc(nproc, nwalkers, nsteps, data, err, corr_mat_inv):
     mu_c = 0.40
     mu_s = 0.148
 
-    Mhalo_c = 13
-    Mstar_c = 11.5
+    Mhalo_c = 11.9
+    Mstar_c = 10.3
     mlow_slope = 0.38
-    mhigh_slope = 0.48
+    mhigh_slope = 0.50
     scatter = 0.24
 
     # ## Starting at best-fit values found in optimize_hybridqm_eco.py
@@ -3341,7 +3343,6 @@ def main(args):
     print('Mean M* blue data: \n', mean_mstar_blue_data[0])
     print('------------- \n')
 
-    print('Running MCMC')
     if stacked_stat == "both":
 
         phi_total_data, f_blue_cen_data, f_blue_sat_data, vdisp_red_data, \
@@ -3402,6 +3403,7 @@ def main(args):
         if pca:
             data_arr = data_arr.dot(mat)
 
+    print('Running MCMC')
     sampler = mcmc(nproc, nwalkers, nsteps, data_arr, sigma, mat)
 
     # sampler = mcmc(nproc, nwalkers, nsteps, total_data[1], f_blue_data[2], 
