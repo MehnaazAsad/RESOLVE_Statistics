@@ -3207,8 +3207,8 @@ def main(args):
     np.random.seed(rseed)
     level = "group"
     stacked_stat = "both"
-    pca = True
-    new_chain = True
+    pca = False
+    new_chain = False
 
     survey = args.survey
     machine = args.machine
