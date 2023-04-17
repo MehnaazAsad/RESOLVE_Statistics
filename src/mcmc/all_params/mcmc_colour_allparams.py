@@ -2249,7 +2249,7 @@ def get_err_data(path_to_proc):
         n_elements = len(s[s>min_eigen])
         VT = VT[:n_elements, :]
 
-        # sigma_mat = sigma_mat[:, :n_elements]
+        sigma_mat = sigma_mat[:, :n_elements]
 
         print("Number of principle components kept: {0}".format(n_elements))
 
@@ -3208,7 +3208,7 @@ def main(args):
     level = "group"
     stacked_stat = "both"
     pca = False
-    new_chain = False
+    new_chain = True
 
     survey = args.survey
     machine = args.machine
