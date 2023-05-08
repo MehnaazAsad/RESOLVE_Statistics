@@ -2276,15 +2276,16 @@ def get_err_data(path_to_proc):
         # T = corr_mat_colour.dot(VT.T)
         # print(T)
 
-        err_colour_pca = sigma_average.dot(VT.T)
-        eigenvectors = VT.T
+        # err_colour_pca = sigma_average.dot(VT.T) #* Incorrect
+        eigenvectors = VT #* Scipy svd returns V already transposed
+        eigenvalues = np.diag(sigma_mat)
 
     if pca:
-        return err_colour_pca, eigenvectors
+        return eigenvectors, eigenvalues, sigma_average
     else:
         return sigma_average, corr_mat_inv_colour_average
 
-def mcmc(nproc, nwalkers, nsteps, data, err, corr_mat_inv):
+def mcmc(nproc, nwalkers, nsteps, data, err, corr_mat_inv, eigenvals=None):
     """
     MCMC analysis
 
@@ -2313,40 +2314,40 @@ def mcmc(nproc, nwalkers, nsteps, data, err, corr_mat_inv):
     """
 
     ## Starting at different location than usual
-    Mstar_q = 10.1 # Msun/h
-    Mh_q = 13.6 # Msun/h
-    mu = 0.62
-    nu = 0.2
-
-    Mh_qc = 12.61 # Msun/h
-    Mh_qs = 13.5 # Msun/h
-    mu_c = 0.40
-    mu_s = 0.148
-
-    Mhalo_c = 11.9
-    Mstar_c = 10.3
-    mlow_slope = 0.38
-    mhigh_slope = 0.50
-    scatter = 0.24
-
-    # ## Starting at best-fit values found in optimize_hybridqm_eco.py
-    # Mstar_q = 10.49 # Msun/h
-    # Mh_q = 14.03 # Msun/h
-    # mu = 0.69
-    # nu = 0.148
+    # Mstar_q = 10.1 # Msun/h
+    # Mh_q = 13.6 # Msun/h
+    # mu = 0.62
+    # nu = 0.2
 
     # Mh_qc = 12.61 # Msun/h
     # Mh_qs = 13.5 # Msun/h
     # mu_c = 0.40
     # mu_s = 0.148
 
-    # ## Starting at best-fit parameters from middle column of table 2
-    # ## https://arxiv.org/pdf/1001.0015.pdf
-    # Mhalo_c = 12.35
-    # Mstar_c = 10.72
-    # mlow_slope = 0.44
-    # mhigh_slope = 0.57
-    # scatter = 0.15
+    # Mhalo_c = 11.9
+    # Mstar_c = 10.3
+    # mlow_slope = 0.38
+    # mhigh_slope = 0.50
+    # scatter = 0.24
+
+    ## Starting at best-fit values found in optimize_hybridqm_eco.py
+    Mstar_q = 10.49 # Msun/h
+    Mh_q = 14.03 # Msun/h
+    mu = 0.69
+    nu = 0.148
+
+    Mh_qc = 12.61 # Msun/h
+    Mh_qs = 13.5 # Msun/h
+    mu_c = 0.40
+    mu_s = 0.148
+
+    ## Starting at best-fit parameters from middle column of table 2
+    ## https://arxiv.org/pdf/1001.0015.pdf
+    Mhalo_c = 12.35
+    Mstar_c = 10.72
+    mlow_slope = 0.44
+    mhigh_slope = 0.57
+    scatter = 0.15
 
     behroozi10_param_vals = [Mhalo_c, Mstar_c, mlow_slope, mhigh_slope, scatter]
 
@@ -2374,7 +2375,7 @@ def mcmc(nproc, nwalkers, nsteps, data, err, corr_mat_inv):
         new_backend = emcee.backends.HDFBackend(filename)
         with Pool(processes=nproc) as pool:
             new_sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, 
-                backend=new_backend, args=(data, err, corr_mat_inv), pool=pool)
+                backend=new_backend, args=(data, err, corr_mat_inv, eigenvals), pool=pool)
             start = time.time()
             new_sampler.run_mcmc(None, nsteps, progress=True)
             end = time.time()
@@ -2387,7 +2388,7 @@ def mcmc(nproc, nwalkers, nsteps, data, err, corr_mat_inv):
         backend.reset(nwalkers, ndim)
         with Pool(processes=nproc) as pool:
             sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, 
-                backend=backend, args=(data, err, corr_mat_inv), pool=pool)
+                backend=backend, args=(data, err, corr_mat_inv, eigenvals), pool=pool)
             start = time.time()
             sampler.run_mcmc(p0, nsteps, progress=True)
             end = time.time()
@@ -2809,7 +2810,7 @@ def split_false_pairs(galra, galde, galcz, galgroupid):
             pass
     return newgroupid 
 
-def lnprob(theta, data, err, corr_mat_inv):
+def lnprob(theta, data, err, corr_mat_inv, eigenvals):
     """
     Calculates log probability for emcee
 
@@ -3067,7 +3068,7 @@ def lnprob(theta, data, err, corr_mat_inv):
         model_arr = np.array(model_arr)
 
         if pca:
-            chi2 = chi_squared_pca(data, model_arr, err, corr_mat_inv)
+            chi2 = chi_squared_pca(data, model_arr, err, corr_mat_inv, eigenvals)
         else:
             chi2 = chi_squared(data, model_arr, err, corr_mat_inv)
     
@@ -3120,7 +3121,7 @@ def chi_squared(data, model, err_data, inv_corr_mat):
 
     return chi_squared[0][0]
 
-def chi_squared_pca(data, model, err_data, mat):
+def chi_squared_pca(data, model, err_data, eigenvecs, eigenvals):
     """
     Calculates chi squared
 
@@ -3141,19 +3142,19 @@ def chi_squared_pca(data, model, err_data, mat):
         Value of chi-squared given a model 
 
     """
-    model = model.flatten() # flatten from (5,4) to (1,20)
+    model = model.flatten() 
 
-    # print('data: \n', data)
-    # print('model: \n', model)
 
-    model = model.dot(mat)
+    #* From Norberg2009 
+    lhs = eigenvecs #* No need to transpose as scipy svd already transposes V
+    rhs_data = data/err_data
+    rhs_model = model/err_data
 
-    #Error is already transformed in get_err_data() and data is already 
-    #transformed in main()
-    chi_squared_arr = (data - model)**2 / (err_data**2)
-    chi_squared = np.sum(chi_squared_arr)
-    # print("chi-squared: ", chi_squared)
-    
+    y_d = lhs.dot(rhs_data)
+    y_th = lhs.dot(rhs_model)
+
+    chi_squared = np.sum(((y_d - y_th)**2)/eigenvals)
+
     return chi_squared
 
 def args_parser():
@@ -3207,7 +3208,7 @@ def main(args):
     np.random.seed(rseed)
     level = "group"
     stacked_stat = "both"
-    pca = False
+    pca = True
     new_chain = True
 
     survey = args.survey
@@ -3322,7 +3323,10 @@ def main(args):
     model_init = halocat_init(halo_catalog, z_median)
 
     print('Measuring error in data from mocks')
-    sigma, mat = get_err_data(path_to_proc)
+    if pca:
+        eigenvecs, eigenvals, sigma = get_err_data(path_to_proc)
+    else:
+        sigma, mat = get_err_data(path_to_proc)
 
     print('Error in data: \n', sigma)
     print('------------- \n')
@@ -3358,12 +3362,8 @@ def main(args):
         data_arr.append(vdisp_red_data)
         data_arr.append(vdisp_blue_data)
         data_arr = np.array(data_arr)
-        data_arr = data_arr.flatten() # flatten from (5,4) to (1,20)
+        data_arr = data_arr.flatten()
 
-        if pca:
-            data_arr = data_arr.dot(mat)
-
-    # if stacked_stat == True
     elif stacked_stat: 
 
         phi_total_data, f_blue_cen_data, f_blue_sat_data, vdisp_red_data, \
@@ -3379,12 +3379,8 @@ def main(args):
         data_arr.append(mean_mstar_red_data)
         data_arr.append(mean_mstar_blue_data)
         data_arr = np.array(data_arr)
-        data_arr = data_arr.flatten() # flatten from (5,4) to (1,20)
+        data_arr = data_arr.flatten()
 
-        if pca:
-            data_arr = data_arr.dot(mat)
-
-    # if stacked_stat == False
     else:
 
         phi_total_data, f_blue_cen_data, f_blue_sat_data, vdisp_red_data, \
@@ -3400,11 +3396,11 @@ def main(args):
         data_arr = np.array(data_arr)
         data_arr = data_arr.flatten()
 
-        if pca:
-            data_arr = data_arr.dot(mat)
-
     print('Running MCMC')
-    sampler = mcmc(nproc, nwalkers, nsteps, data_arr, sigma, mat)
+    if pca:
+        sampler = mcmc(nproc, nwalkers, nsteps, data_arr, sigma, eigenvecs, eigenvals)
+    else:
+        sampler = mcmc(nproc, nwalkers, nsteps, data_arr, sigma, mat)
 
     # sampler = mcmc(nproc, nwalkers, nsteps, total_data[1], f_blue_data[2], 
     #     f_blue_data[3], sigma, corr_mat_inv)
