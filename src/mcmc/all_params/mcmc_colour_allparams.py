@@ -3147,13 +3147,11 @@ def chi_squared_pca(data, model, err_data, eigenvecs, eigenvals):
 
     #* From Norberg2009 
     lhs = eigenvecs #* No need to transpose as scipy svd already transposes V
-    rhs_data = data/err_data
     rhs_model = model/err_data
 
-    y_d = lhs.dot(rhs_data)
     y_th = lhs.dot(rhs_model)
 
-    chi_squared = np.sum(((y_d - y_th)**2)/eigenvals)
+    chi_squared = np.sum(((data - y_th)**2)/eigenvals)
 
     return chi_squared
 
@@ -3366,6 +3364,11 @@ def main(args):
         data_arr.append(vdisp_blue_data)
         data_arr = np.array(data_arr)
         data_arr = data_arr.flatten()
+
+        if pca:
+            lhs = eigenvecs #* From Norberg2009
+            rhs_data = data_arr/sigma
+            data_arr = lhs.dot(rhs_data)
 
     elif stacked_stat: 
 
