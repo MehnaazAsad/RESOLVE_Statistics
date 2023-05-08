@@ -3330,7 +3330,10 @@ def main(args):
 
     print('Error in data: \n', sigma)
     print('------------- \n')
-    print('Matrix: \n', mat)
+    if pca:
+        print('Matrix: \n', eigenvecs)
+    else:
+        print('Matrix: \n', mat)
     print('------------- \n')
     if mf_type == 'smf':
         print('SMF total data: \n', total_data[1])
