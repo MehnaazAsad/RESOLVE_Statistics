@@ -3207,7 +3207,7 @@ def main(args):
     level = "group"
     stacked_stat = "both"
     pca = True
-    new_chain = False
+    new_chain = True
 
     survey = args.survey
     machine = args.machine
