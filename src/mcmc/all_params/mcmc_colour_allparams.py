@@ -2313,41 +2313,41 @@ def mcmc(nproc, nwalkers, nsteps, data, err, corr_mat_inv, eigenvals=None):
 
     """
 
-    ## Starting at different location than usual
-    # Mstar_q = 10.1 # Msun/h
-    # Mh_q = 13.6 # Msun/h
-    # mu = 0.62
-    # nu = 0.2
-
-    # Mh_qc = 12.61 # Msun/h
-    # Mh_qs = 13.5 # Msun/h
-    # mu_c = 0.40
-    # mu_s = 0.148
-
-    # Mhalo_c = 11.9
-    # Mstar_c = 10.3
-    # mlow_slope = 0.38
-    # mhigh_slope = 0.50
-    # scatter = 0.24
-
-    ## Starting at best-fit values found in optimize_hybridqm_eco.py
-    Mstar_q = 10.49 # Msun/h
-    Mh_q = 14.03 # Msun/h
-    mu = 0.69
-    nu = 0.148
+    # Starting at different location than usual
+    Mstar_q = 10.1 # Msun/h
+    Mh_q = 13.6 # Msun/h
+    mu = 0.62
+    nu = 0.2
 
     Mh_qc = 12.61 # Msun/h
     Mh_qs = 13.5 # Msun/h
     mu_c = 0.40
     mu_s = 0.148
 
-    ## Starting at best-fit parameters from middle column of table 2
-    ## https://arxiv.org/pdf/1001.0015.pdf
-    Mhalo_c = 12.35
-    Mstar_c = 10.72
-    mlow_slope = 0.44
-    mhigh_slope = 0.57
-    scatter = 0.15
+    Mhalo_c = 11.9
+    Mstar_c = 10.3
+    mlow_slope = 0.38
+    mhigh_slope = 0.50
+    scatter = 0.24
+
+    # ## Starting at best-fit values found in optimize_hybridqm_eco.py
+    # Mstar_q = 10.49 # Msun/h
+    # Mh_q = 14.03 # Msun/h
+    # mu = 0.69
+    # nu = 0.148
+
+    # Mh_qc = 12.61 # Msun/h
+    # Mh_qs = 13.5 # Msun/h
+    # mu_c = 0.40
+    # mu_s = 0.148
+
+    # ## Starting at best-fit parameters from middle column of table 2
+    # ## https://arxiv.org/pdf/1001.0015.pdf
+    # Mhalo_c = 12.35
+    # Mstar_c = 10.72
+    # mlow_slope = 0.44
+    # mhigh_slope = 0.57
+    # scatter = 0.15
 
     behroozi10_param_vals = [Mhalo_c, Mstar_c, mlow_slope, mhigh_slope, scatter]
 
