@@ -750,7 +750,7 @@ def main(args):
     global ver
     global run
     survey = 'eco'
-    mf_type = 'smf'
+    mf_type = 'bmf'
     machine = 'bender'
     quenching = 'hybrid'
     pca = True
