@@ -3400,7 +3400,7 @@ class Plotting_Panels():
         self.preprocess = preprocess
         self.settings = preprocess.settings
 
-    def extract_total_mf(self, models, data, best_fit):
+    def extract_total_mf(self, models, data):
         """
         Plot SMF from data, best fit param values and param values corresponding to 
         68th percentile 100 lowest chi^2 values
@@ -3608,7 +3608,7 @@ class Plotting_Panels():
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/mf_total_emcee_{0}.pdf'.format(quenching), 
             bbox_inches="tight", dpi=1200)
 
-    def extract_fblue(self, models, data, best_fit):
+    def extract_fblue(self, models, data):
         """
         Plot blue fraction from data, best fit param values and param values 
         corresponding to 68th percentile 100 lowest chi^2 values
@@ -3952,7 +3952,7 @@ class Plotting_Panels():
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fblue_censat_emcee_{0}.pdf'.format(quenching), 
             bbox_inches="tight", dpi=1200)
 
-    def plot_xmhm(self, models, best_fit):
+    def plot_xmhm(self):
         """
         Plot SMHM from data, best fit param values, param values corresponding to 
         68th percentile 100 lowest chi^2 values.
@@ -3976,7 +3976,6 @@ class Plotting_Panels():
         Plot displayed on screen.
         """
         settings = self.settings
-        preprocess = self.preprocess
         quenching = settings.quenching
 
         #* NOTE: DECIDED TO PLOT ANALYTICAL BEST-FIT AND MODELS SO AS TO 
@@ -4254,7 +4253,7 @@ class Plotting_Panels():
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/shmr_total_emcee_{0}.pdf'.format(quenching), 
             bbox_inches="tight", dpi=1200)
 
-    def plot_colour_xmhm(self, models, data, best_fit):
+    def extract_colour_xmhm(self, models, data, best_fit):
         """
         Plot red and blue SMHM from data, best fit param values, param values 
         corresponding to 68th percentile 100 lowest chi^2 values.
@@ -4284,7 +4283,6 @@ class Plotting_Panels():
         Plot displayed on screen.
         """   
         settings = self.settings
-        preprocess = self.preprocess
         quenching = settings.quenching
 
         dof = data[8]
@@ -4386,130 +4384,67 @@ class Plotting_Panels():
         blue_y_max = np.nanmax(blue_mod_y_arr, axis=0)
         blue_y_min = np.nanmin(blue_mod_y_arr, axis=0)
 
-        x_stellar =  np.array([10.17857143, 10.53571429, 10.89285714, 11.25, 11.60714286,
-            11.96428571, 12.32142857, 12.67857143, 13.03571429, 13.39285714,
-            13.75, 14.10714286, 14.46428571, 14.82142857])
-        x_baryonic = np.array([10.17857143, 10.53571429, 10.89285714, 11.25, 11.60714286,
-            11.96428571, 12.32142857, 12.67857143, 13.03571429, 13.39285714,
-            13.75, 14.10714286, 14.46428571, 14.82142857])
+        if settings.mf_type == "smf":
+            x_stellar = 0.5 * (x_bf_red[1:] + x_bf_red[:-1]) # bin centers
+            hybrid_stellar_red_model_max = np.nanmax(red_mod_y_arr, axis=0)
+            hybrid_stellar_red_model_min = np.nanmin(red_mod_y_arr, axis=0)
+            hybrid_stellar_blue_model_max = np.nanmax(blue_mod_y_arr, axis=0)
+            hybrid_stellar_blue_model_min = np.nanmin(blue_mod_y_arr, axis=0)
+            hybrid_stellar_red_bf_y = np.nanmedian(red_mod_y_arr, axis=0)
+            hybrid_stellar_blue_bf_y = np.nanmedian(blue_mod_y_arr, axis=0)
 
-        if settings.pca:
-            hybrid_stellar_red_model_max = np.array([ 8.77501649,  8.81518885,  9.09522143,  9.60802491, 10.06033326,
-                10.31019019, 10.49070929, 10.66699567, 10.81056823, 11.00086105,
-                11.21090032, 11.34306431, 11.45014811, np.nan])
-            hybrid_stellar_red_model_min = np.array([ 8.61430931,  8.60002232,  8.63245153,  8.91945337,  9.40441   ,
-                9.86971114, 10.15629324, 10.3757936 , 10.53759908, 10.60623005,
-                10.6141381 , 10.59477513, 10.60457611, np.nan])
-            hybrid_stellar_blue_model_max = np.array([ 8.70869198,  8.79080944,  8.98672584,  9.45274788,  9.95532497,
-                10.1986408 , 10.39347438, 10.55560905, 10.68105502, 10.79696288,
-                11.04888439, 10.80910587, 10.77050877, np.nan])
-            hybrid_stellar_blue_model_min = np.array([ 8.60055256,  8.64782887,  8.66357911,  8.85570085,  9.26707585,
-                9.77062604, 10.00936933, 10.09142148, 10.19485641, 10.21191695,
-                10.35246213, 10.25267839,  9.72976017, np.nan])
+            np.savez('xmhm_colour_stellar.npz', 
+                     x_stellar=x_stellar, 
+                     hybrid_stellar_red_model_max=hybrid_stellar_red_model_max,\
+                     hybrid_stellar_red_model_min=hybrid_stellar_red_model_min,\
+                     hybrid_stellar_blue_model_max=hybrid_stellar_blue_model_max,\
+                     hybrid_stellar_blue_model_min=hybrid_stellar_blue_model_min,\
+                     hybrid_stellar_red_bf_y=hybrid_stellar_red_bf_y,\
+                     hybrid_stellar_blue_bf_y=hybrid_stellar_blue_bf_y
+                     )
 
-            #* Median of 200 models
-            hybrid_stellar_red_bf_y = np.array([ 8.69533984,  8.71138955,  8.88921355,  9.33662713,  9.87008991,
-                10.19996142, 10.40191798, 10.5483459 , 10.68369548, 10.79483414,
-                10.8877297 , 10.93128668, 10.94357618, np.nan])
-            
-            hybrid_stellar_blue_bf_y = np.array([ 8.64589756,  8.70829449,  8.8326421 ,  9.20179837,  9.72642478,
-                10.06759648, 10.23413581, 10.36843105, 10.50416413, 10.55558498,
-                10.62038542, 10.57202339, 10.27967525, np.nan])
+        elif settings.mf_type == "bmf":
+            x_baryonic = 0.5 * (x_bf_red[1:] + x_bf_red[:-1]) # bin centers
+            hybrid_baryonic_red_model_max = np.nanmax(red_mod_y_arr, axis=0)
+            hybrid_baryonic_red_model_min = np.nanmin(red_mod_y_arr, axis=0)
+            hybrid_baryonic_blue_model_max = np.nanmax(blue_mod_y_arr, axis=0)
+            hybrid_baryonic_blue_model_min = np.nanmin(blue_mod_y_arr, axis=0)
+            hybrid_baryonic_red_bf_y = np.nanmedian(red_mod_y_arr, axis=0)
+            hybrid_baryonic_blue_bf_y = np.nanmedian(blue_mod_y_arr, axis=0)
 
+            np.savez('xmhm_colour_baryonic.npz', 
+                     x_baryonic=x_baryonic, 
+                     hybrid_baryonic_red_model_max=hybrid_baryonic_red_model_max,\
+                     hybrid_baryonic_red_model_min=hybrid_baryonic_red_model_min,\
+                     hybrid_baryonic_blue_model_max=hybrid_baryonic_blue_model_max,\
+                     hybrid_baryonic_blue_model_min=hybrid_baryonic_blue_model_min,\
+                     hybrid_baryonic_red_bf_y=hybrid_baryonic_red_bf_y,\
+                     hybrid_baryonic_blue_bf_y=hybrid_baryonic_blue_bf_y
+                     )
 
-            halo_stellar_red_model_max = np.array([ 8.79534562,  8.78778621,  8.94179659,  9.30816669,  9.80457141,
-                10.17550807, 10.40277755, 10.56433799, 10.7021213 , 10.85176786,
-                11.09919406, 11.29035944, 11.37165179, np.nan])
-            halo_stellar_red_model_min = np.array([ 8.63769531,  8.61456871,  8.64353364,  8.65503441,  8.91072896,
-                9.46221338,  9.99195825, 10.193009  , 10.33596912, 10.39416623,
-                10.49454848, 10.48387343, 10.243883  , np.nan])
-            halo_stellar_blue_model_max = np.array([ 8.72993462,  8.9396739 ,  8.93396494,  9.27985361,  9.78262394,
-                10.17459692, 10.37619121, 10.54354278, 11.11701107, 10.76695633,
-                11.04579512, np.nan, np.nan, np.nan])
-            halo_stellar_blue_model_min = np.array([ 8.61337948,  8.61881161,  8.61774015,  8.6573176 ,  8.89215263,
-                9.4542804 ,  9.91002188, 10.10847998, 10.3251694 , 10.23846436,
-                10.602561  , np.nan, np.nan, np.nan])
+    def plot_colour_xmhm(stellar_file, baryonic_file):
 
-            #* Median of 200 models
-            halo_stellar_red_bf_y = np.array([ 8.71820202,  8.69827243,  8.73017639,  8.91713916,  9.37851942,
-                9.86014732, 10.19124497, 10.40884107, 10.59127937, 10.71254831,
-                10.84247653, 10.90790594, 10.84766933, np.nan])
-            
-            halo_stellar_blue_bf_y = np.array([ 8.66903382,  8.71381557,  8.7314507 ,  8.90384057,  9.35368178,
-                9.85023718, 10.15353017, 10.37572359, 10.50029431, 10.58084869,
-                10.77174139, np.nan, np.nan, np.nan])
+        stellar_data = np.load(stellar_file)
+        baryonic_data = np.load(baryonic_file)
+
+        x_stellar=stellar_data["x_stellar"]
+        hybrid_stellar_red_model_max=stellar_data["hybrid_stellar_red_model_max"]
+        hybrid_stellar_red_model_min=stellar_data["hybrid_stellar_red_model_min"]
+        hybrid_stellar_blue_model_max=stellar_data["hybrid_stellar_blue_model_max"]
+        hybrid_stellar_blue_model_min=stellar_data["hybrid_stellar_blue_model_min"]
+        hybrid_stellar_red_bf_y=stellar_data["hybrid_stellar_red_bf_y"]
+        hybrid_stellar_blue_bf_y=stellar_data["hybrid_stellar_blue_bf_y"]
 
 
-            baryonic_red_model_max = np.array([ 9.19808881,  9.27608054,  9.65819019, 10.04446561, 10.26683499,
-                10.39124226, 10.52316958, 10.6380542 , 10.78821817, 10.99077096,
-                11.29573545, 11.58161545, 11.74770505, np.nan])
-            baryonic_red_model_min = np.array([ 9.00776958,  9.00126362,  9.13687001,  9.19199614,  9.48360338,
-                9.92850976, 10.23429796, 10.44744992, 10.57938125, 10.65461116,
-                10.68428091, 10.67665329, 10.69614658, np.nan])
-            baryonic_blue_model_max = np.array([ 9.16281122,  9.23469257,  9.41302546,  9.7293698 ,  9.98798469,
-                10.26062338, 10.39264808, 10.46462031, 10.5919609 , 10.78399116,
-                10.95546103, 10.70627499, 10.70329952, np.nan])
-            baryonic_blue_model_min = np.array([ 9.00103283,  9.01988697,  9.06846831,  9.15127483,  9.37219202,
-                9.80023895, 10.01240468, 10.09123647, 10.21980079, 10.24789936,
-                10.29120197, 10.25347614,  9.92203951, np.nan])
+        x_baryonic=baryonic_data["x_baryonic"]
+        hybrid_baryonic_red_model_max=baryonic_data["hybrid_baryonic_red_model_max"]
+        hybrid_baryonic_red_model_min=baryonic_data["hybrid_baryonic_red_model_min"]
+        hybrid_baryonic_blue_model_max=baryonic_data["hybrid_baryonic_blue_model_max"]
+        hybrid_baryonic_blue_model_min=baryonic_data["hybrid_baryonic_blue_model_min"]
+        hybrid_baryonic_red_bf_y=baryonic_data["hybrid_baryonic_red_bf_y"]
+        hybrid_baryonic_blue_bf_y=baryonic_data["hybrid_baryonic_blue_bf_y"]
 
-            # baryonic_red_bf_y = np.array([np.nan, np.nan,  9.11761777,  9.43032567,  9.84050111,
-            #     10.12570863, 10.29704134, 10.44495312, 10.57756666, 10.68222479,
-            #     10.77839483, 10.82554779, 10.83195496, np.nan])
-            # baryonic_blue_bf_y = np.array([np.nan, np.nan,  9.10319151,  9.2914429 ,  9.64783634,
-            #     9.93082071, 10.08509616, 10.20284335, 10.32861552, 10.401215  ,
-            #     10.45487165, 10.50052071, 10.12001896, np.nan])
-
-            #* Median of 200 models
-            baryonic_red_bf_y = np.array([ 9.08817314,  9.09737861,  9.26408408,  9.63876929, 10.03918913,
-                10.26616909, 10.41180737, 10.52793802, 10.64744804, 10.74060493,
-                10.80409309, 10.83022089, 10.84343204, np.nan])
-            baryonic_blue_bf_y = np.array([ 9.05588519,  9.10299748,  9.19723412,  9.44985443,  9.80775747,
-                10.04087638, 10.16442381, 10.25815322, 10.36328433, 10.41431438,
-                10.43919938, 10.43786335, 10.17752719, np.nan])
-
-        # else:
-        #     stellar_red_model_max = np.array([np.nan,  8.78282022,  8.99700873,  9.53119123, 10.00528155,
-        #         10.27854869, 10.44610589, 10.59656844, 10.75868903, 10.90508703,
-        #         11.0607739 , 11.15575129, 11.19462776, np.nan])
-        #     stellar_red_model_min = np.array([np.nan,  8.60961246,  8.65162209,  8.82337518,  9.27056983,
-        #         9.84187458, 10.19257816, 10.40060147, 10.54988333, 10.62984439,
-        #         10.66436289, 10.65507545, 10.68529243, np.nan])
-        #     stellar_blue_model_max = np.array([np.nan,  8.79829025,  8.89312613,  9.32828028,  9.84170741,
-        #         10.15792618, 10.32696606, 10.44604343, 10.59748779, 10.72935629,
-        #         10.82329162, 10.70417595, 10.66892052, np.nan])
-        #     stellar_blue_model_min = np.array([np.nan,  8.60432529,  8.65892876,  8.78457609,  9.14492122,
-        #         9.73335852, 10.01329429, 10.10256606, 10.23122946, 10.24717576,
-        #         10.25496403, 10.19932652,  9.94131565, np.nan])
-
-        #     stellar_red_bf_y = np.array([np.nan, np.nan, 8.67556329,  8.96768756,  9.57200841,
-        #         10.03687634, 10.31140515, 10.51031573, 10.6806836 , 10.81853498,
-        #         10.96046381, 11.04723823, 11.04416275, np.nan])
-        #     stellar_blue_bf_y = np.array([np.nan, np.nan,  8.6735805 ,  8.89224166,  9.44830933,
-        #         9.95253006, 10.21548383, 10.38678304, 10.50315969, 10.66364638,
-        #         10.68759584, np.nan, np.nan, np.nan])
-
-        #     baryonic_red_model_max = np.array([ 9.06451845,  9.19514523,  9.41600215,  9.75984543, 10.09770975,
-        #         10.29538681, 10.44230188, 10.57640112, 10.71676461, 10.85145204,
-        #         10.9958108 , 11.06230235, 11.11948236, np.nan])
-        #     baryonic_red_model_min = np.array([ 9.04941416,  9.05371428,  9.16441726,  9.44115129,  9.84408751,
-        #         10.15473634, 10.33615638, 10.47086298, 10.57517847, 10.68656131,
-        #         10.6923637 , 10.64884131, 10.66979885, np.nan])
-        #     baryonic_blue_model_max = np.array([ 9.05330086,  9.15813616,  9.27518956,  9.52601811,  9.82444746,
-        #         10.05590926, 10.20829801, 10.34517216, 10.4907835 , 10.56341199,
-        #         10.62287178, 10.69516659, 10.42060089, np.nan])
-        #     baryonic_blue_model_min = np.array([ 9.00780153,  9.06356299,  9.1404833 ,  9.31871163,  9.66100564,
-        #         9.86803471,  9.97971068, 10.08066081, 10.18767609, 10.18122001,
-        #         10.28636229, 10.28628922,  9.83613777, np.nan])
-
-        #     baryonic_red_bf_y = np.array([np.nan,  9.06137323,  9.19164498,  9.47289201,  9.85622011,
-        #         10.14642113, 10.34091901, 10.51689518, 10.68136276, 10.8202588 ,
-        #         10.97885078, 11.06299716, 11.13655154, np.nan])
-        #     baryonic_blue_bf_y = np.array([np.nan,  9.07517365,  9.15393038,  9.33041699,  9.66323243,
-        #         9.95169488, 10.12940522, 10.26877024, 10.42019781, 10.52883073,
-        #         10.55429316, np.nan, 10.39689827, np.nan])
-
-        fig, ax = plt.subplots(1, 3, figsize=(24,13.5), sharex=False, sharey=False, 
+        fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
             gridspec_kw={'wspace':0.30})
 
         smr = ax[0].fill_between(x=x_stellar, y1=hybrid_stellar_red_model_max, 
@@ -4522,28 +4457,28 @@ class Plotting_Panels():
 
         sbfb, = ax[0].plot(x_stellar, hybrid_stellar_blue_bf_y, color='cornflowerblue', lw=4, zorder=10)
 
+        #* halo model
+        # smr = ax[2].fill_between(x=x_stellar, y1=halo_stellar_red_model_max, 
+        #     y2=halo_stellar_red_model_min, color='indianred',alpha=0.4)
 
-        smr = ax[2].fill_between(x=x_stellar, y1=halo_stellar_red_model_max, 
-            y2=halo_stellar_red_model_min, color='indianred',alpha=0.4)
+        # sbfr, = ax[2].plot(x_stellar, halo_stellar_red_bf_y, color='indianred', lw=4, zorder=10)
 
-        sbfr, = ax[2].plot(x_stellar, halo_stellar_red_bf_y, color='indianred', lw=4, zorder=10)
+        # smb = ax[2].fill_between(x=x_stellar, y1=halo_stellar_blue_model_max, 
+        #     y2=halo_stellar_blue_model_min, color='cornflowerblue',alpha=0.4)
 
-        smb = ax[2].fill_between(x=x_stellar, y1=halo_stellar_blue_model_max, 
-            y2=halo_stellar_blue_model_min, color='cornflowerblue',alpha=0.4)
-
-        sbfb, = ax[2].plot(x_stellar, halo_stellar_blue_bf_y, color='cornflowerblue', lw=4, zorder=10)
+        # sbfb, = ax[2].plot(x_stellar, halo_stellar_blue_bf_y, color='cornflowerblue', lw=4, zorder=10)
 
         
-        bmr = ax[1].fill_between(x=x_baryonic, y1=baryonic_red_model_max, 
-            y2=baryonic_red_model_min, color='indianred',alpha=0.4)
+        bmr = ax[1].fill_between(x=x_baryonic, y1=hybrid_baryonic_red_model_max, 
+            y2=hybrid_baryonic_red_model_min, color='indianred',alpha=0.4)
 
-        bbfr, = ax[1].plot(x_baryonic, baryonic_red_bf_y, color='indianred', lw=4, 
+        bbfr, = ax[1].plot(x_baryonic, hybrid_baryonic_red_bf_y, color='indianred', lw=4, 
             zorder=10)
 
-        bmb = ax[1].fill_between(x=x_baryonic, y1=baryonic_blue_model_max, 
-            y2=baryonic_blue_model_min, color='cornflowerblue',alpha=0.4)
+        bmb = ax[1].fill_between(x=x_baryonic, y1=hybrid_baryonic_blue_model_max, 
+            y2=hybrid_baryonic_blue_model_min, color='cornflowerblue',alpha=0.4)
 
-        bbfb, = ax[1].plot(x_baryonic, baryonic_blue_bf_y, color='cornflowerblue', lw=4, 
+        bbfb, = ax[1].plot(x_baryonic, hybrid_baryonic_blue_bf_y, color='cornflowerblue', lw=4, 
             zorder=10)
 
         ax[0].set_xlim(10,14.5)
@@ -4552,8 +4487,8 @@ class Plotting_Panels():
         ax[1].set_xlim(10,14.5)
         ax[1].set_xlabel(r'\boldmath$\log M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',labelpad=10, fontsize=40)
 
-        ax[2].set_xlim(10,14.5)
-        ax[2].set_xlabel(r'\boldmath$\log M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',labelpad=10, fontsize=40)
+        # ax[2].set_xlim(10,14.5)
+        # ax[2].set_xlabel(r'\boldmath$\log M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',labelpad=10, fontsize=40)
 
         ax[0].set_ylim(np.log10((10**8.9)/2.041),11.5)
         ax[0].set_ylabel(r'\boldmath$\log M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
@@ -4561,8 +4496,8 @@ class Plotting_Panels():
         ax[1].set_ylim(np.log10((10**9.3)/2.041),11.5)
         ax[1].set_ylabel(r'\boldmath$\log M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',labelpad=20, fontsize=40)
 
-        ax[2].set_ylim(np.log10((10**8.9)/2.041),11.5)
-        ax[2].set_ylabel(r'\boldmath$\log M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
+        # ax[2].set_ylim(np.log10((10**8.9)/2.041),11.5)
+        # ax[2].set_ylabel(r'\boldmath$\log M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
 
         ax[0].fill([13.5, ax[0].get_xlim()[1], ax[0].get_xlim()[1], 13.5], 
             [ax[0].get_ylim()[0], ax[0].get_ylim()[0], 
@@ -4574,24 +4509,22 @@ class Plotting_Panels():
             ax[1].get_ylim()[1], ax[1].get_ylim()[1]], fill=False, 
             hatch='\\')
 
-        ax[2].fill([13.5, ax[2].get_xlim()[1], ax[2].get_xlim()[1], 13.5], 
-            [ax[2].get_ylim()[0], ax[2].get_ylim()[0], 
-            ax[2].get_ylim()[1], ax[2].get_ylim()[1]], fill=False, 
-            hatch='\\')
+        # ax[2].fill([13.5, ax[2].get_xlim()[1], ax[2].get_xlim()[1], 13.5], 
+        #     [ax[2].get_ylim()[0], ax[2].get_ylim()[0], 
+        #     ax[2].get_ylim()[1], ax[2].get_ylim()[1]], fill=False, 
+        #     hatch='\\')
 
         sat = AnchoredText("Stellar",
                         prop=dict(size=30), frameon=False, loc='upper center')
-        # at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
         ax[0].add_artist(sat)
 
         bat = AnchoredText("Baryonic",
                         prop=dict(size=30), frameon=False, loc='upper left')
         ax[1].add_artist(bat)
 
-        sat = AnchoredText("Halo",
-                        prop=dict(size=30), frameon=False, loc='upper left')
-        # at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
-        ax[2].add_artist(sat)
+        # sat = AnchoredText("Halo",
+        #                 prop=dict(size=30), frameon=False, loc='upper left')
+        # ax[2].add_artist(sat)
 
 
         ax[0].legend([(smr, smb),  (sbfr, sbfb)], ['Models', 'Best-fit'],
@@ -4600,14 +4533,14 @@ class Plotting_Panels():
         
         ax[0].minorticks_on()
         ax[1].minorticks_on()
-        ax[2].minorticks_on()
+        # ax[2].minorticks_on()
         
         plt.show()
 
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/shmr_colour_emcee_{0}.pdf'.format(quenching), 
             bbox_inches="tight", dpi=1200)
 
-
+    def plot_shmr_comparison(self, models, best_fit):
         #* Comparison plot between my colour SHMRs and those from Fig 16 in 
         #* ZM15
         halos_bf_red = best_fit[0]['centrals']['halos_red'][0]
@@ -5954,4 +5887,6 @@ class Plotting_Panels():
         
         self.plot_mean_grpcen_vs_sigma(models, data, data_experiments, 
             best_fit)
+
+        self.plot_shmr_comparison(models, best_fit)
 
