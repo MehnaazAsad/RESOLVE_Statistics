@@ -3636,24 +3636,15 @@ class Plotting_Panels():
         Plot displayed on screen.
         """
         settings = self.settings
-        preprocess = self.preprocess
-        quenching = settings.quenching
 
         fblue_data = data[1]
-        error_cen = data[8][4:8]
-        error_sat = data[8][8:12]
-        dof = data[10]
+        error = data[8]
 
-        x_fblue_total_data, y_fblue_total_data = fblue_data[0], fblue_data[1]
-        y_fblue_cen_data = fblue_data[2]
-        y_fblue_sat_data = fblue_data[3]
-
-        x_fblue_model = models[0][0]['f_blue']['max_fblue'][0]
-
-        x_fblue_total_bf, y_fblue_total_bf = best_fit[0]['f_blue']['max_fblue'],\
-            best_fit[0]['f_blue']['fblue_total']
-        y_fblue_cen_bf = best_fit[0]['f_blue']['fblue_cen']
-        y_fblue_sat_bf = best_fit[0]['f_blue']['fblue_sat']
+        #* Best-fit is now median of 200 models
+        # x_fblue_total_bf, y_fblue_total_bf = best_fit[0]['f_blue']['max_fblue'],\
+        #     best_fit[0]['f_blue']['fblue_total']
+        # y_fblue_cen_bf = best_fit[0]['f_blue']['fblue_cen']
+        # y_fblue_sat_bf = best_fit[0]['f_blue']['fblue_sat']
 
         i_outer = 0
         total_mod_arr = []
@@ -3750,19 +3741,12 @@ class Plotting_Panels():
                 sat_mod_arr.append(sat_mod_ii)
             i_outer += 1
 
-        fblue_total_max = np.amax(total_mod_arr, axis=0)
-        fblue_total_min = np.amin(total_mod_arr, axis=0)
-        fblue_cen_max = np.nanmax(cen_mod_arr, axis=0)
-        fblue_cen_min = np.nanmin(cen_mod_arr, axis=0)
-        fblue_sat_max = np.nanmax(sat_mod_arr, axis=0)
-        fblue_sat_min = np.nanmin(sat_mod_arr, axis=0)
-
         if settings.mf_type == "smf":
-            x_stellar = data[1][0]
-            stellar_data_cen_y = data[1][2]
-            stellar_data_sat_y = data[1][3]
-            stellar_cen_error = data[8][4:8]
-            stellar_sat_error = data[8][8:12]
+            x_stellar = fblue_data[0]
+            stellar_data_cen_y = fblue_data[2]
+            stellar_data_sat_y = fblue_data[3]
+            stellar_cen_error = error[4:8]
+            stellar_sat_error = error[8:12]
             hybrid_stellar_model_cen_max = np.nanmax(cen_mod_arr, axis=0)
             hybrid_stellar_model_cen_min = np.nanmin(cen_mod_arr, axis=0)
             hybrid_stellar_model_sat_max = np.nanmax(sat_mod_arr, axis=0)
@@ -3785,11 +3769,11 @@ class Plotting_Panels():
                      )
 
         elif settings.mf_type == "bmf":
-            x_baryonic = data[1][0]
-            baryonic_data_cen_y = data[1][2]
-            baryonic_data_sat_y = data[1][3]
-            baryonic_cen_error = data[8][4:8]
-            baryonic_sat_error = data[8][8:12]    
+            x_baryonic = fblue_data[0]
+            baryonic_data_cen_y = fblue_data[2]
+            baryonic_data_sat_y = fblue_data[3]
+            baryonic_cen_error = error[4:8]
+            baryonic_sat_error = error[8:12]    
             hybrid_baryonic_model_cen_max = np.nanmax(cen_mod_arr, axis=0)
             hybrid_baryonic_model_cen_min = np.nanmin(cen_mod_arr, axis=0)
             hybrid_baryonic_model_sat_max = np.nanmax(sat_mod_arr, axis=0)
@@ -3809,71 +3793,6 @@ class Plotting_Panels():
                      hybrid_baryonic_model_sat_min=hybrid_baryonic_model_sat_min,\
                      hybrid_baryonic_bf_cen_y=hybrid_baryonic_bf_cen_y,\
                      hybrid_baryonic_bf_sat_y=hybrid_baryonic_bf_sat_y)
-
-        x_stellar = np.array([ 8.875,  9.425,  9.975, 10.525])
-        x_baryonic = np.array([ 9.275,  9.825, 10.375, 10.925])
-
-        # data[1][2] and data[1][3]
-        stellar_data_cen_y = np.array([0.83244838, 0.65177066, 0.40886203, 0.21748401])
-        stellar_data_sat_y = np.array([0.46857773, 0.34697218, 0.26781857, 0.11111111])
-
-        # data[8][4:8] and data[8][8:12]
-        stellar_cen_error = np.array([0.02761067, 0.03908448, 0.03358606, 0.02101262])
-        stellar_sat_error = np.array([0.02126624, 0.01933832, 0.01724711, 0.02441217])
-
-        baryonic_data_cen_y = np.array([0.8465711 , 0.62694611, 0.37299465, 0.10691824])
-        baryonic_data_sat_y = np.array([0.55704008, 0.41626016, 0.2283105 , 0.09090909])
-
-        baryonic_cen_error = np.array([0.02318217, 0.04046306, 0.03295486, 0.03116817])
-        baryonic_sat_error = np.array([0.02119533, 0.02008324, 0.0296453 , 0.07140613])
-
-        if settings.pca:
-            # np.nanmax(cen_mod_arr, axis=0) and np.nanmin(cen_mod_arr, axis=0)
-            hybrid_stellar_model_cen_max = np.array([0.88473255, 0.79203471, 0.58624609, 0.31147541])
-            hybrid_stellar_model_cen_min = np.array([0.67912271, 0.54029851, 0.37274601, 0.15154917])
-            # np.nanmax(sat_mod_arr, axis=0) and np.nanmin(sat_mod_arr, axis=0)            
-            hybrid_stellar_model_sat_max = np.array([0.5262697 , 0.43430866, 0.32385374, 0.19565217])
-            hybrid_stellar_model_sat_min = np.array([0.44046869, 0.33835058, 0.22510561, 0.09810671])
-            
-            #* Best fit is median of 200 models
-            # np.nanmedian(cen_mod_arr, axis=0) and np.nanmedian(sat_mod_arr, axis=0)
-            hybrid_stellar_bf_cen_y = np.array([0.81133846, 0.68200102, 0.47774408, 0.24035603])
-            hybrid_stellar_bf_sat_y = np.array([0.48125489, 0.39192084, 0.28591222, 0.13695281])
-
-            halo_stellar_model_cen_max = np.array([0.87568787, 0.82562958, 0.69446468, 0.36118598])
-            halo_stellar_model_cen_min = np.array([0.50509068, 0.42033294, 0.3338361 , 0.15789474])
-            halo_stellar_model_sat_max = np.array([0.61758958, 0.58739837, 0.44239631, 0.23305085])
-            halo_stellar_model_sat_min = np.array([0.42444717, 0.37264151, 0.24382716, 0.08181818])
-            
-            #* Best fit is median of 200 models
-            halo_stellar_bf_cen_y = np.array([0.75410308, 0.66207108, 0.50959026, 0.24367965])
-            halo_stellar_bf_sat_y = np.array([0.52995709, 0.46177062, 0.33055981, 0.1447181 ])
-
-            baryonic_model_cen_max = np.array([0.87715799, 0.75733118, 0.52504953, 0.18774704])
-            baryonic_model_cen_min = np.array([0.74340455, 0.54200796, 0.23357554, 0.01090909])
-            baryonic_model_sat_max = np.array([0.62863196, 0.48458985, 0.30289855, 0.18181818])
-            baryonic_model_sat_min = np.array([0.47354921, 0.37816092, 0.17527862, 0.        ])
-            
-            #* Best fit is median of 200 models
-            baryonic_bf_cen_y = np.array([0.81809551, 0.6325453 , 0.33403584, 0.05745565])
-            baryonic_bf_sat_y = np.array([0.55651524, 0.42901981, 0.24387745, 0.05      ])
-
-        # else:
-        #     stellar_model_cen_max = np.array([0.85680934, 0.74592391, 0.52844037, 0.27729573])
-        #     stellar_model_cen_min = np.array([0.78984787, 0.6493089 , 0.42275736, 0.16432978])
-        #     stellar_model_sat_max = np.array([0.52685661, 0.43925234, 0.33355978, 0.17922078])
-        #     stellar_model_sat_min = np.array([0.44516439, 0.35151803, 0.23303633, 0.07048458])
-
-        #     stellar_bf_cen_y = np.array([0.83446115, 0.71072411, 0.46760563, 0.18954248])
-        #     stellar_bf_sat_y = np.array([0.45949477, 0.39189189, 0.27251185, 0.09230769])
-
-        #     baryonic_model_cen_max = np.array([0.87305371, 0.74      , 0.45011086, 0.1317734 ])
-        #     baryonic_model_cen_min = np.array([0.82241515, 0.64424267, 0.34025559, 0.04607721])
-        #     baryonic_model_sat_max = np.array([0.59414818, 0.49204771, 0.31754386, 0.2       ])
-        #     baryonic_model_sat_min = np.array([0.52754131, 0.41655658, 0.22953451, 0.        ])
-
-        #     baryonic_bf_cen_y = np.array([0.85979801, 0.70827149, 0.40085942, 0.07839721])
-        #     baryonic_bf_sat_y = np.array([0.5826819 , 0.47610723, 0.2611465 , 0.09090909])
 
     def plot_fblue(stellar_file, baryonic_file):
         stellar_data = np.load(stellar_file)
