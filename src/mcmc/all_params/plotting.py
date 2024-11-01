@@ -4978,7 +4978,7 @@ class Plotting_Panels():
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fred_cen_emcee_{0}.pdf'.format(quenching), 
             bbox_inches="tight", dpi=1200)
 
-    def plot_red_fraction_sat(self, models, best_fit):
+    def extract_red_fraction_sat(self, models, best_fit):
         """
         Plot red fraction of satellites from best fit param values and param values 
         corresponding to 68th percentile 100 lowest chi^2 values.
@@ -5054,16 +5054,9 @@ class Plotting_Panels():
 
             i_outer+=1
         
-        sat_gals_bf = []
-        sat_halos_bf = []
-        fred_bf = []
-        sat_gals_bf = list(gals_bf_red) + list(gals_bf_blue)
-        sat_halos_bf = list(halos_bf_red) + list(halos_bf_blue)
-        fred_bf = list(fred_bf_red) + list(fred_bf_blue)
 
         df1 = pd.DataFrame(sat_gals_arr)
         df2 = pd.DataFrame(fred_arr)
-        df3 = pd.DataFrame(zip(sat_gals_bf, fred_bf))
         df = pd.concat([df1, df2])
 
         if mf_type == "smf":
@@ -5079,7 +5072,6 @@ class Plotting_Panels():
         elif quenching == "halo":
             df1 = pd.DataFrame(sat_halos_arr)
             df2 = pd.DataFrame(fred_arr)
-            df3 = pd.DataFrame(zip(sat_halos_bf, fred_bf))
             df = pd.concat([df1, df2])
 
             df.to_csv("/Users/asadm2/Desktop/halo_stellar_fred_sat_models_pca.csv")
@@ -5103,26 +5095,25 @@ class Plotting_Panels():
         def nanmedian(arr):
             return np.nanmedian(arr)
 
-        fig, ax = plt.subplots(1, 3, figsize=(24,13.5), sharex=False, sharey=True, 
+        fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=True, 
             gridspec_kw={'wspace':0.0})
 
         # for idx in range(len(hybrid_stellar_median_models_arr)):
         #     ax[0].plot(x_stellar_hybrid, hybrid_stellar_median_models_arr[idx], alpha=0.2, 
         #         c='rebeccapurple', lw=10, solid_capstyle='round')
 
-        # # Plotting again just so that adding label to legend is easier
-        # ax[0].plot(x_stellar_hybrid, hybrid_stellar_median_models_arr[idx], c='rebeccapurple', 
-        #            label='Models', lw=10, solid_capstyle='round')
-
         sat_gals_arr = hybrid_stellar_models_df.iloc[:200,1:].values
         fred_arr = hybrid_stellar_models_df.iloc[200:,1:].values
-        sat_gals_bf = hybrid_stellar_bf_df.iloc[:,1].values
-        fred_bf = hybrid_stellar_bf_df.iloc[:,2].values
 
-        # hybrid_stellar_median_models_arr = []
-        # for idx in range(len(sat_gals_arr)):
-        #     sat_median_model = bs(sat_gals_arr[idx], fred_arr[idx], bins=np.linspace(8.6, 12, 15), statistic=nanmedian)
-        #     hybrid_stellar_median_models_arr.append(sat_median_model[0])
+        for idx in range(len(sat_gals_arr)):
+            sat_median_model = bs(sat_gals_arr[idx], fred_arr[idx], bins=np.linspace(8.6, 12, 15), statistic=nanmedian)
+            ax[0].plot(x_stellar_hybrid, sat_median_model, alpha=0.2, 
+                c='rebeccapurple', lw=10, solid_capstyle='round')
+                
+        # Plotting again just so that adding label to legend is easier
+        ax[0].plot(x_stellar_hybrid, hybrid_stellar_median_models_arr[idx], c='rebeccapurple', 
+                   label='Models', lw=10, solid_capstyle='round')
+
         hybrid_stellar_bf_median = bs(np.ravel(sat_gals_arr), np.ravel(fred_arr), bins=np.linspace(8.6, 12, 15), statistic=nanmedian)
         x_stellar_hybrid = 0.5 * (hybrid_stellar_bf_median[1][1:] + hybrid_stellar_bf_median[1][:-1])
 
