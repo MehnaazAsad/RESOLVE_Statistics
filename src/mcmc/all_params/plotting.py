@@ -5086,58 +5086,22 @@ class Plotting_Panels():
             df3.to_csv("/Users/asadm2/Desktop/halo_stellar_fred_sat_bf_pca.csv")
 
         
+    
+    def plot_red_fraction_sat(self):
+
+        settings = self.settings
+        quenching = settings.quenching
+
         hybrid_stellar_models_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/hybrid_stellar_fred_sat_models_pca.csv") 
-        hybrid_stellar_bf_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/hybrid_stellar_fred_sat_bf_pca.csv") 
 
         baryonic_models_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/baryonic_fred_sat_models_pca.csv") 
-        baryonic_bf_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/baryonic_fred_sat_bf_pca.csv") 
 
-        halo_stellar_models_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/halo_stellar_fred_sat_models_pca.csv") 
-        halo_stellar_bf_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/halo_stellar_fred_sat_bf_pca.csv") 
+        if quenching == "halo":
+            halo_stellar_models_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/halo_stellar_fred_sat_models_pca.csv") 
         
 
         def nanmedian(arr):
             return np.nanmedian(arr)
-
-
-
-        # sat_mean_stats = bs(np.hstack(sat_halos_arr), np.hstack(fred_arr), bins=10)
-        # sat_std_stats = bs(np.hstack(sat_halos_arr), np.hstack(fred_arr), 
-        #     statistic='std', bins=10)
-        # sat_stats_bincens = 0.5 * (sat_mean_stats[1][1:] + sat_mean_stats[1][:-1])
-
-        #* When using bins=10
-        # x_stellar = [ 8.734819 ,  9.003975 ,  9.273129 ,  9.542284 ,  9.8114395,
-        #     10.080593 , 10.349749 , 10.618903 , 10.888058 , 11.157213 ]
-        # stellar_bf_mean = [0.64832755, 0.66529764, 0.69120117, 0.72903512, 0.77603136,
-        #     0.83500419, 0.89571355, 0.94836159, 0.98310526, 0.99732491]
-        # stellar_models_std = [0.0462312 , 0.04248074, 0.03900303, 0.03510415, 0.03070705,
-        #     0.02679532, 0.02100911, 0.01240529, 0.0050619 , 0.00116498]
-
-        # x_baryonic = [ 9.126106,  9.378054,  9.630001,  9.881948, 10.133896, 10.385844,
-        #     10.637792, 10.889739, 11.141686, 11.393634]
-        # baryonic_bf_mean = [0.52098262, 0.55425301, 0.59349114, 0.65561065, 0.73145152,
-        #     0.82674526, 0.91662107, 0.97293731, 0.99589235, 0.99984093]
-        # baryonic_models_std = [0.09414305, 0.08624629, 0.0763314 , 0.06522779, 0.05077027,
-        #     0.03996957, 0.02353461, 0.01034778, 0.0025645 , 0.00015419]
-
-        # #* When specifying bin range 8.6-12 for stellar and 9.0-12 for baryonic
-        # x_stellar = [ 8.788889,  9.166666,  9.544445,  9.922222, 10.299999, 10.677778,
-        #     11.055555, 11.433333, 11.811111]
-        # stellar_bf_mean = [0.65101158, 0.67990708, 0.72933361, 0.79900317, 0.8813311 ,
-        #     0.95284105, 0.99150349, 0.99946155, np.nan]
-        # stellar_models_std = [0.04603505, 0.04185573, 0.03807872, 0.03397289, 0.0298246 ,
-        #     0.01999644, 0.00842211, 0.00149638, 0.        ]
-
-
-        # x_baryonic = [ 9.166666,  9.5     ,  9.833334, 10.166666, 10.5     , 10.833334,
-        #     11.166666, 11.5     , 11.833334]
-        # baryonic_bf_mean = [0.5253415 , 0.57114373, 0.63850572, 0.74087505, 0.86857715,
-        #     0.95880641, 0.9964849 , 0.99993795, np.nan]
-        # baryonic_models_std = [0.09340062, 0.08346824, 0.07023482, 0.05558838, 0.04363577,
-        #     0.02178294, 0.00548515, 0.00043039, 0.        ]
-
-
 
         fig, ax = plt.subplots(1, 3, figsize=(24,13.5), sharex=False, sharey=True, 
             gridspec_kw={'wspace':0.0})
@@ -5226,7 +5190,7 @@ class Plotting_Panels():
         ax[2].plot(x_stellar_halo, halo_stellar_bf_median[0], c='goldenrod', 
                    label='Best-fit', lw=10, solid_capstyle='round')
 
-
+        #* Experiment to find smoothest looking curve
         for bin_i in bin_num:
             y_bf = bs(np.ravel(sat_gals_arr), np.ravel(fred_arr), bins=np.linspace(10, 15, bin_i), statistic=nanmedian)
             x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
