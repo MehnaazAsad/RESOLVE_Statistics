@@ -4763,7 +4763,7 @@ class Plotting_Panels():
 
         plt.show()
 
-    def extract_red_fraction_cen(self, models, best_fit):
+    def extract_red_fraction_cen(self, models):
         """
         Plot red fraction of centrals from best fit param values and param values 
         corresponding to 68th percentile 100 lowest chi^2 values.
@@ -4978,7 +4978,7 @@ class Plotting_Panels():
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fred_cen_emcee_{0}.pdf'.format(quenching), 
             bbox_inches="tight", dpi=1200)
 
-    def extract_red_fraction_sat(self, models, best_fit):
+    def extract_red_fraction_sat(self, models):
         """
         Plot red fraction of satellites from best fit param values and param values 
         corresponding to 68th percentile 100 lowest chi^2 values.
@@ -5064,43 +5064,28 @@ class Plotting_Panels():
             df = pd.concat([df1, df2])
 
             df.to_csv("/Users/asadm2/Desktop/halo_stellar_fred_sat_models_pca.csv")
-
         
-    
     def plot_red_fraction_sat(self):
 
         settings = self.settings
         quenching = settings.quenching
+        mf_type = settings.mf_type
 
         hybrid_stellar_models_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/hybrid_stellar_fred_sat_models_pca.csv") 
-
         baryonic_models_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/baryonic_fred_sat_models_pca.csv") 
 
-        if quenching == "halo":
-            halo_stellar_models_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/halo_stellar_fred_sat_models_pca.csv") 
-        
-
-        def nanmedian(arr):
-            return np.nanmedian(arr)
+        #* HALO MODEL
+        # halo_stellar_models_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/halo_stellar_fred_sat_models_pca.csv") 
 
         fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=True, 
             gridspec_kw={'wspace':0.0})
 
-        # for idx in range(len(hybrid_stellar_median_models_arr)):
-        #     ax[0].plot(x_stellar_hybrid, hybrid_stellar_median_models_arr[idx], alpha=0.2, 
-        #         c='rebeccapurple', lw=10, solid_capstyle='round')
+        def nanmedian(arr):
+            return np.nanmedian(arr)
 
+        #* STELLAR MODEL
         sat_gals_arr = hybrid_stellar_models_df.iloc[:200,1:].values
         fred_arr = hybrid_stellar_models_df.iloc[200:,1:].values
-
-        for idx in range(len(sat_gals_arr)):
-            sat_median_model = bs(sat_gals_arr[idx], fred_arr[idx], bins=np.linspace(8.6, 12, 15), statistic=nanmedian)
-            ax[0].plot(x_stellar_hybrid, sat_median_model, alpha=0.2, 
-                c='rebeccapurple', lw=10, solid_capstyle='round')
-                
-        # Plotting again just so that adding label to legend is easier
-        ax[0].plot(x_stellar_hybrid, hybrid_stellar_median_models_arr[idx], c='rebeccapurple', 
-                   label='Models', lw=10, solid_capstyle='round')
 
         hybrid_stellar_bf_median = bs(np.ravel(sat_gals_arr), np.ravel(fred_arr), bins=np.linspace(8.6, 12, 15), statistic=nanmedian)
         x_stellar_hybrid = 0.5 * (hybrid_stellar_bf_median[1][1:] + hybrid_stellar_bf_median[1][:-1])
@@ -5108,83 +5093,85 @@ class Plotting_Panels():
         ax[0].plot(x_stellar_hybrid, hybrid_stellar_bf_median[0], c='goldenrod', 
                    label='Best-fit', lw=10, solid_capstyle='round')
 
-        #* Experiment to find smoothest looking curve
-        bin_num = np.arange(15, 65, 5)
-        for bin_i in bin_num:
-            y_bf = bs(np.ravel(sat_gals_arr), np.ravel(fred_arr), bins=np.linspace(8.6, 12, bin_i), statistic=nanmedian)
-            x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
+        for idx in range(len(sat_gals_arr)):
+            sat_median_model = bs(sat_gals_arr[idx], fred_arr[idx], bins=np.linspace(8.6, 12, 15), statistic=nanmedian)
+            ax[0].plot(x_stellar_hybrid, sat_median_model[0], alpha=0.2, 
+                c='rebeccapurple', lw=10, solid_capstyle='round', zorder=-10)
+                
+        # Plotting last sat median model again just so that adding label to 
+        # legend is easier and zorder so that best fit is plotted above models
+        ax[0].plot(x_stellar_hybrid, sat_median_model[0], c='rebeccapurple', 
+                   label='Models', lw=10, solid_capstyle='round', zorder=-10)
 
-            ax[0].plot(x_bf, y_bf[0], c='grey', lw=10, solid_capstyle='round')
 
-        # for idx in range(len(baryonic_median_models_arr)):
-        #     ax[1].plot(x_baryonic, baryonic_median_models_arr[idx], alpha=0.2, 
-        #         c='rebeccapurple', lw=10, solid_capstyle='round')
+        # #* Experiment to find smoothest looking curve
+        # bin_num = np.arange(15, 65, 5)
+        # for bin_i in bin_num:
+        #     y_bf = bs(np.ravel(sat_gals_arr), np.ravel(fred_arr), bins=np.linspace(8.6, 12, bin_i), statistic=nanmedian)
+        #     x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
+        #     ax[0].plot(x_bf, y_bf[0], c='grey', lw=10, solid_capstyle='round')
 
-        # # Plotting again just so that adding label to legend is easier
-        # ax[1].plot(x_baryonic, baryonic_median_models_arr[idx], c='rebeccapurple', 
-        #     label='Models', lw=10, solid_capstyle='round')
 
+        #* BARYONIC MODEL
         sat_gals_arr = baryonic_models_df.iloc[:200,1:].values
         fred_arr = baryonic_models_df.iloc[200:,1:].values
-        sat_gals_bf = baryonic_bf_df.iloc[:,1].values
-        fred_bf = baryonic_bf_df.iloc[:,2].values
 
-        # baryonic_median_models_arr = []
-        # for idx in range(len(sat_gals_arr)):
-        #     sat_median_model = bs(sat_gals_arr[idx], fred_arr[idx], bins=np.linspace(9.0, 12, 15), statistic=nanmedian)
-        #     baryonic_median_models_arr.append(sat_median_model[0])
         baryonic_bf_median = bs(np.ravel(sat_gals_arr), np.ravel(fred_arr), bins=np.linspace(9.0, 12, 15), statistic=nanmedian)
         x_baryonic = 0.5 * (baryonic_bf_median[1][1:] + baryonic_bf_median[1][:-1])
 
         ax[1].plot(x_baryonic, baryonic_bf_median[0], c='goldenrod', 
             label='Best-fit', lw=10, solid_capstyle='round')
 
-        #* Experiment to find smoothest looking curve
-        for bin_i in bin_num:
-            y_bf = bs(np.ravel(sat_gals_arr), np.ravel(fred_arr), bins=np.linspace(9.0, 12, bin_i), statistic=nanmedian)
-            x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
+        for idx in range(len(sat_gals_arr)):
+            sat_median_model = bs(sat_gals_arr[idx], fred_arr[idx], bins=np.linspace(9.0, 12, 15), statistic=nanmedian)
+            ax[1].plot(x_baryonic, sat_median_model[0], alpha=0.2, 
+                c='rebeccapurple', lw=10, solid_capstyle='round', zorder=-10)
 
-            ax[1].plot(x_bf, y_bf[0], c='grey', lw=10, solid_capstyle='round')
+        # Plotting again just so that adding label to legend is easier
+        ax[1].plot(x_baryonic, sat_median_model[0], c='rebeccapurple', 
+            label='Models', lw=10, solid_capstyle='round', zorder=-10)
 
-        # for idx in range(len(halo_stellar_median_models_arr)):
-        #     ax[2].plot(x_stellar_halo, halo_stellar_median_models_arr[idx], alpha=0.2, 
-        #         c='rebeccapurple', lw=10, solid_capstyle='round')
+        # #* Experiment to find smoothest looking curve
+        # for bin_i in bin_num:
+        #     y_bf = bs(np.ravel(sat_gals_arr), np.ravel(fred_arr), bins=np.linspace(9.0, 12, bin_i), statistic=nanmedian)
+        #     x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
+        #     ax[1].plot(x_bf, y_bf[0], c='grey', lw=10, solid_capstyle='round')
 
-        # # Plotting again just so that adding label to legend is easier
-        # ax[2].plot(x_stellar_halo, halo_stellar_median_models_arr[idx], c='rebeccapurple', 
-        #            label='Models', lw=10, solid_capstyle='round')
+        
+        #* HALO MODEL
+        # sat_gals_arr = halo_stellar_models_df.iloc[:200,1:].values
+        # fred_arr = halo_stellar_models_df.iloc[200:,1:].values
 
-        sat_gals_arr = halo_stellar_models_df.iloc[:200,1:].values
-        fred_arr = halo_stellar_models_df.iloc[200:,1:].values
-        sat_gals_bf = halo_stellar_bf_df.iloc[:,1].values
-        fred_bf = halo_stellar_bf_df.iloc[:,2].values
+        # halo_stellar_bf_median = bs(np.ravel(sat_gals_arr), np.ravel(fred_arr), bins=np.linspace(10, 15, 15), statistic=nanmedian)
+        # x_stellar_halo = 0.5 * (halo_stellar_bf_median[1][1:] + halo_stellar_bf_median[1][:-1])
 
-        # halo_stellar_median_models_arr = []
+        # ax[2].plot(x_stellar_halo, halo_stellar_bf_median[0], c='goldenrod', 
+        #            label='Best-fit', lw=10, solid_capstyle='round')
+
         # for idx in range(len(sat_gals_arr)):
         #     sat_median_model = bs(sat_gals_arr[idx], fred_arr[idx], bins=np.linspace(10, 15, 15), statistic=nanmedian)
-        #     halo_stellar_median_models_arr.append(sat_median_model[0])
-        halo_stellar_bf_median = bs(np.ravel(sat_gals_arr), np.ravel(fred_arr), bins=np.linspace(10, 15, 15), statistic=nanmedian)
-        x_stellar_halo = 0.5 * (halo_stellar_bf_median[1][1:] + halo_stellar_bf_median[1][:-1])
+        #     ax[2].plot(x_stellar_halo, sat_median_model[0], alpha=0.2, 
+        #         c='rebeccapurple', lw=10, solid_capstyle='round', zorder=-10)
 
-        ax[2].plot(x_stellar_halo, halo_stellar_bf_median[0], c='goldenrod', 
-                   label='Best-fit', lw=10, solid_capstyle='round')
+        # # Plotting again just so that adding label to legend is easier
+        # ax[2].plot(x_stellar_halo, sat_median_model[0], c='rebeccapurple', 
+        #            label='Models', lw=10, solid_capstyle='round', zorder=-10)
 
-        #* Experiment to find smoothest looking curve
-        for bin_i in bin_num:
-            y_bf = bs(np.ravel(sat_gals_arr), np.ravel(fred_arr), bins=np.linspace(10, 15, bin_i), statistic=nanmedian)
-            x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
-
-            ax[2].plot(x_bf, y_bf[0], c='grey', lw=10, solid_capstyle='round')
+        # #* Experiment to find smoothest looking curve
+        # for bin_i in bin_num:
+        #     y_bf = bs(np.ravel(sat_gals_arr), np.ravel(fred_arr), bins=np.linspace(10, 15, bin_i), statistic=nanmedian)
+        #     x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
+        #     ax[2].plot(x_bf, y_bf[0], c='grey', lw=10, solid_capstyle='round')
 
         ax[0].set_xlabel(r'\boldmath$\log M_{*, sat} \left[\mathrm{M_\odot}\,'\
                     r' \mathrm{h}^{-2} \right]$', labelpad=10, fontsize=40)
         ax[1].set_xlabel(r'\boldmath$\log M_{b, sat} \left[\mathrm{M_\odot}\,'\
                     r' \mathrm{h}^{-2} \right]$', labelpad=10, fontsize=40)
 
-        ax[2].set_xlabel(r'\boldmath$\log M_{h, host} \left[\mathrm{M_\odot}\,'\
-                    r' \mathrm{h}^{-1} \right]$', labelpad=10, fontsize=40)
+        # ax[2].set_xlabel(r'\boldmath$\log M_{h, host} \left[\mathrm{M_\odot}\,'\
+        #             r' \mathrm{h}^{-1} \right]$', labelpad=10, fontsize=40)
 
-        if settings.mf_type == 'smf':
+        if mf_type == 'smf':
             antonio_data = pd.read_csv(settings.path_to_proc + 
                 "../external/fquench_stellar/fqlogTSM_sat_DS_TNG_Salim_z0.csv", 
                 index_col=0, skiprows=1, 
@@ -5199,21 +5186,18 @@ class Plotting_Panels():
 
 
         ax[0].set_ylabel(r'\boldmath$f_{red, sat}$', labelpad=20, fontsize=40)
-        # ax[1].set_ylabel(r'\boldmath$f_{red, sat}$', labelpad=20, fontsize=30)
 
         sat = AnchoredText("Stellar",
             prop=dict(size=30), frameon=False, loc='upper left')
-        # at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
         ax[0].add_artist(sat)
 
         bat = AnchoredText("Baryonic",
             prop=dict(size=30), frameon=False, loc='upper left')
         ax[1].add_artist(bat)
 
-        sat = AnchoredText("Halo",
-            prop=dict(size=30), frameon=False, loc='upper left')
-        # at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
-        ax[2].add_artist(sat)
+        # sat = AnchoredText("Halo",
+        #     prop=dict(size=30), frameon=False, loc='upper left')
+        # ax[2].add_artist(sat)
 
         ax[0].legend(loc='lower right', prop={'size':30})
 
