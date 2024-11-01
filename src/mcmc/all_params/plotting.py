@@ -4769,7 +4769,7 @@ class Plotting_Panels():
 
         plt.show()
 
-    def plot_red_fraction_cen(self, models, best_fit):
+    def extract_red_fraction_cen(self, models, best_fit):
         """
         Plot red fraction of centrals from best fit param values and param values 
         corresponding to 68th percentile 100 lowest chi^2 values.
@@ -4802,17 +4802,8 @@ class Plotting_Panels():
         Plot displayed on screen.
         """   
         settings = self.settings
-        preprocess = self.preprocess
         quenching = settings.quenching
-
-        halos_bf_red = best_fit[0]['centrals']['halos_red'][0]
-        gals_bf_red = best_fit[0]['centrals']['gals_red'][0]
-
-        halos_bf_blue = best_fit[0]['centrals']['halos_blue'][0]
-        gals_bf_blue = best_fit[0]['centrals']['gals_blue'][0]
-
-        fred_bf_red = best_fit[0]['f_red']['cen_red'][0]
-        fred_bf_blue = best_fit[0]['f_red']['cen_blue'][0]
+        mf_type = settings.mf_type
 
         cen_gals_arr = []
         cen_halos_arr = []
@@ -4844,180 +4835,126 @@ class Plotting_Panels():
                 fred_idx_arr = []
 
             i_outer+=1
-        
-        cen_gals_bf = []
-        cen_halos_bf = []
-        fred_bf = []
-
-        cen_gals_bf = list(gals_bf_red) + list(gals_bf_blue)
-        cen_halos_bf = list(halos_bf_red) + list(halos_bf_blue)
-        fred_bf = list(fred_bf_red) + list(fred_bf_blue)
-
 
         df1 = pd.DataFrame(cen_gals_arr)
         df2 = pd.DataFrame(fred_arr)
-        df3 = pd.DataFrame(zip(cen_gals_bf, fred_bf))
         df = pd.concat([df1, df2])
 
-        # df.to_csv("/Users/asadm2/Desktop/hybrid_stellar_fred_cen_models_pca.csv")
-        # df3.to_csv("/Users/asadm2/Desktop/hybrid_stellar_fred_cen_bf_pca.csv")
+        if mf_type == "smf":
+            df.to_csv("hybrid_stellar_fred_cen_models_pca.csv")
 
+        elif mf_type == "bmf":
+            df.to_csv("baryonic_fred_cen_models_pca.csv")
 
-        # df.to_csv("/Users/asadm2/Desktop/baryonic_fred_cen_models_pca.csv")
-        # df3.to_csv("/Users/asadm2/Desktop/baryonic_fred_cen_bf_pca.csv")
+        elif quenching == "halo":
+            df1 = pd.DataFrame(cen_halos_arr)
+            df2 = pd.DataFrame(fred_arr)
+            df = pd.concat([df1, df2])
 
-        
-        hybrid_stellar_models_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/hybrid_stellar_fred_cen_models_pca.csv") 
-        hybrid_stellar_bf_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/hybrid_stellar_fred_cen_bf_pca.csv") 
+            df.to_csv("halo_stellar_fred_cen_models_pca.csv")
 
-        baryonic_models_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/baryonic_fred_cen_models_pca.csv") 
-        baryonic_bf_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/baryonic_fred_cen_bf_pca.csv") 
+        def plot_red_fraction_cen(self):
+            
+            hybrid_stellar_models_df = pd.read_csv("hybrid_stellar_fred_cen_models_pca.csv") 
+            hybrid_baryonic_models_df = pd.read_csv("baryonic_fred_cen_models_pca.csv") 
 
-        df1 = pd.DataFrame(cen_halos_arr)
-        df2 = pd.DataFrame(fred_arr)
-        df3 = pd.DataFrame(zip(cen_halos_bf, fred_bf))
-        df = pd.concat([df1, df2])
+            #* halo model
+            # halo_stellar_models_df = pd.read_csv("halo_stellar_fred_cen_models_pca.csv") 
+            # halo_stellar_bf_df = pd.read_csv("halo_stellar_fred_cen_bf_pca.csv") 
 
-        df.to_csv("/Users/asadm2/Desktop/halo_stellar_fred_cen_models_pca.csv")
-        df3.to_csv("/Users/asadm2/Desktop/halo_stellar_fred_cen_bf_pca.csv")
+            bin_num = np.arange(15, 65, 5)
+            
+            fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=True, 
+                gridspec_kw={'wspace':0.0})
 
-        halo_stellar_models_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/halo_stellar_fred_cen_models_pca.csv") 
-        halo_stellar_bf_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/halo_stellar_fred_cen_bf_pca.csv") 
-
-
-        def nanmedian(arr):
-            return np.nanmedian(arr)
-
-        bin_num = np.arange(15, 65, 5)
-        
-        fig, ax = plt.subplots(1, 3, figsize=(24,13.5), sharex=False, sharey=True, 
-            gridspec_kw={'wspace':0.0})
-
-        cen_gals_arr = hybrid_stellar_models_df.iloc[:200,1:].values
-        fred_arr = hybrid_stellar_models_df.iloc[200:,1:].values
-        cen_gals_bf = hybrid_stellar_bf_df.iloc[:,1].values
-        fred_bf = hybrid_stellar_bf_df.iloc[:,2].values
-
-        # stellar_median_models_arr = []
-        # for idx in range(len(cen_gals_arr)):
-        #     cen_median_model = bs(cen_gals_arr[idx], fred_arr[idx], 
-        #                         bins=np.linspace(8.6, 12, 15), statistic=nanmedian)
-        #     stellar_median_models_arr.append(cen_median_model[0])
-        #* Median of 200 models
-        y_bf = bs(np.ravel(cen_gals_arr), np.ravel(fred_arr), bins=np.linspace(8.6, 12, 15), statistic=nanmedian)
-        x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
-
-        # for idx in range(len(cen_gals_arr)):
-        #     x, y = zip(*sorted(zip(cen_gals_arr[idx],fred_arr[idx])))
-        #     ax[0].plot(x, y, alpha=0.2, c='rebeccapurple', lw=10, solid_capstyle='round')
-
-        # x, y = zip(*sorted(zip(cen_gals_arr[0],fred_arr[0])))
-        # # x_bf, y_bf = zip(*sorted(zip(cen_gals_bf,fred_bf)))
-        # # Plotting again just so that adding label to legend is easier
-        # ax[0].plot(x, y, c='rebeccapurple', label='Models', lw=10, solid_capstyle='round')
-        ax[0].plot(x_bf, y_bf[0], c='goldenrod', label='Best-fit', lw=10, solid_capstyle='round')
-        for bin_i in bin_num:
-            y_bf = bs(np.ravel(cen_gals_arr), np.ravel(fred_arr), bins=np.linspace(8.6, 12, bin_i), statistic=nanmedian)
+            cen_gals_arr = hybrid_stellar_models_df.iloc[:200,1:].values
+            fred_arr = hybrid_stellar_models_df.iloc[200:,1:].values
+            
+            def nanmedian(arr):
+                return np.nanmedian(arr)
+            
+            #* Median of 200 models
+            y_bf = bs(np.ravel(cen_gals_arr), np.ravel(fred_arr), bins=np.linspace(8.6, 12, 15), statistic=nanmedian)
             x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
 
-            ax[0].plot(x_bf, y_bf[0], c='grey', lw=10, solid_capstyle='round')
+            ax[0].plot(x_bf, y_bf[0], c='goldenrod', label='Best-fit', lw=10, solid_capstyle='round')
+            for bin_i in bin_num:
+                y_bf = bs(np.ravel(cen_gals_arr), np.ravel(fred_arr), bins=np.linspace(8.6, 12, bin_i), statistic=nanmedian)
+                x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
 
-        ax[0].set_xlabel(r'\boldmath$\log M_{*, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',labelpad=10, fontsize=40)
-        ax[0].set_ylabel(r'\boldmath$f_{red, cen}$', labelpad=20, fontsize=40)
+                ax[0].plot(x_bf, y_bf[0], c='grey', lw=10, solid_capstyle='round')
 
-        cen_gals_arr = baryonic_models_df.iloc[:200,1:].values
-        fred_arr = baryonic_models_df.iloc[200:,1:].values
-        cen_gals_bf = baryonic_bf_df.iloc[:,1].values
-        fred_bf = baryonic_bf_df.iloc[:,2].values
+            ax[0].set_xlabel(r'\boldmath$\log M_{*, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',labelpad=10, fontsize=40)
+            ax[0].set_ylabel(r'\boldmath$f_{red, cen}$', labelpad=20, fontsize=40)
 
-        #* Median of 200 models
-        y_bf = bs(np.ravel(cen_gals_arr), np.ravel(fred_arr), bins=np.linspace(9.0, 12, 15), statistic=nanmedian)
-        x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
+            cen_gals_arr = hybrid_baryonic_models_df.iloc[:200,1:].values
+            fred_arr = hybrid_baryonic_models_df.iloc[200:,1:].values
 
-
-        # for idx in range(len(cen_gals_arr)):
-        #     x, y = zip(*sorted(zip(cen_gals_arr[idx],fred_arr[idx])))
-        #     ax[1].plot(x, y, alpha=0.2, c='rebeccapurple', lw=10, solid_capstyle='round')
-
-        # x, y = zip(*sorted(zip(cen_gals_arr[0],fred_arr[0])))
-        # # x_bf, y_bf = zip(*sorted(zip(cen_gals_bf,fred_bf)))
-        # # Plotting again just so that adding label to legend is easier
-        # ax[1].plot(x, y, c='rebeccapurple', label='Models', lw=10, solid_capstyle='round')
-        ax[1].plot(x_bf, y_bf[0], c='goldenrod', label='Best-fit', lw=10, solid_capstyle='round')
-        for bin_i in bin_num:
-            y_bf = bs(np.ravel(cen_gals_arr), np.ravel(fred_arr), bins=np.linspace(9.0, 12, bin_i), statistic=nanmedian)
+            #* Median of 200 models
+            y_bf = bs(np.ravel(cen_gals_arr), np.ravel(fred_arr), bins=np.linspace(9.0, 12, 15), statistic=nanmedian)
             x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
 
-            ax[1].plot(x_bf, y_bf[0], c='grey', lw=10, solid_capstyle='round')
+            ax[1].plot(x_bf, y_bf[0], c='goldenrod', label='Best-fit', lw=10, solid_capstyle='round')
+            for bin_i in bin_num:
+                y_bf = bs(np.ravel(cen_gals_arr), np.ravel(fred_arr), bins=np.linspace(9.0, 12, bin_i), statistic=nanmedian)
+                x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
 
-        ax[1].set_xlabel(r'\boldmath$\log M_{b, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',labelpad=10, fontsize=40)
+                ax[1].plot(x_bf, y_bf[0], c='grey', lw=10, solid_capstyle='round')
 
-        cen_gals_arr = halo_stellar_models_df.iloc[:200,1:].values
-        fred_arr = halo_stellar_models_df.iloc[200:,1:].values
-        cen_gals_bf = halo_stellar_bf_df.iloc[:,1].values
-        fred_bf = halo_stellar_bf_df.iloc[:,2].values
+            ax[1].set_xlabel(r'\boldmath$\log M_{b, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',labelpad=10, fontsize=40)
 
-        # stellar_median_models_arr = []
-        # for idx in range(len(cen_gals_arr)):
-        #     cen_median_model = bs(cen_gals_arr[idx], fred_arr[idx], 
-        #                         bins=np.linspace(8.6, 12, 15), statistic=nanmedian)
-        #     stellar_median_models_arr.append(cen_median_model[0])
-        #* Median of 200 models
-        y_bf = bs(np.ravel(cen_gals_arr), np.ravel(fred_arr), bins=np.linspace(10, 15, 15), statistic=nanmedian)
-        x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
+            #* halo model
+            # cen_gals_arr = halo_stellar_models_df.iloc[:200,1:].values
+            # fred_arr = halo_stellar_models_df.iloc[200:,1:].values
+            # cen_gals_bf = halo_stellar_bf_df.iloc[:,1].values
+            # fred_bf = halo_stellar_bf_df.iloc[:,2].values
 
-        # for idx in range(len(cen_gals_arr)):
-        #     x, y = zip(*sorted(zip(cen_gals_arr[idx],fred_arr[idx])))
-        #     ax[2].plot(x, y, alpha=0.2, c='rebeccapurple', lw=10, solid_capstyle='round')
+            # #* Median of 200 models
+            # y_bf = bs(np.ravel(cen_gals_arr), np.ravel(fred_arr), bins=np.linspace(10, 15, 15), statistic=nanmedian)
+            # x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
 
-        # x, y = zip(*sorted(zip(cen_gals_arr[0],fred_arr[0])))
-        # # x_bf, y_bf = zip(*sorted(zip(cen_gals_bf,fred_bf)))
-        # # Plotting again just so that adding label to legend is easier
-        # ax[2].plot(x, y, c='rebeccapurple', label='Models', lw=10, solid_capstyle='round')
-        ax[2].plot(x_bf, y_bf[0], c='goldenrod', label='Best-fit', lw=10, solid_capstyle='round')
-        for bin_i in bin_num:
-            y_bf = bs(np.ravel(cen_gals_arr), np.ravel(fred_arr), bins=np.linspace(10, 15, bin_i), statistic=nanmedian)
-            x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
+            # ax[2].plot(x_bf, y_bf[0], c='goldenrod', label='Best-fit', lw=10, solid_capstyle='round')
+            # for bin_i in bin_num:
+            #     y_bf = bs(np.ravel(cen_gals_arr), np.ravel(fred_arr), bins=np.linspace(10, 15, bin_i), statistic=nanmedian)
+            #     x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
 
-            ax[2].plot(x_bf, y_bf[0], c='grey', lw=10, solid_capstyle='round')
+            #     ax[2].plot(x_bf, y_bf[0], c='grey', lw=10, solid_capstyle='round')
 
-        ax[2].set_xlabel(r'\boldmath$\log M_{h, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',labelpad=10, fontsize=40)
-        ax[2].set_ylabel(r'\boldmath$f_{red, cen}$', labelpad=20, fontsize=40)
+            # ax[2].set_xlabel(r'\boldmath$\log M_{h, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',labelpad=10, fontsize=40)
+            # ax[2].set_ylabel(r'\boldmath$f_{red, cen}$', labelpad=20, fontsize=40)
 
-        if settings.mf_type == 'smf':
-            antonio_data = pd.read_csv(settings.path_to_proc + \
-                "../external/fquench_stellar/fqlogTSM_cen_DS_TNG_Salim_z0.csv", 
-                index_col=0, skiprows=1, 
-                names=['fred_ds','logmstar','fred_tng','fred_salim'])
-            ax[0].plot(antonio_data.logmstar.values, 
-                antonio_data.fred_ds.values, lw=5, c='#C71585', ls='dashed', 
-                label='Dark Sage')
-            ax[0].plot(antonio_data.logmstar.values, 
-                antonio_data.fred_salim.values, lw=5, c='#FF6347', ls='dotted', 
-                label='Salim+18')
-            ax[0].plot(antonio_data.logmstar.values, 
-                antonio_data.fred_tng.values, lw=5, c='#228B22', ls='dashdot', 
-                label='TNG')
+            if settings.mf_type == 'smf':
+                antonio_data = pd.read_csv(settings.path_to_proc + \
+                    "../external/fquench_stellar/fqlogTSM_cen_DS_TNG_Salim_z0.csv", 
+                    index_col=0, skiprows=1, 
+                    names=['fred_ds','logmstar','fred_tng','fred_salim'])
+                ax[0].plot(antonio_data.logmstar.values, 
+                    antonio_data.fred_ds.values, lw=5, c='#C71585', ls='dashed', 
+                    label='Dark Sage')
+                ax[0].plot(antonio_data.logmstar.values, 
+                    antonio_data.fred_salim.values, lw=5, c='#FF6347', ls='dotted', 
+                    label='Salim+18')
+                ax[0].plot(antonio_data.logmstar.values, 
+                    antonio_data.fred_tng.values, lw=5, c='#228B22', ls='dashdot', 
+                    label='TNG')
 
-        sat = AnchoredText("Stellar",
-                        prop=dict(size=30), frameon=False, loc='upper left')
-        # at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
-        ax[0].add_artist(sat)
+            sat = AnchoredText("Stellar",
+                            prop=dict(size=30), frameon=False, loc='upper left')
+            ax[0].add_artist(sat)
 
-        bat = AnchoredText("Baryonic",
-                        prop=dict(size=30), frameon=False, loc='upper left')
-        ax[1].add_artist(bat)
+            bat = AnchoredText("Baryonic",
+                            prop=dict(size=30), frameon=False, loc='upper left')
+            ax[1].add_artist(bat)
 
-        sat = AnchoredText("Halo",
-                        prop=dict(size=30), frameon=False, loc='upper left')
-        # at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
-        ax[2].add_artist(sat)
+            # sat = AnchoredText("Halo",
+            #                 prop=dict(size=30), frameon=False, loc='upper left')
+            # ax[2].add_artist(sat)
 
-        ax[0].legend(loc='lower right', prop={'size':30})
-        plt.show()
+            ax[0].legend(loc='lower right', prop={'size':30})
+            plt.show()
 
-        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fred_cen_emcee_{0}.pdf'.format(quenching), 
-            bbox_inches="tight", dpi=1200)
+            plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fred_cen_emcee_{0}.pdf'.format(quenching), 
+                bbox_inches="tight", dpi=1200)
 
     def plot_red_fraction_sat(self, models, best_fit):
         """
