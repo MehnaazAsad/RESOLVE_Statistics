@@ -3642,12 +3642,6 @@ class Plotting_Panels():
         fblue_data = data[1]
         error = data[8]
 
-        #* Best-fit is now median of 200 models
-        # x_fblue_total_bf, y_fblue_total_bf = best_fit[0]['f_blue']['max_fblue'],\
-        #     best_fit[0]['f_blue']['fblue_total']
-        # y_fblue_cen_bf = best_fit[0]['f_blue']['fblue_cen']
-        # y_fblue_sat_bf = best_fit[0]['f_blue']['fblue_sat']
-
         i_outer = 0
         total_mod_arr = []
         cen_mod_arr = []
