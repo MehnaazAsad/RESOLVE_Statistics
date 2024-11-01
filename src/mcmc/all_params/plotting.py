@@ -4877,14 +4877,14 @@ class Plotting_Panels():
         #* Median of 200 models
         y_bf = bs(np.ravel(cen_gals_arr), np.ravel(fred_arr), bins=np.linspace(8.6, 12, 15), statistic=nanmedian)
         x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
+        
+        ax[0].plot(x_bf, y_bf[0], c='goldenrod', label='Best-fit', lw=10, solid_capstyle='round')
 
         for idx in range(len(cen_gals_arr)):
             cen_median_model = bs(cen_gals_arr[idx], fred_arr[idx], 
                                 bins=np.linspace(8.6, 12, 15), statistic=nanmedian)
-            ax[0].plot(x_bf, cen_median_model[0], alpha=0.2, c='rebeccapurple', lw=10, solid_capstyle='round')
+            ax[0].plot(x_bf, cen_median_model[0], alpha=0.2, c='rebeccapurple', lw=10, solid_capstyle='round', zorder=-10)
 
-        ax[0].plot(x_bf, y_bf[0], c='goldenrod', label='Best-fit', lw=10, solid_capstyle='round')
-        
         #* experiment to see how many bins are needed for the smoothest looking curve
         # bin_num = np.arange(15, 65, 5)
         # for bin_i in bin_num:
@@ -4904,6 +4904,13 @@ class Plotting_Panels():
         #* Median of 200 models
         y_bf = bs(np.ravel(cen_gals_arr), np.ravel(fred_arr), bins=np.linspace(9.0, 12, 15), statistic=nanmedian)
         x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
+
+        for idx in range(len(cen_gals_arr)):
+            cen_median_model = bs(cen_gals_arr[idx], fred_arr[idx], 
+                                bins=np.linspace(9.0, 12, 15), statistic=nanmedian)
+            ax[1].plot(x_bf, cen_median_model[0], alpha=0.2, c='rebeccapurple', lw=10, solid_capstyle='round')
+
+        ax[1].plot(x_bf, y_bf[0], c='goldenrod', label='Best-fit', lw=10, solid_capstyle='round')
 
         #* experiment to see how many bins are needed for the smoothest looking curve
         # ax[1].plot(x_bf, y_bf[0], c='goldenrod', label='Best-fit', lw=10, solid_capstyle='round')
@@ -4963,6 +4970,15 @@ class Plotting_Panels():
         # ax[2].add_artist(sat)
 
         ax[0].legend(loc='lower right', prop={'size':30})
+
+        # Set explicit limits for first subplot to avoid overlap
+        ax[0].set_xlim(8.6, 12)
+        ax[0].set_xticks(np.linspace(8.6, 11.8, 5)) 
+
+        # Set explicit limits for second subplot to avid overlap
+        ax[1].set_xlim(9.0, 12)
+        ax[1].set_xticks(np.linspace(9.2, 12, 5))  
+
         plt.show()
 
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fred_cen_emcee_{0}.pdf'.format(quenching), 
@@ -5127,7 +5143,7 @@ class Plotting_Panels():
         # baryonic_models_std = [0.09340062, 0.08346824, 0.07023482, 0.05558838, 0.04363577,
         #     0.02178294, 0.00548515, 0.00043039, 0.        ]
 
-        bin_num = np.arange(15, 65, 5)
+
 
         fig, ax = plt.subplots(1, 3, figsize=(24,13.5), sharex=False, sharey=True, 
             gridspec_kw={'wspace':0.0})
@@ -5155,12 +5171,14 @@ class Plotting_Panels():
         ax[0].plot(x_stellar_hybrid, hybrid_stellar_bf_median[0], c='goldenrod', 
                    label='Best-fit', lw=10, solid_capstyle='round')
 
+        #* Experiment to find smoothest looking curve
+        bin_num = np.arange(15, 65, 5)
         for bin_i in bin_num:
             y_bf = bs(np.ravel(sat_gals_arr), np.ravel(fred_arr), bins=np.linspace(8.6, 12, bin_i), statistic=nanmedian)
             x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
 
             ax[0].plot(x_bf, y_bf[0], c='grey', lw=10, solid_capstyle='round')
-        plt.show()
+
         # for idx in range(len(baryonic_median_models_arr)):
         #     ax[1].plot(x_baryonic, baryonic_median_models_arr[idx], alpha=0.2, 
         #         c='rebeccapurple', lw=10, solid_capstyle='round')
@@ -5184,6 +5202,7 @@ class Plotting_Panels():
         ax[1].plot(x_baryonic, baryonic_bf_median[0], c='goldenrod', 
             label='Best-fit', lw=10, solid_capstyle='round')
 
+        #* Experiment to find smoothest looking curve
         for bin_i in bin_num:
             y_bf = bs(np.ravel(sat_gals_arr), np.ravel(fred_arr), bins=np.linspace(9.0, 12, bin_i), statistic=nanmedian)
             x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
@@ -5261,6 +5280,7 @@ class Plotting_Panels():
 
         ax[0].legend(loc='lower right', prop={'size':30})
 
+        plt.tight_layout()
         plt.show()
 
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fred_sat_emcee_{0}.pdf'.format(quenching), 
