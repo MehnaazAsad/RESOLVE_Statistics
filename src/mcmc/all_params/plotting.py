@@ -5014,15 +5014,6 @@ class Plotting_Panels():
         quenching = settings.quenching
         mf_type = settings.mf_type
 
-        halos_bf_red = best_fit[0]['satellites']['halos_red'][0]
-        gals_bf_red = best_fit[0]['satellites']['gals_red'][0]
-
-        halos_bf_blue = best_fit[0]['satellites']['halos_blue'][0]
-        gals_bf_blue = best_fit[0]['satellites']['gals_blue'][0]
-
-        fred_bf_red = best_fit[0]['f_red']['sat_red'][0]
-        fred_bf_blue = best_fit[0]['f_red']['sat_blue'][0]
-
         sat_gals_arr = []
         sat_halos_arr = []
         fred_arr = []
@@ -5062,12 +5053,10 @@ class Plotting_Panels():
         if mf_type == "smf":
 
             df.to_csv("hybrid_stellar_fred_sat_models_pca.csv")
-            df3.to_csv("hybrid_stellar_fred_sat_bf_pca.csv")
 
         elif mf_type == "bmf":
 
             df.to_csv("/Users/asadm2/Desktop/baryonic_fred_sat_models_pca.csv")
-            df3.to_csv("/Users/asadm2/Desktop/baryonic_fred_sat_bf_pca.csv")
 
         elif quenching == "halo":
             df1 = pd.DataFrame(sat_halos_arr)
@@ -5075,7 +5064,6 @@ class Plotting_Panels():
             df = pd.concat([df1, df2])
 
             df.to_csv("/Users/asadm2/Desktop/halo_stellar_fred_sat_models_pca.csv")
-            df3.to_csv("/Users/asadm2/Desktop/halo_stellar_fred_sat_bf_pca.csv")
 
         
     
