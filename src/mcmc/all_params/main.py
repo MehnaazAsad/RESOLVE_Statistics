@@ -8,7 +8,7 @@ from settings import Settings
 from preprocess import Preprocess
 from analysis import Analysis
 from experiments import Experiments
-from plotting import Plotting
+from plotting import Plotting_Panels
 
 def main():    
     settings = Settings()
@@ -25,9 +25,9 @@ def main():
     
     models, best_fit, gals_df = analysis.Mocks_And_Models(experiments)
 
-    plotting = Plotting(preprocess)
-    plotting.Plot_Core(data, models, best_fit)
-    plotting.Plot_Experiments(data, data_experimentals, models, best_fit)
+    plotting = Plotting_Panels(preprocess)
+    plotting.Extract_Core(models, data)
+    plotting.Plot_Core()
 
 
 if __name__ == '__main__':
