@@ -3521,10 +3521,10 @@ class Plotting_Panels():
                      hybrid_baryonic_bf_y=hybrid_baryonic_bf_y,\
                      )
 
-    def plot_total_mf(self, stellar_file, baryonic_file):
+    def plot_total_mf(self):
 
-        stellar_data = np.load(stellar_file)
-        baryonic_data = np.load(baryonic_file)
+        stellar_data = np.load("mf_stellar.npz")
+        baryonic_data = np.load("mf_baryonic.npz")
 
         x_stellar=stellar_data["x_stellar"]
         stellar_data_y=stellar_data["stellar_data_y"]
@@ -3777,7 +3777,7 @@ class Plotting_Panels():
             hybrid_baryonic_bf_cen_y = np.nanmedian(cen_mod_arr, axis=0)
             hybrid_baryonic_bf_sat_y = np.nanmedian(sat_mod_arr, axis=0)
 
-            np.savez('fblue_baryonic', 
+            np.savez('fblue_baryonic.npz', 
                      x_baryonic=x_baryonic, 
                      baryonic_data_cen_y=baryonic_data_cen_y, \
                      baryonic_data_sat_y=baryonic_data_sat_y, \
@@ -3790,10 +3790,10 @@ class Plotting_Panels():
                      hybrid_baryonic_bf_cen_y=hybrid_baryonic_bf_cen_y,\
                      hybrid_baryonic_bf_sat_y=hybrid_baryonic_bf_sat_y)
 
-    def plot_fblue(self, stellar_file, baryonic_file):
+    def plot_fblue(self):
         
-        stellar_data = np.load(stellar_file)
-        baryonic_data = np.load(baryonic_file)
+        stellar_data = np.load("fblue_stellar.npz")
+        baryonic_data = np.load("fblue_baryonic.npz")
 
         x_stellar=stellar_data["x_stellar"]
         stellar_data_cen_y=stellar_data["stellar_data_cen_y"]
@@ -4416,10 +4416,10 @@ class Plotting_Panels():
                      hybrid_baryonic_blue_bf_y=hybrid_baryonic_blue_bf_y
                      )
 
-    def plot_colour_xmhm(stellar_file, baryonic_file):
+    def plot_colour_xmhm(self):
 
-        stellar_data = np.load(stellar_file)
-        baryonic_data = np.load(baryonic_file)
+        stellar_data = np.load("xmhm_colour_stellar.npz")
+        baryonic_data = np.load("xmhm_colour_baryonic.npz")
 
         x_stellar=stellar_data["x_stellar"]
         hybrid_stellar_red_model_max=stellar_data["hybrid_stellar_red_model_max"]
