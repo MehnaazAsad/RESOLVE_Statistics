@@ -1032,7 +1032,7 @@ def split_false_pairs(galra, galde, galcz, galgroupid):
 
 
 survey = 'eco'
-mf_type = 'bmf'
+mf_type = 'smf'
 quenching = 'hybrid'
 machine = 'bender'
 level = 'group'
@@ -1973,3 +1973,27 @@ plt.gca().xaxis.tick_bottom()
 plt.colorbar(cax)
 # plt.title('{0}'.format(quenching))
 plt.show()
+
+
+
+#* Scatter plot of logmhalo - logmstar for true cens and sats
+
+
+fig1 = plt.figure()
+# plt.scatter(mock_pd.loghalom, mock_pd.logmstar, c=mock_pd.cs_flag.values, cmap='PiYG',
+#             s=20, zorder=10)
+plt.scatter(mock_pd.loghalom.loc[mock_pd.cs_flag==1], mock_pd.logmstar.loc[mock_pd.cs_flag==1], c='orangered',
+            s=20, zorder=10, label="True centrals")
+plt.scatter(mock_pd.loghalom.loc[mock_pd.cs_flag==0], mock_pd.logmstar.loc[mock_pd.cs_flag==0], c='green',
+            s=20, zorder=10, label="True satellites")
+
+plt.ylabel(r'\boldmath$\log M_\star \left[\mathrm{M_\odot} \right]$', fontsize=20)
+plt.xlabel(r'\boldmath$\log M_h \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', fontsize=20)
+plt.legend(prop={'size':20})
+plt.show()
+
+cen_loghalom = mock_pd.loghalom.loc[mock_pd.cs_flag==1]
+cen_logmstar = mock_pd.logmstar.loc[mock_pd.cs_flag==1]
+logmstar_scatter = bs(cen_loghalom, cen_logmstar, statistic='std', 
+                      bins=np.linspace(10.45,14.5,5))
+logmstar_scatter[0]
