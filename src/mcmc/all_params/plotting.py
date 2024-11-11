@@ -3522,6 +3522,8 @@ class Plotting_Panels():
                      )
 
     def plot_total_mf(self):
+        
+        settings = self.settings
 
         stellar_data = np.load("mf_stellar.npz")
         baryonic_data = np.load("mf_baryonic.npz")
@@ -3605,7 +3607,7 @@ class Plotting_Panels():
         # ax[2].minorticks_on()
 
         plt.show()
-        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/mf_total_emcee_{0}.pdf'.format(quenching), 
+        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/mf_total_emcee_{0}.pdf'.format(settings.quenching), 
             bbox_inches="tight", dpi=1200)
 
     def extract_fblue(self, models, data):
@@ -3792,6 +3794,8 @@ class Plotting_Panels():
 
     def plot_fblue(self):
         
+        settings = self.settings
+
         stellar_data = np.load("fblue_stellar.npz")
         baryonic_data = np.load("fblue_baryonic.npz")
 
@@ -3943,8 +3947,928 @@ class Plotting_Panels():
 
         plt.show()
 
-        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fblue_censat_emcee_{0}.pdf'.format(quenching), 
+        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fblue_censat_emcee_{0}.pdf'.format(settings.quenching), 
             bbox_inches="tight", dpi=1200)
+
+    def extract_mean_sigma_vs_grpcen(self, models, data):
+        """
+        Plot average group central stellar mass vs. velocity dispersion from data, 
+        best fit param values and param values corresponding to 68th percentile 100 
+        lowest chi^2 values.
+
+        Parameters
+        ----------
+        result: multidimensional array
+            Array of SMF, blue fraction and SMHM information
+
+        red_sigma_bf: array
+            Array of velocity dispersion around red group centrals for best-fit 
+            model
+
+        grp_red_cen_stellar_mass_bf: array
+            Array of red group central stellar masses for best-fit model
+
+        blue_sigma_bf: array
+            Array of velocity dispersion around blue group centrals for best-fit 
+            model
+
+        grp_blue_cen_stellar_mass_bf: array
+            Array of blue group central stellar masses for best-fit model
+
+        red_sigma_data: array
+            Array of velocity dispersion around red group centrals for data
+
+        grp_red_cen_stellar_mass_data: array
+            Array of red group central stellar masses for data
+
+        blue_sigma_data: array
+            Array of velocity dispersion around blue group centrals for data
+
+        grp_blue_cen_stellar_mass_data: array
+            Array of blue group central stellar masses for data
+
+        err_red: array
+            Array of std values per bin of red group central stellar mass vs. 
+            velocity dispersion from mocks
+
+        err_blue: array
+            Array of std values per bin of blue group central stellar mass vs. 
+            velocity dispersion from mocks
+
+        bf_chi2: float
+            Chi-squared value associated with the best-fit model
+
+        Returns
+        ---------
+        Plot displayed on screen.
+        """   
+        settings = self.settings
+
+        error_red = data[8][12:16]
+        error_blue = data[8][16:20]
+
+        x_sigma_red_data, y_mean_mstar_red_data = data[4][1], data[4][0]
+        x_sigma_blue_data, y_mean_mstar_blue_data = data[5][1], data[5][0]
+
+        mean_grp_red_cen_gals_arr = []
+        mean_grp_blue_cen_gals_arr = []
+        red_sigma_arr = []
+        blue_sigma_arr = []
+        chunk_counter = 0 # There are 5 chunks of all 16 statistics each with len 20
+        while chunk_counter < 10:
+            for idx in range(len(models[chunk_counter][1]['mean_mass'])):
+                mean_grp_red_cen_gals_arr.append(models[chunk_counter][1]['mean_mass']['red_cen_mass'][idx])
+                mean_grp_blue_cen_gals_arr.append(models[chunk_counter][1]['mean_mass']['blue_cen_mass'][idx])
+                red_sigma_arr.append(models[chunk_counter][1]['mean_mass']['red_sigma'][idx])
+                blue_sigma_arr.append(models[chunk_counter][1]['mean_mass']['blue_sigma'][idx])
+
+            chunk_counter+=1
+
+        bins_red = 0.5 * (x_sigma_red_data[1:] + x_sigma_red_data[:-1]) # bin centers 
+        bins_blue = 0.5 * (x_sigma_blue_data[1:] + x_sigma_blue_data[:-1]) # bin centers 
+
+        if settings.mf_type == "smf":
+            x_stellar_red = bins_red
+            x_stellar_blue = bins_blue
+            stellar_red_data_y = y_mean_mstar_red_data
+            stellar_blue_data_y = y_mean_mstar_blue_data
+            stellar_error_red = error_red
+            stellar_error_blue = error_blue
+            hybrid_stellar_red_model_max = np.nanmax(mean_grp_red_cen_gals_arr, axis=0)
+            hybrid_stellar_red_model_min = np.nanmin(mean_grp_red_cen_gals_arr, axis=0)
+            hybrid_stellar_blue_model_max = np.nanmax(mean_grp_blue_cen_gals_arr, axis=0)
+            hybrid_stellar_blue_model_min = np.nanmin(mean_grp_blue_cen_gals_arr, axis=0)
+            hybrid_stellar_red_bf_y = np.nanmedian(mean_grp_red_cen_gals_arr, axis=0)
+            hybrid_stellar_blue_bf_y = np.nanmedian(mean_grp_blue_cen_gals_arr, axis=0)
+
+            np.savez('sigma_grpcen_stellar.npz', 
+                     x_stellar_red=x_stellar_red, 
+                     x_stellar_blue=x_stellar_blue,
+                     stellar_red_data_y=stellar_red_data_y,
+                     stellar_blue_data_y=stellar_blue_data_y,
+                     stellar_error_red=stellar_error_red,
+                     stellar_error_blue=stellar_error_blue,
+                     hybrid_stellar_red_model_max=hybrid_stellar_red_model_max,\
+                     hybrid_stellar_red_model_min=hybrid_stellar_red_model_min,\
+                     hybrid_stellar_blue_model_max=hybrid_stellar_blue_model_max,\
+                     hybrid_stellar_blue_model_min=hybrid_stellar_blue_model_min,\
+                     hybrid_stellar_red_bf_y=hybrid_stellar_red_bf_y,\
+                     hybrid_stellar_blue_bf_y=hybrid_stellar_blue_bf_y
+                     )
+
+        elif settings.mf_type == "bmf":
+            x_baryonic_red = bins_red
+            x_baryonic_blue = bins_blue
+            baryonic_red_data_y = y_mean_mstar_red_data
+            baryonic_blue_data_y = y_mean_mstar_blue_data
+            baryonic_error_red = error_red
+            baryonic_error_blue = error_blue
+            hybrid_baryonic_red_model_max = np.nanmax(mean_grp_red_cen_gals_arr, axis=0)
+            hybrid_baryonic_red_model_min = np.nanmin(mean_grp_red_cen_gals_arr, axis=0)
+            hybrid_baryonic_blue_model_max = np.nanmax(mean_grp_blue_cen_gals_arr, axis=0)
+            hybrid_baryonic_blue_model_min = np.nanmin(mean_grp_blue_cen_gals_arr, axis=0)
+            hybrid_baryonic_red_bf_y = np.nanmedian(mean_grp_red_cen_gals_arr, axis=0)
+            hybrid_baryonic_blue_bf_y = np.nanmedian(mean_grp_blue_cen_gals_arr, axis=0)
+
+            np.savez('sigma_grpcen_baryonic.npz', 
+                     x_baryonic_red=x_baryonic_red, 
+                     x_baryonic_blue=x_baryonic_blue,
+                     baryonic_red_data_y=baryonic_red_data_y,
+                     baryonic_blue_data_y=baryonic_blue_data_y,
+                     baryonic_error_red=baryonic_error_red,
+                     baryonic_error_blue=baryonic_error_blue,
+                     hybrid_baryonic_red_model_max=hybrid_baryonic_red_model_max,\
+                     hybrid_baryonic_red_model_min=hybrid_baryonic_red_model_min,\
+                     hybrid_baryonic_blue_model_max=hybrid_baryonic_blue_model_max,\
+                     hybrid_baryonic_blue_model_min=hybrid_baryonic_blue_model_min,\
+                     hybrid_baryonic_red_bf_y=hybrid_baryonic_red_bf_y,\
+                     hybrid_baryonic_blue_bf_y=hybrid_baryonic_blue_bf_y
+                     )
+
+    def plot_mean_sigma_vs_grpcen(self):
+
+        settings = self.settings
+
+        stellar_data = np.load("sigma_grpcen_stellar.npz")
+        baryonic_data = np.load("sigma_grpcen_baryonic.npz")
+
+        x_stellar_red=stellar_data["x_stellar_red"]
+        x_stellar_blue=stellar_data["x_stellar_blue"]
+        stellar_red_data_y=stellar_data["stellar_red_data_y"]
+        stellar_blue_data_y=stellar_data["stellar_blue_data_y"]
+        stellar_error_red=stellar_data["stellar_error_red"]
+        stellar_error_blue=stellar_data["stellar_error_blue"]
+        hybrid_stellar_red_model_max=stellar_data["hybrid_stellar_red_model_max"]
+        hybrid_stellar_red_model_min=stellar_data["hybrid_stellar_red_model_min"]
+        hybrid_stellar_blue_model_max=stellar_data["hybrid_stellar_blue_model_max"]
+        hybrid_stellar_blue_model_min=stellar_data["hybrid_stellar_blue_model_min"]
+        hybrid_stellar_red_bf_y=stellar_data["hybrid_stellar_red_bf_y"]
+        hybrid_stellar_blue_bf_y=stellar_data["hybrid_stellar_blue_bf_y"]
+
+
+        x_baryonic_red=baryonic_data["x_baryonic_red"]
+        x_baryonic_blue=baryonic_data["x_baryonic_blue"]
+        baryonic_red_data_y=baryonic_data["baryonic_red_data_y"]
+        baryonic_blue_data_y=baryonic_data["baryonic_blue_data_y"]
+        baryonic_error_red=baryonic_data["baryonic_error_red"]
+        baryonic_error_blue=baryonic_data["baryonic_error_blue"]
+        hybrid_baryonic_red_model_max=baryonic_data["hybrid_baryonic_red_model_max"]
+        hybrid_baryonic_red_model_min=baryonic_data["hybrid_baryonic_red_model_min"]
+        hybrid_baryonic_blue_model_max=baryonic_data["hybrid_baryonic_blue_model_max"]
+        hybrid_baryonic_blue_model_min=baryonic_data["hybrid_baryonic_blue_model_min"]
+        hybrid_baryonic_red_bf_y=baryonic_data["hybrid_baryonic_red_bf_y"]
+        hybrid_baryonic_blue_bf_y=baryonic_data["hybrid_baryonic_blue_bf_y"]
+
+        fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
+            gridspec_kw={'wspace':0.30})
+
+        sdr = ax[0].errorbar(x_stellar_red, stellar_red_data_y, yerr=stellar_error_red,
+                color='indianred',fmt='^',ecolor='indianred',markersize=20,capsize=7,
+                capthick=1.5,zorder=10)
+        sdb = ax[0].errorbar(x_stellar_blue, stellar_blue_data_y, yerr=stellar_error_blue,
+                color='cornflowerblue',fmt='^',ecolor='cornflowerblue',markersize=20,capsize=7,
+                capthick=1.5,zorder=10)
+
+        smr = ax[0].fill_between(x=x_stellar_red, y1=hybrid_stellar_red_model_max, 
+            y2=hybrid_stellar_red_model_min, color='indianred',alpha=0.4)
+        smb = ax[0].fill_between(x=x_stellar_blue, y1=hybrid_stellar_blue_model_max, 
+            y2=hybrid_stellar_blue_model_min, color='cornflowerblue',alpha=0.4)
+
+        sbfr, = ax[0].plot(x_stellar_red, hybrid_stellar_red_bf_y, c='indianred', 
+            zorder=9, ls='--', lw=4)
+        sbfb, = ax[0].plot(x_stellar_blue, hybrid_stellar_blue_bf_y, 
+            c='cornflowerblue', zorder=9, ls='--', lw=4)
+
+        bdr = ax[1].errorbar(x_baryonic_red, baryonic_red_data_y, yerr=baryonic_error_red,
+                color='indianred',fmt='^',ecolor='indianred',markersize=20,capsize=7,
+                capthick=1.5,zorder=10)
+        bdb = ax[1].errorbar(x_baryonic_blue, baryonic_blue_data_y, yerr=baryonic_error_blue,
+                color='cornflowerblue',fmt='^',ecolor='cornflowerblue',markersize=20,capsize=7,
+                capthick=1.5,zorder=10)
+
+        bmr = ax[1].fill_between(x=x_baryonic_red, y1=hybrid_baryonic_red_model_max, 
+            y2=hybrid_baryonic_red_model_min, color='indianred',alpha=0.4)
+        bmb = ax[1].fill_between(x=x_baryonic_blue, y1=hybrid_baryonic_blue_model_max, 
+            y2=hybrid_baryonic_blue_model_min, color='cornflowerblue',alpha=0.4)
+
+        bbfr, = ax[1].plot(x_baryonic_red, hybrid_baryonic_red_bf_y, c='indianred', 
+            zorder=9, ls='--', lw=4)
+        bbfb, = ax[1].plot(x_baryonic_blue, hybrid_baryonic_blue_bf_y, 
+            c='cornflowerblue', zorder=9, ls='--', lw=4)
+
+
+        #* HALO MODEL
+        # sdr = ax[2].errorbar(x_stellar_red, stellar_red_data_y, yerr=stellar_error_red,
+        #         color='indianred',fmt='^',ecolor='indianred',markersize=20,capsize=7,
+        #         capthick=1.5,zorder=10)
+        # sdb = ax[2].errorbar(x_stellar_blue, stellar_blue_data_y, yerr=stellar_error_blue,
+        #         color='cornflowerblue',fmt='^',ecolor='cornflowerblue',markersize=20,capsize=7,
+        #         capthick=1.5,zorder=10)
+
+        # smr = ax[2].fill_between(x=x_stellar_red, y1=halo_stellar_red_models_max, 
+        #     y2=halo_stellar_red_models_min, color='indianred',alpha=0.4)
+        # smb = ax[2].fill_between(x=x_stellar_blue, y1=halo_stellar_blue_models_max, 
+        #     y2=halo_stellar_blue_models_min, color='cornflowerblue',alpha=0.4)
+
+        # sbfr, = ax[2].plot(x_stellar_red, halo_stellar_red_bf_y, c='indianred', 
+        #     zorder=9, ls='--', lw=4)
+        # sbfb, = ax[2].plot(x_stellar_blue, halo_stellar_blue_bf_y, 
+        #     c='cornflowerblue', zorder=9, ls='--', lw=4)
+
+        ax[0].legend([(sdr, sdb), (smr, smb), (sbfr, sbfb)], 
+            ['Data','Models','Best-fit'],
+            handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, 
+            markerscale=0.5, loc='best', prop={'size':30})
+
+        sat = AnchoredText("Stellar",
+            prop=dict(size=30), frameon=False, loc='upper center')
+        ax[0].add_artist(sat)
+
+        bat = AnchoredText("Baryonic",
+            prop=dict(size=30), frameon=False, loc='upper left')
+        ax[1].add_artist(bat)
+
+        # sat = AnchoredText("Halo",
+        #     prop=dict(size=30), frameon=False, loc='upper center')
+        # ax[2].add_artist(sat)
+
+        ax[0].set_xlabel(r'\boldmath$\log \sigma \left[\mathrm{km/s} \right]$', labelpad=10, fontsize=40)
+        ax[0].set_ylabel(r'\boldmath$\langle\log M_{*,group\ cen}\rangle \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
+
+        ax[1].set_xlabel(r'\boldmath$\log \sigma \left[\mathrm{km/s} \right]$', labelpad=10, fontsize=40)
+        ax[1].set_ylabel(r'\boldmath$\langle\log M_{b,group\ cen}\rangle \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
+
+        # ax[2].set_xlabel(r'\boldmath$\log \sigma \left[\mathrm{km/s} \right]$', labelpad=10, fontsize=40)
+        # ax[2].set_ylabel(r'\boldmath$\langle\log M_{*,group\ cen}\rangle \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
+
+        plt.show()
+
+        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/sigma_grpcen_emcee_{0}.pdf'.format(settings.quenching), 
+            bbox_inches="tight", dpi=1200)
+
+    def extract_mean_grpcen_vs_sigma(self, models, data):
+        """[summary]
+
+        Args:
+            result ([type]): [description]
+            std_red_data ([type]): [description]
+            cen_red_data ([type]): [description]
+            std_blue_data ([type]): [description]
+            cen_blue_data ([type]): [description]
+            std_bf_red ([type]): [description]
+            std_bf_blue ([type]): [description]
+            std_cen_bf_red ([type]): [description]
+            std_cen_bf_blue ([type]): [description]
+            bf_chi2 ([type]): [description]
+        """
+        settings = self.settings
+
+        error_red = data[8][20:24]
+        error_blue = data[8][24:]
+
+        x_sigma_red_data, y_sigma_red_data = data[2][1], data[2][0]
+        x_sigma_blue_data, y_sigma_blue_data = data[3][1], data[3][0]
+
+        grp_red_cen_gals_arr = []
+        grp_blue_cen_gals_arr = []
+        mean_red_sigma_arr = []
+        mean_blue_sigma_arr = []
+        chunk_counter = 0 # There are 5 chunks of all 16 statistics each with len 20
+        while chunk_counter < 5:
+            for idx in range(len(models[chunk_counter][1]['vel_disp'])):
+                grp_red_cen_gals_arr.append(models[chunk_counter][1]['vel_disp']['red_cen_mass'][idx])
+                grp_blue_cen_gals_arr.append(models[chunk_counter][1]['vel_disp']['blue_cen_mass'][idx])
+                mean_red_sigma_arr.append(models[chunk_counter][1]['vel_disp']['red_sigma'][idx])
+                mean_blue_sigma_arr.append(models[chunk_counter][1]['vel_disp']['blue_sigma'][idx])
+
+            chunk_counter+=1
+
+        ## Same centers used for all sets of lines since binning is the same for 
+        ## models, bf and data
+        bins_red = 0.5 * (x_sigma_red_data[1:] + x_sigma_red_data[:-1])
+        bins_blue = 0.5 * (x_sigma_blue_data[1:] + x_sigma_blue_data[:-1])
+
+        #* One -inf in y_sigma_red_data
+        inf_idx = np.where(y_sigma_red_data == -np.inf)
+        if len(inf_idx) > 0:
+            for idx in inf_idx:
+                x_sigma_red_data = np.delete(x_sigma_red_data, idx)
+                y_sigma_red_data = np.delete(y_sigma_red_data, idx)
+
+        if settings.mf_type == "smf":
+            x_stellar_red = bins_red
+            x_stellar_blue = bins_blue
+            stellar_red_data_y = y_sigma_red_data
+            stellar_blue_data_y = y_sigma_blue_data
+            stellar_error_red = error_red
+            stellar_error_blue = error_blue
+            hybrid_stellar_red_model_max = np.nanmax(mean_red_sigma_arr, axis=0)
+            hybrid_stellar_red_model_min = np.nanmin(mean_red_sigma_arr, axis=0)
+            hybrid_stellar_blue_model_max = np.nanmax(mean_blue_sigma_arr, axis=0)
+            hybrid_stellar_blue_model_min = np.nanmin(mean_blue_sigma_arr, axis=0)
+            hybrid_stellar_red_bf_y = np.nanmedian(mean_red_sigma_arr, axis=0)
+            hybrid_stellar_blue_bf_y = np.nanmedian(mean_blue_sigma_arr, axis=0)
+
+            np.savez('grpcen_sigma_stellar.npz', 
+                x_stellar_red=x_stellar_red, 
+                x_stellar_blue=x_stellar_blue,
+                stellar_red_data_y=stellar_red_data_y,
+                stellar_blue_data_y=stellar_blue_data_y,
+                stellar_error_red=stellar_error_red,
+                stellar_error_blue=stellar_error_blue,
+                hybrid_stellar_red_model_max=hybrid_stellar_red_model_max,\
+                hybrid_stellar_red_model_min=hybrid_stellar_red_model_min,\
+                hybrid_stellar_blue_model_max=hybrid_stellar_blue_model_max,\
+                hybrid_stellar_blue_model_min=hybrid_stellar_blue_model_min,\
+                hybrid_stellar_red_bf_y=hybrid_stellar_red_bf_y,\
+                hybrid_stellar_blue_bf_y=hybrid_stellar_blue_bf_y
+                )
+
+        elif settings.mf_type == "bmf":
+            x_baryonic_red = bins_red
+            x_baryonic_blue = bins_blue
+            baryonic_red_data_y = y_sigma_red_data
+            baryonic_blue_data_y = y_sigma_blue_data
+            baryonic_error_red = error_red
+            baryonic_error_blue = error_blue
+            hybrid_baryonic_red_model_max = np.nanmax(mean_red_sigma_arr, axis=0)
+            hybrid_baryonic_red_model_min = np.nanmin(mean_red_sigma_arr, axis=0)
+            hybrid_baryonic_blue_model_max = np.nanmax(mean_blue_sigma_arr, axis=0)
+            hybrid_baryonic_blue_model_min = np.nanmin(mean_blue_sigma_arr, axis=0)
+            hybrid_baryonic_red_bf_y = np.nanmedian(mean_red_sigma_arr, axis=0)
+            hybrid_baryonic_blue_bf_y = np.nanmedian(mean_blue_sigma_arr, axis=0)
+
+            np.savez('grpcen_sigma_baryonic.npz', 
+                x_baryonic_red=x_baryonic_red, 
+                x_baryonic_blue=x_baryonic_blue,
+                baryonic_red_data_y=baryonic_red_data_y,
+                baryonic_blue_data_y=baryonic_blue_data_y,
+                baryonic_error_red=baryonic_error_red,
+                baryonic_error_blue=baryonic_error_blue,
+                hybrid_baryonic_red_model_max=hybrid_baryonic_red_model_max,\
+                hybrid_baryonic_red_model_min=hybrid_baryonic_red_model_min,\
+                hybrid_baryonic_blue_model_max=hybrid_baryonic_blue_model_max,\
+                hybrid_baryonic_blue_model_min=hybrid_baryonic_blue_model_min,\
+                hybrid_baryonic_red_bf_y=hybrid_baryonic_red_bf_y,\
+                hybrid_baryonic_blue_bf_y=hybrid_baryonic_blue_bf_y
+                )
+
+    def plot_mean_grpcen_vs_sigma(self):
+        
+        settings = self.settings
+
+        stellar_data = np.load("grpcen_sigma_stellar.npz")
+        baryonic_data = np.load("grpcen_sigma_baryonic.npz")
+
+        x_stellar_red=stellar_data["x_stellar_red"]
+        x_stellar_blue=stellar_data["x_stellar_blue"]
+        stellar_red_data_y=stellar_data["stellar_red_data_y"]
+        stellar_blue_data_y=stellar_data["stellar_blue_data_y"]
+        stellar_error_red=stellar_data["stellar_error_red"]
+        stellar_error_blue=stellar_data["stellar_error_blue"]
+        hybrid_stellar_red_model_max=stellar_data["hybrid_stellar_red_model_max"]
+        hybrid_stellar_red_model_min=stellar_data["hybrid_stellar_red_model_min"]
+        hybrid_stellar_blue_model_max=stellar_data["hybrid_stellar_blue_model_max"]
+        hybrid_stellar_blue_model_min=stellar_data["hybrid_stellar_blue_model_min"]
+        hybrid_stellar_red_bf_y=stellar_data["hybrid_stellar_red_bf_y"]
+        hybrid_stellar_blue_bf_y=stellar_data["hybrid_stellar_blue_bf_y"]
+
+
+        x_baryonic_red=baryonic_data["x_baryonic_red"]
+        x_baryonic_blue=baryonic_data["x_baryonic_blue"]
+        baryonic_red_data_y=baryonic_data["baryonic_red_data_y"]
+        baryonic_blue_data_y=baryonic_data["baryonic_blue_data_y"]
+        baryonic_error_red=baryonic_data["baryonic_error_red"]
+        baryonic_error_blue=baryonic_data["baryonic_error_blue"]
+        hybrid_baryonic_red_model_max=baryonic_data["hybrid_baryonic_red_model_max"]
+        hybrid_baryonic_red_model_min=baryonic_data["hybrid_baryonic_red_model_min"]
+        hybrid_baryonic_blue_model_max=baryonic_data["hybrid_baryonic_blue_model_max"]
+        hybrid_baryonic_blue_model_min=baryonic_data["hybrid_baryonic_blue_model_min"]
+        hybrid_baryonic_red_bf_y=baryonic_data["hybrid_baryonic_red_bf_y"]
+        hybrid_baryonic_blue_bf_y=baryonic_data["hybrid_baryonic_blue_bf_y"]
+
+        fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
+            gridspec_kw={'wspace':0.15})
+
+        sdr = ax[0].errorbar(x_stellar_red, stellar_red_data_y, yerr=stellar_error_red,
+                color='indianred',fmt='^',ecolor='indianred',markersize=20,capsize=7,
+                capthick=1.5,zorder=10)
+        sdb = ax[0].errorbar(x_stellar_blue, stellar_blue_data_y, yerr=stellar_error_blue,
+                color='cornflowerblue',fmt='^',ecolor='cornflowerblue',markersize=20,capsize=7,
+                capthick=1.5,zorder=10)
+
+        smr = ax[0].fill_between(x=x_stellar_red, y1=hybrid_stellar_red_model_max, 
+            y2=hybrid_stellar_red_model_min, color='indianred',alpha=0.4)
+        smb = ax[0].fill_between(x=x_stellar_blue, y1=hybrid_stellar_blue_model_max, 
+            y2=hybrid_stellar_blue_model_min, color='cornflowerblue',alpha=0.4)
+
+        sbfr, = ax[0].plot(x_stellar_red, hybrid_stellar_red_bf_y, c='indianred', 
+            zorder=9, ls='--', lw=4)
+        sbfb, = ax[0].plot(x_stellar_blue, hybrid_stellar_blue_bf_y, 
+            c='cornflowerblue', zorder=9, ls='--', lw=4)
+
+        bdr = ax[1].errorbar(x_baryonic_red, baryonic_red_data_y, yerr=baryonic_error_red,
+                color='indianred',fmt='^',ecolor='indianred',markersize=20,capsize=7,
+                capthick=1.5,zorder=10)
+        bdb = ax[1].errorbar(x_baryonic_blue, baryonic_blue_data_y, yerr=baryonic_error_blue,
+                color='cornflowerblue',fmt='^',ecolor='cornflowerblue',markersize=20,capsize=7,
+                capthick=1.5,zorder=10)
+
+        bmr = ax[1].fill_between(x=x_baryonic_red, y1=hybrid_baryonic_red_model_max, 
+            y2=hybrid_baryonic_red_model_min, color='indianred',alpha=0.4)
+        bmb = ax[1].fill_between(x=x_baryonic_blue, y1=hybrid_baryonic_blue_model_max, 
+            y2=hybrid_baryonic_blue_model_min, color='cornflowerblue',alpha=0.4)
+
+        bbfr, = ax[1].plot(x_baryonic_red, hybrid_baryonic_red_bf_y, c='indianred', 
+            zorder=9, ls='--', lw=4)
+        bbfb, = ax[1].plot(x_baryonic_blue, hybrid_baryonic_blue_bf_y, 
+            c='cornflowerblue', zorder=9, ls='--', lw=4)
+
+        #* HALO MODEL
+        # sdr = ax[2].errorbar(x_stellar_red, stellar_red_data_y, yerr=stellar_error_red,
+        #         color='indianred',fmt='^',ecolor='indianred',markersize=20,capsize=7,
+        #         capthick=1.5,zorder=10)
+        # sdb = ax[2].errorbar(x_stellar_blue, stellar_blue_data_y, yerr=stellar_error_blue,
+        #         color='cornflowerblue',fmt='^',ecolor='cornflowerblue',markersize=20,capsize=7,
+        #         capthick=1.5,zorder=10)
+
+        # smr = ax[2].fill_between(x=x_stellar_red, y1=halo_stellar_red_models_max, 
+        #     y2=halo_stellar_red_models_min, color='indianred',alpha=0.4)
+        # smb = ax[2].fill_between(x=x_stellar_blue, y1=halo_stellar_blue_models_max, 
+        #     y2=halo_stellar_blue_models_min, color='cornflowerblue',alpha=0.4)
+
+        # sbfr, = ax[2].plot(x_stellar_red, halo_stellar_red_bf_y, c='indianred', 
+        #     zorder=9, ls='--', lw=4)
+        # sbfb, = ax[2].plot(x_stellar_blue, halo_stellar_blue_bf_y, 
+        #     c='cornflowerblue', zorder=9, ls='--', lw=4)
+
+        sat = AnchoredText("Stellar",
+            prop=dict(size=30), frameon=False, loc='upper center')
+        ax[0].add_artist(sat)
+
+        bat = AnchoredText("Baryonic",
+            prop=dict(size=30), frameon=False, loc='upper left')
+        ax[1].add_artist(bat)
+
+        # sat = AnchoredText("Halo",
+        #     prop=dict(size=30), frameon=False, loc='upper center')
+        # ax[2].add_artist(sat)
+
+        ax[0].legend([(sdr, sdb), (smr, smb), (sbfr, sbfb)], 
+            ['Data','Models','Best-fit'],
+            handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, 
+            markerscale=0.5, loc='best', prop={'size':30})
+
+        ax[0].set_xlabel(r'\boldmath$\log M_{* , group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=10, fontsize=40)
+        ax[0].set_ylabel(r'\boldmath$\log \sigma \left[\mathrm{km/s} \right]$', labelpad=20, fontsize=40)
+
+        ax[1].set_xlabel(r'\boldmath$\log M_{b , group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=10, fontsize=40)
+        # ax[1].set_ylabel(r'\boldmath$\log \ \sigma \left[\mathrm{km/s} \right]$', labelpad=20, fontsize=40)
+
+        # ax[2].set_xlabel(r'\boldmath$\log M_{* , group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=10, fontsize=40)
+
+        plt.show()
+
+        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/grpcen_sigma_emcee_{0}.pdf'.format(settings.quenching), 
+            bbox_inches="tight", dpi=1200)
+
+    def extract_red_fraction_cen(self, models):
+        """
+        Plot red fraction of centrals from best fit param values and param values 
+        corresponding to 68th percentile 100 lowest chi^2 values.
+
+        Parameters
+        ----------
+        result: multidimensional array
+            Array of SMF, blue fraction and SMHM information
+        
+        cen_gals_red: array
+            Array of red central stellar mass values for best-fit model
+
+        cen_halos_red: array
+            Array of red central halo mass values for best-fit model
+
+        cen_gals_blue: array
+            Array of blue central stellar mass values for best-fit model
+
+        cen_halos_blue: array
+            Array of blue central halo mass values for best-fit model
+
+        f_red_cen_red: array
+            Array of red fractions for red centrals for best-fit model
+
+        f_red_cen_blue: array
+            Array of red fractions for blue centrals for best-fit model
+            
+        Returns
+        ---------
+        Plot displayed on screen.
+        """   
+        settings = self.settings
+
+        cen_gals_arr = []
+        cen_halos_arr = []
+        fred_arr = []
+        i_outer = 0 # There are 10 chunks of all statistics each with len 20
+        while i_outer < 10:
+            cen_gals_idx_arr = []
+            cen_halos_idx_arr = []
+            fred_idx_arr = []
+            for idx in range(len(models[i_outer][0]['centrals']['halos_red'])):
+                red_cen_gals_idx = models[i_outer][0]['centrals']['gals_red'][idx][0]
+                red_cen_halos_idx = models[i_outer][0]['centrals']['halos_red'][idx][0]
+                blue_cen_gals_idx = models[i_outer][0]['centrals']['gals_blue'][idx][0]
+                blue_cen_halos_idx = models[i_outer][0]['centrals']['halos_blue'][idx][0]
+                fred_red_cen_idx = models[i_outer][0]['f_red']['cen_red'][idx][0]
+                fred_blue_cen_idx = models[i_outer][0]['f_red']['cen_blue'][idx][0]
+
+                cen_gals_idx_arr = list(red_cen_gals_idx) + list(blue_cen_gals_idx)
+                cen_gals_arr.append(cen_gals_idx_arr)
+
+                cen_halos_idx_arr = list(red_cen_halos_idx) + list(blue_cen_halos_idx)
+                cen_halos_arr.append(cen_halos_idx_arr)
+
+                fred_idx_arr = list(fred_red_cen_idx) + list(fred_blue_cen_idx)
+                fred_arr.append(fred_idx_arr)
+                
+                cen_gals_idx_arr = []
+                cen_halos_idx_arr = []
+                fred_idx_arr = []
+
+            i_outer+=1
+
+        df1 = pd.DataFrame(cen_gals_arr)
+        df2 = pd.DataFrame(fred_arr)
+        df = pd.concat([df1, df2])
+
+        if settings.mf_type == "smf":
+            df.to_csv("hybrid_stellar_fred_cen_models_pca.csv")
+
+        elif settings.mf_type == "bmf":
+            df.to_csv("baryonic_fred_cen_models_pca.csv")
+
+        elif settings.quenching == "halo":
+            df1 = pd.DataFrame(cen_halos_arr)
+            df2 = pd.DataFrame(fred_arr)
+            df = pd.concat([df1, df2])
+
+            df.to_csv("halo_stellar_fred_cen_models_pca.csv")
+
+    def plot_red_fraction_cen(self):
+        
+        settings = self.settings
+
+        hybrid_stellar_models_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/hybrid_stellar_fred_cen_models_pca.csv") 
+        hybrid_baryonic_models_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/baryonic_fred_cen_models_pca.csv") 
+
+        #* halo model
+        # halo_stellar_models_df = pd.read_csv("halo_stellar_fred_cen_models_pca.csv") 
+        # halo_stellar_bf_df = pd.read_csv("halo_stellar_fred_cen_bf_pca.csv") 
+        
+        fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=True, 
+            gridspec_kw={'wspace':0.0})
+
+        #* STELLAR MODEL
+        cen_gals_arr = hybrid_stellar_models_df.iloc[:200,1:].values
+        fred_arr = hybrid_stellar_models_df.iloc[200:,1:].values
+        
+        def nanmedian(arr):
+            return np.nanmedian(arr)
+        
+        #* Median of 200 models
+        y_bf = bs(np.ravel(cen_gals_arr), np.ravel(fred_arr), bins=np.linspace(8.6, 12, 15), statistic=nanmedian)
+        x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
+        
+        ax[0].plot(x_bf, y_bf[0], c='goldenrod', label='Best-fit', lw=10, solid_capstyle='round')
+
+        for idx in range(len(cen_gals_arr)):
+            cen_median_model = bs(cen_gals_arr[idx], fred_arr[idx], 
+                                bins=np.linspace(8.6, 12, 15), statistic=nanmedian)
+            ax[0].plot(x_bf, cen_median_model[0], alpha=0.2, c='rebeccapurple', lw=10, solid_capstyle='round', zorder=-10)
+
+        #* experiment to see how many bins are needed for the smoothest looking curve
+        # bin_num = np.arange(15, 65, 5)
+        # for bin_i in bin_num:
+        #     y_bf = bs(np.ravel(cen_gals_arr), np.ravel(fred_arr), bins=np.linspace(8.6, 12, bin_i), statistic=nanmedian)
+        #     x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
+
+        #     plt.plot(x_bf, y_bf[0], c='grey', lw=10, solid_capstyle='round')
+        #     plt.show()
+
+        ax[0].set_xlabel(r'\boldmath$\log M_{*, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',labelpad=10, fontsize=40)
+        ax[0].set_ylabel(r'\boldmath$f_{red, cen}$', labelpad=20, fontsize=40)
+
+        #* BARYONIC MODEL
+        cen_gals_arr = hybrid_baryonic_models_df.iloc[:200,1:].values
+        fred_arr = hybrid_baryonic_models_df.iloc[200:,1:].values
+
+        #* Median of 200 models
+        y_bf = bs(np.ravel(cen_gals_arr), np.ravel(fred_arr), bins=np.linspace(9.0, 12, 15), statistic=nanmedian)
+        x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
+
+        for idx in range(len(cen_gals_arr)):
+            cen_median_model = bs(cen_gals_arr[idx], fred_arr[idx], 
+                                bins=np.linspace(9.0, 12, 15), statistic=nanmedian)
+            ax[1].plot(x_bf, cen_median_model[0], alpha=0.2, c='rebeccapurple', lw=10, solid_capstyle='round')
+
+        ax[1].plot(x_bf, y_bf[0], c='goldenrod', label='Best-fit', lw=10, solid_capstyle='round')
+
+        #* experiment to see how many bins are needed for the smoothest looking curve
+        # ax[1].plot(x_bf, y_bf[0], c='goldenrod', label='Best-fit', lw=10, solid_capstyle='round')
+        # for bin_i in bin_num:
+        #     y_bf = bs(np.ravel(cen_gals_arr), np.ravel(fred_arr), bins=np.linspace(9.0, 12, bin_i), statistic=nanmedian)
+        #     x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
+
+        #     ax[1].plot(x_bf, y_bf[0], c='grey', lw=10, solid_capstyle='round')
+
+        ax[1].set_xlabel(r'\boldmath$\log M_{b, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',labelpad=10, fontsize=40)
+
+        #* HALO MODEL
+        # cen_gals_arr = halo_stellar_models_df.iloc[:200,1:].values
+        # fred_arr = halo_stellar_models_df.iloc[200:,1:].values
+        # cen_gals_bf = halo_stellar_bf_df.iloc[:,1].values
+        # fred_bf = halo_stellar_bf_df.iloc[:,2].values
+
+        # #* Median of 200 models
+        # y_bf = bs(np.ravel(cen_gals_arr), np.ravel(fred_arr), bins=np.linspace(10, 15, 15), statistic=nanmedian)
+        # x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
+
+        # ax[2].plot(x_bf, y_bf[0], c='goldenrod', label='Best-fit', lw=10, solid_capstyle='round')
+        # for bin_i in bin_num:
+        #     y_bf = bs(np.ravel(cen_gals_arr), np.ravel(fred_arr), bins=np.linspace(10, 15, bin_i), statistic=nanmedian)
+        #     x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
+
+        #     ax[2].plot(x_bf, y_bf[0], c='grey', lw=10, solid_capstyle='round')
+
+        # ax[2].set_xlabel(r'\boldmath$\log M_{h, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',labelpad=10, fontsize=40)
+        # ax[2].set_ylabel(r'\boldmath$f_{red, cen}$', labelpad=20, fontsize=40)
+
+        if settings.mf_type == 'smf':
+            antonio_data = pd.read_csv(settings.path_to_proc + \
+                "../external/fquench_stellar/fqlogTSM_cen_DS_TNG_Salim_z0.csv", 
+                index_col=0, skiprows=1, 
+                names=['fred_ds','logmstar','fred_tng','fred_salim'])
+            ax[0].plot(antonio_data.logmstar.values, 
+                antonio_data.fred_ds.values, lw=5, c='#C71585', ls='dashed', 
+                label='Dark Sage')
+            ax[0].plot(antonio_data.logmstar.values, 
+                antonio_data.fred_salim.values, lw=5, c='#FF6347', ls='dotted', 
+                label='Salim+18')
+            ax[0].plot(antonio_data.logmstar.values, 
+                antonio_data.fred_tng.values, lw=5, c='#228B22', ls='dashdot', 
+                label='TNG')
+
+        sat = AnchoredText("Stellar",
+                        prop=dict(size=30), frameon=False, loc='upper left')
+        ax[0].add_artist(sat)
+
+        bat = AnchoredText("Baryonic",
+                        prop=dict(size=30), frameon=False, loc='upper left')
+        ax[1].add_artist(bat)
+
+        # sat = AnchoredText("Halo",
+        #                 prop=dict(size=30), frameon=False, loc='upper left')
+        # ax[2].add_artist(sat)
+
+        ax[0].legend(loc='lower right', prop={'size':30})
+
+        # Set explicit limits for first subplot to avoid overlap
+        ax[0].set_xlim(8.6, 12)
+        ax[0].set_xticks(np.linspace(8.6, 11.8, 5)) 
+
+        # Set explicit limits for second subplot to avid overlap
+        ax[1].set_xlim(9.0, 12)
+        ax[1].set_xticks(np.linspace(9.2, 12, 5))  
+
+        plt.show()
+
+        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fred_cen_emcee_{0}.pdf'.format(settings.quenching), 
+            bbox_inches="tight", dpi=1200)
+
+    def extract_red_fraction_sat(self, models):
+        """
+        Plot red fraction of satellites from best fit param values and param values 
+        corresponding to 68th percentile 100 lowest chi^2 values.
+
+        Parameters
+        ----------
+        result: multidimensional array
+            Array of SMF, blue fraction and SMHM information
+        
+        sat_gals_red: array
+            Array of red satellite stellar mass values for best-fit model
+
+        sat_halos_red: array
+            Array of red satellite host halo mass values for best-fit model
+
+        sat_gals_blue: array
+            Array of blue satellite stellar mass values for best-fit model
+
+        sat_halos_blue: array
+            Array of blue satellite host halo mass values for best-fit model
+
+        f_red_sat_red: array
+            Array of red fractions for red satellites for best-fit model
+
+        f_red_sat_blue: array
+            Array of red fractions for blue satellites for best-fit model
+            
+        Returns
+        ---------
+        Plot displayed on screen.
+        """
+        settings = self.settings
+
+        sat_gals_arr = []
+        sat_halos_arr = []
+        fred_arr = []
+        i_outer = 0 # There are 10 chunks of all 16 statistics each with len 20
+        while i_outer < 10:
+            sat_gals_idx_arr = []
+            sat_halos_idx_arr = []
+            fred_idx_arr = []
+            for idx in range(len(models[i_outer][0]['satellites']['halos_red'])):
+                red_sat_gals_idx = models[i_outer][0]['satellites']['gals_red'][idx][0]
+                red_sat_halos_idx = models[i_outer][0]['satellites']['halos_red'][idx][0]
+                blue_sat_gals_idx = models[i_outer][0]['satellites']['gals_blue'][idx][0]
+                blue_sat_halos_idx = models[i_outer][0]['satellites']['halos_blue'][idx][0]
+                fred_red_sat_idx = models[i_outer][0]['f_red']['sat_red'][idx][0]
+                fred_blue_sat_idx = models[i_outer][0]['f_red']['sat_blue'][idx][0]
+
+                sat_gals_idx_arr = list(red_sat_gals_idx) + list(blue_sat_gals_idx)
+                sat_gals_arr.append(sat_gals_idx_arr)
+
+                sat_halos_idx_arr = list(red_sat_halos_idx) + list(blue_sat_halos_idx)
+                sat_halos_arr.append(sat_halos_idx_arr)
+
+                fred_idx_arr = list(fred_red_sat_idx) + list(fred_blue_sat_idx)
+                fred_arr.append(fred_idx_arr)
+                
+                sat_gals_idx_arr = []
+                sat_halos_idx_arr = []
+                fred_idx_arr = []
+
+            i_outer+=1
+        
+
+        df1 = pd.DataFrame(sat_gals_arr)
+        df2 = pd.DataFrame(fred_arr)
+        df = pd.concat([df1, df2])
+
+        if settings.mf_type == "smf":
+
+            df.to_csv("hybrid_stellar_fred_sat_models_pca.csv")
+
+        elif settings.mf_type == "bmf":
+
+            df.to_csv("/Users/asadm2/Desktop/baryonic_fred_sat_models_pca.csv")
+
+        elif settings.quenching == "halo":
+            df1 = pd.DataFrame(sat_halos_arr)
+            df2 = pd.DataFrame(fred_arr)
+            df = pd.concat([df1, df2])
+
+            df.to_csv("/Users/asadm2/Desktop/halo_stellar_fred_sat_models_pca.csv")
+        
+    def plot_red_fraction_sat(self):
+
+        settings = self.settings
+
+        hybrid_stellar_models_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/hybrid_stellar_fred_sat_models_pca.csv") 
+        baryonic_models_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/baryonic_fred_sat_models_pca.csv") 
+
+        #* HALO MODEL
+        # halo_stellar_models_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/halo_stellar_fred_sat_models_pca.csv") 
+
+        fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=True, 
+            gridspec_kw={'wspace':0.0})
+
+        def nanmedian(arr):
+            return np.nanmedian(arr)
+
+        #* STELLAR MODEL
+        sat_gals_arr = hybrid_stellar_models_df.iloc[:200,1:].values
+        fred_arr = hybrid_stellar_models_df.iloc[200:,1:].values
+
+        hybrid_stellar_bf_median = bs(np.ravel(sat_gals_arr), np.ravel(fred_arr), bins=np.linspace(8.6, 12, 15), statistic=nanmedian)
+        x_stellar_hybrid = 0.5 * (hybrid_stellar_bf_median[1][1:] + hybrid_stellar_bf_median[1][:-1])
+
+        ax[0].plot(x_stellar_hybrid, hybrid_stellar_bf_median[0], c='goldenrod', 
+                   label='Best-fit', lw=10, solid_capstyle='round')
+
+        for idx in range(len(sat_gals_arr)):
+            sat_median_model = bs(sat_gals_arr[idx], fred_arr[idx], bins=np.linspace(8.6, 12, 15), statistic=nanmedian)
+            ax[0].plot(x_stellar_hybrid, sat_median_model[0], alpha=0.2, 
+                c='rebeccapurple', lw=10, solid_capstyle='round', zorder=-10)
+                
+        # Plotting last sat median model again just so that adding label to 
+        # legend is easier and zorder so that best fit is plotted above models
+        ax[0].plot(x_stellar_hybrid, sat_median_model[0], c='rebeccapurple', 
+                   label='Models', lw=10, solid_capstyle='round', zorder=-10)
+
+
+        # #* Experiment to find smoothest looking curve
+        # bin_num = np.arange(15, 65, 5)
+        # for bin_i in bin_num:
+        #     y_bf = bs(np.ravel(sat_gals_arr), np.ravel(fred_arr), bins=np.linspace(8.6, 12, bin_i), statistic=nanmedian)
+        #     x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
+        #     ax[0].plot(x_bf, y_bf[0], c='grey', lw=10, solid_capstyle='round')
+
+
+        #* BARYONIC MODEL
+        sat_gals_arr = baryonic_models_df.iloc[:200,1:].values
+        fred_arr = baryonic_models_df.iloc[200:,1:].values
+
+        baryonic_bf_median = bs(np.ravel(sat_gals_arr), np.ravel(fred_arr), bins=np.linspace(9.0, 12, 15), statistic=nanmedian)
+        x_baryonic = 0.5 * (baryonic_bf_median[1][1:] + baryonic_bf_median[1][:-1])
+
+        ax[1].plot(x_baryonic, baryonic_bf_median[0], c='goldenrod', 
+            label='Best-fit', lw=10, solid_capstyle='round')
+
+        for idx in range(len(sat_gals_arr)):
+            sat_median_model = bs(sat_gals_arr[idx], fred_arr[idx], bins=np.linspace(9.0, 12, 15), statistic=nanmedian)
+            ax[1].plot(x_baryonic, sat_median_model[0], alpha=0.2, 
+                c='rebeccapurple', lw=10, solid_capstyle='round', zorder=-10)
+
+        # Plotting again just so that adding label to legend is easier
+        ax[1].plot(x_baryonic, sat_median_model[0], c='rebeccapurple', 
+            label='Models', lw=10, solid_capstyle='round', zorder=-10)
+
+        # #* Experiment to find smoothest looking curve
+        # for bin_i in bin_num:
+        #     y_bf = bs(np.ravel(sat_gals_arr), np.ravel(fred_arr), bins=np.linspace(9.0, 12, bin_i), statistic=nanmedian)
+        #     x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
+        #     ax[1].plot(x_bf, y_bf[0], c='grey', lw=10, solid_capstyle='round')
+
+        
+        #* HALO MODEL
+        # sat_gals_arr = halo_stellar_models_df.iloc[:200,1:].values
+        # fred_arr = halo_stellar_models_df.iloc[200:,1:].values
+
+        # halo_stellar_bf_median = bs(np.ravel(sat_gals_arr), np.ravel(fred_arr), bins=np.linspace(10, 15, 15), statistic=nanmedian)
+        # x_stellar_halo = 0.5 * (halo_stellar_bf_median[1][1:] + halo_stellar_bf_median[1][:-1])
+
+        # ax[2].plot(x_stellar_halo, halo_stellar_bf_median[0], c='goldenrod', 
+        #            label='Best-fit', lw=10, solid_capstyle='round')
+
+        # for idx in range(len(sat_gals_arr)):
+        #     sat_median_model = bs(sat_gals_arr[idx], fred_arr[idx], bins=np.linspace(10, 15, 15), statistic=nanmedian)
+        #     ax[2].plot(x_stellar_halo, sat_median_model[0], alpha=0.2, 
+        #         c='rebeccapurple', lw=10, solid_capstyle='round', zorder=-10)
+
+        # # Plotting again just so that adding label to legend is easier
+        # ax[2].plot(x_stellar_halo, sat_median_model[0], c='rebeccapurple', 
+        #            label='Models', lw=10, solid_capstyle='round', zorder=-10)
+
+        # #* Experiment to find smoothest looking curve
+        # for bin_i in bin_num:
+        #     y_bf = bs(np.ravel(sat_gals_arr), np.ravel(fred_arr), bins=np.linspace(10, 15, bin_i), statistic=nanmedian)
+        #     x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
+        #     ax[2].plot(x_bf, y_bf[0], c='grey', lw=10, solid_capstyle='round')
+
+        ax[0].set_xlabel(r'\boldmath$\log M_{*, sat} \left[\mathrm{M_\odot}\,'\
+                    r' \mathrm{h}^{-2} \right]$', labelpad=10, fontsize=40)
+        ax[1].set_xlabel(r'\boldmath$\log M_{b, sat} \left[\mathrm{M_\odot}\,'\
+                    r' \mathrm{h}^{-2} \right]$', labelpad=10, fontsize=40)
+
+        # ax[2].set_xlabel(r'\boldmath$\log M_{h, host} \left[\mathrm{M_\odot}\,'\
+        #             r' \mathrm{h}^{-1} \right]$', labelpad=10, fontsize=40)
+
+        if settings.mf_type == 'smf':
+            antonio_data = pd.read_csv(settings.path_to_proc + 
+                "../external/fquench_stellar/fqlogTSM_sat_DS_TNG_Salim_z0.csv", 
+                index_col=0, skiprows=1, 
+                names=['fred_ds','logmstar','fred_tng'])
+
+            ax[0].plot(antonio_data.logmstar.values, 
+                antonio_data.fred_ds.values, lw=5, c='#C71585', ls='dashed', 
+                label='Dark Sage')
+            ax[0].plot(antonio_data.logmstar.values, 
+                antonio_data.fred_tng.values, lw=5, c='#228B22', ls='dashdot', 
+                label='TNG')
+
+
+        ax[0].set_ylabel(r'\boldmath$f_{red, sat}$', labelpad=20, fontsize=40)
+
+        sat = AnchoredText("Stellar",
+            prop=dict(size=30), frameon=False, loc='upper left')
+        ax[0].add_artist(sat)
+
+        bat = AnchoredText("Baryonic",
+            prop=dict(size=30), frameon=False, loc='upper left')
+        ax[1].add_artist(bat)
+
+        # sat = AnchoredText("Halo",
+        #     prop=dict(size=30), frameon=False, loc='upper left')
+        # ax[2].add_artist(sat)
+
+        ax[0].legend(loc='lower right', prop={'size':30})
+
+        plt.tight_layout()
+        plt.show()
+
+        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fred_sat_emcee_{0}.pdf'.format(settings.quenching), 
+            bbox_inches="tight", dpi=1200)        
 
     def plot_xmhm(self):
         """
@@ -3970,7 +4894,6 @@ class Plotting_Panels():
         Plot displayed on screen.
         """
         settings = self.settings
-        quenching = settings.quenching
 
         #* NOTE: DECIDED TO PLOT ANALYTICAL BEST-FIT AND MODELS SO AS TO 
         #* COMPARE WITH LIT. FINAL PLOT CODE IS BELOW.
@@ -4244,10 +5167,10 @@ class Plotting_Panels():
 
         plt.show()
 
-        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/shmr_total_emcee_{0}.pdf'.format(quenching), 
+        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/shmr_total_emcee_{0}.pdf'.format(settings.quenching), 
             bbox_inches="tight", dpi=1200)
 
-    def extract_colour_xmhm(self, models, data, best_fit):
+    def extract_colour_xmhm(self, models):
         """
         Plot red and blue SMHM from data, best fit param values, param values 
         corresponding to 68th percentile 100 lowest chi^2 values.
@@ -4277,20 +5200,6 @@ class Plotting_Panels():
         Plot displayed on screen.
         """   
         settings = self.settings
-        quenching = settings.quenching
-
-        dof = data[8]
-
-        halos_bf_red = best_fit[0]['centrals']['halos_red'][0]
-        gals_bf_red = best_fit[0]['centrals']['gals_red'][0]
-
-        halos_bf_blue = best_fit[0]['centrals']['halos_blue'][0]
-        gals_bf_blue = best_fit[0]['centrals']['gals_blue'][0]
-
-        y_bf_red,x_bf_red,binnum_red = bs(halos_bf_red,\
-        gals_bf_red,'mean',bins=np.linspace(10, 15, 15))
-        y_bf_blue,x_bf_blue,binnum_blue = bs(halos_bf_blue,\
-        gals_bf_blue,'mean',bins=np.linspace(10, 15, 15))
 
         i_outer = 0
         red_mod_x_arr = []
@@ -4373,13 +5282,9 @@ class Plotting_Panels():
                 blue_mod_y_arr.append(blue_y)
             i_outer += 1
 
-        red_y_max = np.nanmax(red_mod_y_arr, axis=0)
-        red_y_min = np.nanmin(red_mod_y_arr, axis=0)
-        blue_y_max = np.nanmax(blue_mod_y_arr, axis=0)
-        blue_y_min = np.nanmin(blue_mod_y_arr, axis=0)
-
         if settings.mf_type == "smf":
-            x_stellar = 0.5 * (x_bf_red[1:] + x_bf_red[:-1]) # bin centers
+            #* Note: x_stellar binning is the same for both red and blue groups 
+            x_stellar = 0.5 * (red_x[1:] + red_x[:-1]) # bin centers
             hybrid_stellar_red_model_max = np.nanmax(red_mod_y_arr, axis=0)
             hybrid_stellar_red_model_min = np.nanmin(red_mod_y_arr, axis=0)
             hybrid_stellar_blue_model_max = np.nanmax(blue_mod_y_arr, axis=0)
@@ -4398,7 +5303,7 @@ class Plotting_Panels():
                      )
 
         elif settings.mf_type == "bmf":
-            x_baryonic = 0.5 * (x_bf_red[1:] + x_bf_red[:-1]) # bin centers
+            x_baryonic = 0.5 * (red_x[1:] + red_x[:-1]) # bin centers
             hybrid_baryonic_red_model_max = np.nanmax(red_mod_y_arr, axis=0)
             hybrid_baryonic_red_model_min = np.nanmin(red_mod_y_arr, axis=0)
             hybrid_baryonic_blue_model_max = np.nanmax(blue_mod_y_arr, axis=0)
@@ -4417,6 +5322,8 @@ class Plotting_Panels():
                      )
 
     def plot_colour_xmhm(self):
+
+        settings = self.settings
 
         stellar_data = np.load("xmhm_colour_stellar.npz")
         baryonic_data = np.load("xmhm_colour_baryonic.npz")
@@ -4531,7 +5438,7 @@ class Plotting_Panels():
         
         plt.show()
 
-        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/shmr_colour_emcee_{0}.pdf'.format(quenching), 
+        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/shmr_colour_emcee_{0}.pdf'.format(settings.quenching), 
             bbox_inches="tight", dpi=1200)
 
     def plot_shmr_comparison(self, models, best_fit):
@@ -4763,947 +5670,39 @@ class Plotting_Panels():
 
         plt.show()
 
-    def extract_red_fraction_cen(self, models):
-        """
-        Plot red fraction of centrals from best fit param values and param values 
-        corresponding to 68th percentile 100 lowest chi^2 values.
+    def Extract_Core(self, models, data):
+        self.extract_total_mf(models, data)
 
-        Parameters
-        ----------
-        result: multidimensional array
-            Array of SMF, blue fraction and SMHM information
+        self.extract_fblue(models, data)
+
+        self.extract_mean_sigma_vs_grpcen(models, data)
         
-        cen_gals_red: array
-            Array of red central stellar mass values for best-fit model
+        self.extract_mean_grpcen_vs_sigma(models, data)
 
-        cen_halos_red: array
-            Array of red central halo mass values for best-fit model
+        self.extract_colour_xmhm(models)
 
-        cen_gals_blue: array
-            Array of blue central stellar mass values for best-fit model
+        self.extract_red_fraction_cen(models)
 
-        cen_halos_blue: array
-            Array of blue central halo mass values for best-fit model
+        self.extract_red_fraction_sat(models)
 
-        f_red_cen_red: array
-            Array of red fractions for red centrals for best-fit model
+    def Plot_Core(self):
+        self.plot_total_mf()
 
-        f_red_cen_blue: array
-            Array of red fractions for blue centrals for best-fit model
-            
-        Returns
-        ---------
-        Plot displayed on screen.
-        """   
-        settings = self.settings
-        quenching = settings.quenching
-        mf_type = settings.mf_type
+        self.plot_fblue()
 
-        cen_gals_arr = []
-        cen_halos_arr = []
-        fred_arr = []
-        i_outer = 0 # There are 10 chunks of all statistics each with len 20
-        while i_outer < 10:
-            cen_gals_idx_arr = []
-            cen_halos_idx_arr = []
-            fred_idx_arr = []
-            for idx in range(len(models[i_outer][0]['centrals']['halos_red'])):
-                red_cen_gals_idx = models[i_outer][0]['centrals']['gals_red'][idx][0]
-                red_cen_halos_idx = models[i_outer][0]['centrals']['halos_red'][idx][0]
-                blue_cen_gals_idx = models[i_outer][0]['centrals']['gals_blue'][idx][0]
-                blue_cen_halos_idx = models[i_outer][0]['centrals']['halos_blue'][idx][0]
-                fred_red_cen_idx = models[i_outer][0]['f_red']['cen_red'][idx][0]
-                fred_blue_cen_idx = models[i_outer][0]['f_red']['cen_blue'][idx][0]
-
-                cen_gals_idx_arr = list(red_cen_gals_idx) + list(blue_cen_gals_idx)
-                cen_gals_arr.append(cen_gals_idx_arr)
-
-                cen_halos_idx_arr = list(red_cen_halos_idx) + list(blue_cen_halos_idx)
-                cen_halos_arr.append(cen_halos_idx_arr)
-
-                fred_idx_arr = list(fred_red_cen_idx) + list(fred_blue_cen_idx)
-                fred_arr.append(fred_idx_arr)
-                
-                cen_gals_idx_arr = []
-                cen_halos_idx_arr = []
-                fred_idx_arr = []
-
-            i_outer+=1
-
-        df1 = pd.DataFrame(cen_gals_arr)
-        df2 = pd.DataFrame(fred_arr)
-        df = pd.concat([df1, df2])
-
-        if mf_type == "smf":
-            df.to_csv("hybrid_stellar_fred_cen_models_pca.csv")
-
-        elif mf_type == "bmf":
-            df.to_csv("baryonic_fred_cen_models_pca.csv")
-
-        elif quenching == "halo":
-            df1 = pd.DataFrame(cen_halos_arr)
-            df2 = pd.DataFrame(fred_arr)
-            df = pd.concat([df1, df2])
-
-            df.to_csv("halo_stellar_fred_cen_models_pca.csv")
-
-    def plot_red_fraction_cen(self):
+        self.plot_mean_sigma_vs_grpcen()
         
-        settings = self.settings
+        self.plot_mean_grpcen_vs_sigma()
 
-        hybrid_stellar_models_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/hybrid_stellar_fred_cen_models_pca.csv") 
-        hybrid_baryonic_models_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/baryonic_fred_cen_models_pca.csv") 
+        self.plot_red_fraction_cen()
 
-        #* halo model
-        # halo_stellar_models_df = pd.read_csv("halo_stellar_fred_cen_models_pca.csv") 
-        # halo_stellar_bf_df = pd.read_csv("halo_stellar_fred_cen_bf_pca.csv") 
-        
-        fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=True, 
-            gridspec_kw={'wspace':0.0})
+        self.plot_red_fraction_sat()
 
-        #* STELLAR MODEL
-        cen_gals_arr = hybrid_stellar_models_df.iloc[:200,1:].values
-        fred_arr = hybrid_stellar_models_df.iloc[200:,1:].values
-        
-        def nanmedian(arr):
-            return np.nanmedian(arr)
-        
-        #* Median of 200 models
-        y_bf = bs(np.ravel(cen_gals_arr), np.ravel(fred_arr), bins=np.linspace(8.6, 12, 15), statistic=nanmedian)
-        x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
-        
-        ax[0].plot(x_bf, y_bf[0], c='goldenrod', label='Best-fit', lw=10, solid_capstyle='round')
+        self.plot_xmhm()
 
-        for idx in range(len(cen_gals_arr)):
-            cen_median_model = bs(cen_gals_arr[idx], fred_arr[idx], 
-                                bins=np.linspace(8.6, 12, 15), statistic=nanmedian)
-            ax[0].plot(x_bf, cen_median_model[0], alpha=0.2, c='rebeccapurple', lw=10, solid_capstyle='round', zorder=-10)
+        self.plot_colour_xmhm()
 
-        #* experiment to see how many bins are needed for the smoothest looking curve
-        # bin_num = np.arange(15, 65, 5)
-        # for bin_i in bin_num:
-        #     y_bf = bs(np.ravel(cen_gals_arr), np.ravel(fred_arr), bins=np.linspace(8.6, 12, bin_i), statistic=nanmedian)
-        #     x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
-
-        #     plt.plot(x_bf, y_bf[0], c='grey', lw=10, solid_capstyle='round')
-        #     plt.show()
-
-        ax[0].set_xlabel(r'\boldmath$\log M_{*, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',labelpad=10, fontsize=40)
-        ax[0].set_ylabel(r'\boldmath$f_{red, cen}$', labelpad=20, fontsize=40)
-
-        #* BARYONIC MODEL
-        cen_gals_arr = hybrid_baryonic_models_df.iloc[:200,1:].values
-        fred_arr = hybrid_baryonic_models_df.iloc[200:,1:].values
-
-        #* Median of 200 models
-        y_bf = bs(np.ravel(cen_gals_arr), np.ravel(fred_arr), bins=np.linspace(9.0, 12, 15), statistic=nanmedian)
-        x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
-
-        for idx in range(len(cen_gals_arr)):
-            cen_median_model = bs(cen_gals_arr[idx], fred_arr[idx], 
-                                bins=np.linspace(9.0, 12, 15), statistic=nanmedian)
-            ax[1].plot(x_bf, cen_median_model[0], alpha=0.2, c='rebeccapurple', lw=10, solid_capstyle='round')
-
-        ax[1].plot(x_bf, y_bf[0], c='goldenrod', label='Best-fit', lw=10, solid_capstyle='round')
-
-        #* experiment to see how many bins are needed for the smoothest looking curve
-        # ax[1].plot(x_bf, y_bf[0], c='goldenrod', label='Best-fit', lw=10, solid_capstyle='round')
-        # for bin_i in bin_num:
-        #     y_bf = bs(np.ravel(cen_gals_arr), np.ravel(fred_arr), bins=np.linspace(9.0, 12, bin_i), statistic=nanmedian)
-        #     x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
-
-        #     ax[1].plot(x_bf, y_bf[0], c='grey', lw=10, solid_capstyle='round')
-
-        ax[1].set_xlabel(r'\boldmath$\log M_{b, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$',labelpad=10, fontsize=40)
-
-        #* HALO MODEL
-        # cen_gals_arr = halo_stellar_models_df.iloc[:200,1:].values
-        # fred_arr = halo_stellar_models_df.iloc[200:,1:].values
-        # cen_gals_bf = halo_stellar_bf_df.iloc[:,1].values
-        # fred_bf = halo_stellar_bf_df.iloc[:,2].values
-
-        # #* Median of 200 models
-        # y_bf = bs(np.ravel(cen_gals_arr), np.ravel(fred_arr), bins=np.linspace(10, 15, 15), statistic=nanmedian)
-        # x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
-
-        # ax[2].plot(x_bf, y_bf[0], c='goldenrod', label='Best-fit', lw=10, solid_capstyle='round')
-        # for bin_i in bin_num:
-        #     y_bf = bs(np.ravel(cen_gals_arr), np.ravel(fred_arr), bins=np.linspace(10, 15, bin_i), statistic=nanmedian)
-        #     x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
-
-        #     ax[2].plot(x_bf, y_bf[0], c='grey', lw=10, solid_capstyle='round')
-
-        # ax[2].set_xlabel(r'\boldmath$\log M_{h, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',labelpad=10, fontsize=40)
-        # ax[2].set_ylabel(r'\boldmath$f_{red, cen}$', labelpad=20, fontsize=40)
-
-        if settings.mf_type == 'smf':
-            antonio_data = pd.read_csv(settings.path_to_proc + \
-                "../external/fquench_stellar/fqlogTSM_cen_DS_TNG_Salim_z0.csv", 
-                index_col=0, skiprows=1, 
-                names=['fred_ds','logmstar','fred_tng','fred_salim'])
-            ax[0].plot(antonio_data.logmstar.values, 
-                antonio_data.fred_ds.values, lw=5, c='#C71585', ls='dashed', 
-                label='Dark Sage')
-            ax[0].plot(antonio_data.logmstar.values, 
-                antonio_data.fred_salim.values, lw=5, c='#FF6347', ls='dotted', 
-                label='Salim+18')
-            ax[0].plot(antonio_data.logmstar.values, 
-                antonio_data.fred_tng.values, lw=5, c='#228B22', ls='dashdot', 
-                label='TNG')
-
-        sat = AnchoredText("Stellar",
-                        prop=dict(size=30), frameon=False, loc='upper left')
-        ax[0].add_artist(sat)
-
-        bat = AnchoredText("Baryonic",
-                        prop=dict(size=30), frameon=False, loc='upper left')
-        ax[1].add_artist(bat)
-
-        # sat = AnchoredText("Halo",
-        #                 prop=dict(size=30), frameon=False, loc='upper left')
-        # ax[2].add_artist(sat)
-
-        ax[0].legend(loc='lower right', prop={'size':30})
-
-        # Set explicit limits for first subplot to avoid overlap
-        ax[0].set_xlim(8.6, 12)
-        ax[0].set_xticks(np.linspace(8.6, 11.8, 5)) 
-
-        # Set explicit limits for second subplot to avid overlap
-        ax[1].set_xlim(9.0, 12)
-        ax[1].set_xticks(np.linspace(9.2, 12, 5))  
-
-        plt.show()
-
-        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fred_cen_emcee_{0}.pdf'.format(quenching), 
-            bbox_inches="tight", dpi=1200)
-
-    def extract_red_fraction_sat(self, models):
-        """
-        Plot red fraction of satellites from best fit param values and param values 
-        corresponding to 68th percentile 100 lowest chi^2 values.
-
-        Parameters
-        ----------
-        result: multidimensional array
-            Array of SMF, blue fraction and SMHM information
-        
-        sat_gals_red: array
-            Array of red satellite stellar mass values for best-fit model
-
-        sat_halos_red: array
-            Array of red satellite host halo mass values for best-fit model
-
-        sat_gals_blue: array
-            Array of blue satellite stellar mass values for best-fit model
-
-        sat_halos_blue: array
-            Array of blue satellite host halo mass values for best-fit model
-
-        f_red_sat_red: array
-            Array of red fractions for red satellites for best-fit model
-
-        f_red_sat_blue: array
-            Array of red fractions for blue satellites for best-fit model
-            
-        Returns
-        ---------
-        Plot displayed on screen.
-        """
-        settings = self.settings
-        quenching = settings.quenching
-        mf_type = settings.mf_type
-
-        sat_gals_arr = []
-        sat_halos_arr = []
-        fred_arr = []
-        i_outer = 0 # There are 10 chunks of all 16 statistics each with len 20
-        while i_outer < 10:
-            sat_gals_idx_arr = []
-            sat_halos_idx_arr = []
-            fred_idx_arr = []
-            for idx in range(len(models[i_outer][0]['satellites']['halos_red'])):
-                red_sat_gals_idx = models[i_outer][0]['satellites']['gals_red'][idx][0]
-                red_sat_halos_idx = models[i_outer][0]['satellites']['halos_red'][idx][0]
-                blue_sat_gals_idx = models[i_outer][0]['satellites']['gals_blue'][idx][0]
-                blue_sat_halos_idx = models[i_outer][0]['satellites']['halos_blue'][idx][0]
-                fred_red_sat_idx = models[i_outer][0]['f_red']['sat_red'][idx][0]
-                fred_blue_sat_idx = models[i_outer][0]['f_red']['sat_blue'][idx][0]
-
-                sat_gals_idx_arr = list(red_sat_gals_idx) + list(blue_sat_gals_idx)
-                sat_gals_arr.append(sat_gals_idx_arr)
-
-                sat_halos_idx_arr = list(red_sat_halos_idx) + list(blue_sat_halos_idx)
-                sat_halos_arr.append(sat_halos_idx_arr)
-
-                fred_idx_arr = list(fred_red_sat_idx) + list(fred_blue_sat_idx)
-                fred_arr.append(fred_idx_arr)
-                
-                sat_gals_idx_arr = []
-                sat_halos_idx_arr = []
-                fred_idx_arr = []
-
-            i_outer+=1
-        
-
-        df1 = pd.DataFrame(sat_gals_arr)
-        df2 = pd.DataFrame(fred_arr)
-        df = pd.concat([df1, df2])
-
-        if mf_type == "smf":
-
-            df.to_csv("hybrid_stellar_fred_sat_models_pca.csv")
-
-        elif mf_type == "bmf":
-
-            df.to_csv("/Users/asadm2/Desktop/baryonic_fred_sat_models_pca.csv")
-
-        elif quenching == "halo":
-            df1 = pd.DataFrame(sat_halos_arr)
-            df2 = pd.DataFrame(fred_arr)
-            df = pd.concat([df1, df2])
-
-            df.to_csv("/Users/asadm2/Desktop/halo_stellar_fred_sat_models_pca.csv")
-        
-    def plot_red_fraction_sat(self):
-
-        settings = self.settings
-        quenching = settings.quenching
-        mf_type = settings.mf_type
-
-        hybrid_stellar_models_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/hybrid_stellar_fred_sat_models_pca.csv") 
-        baryonic_models_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/baryonic_fred_sat_models_pca.csv") 
-
-        #* HALO MODEL
-        # halo_stellar_models_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/halo_stellar_fred_sat_models_pca.csv") 
-
-        fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=True, 
-            gridspec_kw={'wspace':0.0})
-
-        def nanmedian(arr):
-            return np.nanmedian(arr)
-
-        #* STELLAR MODEL
-        sat_gals_arr = hybrid_stellar_models_df.iloc[:200,1:].values
-        fred_arr = hybrid_stellar_models_df.iloc[200:,1:].values
-
-        hybrid_stellar_bf_median = bs(np.ravel(sat_gals_arr), np.ravel(fred_arr), bins=np.linspace(8.6, 12, 15), statistic=nanmedian)
-        x_stellar_hybrid = 0.5 * (hybrid_stellar_bf_median[1][1:] + hybrid_stellar_bf_median[1][:-1])
-
-        ax[0].plot(x_stellar_hybrid, hybrid_stellar_bf_median[0], c='goldenrod', 
-                   label='Best-fit', lw=10, solid_capstyle='round')
-
-        for idx in range(len(sat_gals_arr)):
-            sat_median_model = bs(sat_gals_arr[idx], fred_arr[idx], bins=np.linspace(8.6, 12, 15), statistic=nanmedian)
-            ax[0].plot(x_stellar_hybrid, sat_median_model[0], alpha=0.2, 
-                c='rebeccapurple', lw=10, solid_capstyle='round', zorder=-10)
-                
-        # Plotting last sat median model again just so that adding label to 
-        # legend is easier and zorder so that best fit is plotted above models
-        ax[0].plot(x_stellar_hybrid, sat_median_model[0], c='rebeccapurple', 
-                   label='Models', lw=10, solid_capstyle='round', zorder=-10)
-
-
-        # #* Experiment to find smoothest looking curve
-        # bin_num = np.arange(15, 65, 5)
-        # for bin_i in bin_num:
-        #     y_bf = bs(np.ravel(sat_gals_arr), np.ravel(fred_arr), bins=np.linspace(8.6, 12, bin_i), statistic=nanmedian)
-        #     x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
-        #     ax[0].plot(x_bf, y_bf[0], c='grey', lw=10, solid_capstyle='round')
-
-
-        #* BARYONIC MODEL
-        sat_gals_arr = baryonic_models_df.iloc[:200,1:].values
-        fred_arr = baryonic_models_df.iloc[200:,1:].values
-
-        baryonic_bf_median = bs(np.ravel(sat_gals_arr), np.ravel(fred_arr), bins=np.linspace(9.0, 12, 15), statistic=nanmedian)
-        x_baryonic = 0.5 * (baryonic_bf_median[1][1:] + baryonic_bf_median[1][:-1])
-
-        ax[1].plot(x_baryonic, baryonic_bf_median[0], c='goldenrod', 
-            label='Best-fit', lw=10, solid_capstyle='round')
-
-        for idx in range(len(sat_gals_arr)):
-            sat_median_model = bs(sat_gals_arr[idx], fred_arr[idx], bins=np.linspace(9.0, 12, 15), statistic=nanmedian)
-            ax[1].plot(x_baryonic, sat_median_model[0], alpha=0.2, 
-                c='rebeccapurple', lw=10, solid_capstyle='round', zorder=-10)
-
-        # Plotting again just so that adding label to legend is easier
-        ax[1].plot(x_baryonic, sat_median_model[0], c='rebeccapurple', 
-            label='Models', lw=10, solid_capstyle='round', zorder=-10)
-
-        # #* Experiment to find smoothest looking curve
-        # for bin_i in bin_num:
-        #     y_bf = bs(np.ravel(sat_gals_arr), np.ravel(fred_arr), bins=np.linspace(9.0, 12, bin_i), statistic=nanmedian)
-        #     x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
-        #     ax[1].plot(x_bf, y_bf[0], c='grey', lw=10, solid_capstyle='round')
-
-        
-        #* HALO MODEL
-        # sat_gals_arr = halo_stellar_models_df.iloc[:200,1:].values
-        # fred_arr = halo_stellar_models_df.iloc[200:,1:].values
-
-        # halo_stellar_bf_median = bs(np.ravel(sat_gals_arr), np.ravel(fred_arr), bins=np.linspace(10, 15, 15), statistic=nanmedian)
-        # x_stellar_halo = 0.5 * (halo_stellar_bf_median[1][1:] + halo_stellar_bf_median[1][:-1])
-
-        # ax[2].plot(x_stellar_halo, halo_stellar_bf_median[0], c='goldenrod', 
-        #            label='Best-fit', lw=10, solid_capstyle='round')
-
-        # for idx in range(len(sat_gals_arr)):
-        #     sat_median_model = bs(sat_gals_arr[idx], fred_arr[idx], bins=np.linspace(10, 15, 15), statistic=nanmedian)
-        #     ax[2].plot(x_stellar_halo, sat_median_model[0], alpha=0.2, 
-        #         c='rebeccapurple', lw=10, solid_capstyle='round', zorder=-10)
-
-        # # Plotting again just so that adding label to legend is easier
-        # ax[2].plot(x_stellar_halo, sat_median_model[0], c='rebeccapurple', 
-        #            label='Models', lw=10, solid_capstyle='round', zorder=-10)
-
-        # #* Experiment to find smoothest looking curve
-        # for bin_i in bin_num:
-        #     y_bf = bs(np.ravel(sat_gals_arr), np.ravel(fred_arr), bins=np.linspace(10, 15, bin_i), statistic=nanmedian)
-        #     x_bf = 0.5 * (y_bf[1][1:] + y_bf[1][:-1])
-        #     ax[2].plot(x_bf, y_bf[0], c='grey', lw=10, solid_capstyle='round')
-
-        ax[0].set_xlabel(r'\boldmath$\log M_{*, sat} \left[\mathrm{M_\odot}\,'\
-                    r' \mathrm{h}^{-2} \right]$', labelpad=10, fontsize=40)
-        ax[1].set_xlabel(r'\boldmath$\log M_{b, sat} \left[\mathrm{M_\odot}\,'\
-                    r' \mathrm{h}^{-2} \right]$', labelpad=10, fontsize=40)
-
-        # ax[2].set_xlabel(r'\boldmath$\log M_{h, host} \left[\mathrm{M_\odot}\,'\
-        #             r' \mathrm{h}^{-1} \right]$', labelpad=10, fontsize=40)
-
-        if mf_type == 'smf':
-            antonio_data = pd.read_csv(settings.path_to_proc + 
-                "../external/fquench_stellar/fqlogTSM_sat_DS_TNG_Salim_z0.csv", 
-                index_col=0, skiprows=1, 
-                names=['fred_ds','logmstar','fred_tng'])
-
-            ax[0].plot(antonio_data.logmstar.values, 
-                antonio_data.fred_ds.values, lw=5, c='#C71585', ls='dashed', 
-                label='Dark Sage')
-            ax[0].plot(antonio_data.logmstar.values, 
-                antonio_data.fred_tng.values, lw=5, c='#228B22', ls='dashdot', 
-                label='TNG')
-
-
-        ax[0].set_ylabel(r'\boldmath$f_{red, sat}$', labelpad=20, fontsize=40)
-
-        sat = AnchoredText("Stellar",
-            prop=dict(size=30), frameon=False, loc='upper left')
-        ax[0].add_artist(sat)
-
-        bat = AnchoredText("Baryonic",
-            prop=dict(size=30), frameon=False, loc='upper left')
-        ax[1].add_artist(bat)
-
-        # sat = AnchoredText("Halo",
-        #     prop=dict(size=30), frameon=False, loc='upper left')
-        # ax[2].add_artist(sat)
-
-        ax[0].legend(loc='lower right', prop={'size':30})
-
-        plt.tight_layout()
-        plt.show()
-
-        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fred_sat_emcee_{0}.pdf'.format(quenching), 
-            bbox_inches="tight", dpi=1200)        
-
-    def extract_mean_sigma_vs_grpcen(self, models, data):
-        """
-        Plot average group central stellar mass vs. velocity dispersion from data, 
-        best fit param values and param values corresponding to 68th percentile 100 
-        lowest chi^2 values.
-
-        Parameters
-        ----------
-        result: multidimensional array
-            Array of SMF, blue fraction and SMHM information
-
-        red_sigma_bf: array
-            Array of velocity dispersion around red group centrals for best-fit 
-            model
-
-        grp_red_cen_stellar_mass_bf: array
-            Array of red group central stellar masses for best-fit model
-
-        blue_sigma_bf: array
-            Array of velocity dispersion around blue group centrals for best-fit 
-            model
-
-        grp_blue_cen_stellar_mass_bf: array
-            Array of blue group central stellar masses for best-fit model
-
-        red_sigma_data: array
-            Array of velocity dispersion around red group centrals for data
-
-        grp_red_cen_stellar_mass_data: array
-            Array of red group central stellar masses for data
-
-        blue_sigma_data: array
-            Array of velocity dispersion around blue group centrals for data
-
-        grp_blue_cen_stellar_mass_data: array
-            Array of blue group central stellar masses for data
-
-        err_red: array
-            Array of std values per bin of red group central stellar mass vs. 
-            velocity dispersion from mocks
-
-        err_blue: array
-            Array of std values per bin of blue group central stellar mass vs. 
-            velocity dispersion from mocks
-
-        bf_chi2: float
-            Chi-squared value associated with the best-fit model
-
-        Returns
-        ---------
-        Plot displayed on screen.
-        """   
-        settings = self.settings
-
-        error_red = data[8][12:16]
-        error_blue = data[8][16:20]
-
-        x_sigma_red_data, y_mean_mstar_red_data = data[4][1], data[4][0]
-        x_sigma_blue_data, y_mean_mstar_blue_data = data[5][1], data[5][0]
-
-        mean_grp_red_cen_gals_arr = []
-        mean_grp_blue_cen_gals_arr = []
-        red_sigma_arr = []
-        blue_sigma_arr = []
-        chunk_counter = 0 # There are 5 chunks of all 16 statistics each with len 20
-        while chunk_counter < 10:
-            for idx in range(len(models[chunk_counter][1]['mean_mass'])):
-                mean_grp_red_cen_gals_arr.append(models[chunk_counter][1]['mean_mass']['red_cen_mass'][idx])
-                mean_grp_blue_cen_gals_arr.append(models[chunk_counter][1]['mean_mass']['blue_cen_mass'][idx])
-                red_sigma_arr.append(models[chunk_counter][1]['mean_mass']['red_sigma'][idx])
-                blue_sigma_arr.append(models[chunk_counter][1]['mean_mass']['blue_sigma'][idx])
-
-            chunk_counter+=1
-
-        bins_red = 0.5 * (x_sigma_red_data[1:] + x_sigma_red_data[:-1]) # bin centers 
-        bins_blue = 0.5 * (x_sigma_blue_data[1:] + x_sigma_blue_data[:-1]) # bin centers 
-
-        if settings.mf_type == "smf":
-            x_stellar_red = bins_red
-            x_stellar_blue = bins_blue
-            stellar_red_data_y = y_mean_mstar_red_data
-            stellar_blue_data_y = y_mean_mstar_blue_data
-            stellar_error_red = error_red
-            stellar_error_blue = error_blue
-            hybrid_stellar_red_model_max = np.nanmax(mean_grp_red_cen_gals_arr, axis=0)
-            hybrid_stellar_red_model_min = np.nanmin(mean_grp_red_cen_gals_arr, axis=0)
-            hybrid_stellar_blue_model_max = np.nanmax(mean_grp_blue_cen_gals_arr, axis=0)
-            hybrid_stellar_blue_model_min = np.nanmin(mean_grp_blue_cen_gals_arr, axis=0)
-            hybrid_stellar_red_bf_y = np.nanmedian(mean_grp_red_cen_gals_arr, axis=0)
-            hybrid_stellar_blue_bf_y = np.nanmedian(mean_grp_blue_cen_gals_arr, axis=0)
-
-            np.savez('sigma_grpcen_stellar.npz', 
-                     x_stellar_red=x_stellar_red, 
-                     x_stellar_blue=x_stellar_blue,
-                     stellar_red_data_y=stellar_red_data_y,
-                     stellar_blue_data_y=stellar_blue_data_y,
-                     stellar_error_red=stellar_error_red,
-                     stellar_error_blue=stellar_error_blue,
-                     hybrid_stellar_red_model_max=hybrid_stellar_red_model_max,\
-                     hybrid_stellar_red_model_min=hybrid_stellar_red_model_min,\
-                     hybrid_stellar_blue_model_max=hybrid_stellar_blue_model_max,\
-                     hybrid_stellar_blue_model_min=hybrid_stellar_blue_model_min,\
-                     hybrid_stellar_red_bf_y=hybrid_stellar_red_bf_y,\
-                     hybrid_stellar_blue_bf_y=hybrid_stellar_blue_bf_y
-                     )
-
-        elif settings.mf_type == "bmf":
-            x_baryonic_red = bins_red
-            x_baryonic_blue = bins_blue
-            baryonic_red_data_y = y_mean_mstar_red_data
-            baryonic_blue_data_y = y_mean_mstar_blue_data
-            baryonic_error_red = error_red
-            baryonic_error_blue = error_blue
-            hybrid_baryonic_red_model_max = np.nanmax(mean_grp_red_cen_gals_arr, axis=0)
-            hybrid_baryonic_red_model_min = np.nanmin(mean_grp_red_cen_gals_arr, axis=0)
-            hybrid_baryonic_blue_model_max = np.nanmax(mean_grp_blue_cen_gals_arr, axis=0)
-            hybrid_baryonic_blue_model_min = np.nanmin(mean_grp_blue_cen_gals_arr, axis=0)
-            hybrid_baryonic_red_bf_y = np.nanmedian(mean_grp_red_cen_gals_arr, axis=0)
-            hybrid_baryonic_blue_bf_y = np.nanmedian(mean_grp_blue_cen_gals_arr, axis=0)
-
-            np.savez('sigma_grpcen_baryonic.npz', 
-                     x_baryonic_red=x_baryonic_red, 
-                     x_baryonic_blue=x_baryonic_blue,
-                     baryonic_red_data_y=baryonic_red_data_y,
-                     baryonic_blue_data_y=baryonic_blue_data_y,
-                     baryonic_error_red=baryonic_error_red,
-                     baryonic_error_blue=baryonic_error_blue,
-                     hybrid_baryonic_red_model_max=hybrid_baryonic_red_model_max,\
-                     hybrid_baryonic_red_model_min=hybrid_baryonic_red_model_min,\
-                     hybrid_baryonic_blue_model_max=hybrid_baryonic_blue_model_max,\
-                     hybrid_baryonic_blue_model_min=hybrid_baryonic_blue_model_min,\
-                     hybrid_baryonic_red_bf_y=hybrid_baryonic_red_bf_y,\
-                     hybrid_baryonic_blue_bf_y=hybrid_baryonic_blue_bf_y
-                     )
-
-    def plot_mean_sigma_vs_grpcen(self):
-
-        stellar_data = np.load("sigma_grpcen_stellar.npz")
-        baryonic_data = np.load("sigma_grpcen_baryonic.npz")
-
-        x_stellar_red=stellar_data["x_stellar_red"]
-        x_stellar_blue=stellar_data["x_stellar_blue"]
-        stellar_red_data_y=stellar_data["stellar_red_data_y"]
-        stellar_blue_data_y=stellar_data["stellar_blue_data_y"]
-        stellar_error_red=stellar_data["stellar_error_red"]
-        stellar_error_blue=stellar_data["stellar_error_blue"]
-        hybrid_stellar_red_model_max=stellar_data["hybrid_stellar_red_model_max"]
-        hybrid_stellar_red_model_min=stellar_data["hybrid_stellar_red_model_min"]
-        hybrid_stellar_blue_model_max=stellar_data["hybrid_stellar_blue_model_max"]
-        hybrid_stellar_blue_model_min=stellar_data["hybrid_stellar_blue_model_min"]
-        hybrid_stellar_red_bf_y=stellar_data["hybrid_stellar_red_bf_y"]
-        hybrid_stellar_blue_bf_y=stellar_data["hybrid_stellar_blue_bf_y"]
-
-
-        x_baryonic_red=baryonic_data["x_baryonic_red"]
-        x_baryonic_blue=baryonic_data["x_baryonic_blue"]
-        baryonic_red_data_y=baryonic_data["baryonic_red_data_y"]
-        baryonic_blue_data_y=baryonic_data["baryonic_blue_data_y"]
-        baryonic_error_red=baryonic_data["baryonic_error_red"]
-        baryonic_error_blue=baryonic_data["baryonic_error_blue"]
-        hybrid_baryonic_red_model_max=baryonic_data["hybrid_baryonic_red_model_max"]
-        hybrid_baryonic_red_model_min=baryonic_data["hybrid_baryonic_red_model_min"]
-        hybrid_baryonic_blue_model_max=baryonic_data["hybrid_baryonic_blue_model_max"]
-        hybrid_baryonic_blue_model_min=baryonic_data["hybrid_baryonic_blue_model_min"]
-        hybrid_baryonic_red_bf_y=baryonic_data["hybrid_baryonic_red_bf_y"]
-        hybrid_baryonic_blue_bf_y=baryonic_data["hybrid_baryonic_blue_bf_y"]
-
-        fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
-            gridspec_kw={'wspace':0.30})
-
-        sdr = ax[0].errorbar(x_stellar_red, stellar_red_data_y, yerr=stellar_error_red,
-                color='indianred',fmt='^',ecolor='indianred',markersize=20,capsize=7,
-                capthick=1.5,zorder=10)
-        sdb = ax[0].errorbar(x_stellar_blue, stellar_blue_data_y, yerr=stellar_error_blue,
-                color='cornflowerblue',fmt='^',ecolor='cornflowerblue',markersize=20,capsize=7,
-                capthick=1.5,zorder=10)
-
-        smr = ax[0].fill_between(x=x_stellar_red, y1=hybrid_stellar_red_model_max, 
-            y2=hybrid_stellar_red_model_min, color='indianred',alpha=0.4)
-        smb = ax[0].fill_between(x=x_stellar_blue, y1=hybrid_stellar_blue_model_max, 
-            y2=hybrid_stellar_blue_model_min, color='cornflowerblue',alpha=0.4)
-
-        sbfr, = ax[0].plot(x_stellar_red, hybrid_stellar_red_bf_y, c='indianred', 
-            zorder=9, ls='--', lw=4)
-        sbfb, = ax[0].plot(x_stellar_blue, hybrid_stellar_blue_bf_y, 
-            c='cornflowerblue', zorder=9, ls='--', lw=4)
-
-        bdr = ax[1].errorbar(x_baryonic_red, baryonic_red_data_y, yerr=baryonic_error_red,
-                color='indianred',fmt='^',ecolor='indianred',markersize=20,capsize=7,
-                capthick=1.5,zorder=10)
-        bdb = ax[1].errorbar(x_baryonic_blue, baryonic_blue_data_y, yerr=baryonic_error_blue,
-                color='cornflowerblue',fmt='^',ecolor='cornflowerblue',markersize=20,capsize=7,
-                capthick=1.5,zorder=10)
-
-        bmr = ax[1].fill_between(x=x_baryonic_red, y1=hybrid_baryonic_red_model_max, 
-            y2=hybrid_baryonic_red_model_min, color='indianred',alpha=0.4)
-        bmb = ax[1].fill_between(x=x_baryonic_blue, y1=hybrid_baryonic_blue_model_max, 
-            y2=hybrid_baryonic_blue_model_min, color='cornflowerblue',alpha=0.4)
-
-        bbfr, = ax[1].plot(x_baryonic_red, hybrid_baryonic_red_bf_y, c='indianred', 
-            zorder=9, ls='--', lw=4)
-        bbfb, = ax[1].plot(x_baryonic_blue, hybrid_baryonic_blue_bf_y, 
-            c='cornflowerblue', zorder=9, ls='--', lw=4)
-
-
-        #* HALO MODEL
-        # sdr = ax[2].errorbar(x_stellar_red, stellar_red_data_y, yerr=stellar_error_red,
-        #         color='indianred',fmt='^',ecolor='indianred',markersize=20,capsize=7,
-        #         capthick=1.5,zorder=10)
-        # sdb = ax[2].errorbar(x_stellar_blue, stellar_blue_data_y, yerr=stellar_error_blue,
-        #         color='cornflowerblue',fmt='^',ecolor='cornflowerblue',markersize=20,capsize=7,
-        #         capthick=1.5,zorder=10)
-
-        # smr = ax[2].fill_between(x=x_stellar_red, y1=halo_stellar_red_models_max, 
-        #     y2=halo_stellar_red_models_min, color='indianred',alpha=0.4)
-        # smb = ax[2].fill_between(x=x_stellar_blue, y1=halo_stellar_blue_models_max, 
-        #     y2=halo_stellar_blue_models_min, color='cornflowerblue',alpha=0.4)
-
-        # sbfr, = ax[2].plot(x_stellar_red, halo_stellar_red_bf_y, c='indianred', 
-        #     zorder=9, ls='--', lw=4)
-        # sbfb, = ax[2].plot(x_stellar_blue, halo_stellar_blue_bf_y, 
-        #     c='cornflowerblue', zorder=9, ls='--', lw=4)
-
-        ax[0].legend([(sdr, sdb), (smr, smb), (sbfr, sbfb)], 
-            ['Data','Models','Best-fit'],
-            handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, 
-            markerscale=0.5, loc='best', prop={'size':30})
-
-        sat = AnchoredText("Stellar",
-            prop=dict(size=30), frameon=False, loc='upper center')
-        ax[0].add_artist(sat)
-
-        bat = AnchoredText("Baryonic",
-            prop=dict(size=30), frameon=False, loc='upper left')
-        ax[1].add_artist(bat)
-
-        # sat = AnchoredText("Halo",
-        #     prop=dict(size=30), frameon=False, loc='upper center')
-        # ax[2].add_artist(sat)
-
-        ax[0].set_xlabel(r'\boldmath$\log \sigma \left[\mathrm{km/s} \right]$', labelpad=10, fontsize=40)
-        ax[0].set_ylabel(r'\boldmath$\langle\log M_{*,group\ cen}\rangle \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
-
-        ax[1].set_xlabel(r'\boldmath$\log \sigma \left[\mathrm{km/s} \right]$', labelpad=10, fontsize=40)
-        ax[1].set_ylabel(r'\boldmath$\langle\log M_{b,group\ cen}\rangle \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
-
-        # ax[2].set_xlabel(r'\boldmath$\log \sigma \left[\mathrm{km/s} \right]$', labelpad=10, fontsize=40)
-        # ax[2].set_ylabel(r'\boldmath$\langle\log M_{*,group\ cen}\rangle \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
-
-        plt.show()
-
-        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/sigma_grpcen_emcee_{0}.pdf'.format(quenching), 
-            bbox_inches="tight", dpi=1200)
-
-    def extract_mean_grpcen_vs_sigma(self, models, data, data_experiments, best_fit):
-        """[summary]
-
-        Args:
-            result ([type]): [description]
-            std_red_data ([type]): [description]
-            cen_red_data ([type]): [description]
-            std_blue_data ([type]): [description]
-            cen_blue_data ([type]): [description]
-            std_bf_red ([type]): [description]
-            std_bf_blue ([type]): [description]
-            std_cen_bf_red ([type]): [description]
-            std_cen_bf_blue ([type]): [description]
-            bf_chi2 ([type]): [description]
-        """
-        settings = self.settings
-
-        error_red = data[8][20:24]
-        error_blue = data[8][24:]
-
-        x_sigma_red_data, y_sigma_red_data = data[2][1], data[2][0]
-        x_sigma_blue_data, y_sigma_blue_data = data[3][1], data[3][0]
-
-        grp_red_cen_gals_arr = []
-        grp_blue_cen_gals_arr = []
-        mean_red_sigma_arr = []
-        mean_blue_sigma_arr = []
-        chunk_counter = 0 # There are 5 chunks of all 16 statistics each with len 20
-        while chunk_counter < 5:
-            for idx in range(len(models[chunk_counter][1]['vel_disp'])):
-                grp_red_cen_gals_arr.append(models[chunk_counter][1]['vel_disp']['red_cen_mass'][idx])
-                grp_blue_cen_gals_arr.append(models[chunk_counter][1]['vel_disp']['blue_cen_mass'][idx])
-                mean_red_sigma_arr.append(models[chunk_counter][1]['vel_disp']['red_sigma'][idx])
-                mean_blue_sigma_arr.append(models[chunk_counter][1]['vel_disp']['blue_sigma'][idx])
-
-            chunk_counter+=1
-
-        ## Same centers used for all sets of lines since binning is the same for 
-        ## models, bf and data
-        bins_red = 0.5 * (x_sigma_red_data[1:] + x_sigma_red_data[:-1])
-        bins_blue = 0.5 * (x_sigma_blue_data[1:] + x_sigma_blue_data[:-1])
-
-        #* One -inf in y_sigma_red_data
-        inf_idx = np.where(y_sigma_red_data == -np.inf)
-        if len(inf_idx) > 0:
-            for idx in inf_idx:
-                x_sigma_red_data = np.delete(x_sigma_red_data, idx)
-                y_sigma_red_data = np.delete(y_sigma_red_data, idx)
-
-        if settings.mf_type == "smf":
-            x_stellar_red = bins_red
-            x_stellar_blue = bins_blue
-            stellar_red_data_y = y_sigma_red_data
-            stellar_blue_data_y = y_sigma_blue_data
-            stellar_error_red = error_red
-            stellar_error_blue = error_blue
-            hybrid_stellar_red_model_max = np.nanmax(mean_red_sigma_arr, axis=0)
-            hybrid_stellar_red_model_min = np.nanmin(mean_red_sigma_arr, axis=0)
-            hybrid_stellar_blue_model_max = np.nanmax(mean_blue_sigma_arr, axis=0)
-            hybrid_stellar_blue_model_min = np.nanmin(mean_blue_sigma_arr, axis=0)
-            hybrid_stellar_red_bf_y = np.nanmedian(mean_red_sigma_arr, axis=0)
-            hybrid_stellar_blue_bf_y = np.nanmedian(mean_blue_sigma_arr, axis=0)
-
-            np.savez('grpcen_sigma_stellar.npz', 
-                x_stellar_red=x_stellar_red, 
-                x_stellar_blue=x_stellar_blue,
-                stellar_red_data_y=stellar_red_data_y,
-                stellar_blue_data_y=stellar_blue_data_y,
-                stellar_error_red=stellar_error_red,
-                stellar_error_blue=stellar_error_blue,
-                hybrid_stellar_red_model_max=hybrid_stellar_red_model_max,\
-                hybrid_stellar_red_model_min=hybrid_stellar_red_model_min,\
-                hybrid_stellar_blue_model_max=hybrid_stellar_blue_model_max,\
-                hybrid_stellar_blue_model_min=hybrid_stellar_blue_model_min,\
-                hybrid_stellar_red_bf_y=hybrid_stellar_red_bf_y,\
-                hybrid_stellar_blue_bf_y=hybrid_stellar_blue_bf_y
-                )
-
-        elif settings.mf_type == "bmf":
-            x_baryonic_red = bins_red
-            x_baryonic_blue = bins_blue
-            baryonic_red_data_y = y_sigma_red_data
-            baryonic_blue_data_y = y_sigma_blue_data
-            baryonic_error_red = error_red
-            baryonic_error_blue = error_blue
-            hybrid_baryonic_red_model_max = np.nanmax(mean_red_sigma_arr, axis=0)
-            hybrid_baryonic_red_model_min = np.nanmin(mean_red_sigma_arr, axis=0)
-            hybrid_baryonic_blue_model_max = np.nanmax(mean_blue_sigma_arr, axis=0)
-            hybrid_baryonic_blue_model_min = np.nanmin(mean_blue_sigma_arr, axis=0)
-            hybrid_baryonic_red_bf_y = np.nanmedian(mean_red_sigma_arr, axis=0)
-            hybrid_baryonic_blue_bf_y = np.nanmedian(mean_blue_sigma_arr, axis=0)
-
-            np.savez('grpcen_sigma_baryonic.npz', 
-                x_baryonic_red=x_baryonic_red, 
-                x_baryonic_blue=x_baryonic_blue,
-                baryonic_red_data_y=baryonic_red_data_y,
-                baryonic_blue_data_y=baryonic_blue_data_y,
-                baryonic_error_red=baryonic_error_red,
-                baryonic_error_blue=baryonic_error_blue,
-                hybrid_baryonic_red_model_max=hybrid_baryonic_red_model_max,\
-                hybrid_baryonic_red_model_min=hybrid_baryonic_red_model_min,\
-                hybrid_baryonic_blue_model_max=hybrid_baryonic_blue_model_max,\
-                hybrid_baryonic_blue_model_min=hybrid_baryonic_blue_model_min,\
-                hybrid_baryonic_red_bf_y=hybrid_baryonic_red_bf_y,\
-                hybrid_baryonic_blue_bf_y=hybrid_baryonic_blue_bf_y
-                )
-
-    def plot_mean_grpcen_vs_sigma(self):
-
-        stellar_data = np.load("grpcen_sigma_stellar.npz")
-        baryonic_data = np.load("grpcen_sigma_baryonic.npz")
-
-        x_stellar_red=stellar_data["x_stellar_red"]
-        x_stellar_blue=stellar_data["x_stellar_blue"]
-        stellar_red_data_y=stellar_data["stellar_red_data_y"]
-        stellar_blue_data_y=stellar_data["stellar_blue_data_y"]
-        stellar_error_red=stellar_data["stellar_error_red"]
-        stellar_error_blue=stellar_data["stellar_error_blue"]
-        hybrid_stellar_red_model_max=stellar_data["hybrid_stellar_red_model_max"]
-        hybrid_stellar_red_model_min=stellar_data["hybrid_stellar_red_model_min"]
-        hybrid_stellar_blue_model_max=stellar_data["hybrid_stellar_blue_model_max"]
-        hybrid_stellar_blue_model_min=stellar_data["hybrid_stellar_blue_model_min"]
-        hybrid_stellar_red_bf_y=stellar_data["hybrid_stellar_red_bf_y"]
-        hybrid_stellar_blue_bf_y=stellar_data["hybrid_stellar_blue_bf_y"]
-
-
-        x_baryonic_red=baryonic_data["x_baryonic_red"]
-        x_baryonic_blue=baryonic_data["x_baryonic_blue"]
-        baryonic_red_data_y=baryonic_data["baryonic_red_data_y"]
-        baryonic_blue_data_y=baryonic_data["baryonic_blue_data_y"]
-        baryonic_error_red=baryonic_data["baryonic_error_red"]
-        baryonic_error_blue=baryonic_data["baryonic_error_blue"]
-        hybrid_baryonic_red_model_max=baryonic_data["hybrid_baryonic_red_model_max"]
-        hybrid_baryonic_red_model_min=baryonic_data["hybrid_baryonic_red_model_min"]
-        hybrid_baryonic_blue_model_max=baryonic_data["hybrid_baryonic_blue_model_max"]
-        hybrid_baryonic_blue_model_min=baryonic_data["hybrid_baryonic_blue_model_min"]
-        hybrid_baryonic_red_bf_y=baryonic_data["hybrid_baryonic_red_bf_y"]
-        hybrid_baryonic_blue_bf_y=baryonic_data["hybrid_baryonic_blue_bf_y"]
-
-        fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
-            gridspec_kw={'wspace':0.15})
-
-        sdr = ax[0].errorbar(x_stellar_red, stellar_red_data_y, yerr=stellar_error_red,
-                color='indianred',fmt='^',ecolor='indianred',markersize=20,capsize=7,
-                capthick=1.5,zorder=10)
-        sdb = ax[0].errorbar(x_stellar_blue, stellar_blue_data_y, yerr=stellar_error_blue,
-                color='cornflowerblue',fmt='^',ecolor='cornflowerblue',markersize=20,capsize=7,
-                capthick=1.5,zorder=10)
-
-        smr = ax[0].fill_between(x=x_stellar_red, y1=hybrid_stellar_red_model_max, 
-            y2=hybrid_stellar_red_model_min, color='indianred',alpha=0.4)
-        smb = ax[0].fill_between(x=x_stellar_blue, y1=hybrid_stellar_blue_model_max, 
-            y2=hybrid_stellar_blue_model_min, color='cornflowerblue',alpha=0.4)
-
-        sbfr, = ax[0].plot(x_stellar_red, hybrid_stellar_red_bf_y, c='indianred', 
-            zorder=9, ls='--', lw=4)
-        sbfb, = ax[0].plot(x_stellar_blue, hybrid_stellar_blue_bf_y, 
-            c='cornflowerblue', zorder=9, ls='--', lw=4)
-
-        bdr = ax[1].errorbar(x_baryonic_red, baryonic_red_data_y, yerr=baryonic_error_red,
-                color='indianred',fmt='^',ecolor='indianred',markersize=20,capsize=7,
-                capthick=1.5,zorder=10)
-        bdb = ax[1].errorbar(x_baryonic_blue, baryonic_blue_data_y, yerr=baryonic_error_blue,
-                color='cornflowerblue',fmt='^',ecolor='cornflowerblue',markersize=20,capsize=7,
-                capthick=1.5,zorder=10)
-
-        bmr = ax[1].fill_between(x=x_baryonic_red, y1=hybrid_baryonic_red_model_max, 
-            y2=hybrid_baryonic_red_model_min, color='indianred',alpha=0.4)
-        bmb = ax[1].fill_between(x=x_baryonic_blue, y1=hybrid_baryonic_blue_model_max, 
-            y2=hybrid_baryonic_blue_model_min, color='cornflowerblue',alpha=0.4)
-
-        bbfr, = ax[1].plot(x_baryonic_red, hybrid_baryonic_red_bf_y, c='indianred', 
-            zorder=9, ls='--', lw=4)
-        bbfb, = ax[1].plot(x_baryonic_blue, hybrid_baryonic_blue_bf_y, 
-            c='cornflowerblue', zorder=9, ls='--', lw=4)
-
-        #* HALO MODEL
-        # sdr = ax[2].errorbar(x_stellar_red, stellar_red_data_y, yerr=stellar_error_red,
-        #         color='indianred',fmt='^',ecolor='indianred',markersize=20,capsize=7,
-        #         capthick=1.5,zorder=10)
-        # sdb = ax[2].errorbar(x_stellar_blue, stellar_blue_data_y, yerr=stellar_error_blue,
-        #         color='cornflowerblue',fmt='^',ecolor='cornflowerblue',markersize=20,capsize=7,
-        #         capthick=1.5,zorder=10)
-
-        # smr = ax[2].fill_between(x=x_stellar_red, y1=halo_stellar_red_models_max, 
-        #     y2=halo_stellar_red_models_min, color='indianred',alpha=0.4)
-        # smb = ax[2].fill_between(x=x_stellar_blue, y1=halo_stellar_blue_models_max, 
-        #     y2=halo_stellar_blue_models_min, color='cornflowerblue',alpha=0.4)
-
-        # sbfr, = ax[2].plot(x_stellar_red, halo_stellar_red_bf_y, c='indianred', 
-        #     zorder=9, ls='--', lw=4)
-        # sbfb, = ax[2].plot(x_stellar_blue, halo_stellar_blue_bf_y, 
-        #     c='cornflowerblue', zorder=9, ls='--', lw=4)
-
-        sat = AnchoredText("Stellar",
-            prop=dict(size=30), frameon=False, loc='upper center')
-        ax[0].add_artist(sat)
-
-        bat = AnchoredText("Baryonic",
-            prop=dict(size=30), frameon=False, loc='upper left')
-        ax[1].add_artist(bat)
-
-        # sat = AnchoredText("Halo",
-        #     prop=dict(size=30), frameon=False, loc='upper center')
-        # ax[2].add_artist(sat)
-
-        ax[0].legend([(sdr, sdb), (smr, smb), (sbfr, sbfb)], 
-            ['Data','Models','Best-fit'],
-            handler_map={tuple: HandlerTuple(ndivide=3, pad=0.3)}, 
-            markerscale=0.5, loc='best', prop={'size':30})
-
-        ax[0].set_xlabel(r'\boldmath$\log M_{* , group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=10, fontsize=40)
-        ax[0].set_ylabel(r'\boldmath$\log \sigma \left[\mathrm{km/s} \right]$', labelpad=20, fontsize=40)
-
-        ax[1].set_xlabel(r'\boldmath$\log M_{b , group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=10, fontsize=40)
-        # ax[1].set_ylabel(r'\boldmath$\log \ \sigma \left[\mathrm{km/s} \right]$', labelpad=20, fontsize=40)
-
-        # ax[2].set_xlabel(r'\boldmath$\log M_{* , group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=10, fontsize=40)
-
-        plt.show()
-
-        plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/grpcen_sigma_emcee_{0}.pdf'.format(quenching), 
-            bbox_inches="tight", dpi=1200)
-
-    def Plot_Core(self, data, models, best_fit):
-        self.plot_total_mf(models, data, best_fit)
-
-        self.plot_fblue(models, data, best_fit)
-
-        self.plot_xmhm(models, data, best_fit)
-
-        self.plot_colour_xmhm(models, data, best_fit)
-
-        self.plot_red_fraction_cen(models, data, best_fit)
-
-        self.plot_red_fraction_sat(models, best_fit)
-
-    def Plot_Experiments(self, data, data_experiments, models, best_fit):
-        self.plot_mean_sigma_vs_grpcen(models, data, data_experiments, 
-            best_fit)
-        
-        self.plot_mean_grpcen_vs_sigma(models, data, data_experiments, 
-            best_fit)
+    def Plot_Experiments(self, models, best_fit):
 
         self.plot_shmr_comparison(models, best_fit)
 
