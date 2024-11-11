@@ -4603,20 +4603,19 @@ class Plotting_Panels():
         # ax[2].set_xlabel(r'\boldmath$\log M_{h, cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',labelpad=10, fontsize=40)
         # ax[2].set_ylabel(r'\boldmath$f_{red, cen}$', labelpad=20, fontsize=40)
 
-        if settings.mf_type == 'smf':
-            antonio_data = pd.read_csv(settings.path_to_proc + \
-                "../external/fquench_stellar/fqlogTSM_cen_DS_TNG_Salim_z0.csv", 
-                index_col=0, skiprows=1, 
-                names=['fred_ds','logmstar','fred_tng','fred_salim'])
-            ax[0].plot(antonio_data.logmstar.values, 
-                antonio_data.fred_ds.values, lw=5, c='#C71585', ls='dashed', 
-                label='Dark Sage')
-            ax[0].plot(antonio_data.logmstar.values, 
-                antonio_data.fred_salim.values, lw=5, c='#FF6347', ls='dotted', 
-                label='Salim+18')
-            ax[0].plot(antonio_data.logmstar.values, 
-                antonio_data.fred_tng.values, lw=5, c='#228B22', ls='dashdot', 
-                label='TNG')
+        antonio_data = pd.read_csv(settings.path_to_proc + \
+            "../external/fquench_stellar/fqlogTSM_cen_DS_TNG_Salim_z0.csv", 
+            index_col=0, skiprows=1, 
+            names=['fred_ds','logmstar','fred_tng','fred_salim'])
+        ax[0].plot(antonio_data.logmstar.values, 
+            antonio_data.fred_ds.values, lw=5, c='#C71585', ls='dashed', 
+            label='Dark Sage')
+        ax[0].plot(antonio_data.logmstar.values, 
+            antonio_data.fred_salim.values, lw=5, c='#FF6347', ls='dotted', 
+            label='Salim+18')
+        ax[0].plot(antonio_data.logmstar.values, 
+            antonio_data.fred_tng.values, lw=5, c='#228B22', ls='dashdot', 
+            label='TNG')
 
         sat = AnchoredText("Stellar",
                         prop=dict(size=30), frameon=False, loc='upper left')
@@ -4834,18 +4833,17 @@ class Plotting_Panels():
         # ax[2].set_xlabel(r'\boldmath$\log M_{h, host} \left[\mathrm{M_\odot}\,'\
         #             r' \mathrm{h}^{-1} \right]$', labelpad=10, fontsize=40)
 
-        if settings.mf_type == 'smf':
-            antonio_data = pd.read_csv(settings.path_to_proc + 
-                "../external/fquench_stellar/fqlogTSM_sat_DS_TNG_Salim_z0.csv", 
-                index_col=0, skiprows=1, 
-                names=['fred_ds','logmstar','fred_tng'])
+        antonio_data = pd.read_csv(settings.path_to_proc + 
+            "../external/fquench_stellar/fqlogTSM_sat_DS_TNG_Salim_z0.csv", 
+            index_col=0, skiprows=1, 
+            names=['fred_ds','logmstar','fred_tng'])
 
-            ax[0].plot(antonio_data.logmstar.values, 
-                antonio_data.fred_ds.values, lw=5, c='#C71585', ls='dashed', 
-                label='Dark Sage')
-            ax[0].plot(antonio_data.logmstar.values, 
-                antonio_data.fred_tng.values, lw=5, c='#228B22', ls='dashdot', 
-                label='TNG')
+        ax[0].plot(antonio_data.logmstar.values, 
+            antonio_data.fred_ds.values, lw=5, c='#C71585', ls='dashed', 
+            label='Dark Sage')
+        ax[0].plot(antonio_data.logmstar.values, 
+            antonio_data.fred_tng.values, lw=5, c='#228B22', ls='dashdot', 
+            label='TNG')
 
 
         ax[0].set_ylabel(r'\boldmath$f_{red, sat}$', labelpad=20, fontsize=40)
