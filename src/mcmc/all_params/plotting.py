@@ -5342,10 +5342,10 @@ class Plotting_Panels():
                      hybrid_baryonic_blue_bf_y=hybrid_baryonic_blue_bf_y
                      )
 
-    def plot_mean_sigma_vs_grpcen(self, stellar_file, baryonic_file):
+    def plot_mean_sigma_vs_grpcen(self):
 
-        stellar_data = np.load(stellar_file)
-        baryonic_data = np.load(baryonic_file)
+        stellar_data = np.load("sigma_grpcen_stellar.npz")
+        baryonic_data = np.load("sigma_grpcen_baryonic.npz")
 
         x_stellar_red=stellar_data["x_stellar_red"]
         x_stellar_blue=stellar_data["x_stellar_blue"]
