@@ -103,7 +103,7 @@ nwalkers = 500
 nsteps = 200
 burnin = 125
 ndim = 9
-run = 94
+run = 108
 
 if run >= 37:
     if mf_type == 'smf':
@@ -125,7 +125,7 @@ else:
 #* Additional chains
 if quenching == 'hybrid':
 
-    run = 97
+    run = 109
     burnin = 125
     mf_type = 'bmf'
 
@@ -137,13 +137,13 @@ if quenching == 'hybrid':
         reader = emcee.backends.HDFBackend(
             path_to_proc + "bmhm_colour_run{0}/chain.h5".format(run), 
             read_only=True)
-    samples_97 = reader.get_chain(flat=True, discard=burnin) 
+    samples_109 = reader.get_chain(flat=True, discard=burnin) 
 
 elif quenching == 'halo':
     
-    run = 96
+    run = 110
     burnin = 125
-    mf_type = 'bmf'
+    mf_type = 'smf'
 
     if mf_type == 'smf':
         reader = emcee.backends.HDFBackend(
@@ -153,7 +153,7 @@ elif quenching == 'halo':
         reader = emcee.backends.HDFBackend(
             path_to_proc + "bmhm_colour_run{0}/chain.h5".format(run), 
             read_only=True)
-    samples_96 = reader.get_chain(flat=True, discard=burnin) 
+    samples_110 = reader.get_chain(flat=True, discard=burnin) 
 
 Mhalo_c_fid = 12.35
 Mstar_c_fid = 10.72
@@ -196,6 +196,26 @@ best_fit_101 = [ 13.01495508, 10.91145968, 0.58541296, 0.71943529,
 0.23429699, 12.24672516, 13.56492932, 0.84634606,
 0.24972688]
 
+best_fit_106 = [12.178195407025239, 10.38362218058177, 0.4704118229066696,
+0.4202521477038505, 0.36709738667881775, 10.424770988481344, 13.24486718241324,
+0.898903338584534, 0.32530047864256467]
+
+best_fit_107 = [ 11.96459146, 10.30909142, 0.26544355, 0.60793614,
+0.34687623, 10.29263832, 13.71180382, 0.79345616,
+0.57748463]
+
+best_fit_108 = [12.71049767, 10.63566776, 0.52972157, 0.11903531, 0.14281782,
+10.35545101, 13.09255895, 0.6487568 , 0.09276749]
+
+best_fit_109 = [12.20688412, 10.52820597, 0.410239940, 0.676868951, 0.304258746,
+10.25683401, 14.00948397, 0.847525582, 0.2046413371]
+
+best_fit_110 = [12.58060557, 10.67744326, 0.43156447, 0.34225694, 0.13262671,
+12.26122474, 12.80147583, 0.6171624 , 0.84058445]
+
+best_fit_111 = [12.67249886, 10.75864465,  0.46836645,  0.560756  ,  0.11172769,
+       12.25722739, 12.78587446,  0.60694604,  0.77017504]
+
 param_names_hybrid = [r"$\mathbf{log_{10}\ M_{1}}$", 
         r"$\mathbf{log_{10}\ M_{*}}$", r"$\boldsymbol{\beta}$",
         r"$\boldsymbol{\delta}$", r"$\boldsymbol{\xi}$", 
@@ -213,27 +233,41 @@ if quenching == 'hybrid':
     c.add_chain(samples[:,:], parameters=param_names_hybrid[:],
         name=r"Stellar", color='#B1862D', zorder=-20)
 
-    c.add_marker(best_fit_94, parameters=param_names_hybrid, 
-        name=r"Stellar", marker_style="*", marker_size=200, 
-        color='#523e14')
+    # c.add_marker(best_fit_109, parameters=param_names_hybrid, 
+    #     name=r"PCA best-fit", marker_style="*", marker_size=200, 
+    #     color='#523e14')
 
-    c.add_chain(samples_97[:,:], parameters=param_names_hybrid[:],
+    c.add_chain(samples_109[:,:], parameters=param_names_hybrid[:],
         name=r"Baryonic", color='#663399', zorder=-10)
 
-    c.add_marker(best_fit_97, parameters=param_names_hybrid, 
-        name=r"Baryonic", marker_style="*", marker_size=200, 
-        color='#29015F')
+    # c.add_chain(samples_110[:,:], parameters=param_names_hybrid[:],
+    #     name=r"Halo", color='#663399', zorder=-5)
+    
+    # c.add_marker(best_fit_110, parameters=param_names_hybrid, 
+    #     name=r"Best-fit", marker_style="*", marker_size=200, 
+    #     color='#29015F')
+    
+    # c.add_chain(samples_97[:,:], parameters=param_names_hybrid[:],
+    #     name=r"Baryonic non-pca", color='#663399', zorder=-10)
+
+    # c.add_marker(best_fit_97, parameters=param_names_hybrid, 
+    #     name=r"Non-pca best-fit", marker_style="*", marker_size=200, 
+    #     color='#29015F')
 
 elif quenching == 'halo':
-    c.add_chain(samples[:,:], parameters=param_names_halo,
-        name=r"Halo baryonic pca", color='#B1862D', zorder=-20)
+    c.add_chain(samples[:,:], parameters=param_names_halo[:],
+        name=r"Halo pca (new initial loc)", color='#B1862D', zorder=-20)
 
-    c.add_chain(samples_96[:,:], parameters=param_names_halo,
-        name=r"Halo baryonic non-pca", color='#663399', zorder=-10)
+    c.add_marker(best_fit_111, parameters=param_names_halo, 
+        name=r"Best-fit", marker_style="*", marker_size=200, 
+        color='#523e14')
 
-    c.add_marker(best_fit_96, parameters=param_names_halo, 
-        name="", marker_style="*", marker_size=200, 
-        color="#29015F")
+    c.add_chain(samples_110[:,:], parameters=param_names_halo[:],
+        name=r"Halo pca (old initial loc)", color='#663399', zorder=-10)
+
+    c.add_marker(best_fit_110, parameters=param_names_halo, 
+        name=r"Best-fit", marker_style="*", marker_size=200, 
+        color='#29015F')
 
 # sigma levels for 1D gaussian showing 68%,95% conf intervals
 c.configure(kde=2.0, shade_gradient = 1.0, shade_alpha=0.8, label_font_size=15, 
@@ -241,12 +275,14 @@ c.configure(kde=2.0, shade_gradient = 1.0, shade_alpha=0.8, label_font_size=15,
     max_ticks=3, linewidths=2, legend_kwargs={"fontsize": 30})
 # c.configure_truth(color='#B1862D', lw=1.7)
 # c.configure_truth(color='#B1862D', lw=1.7, alpha=0.0)
-# if quenching == 'hybrid':
-#     fig1 = c.plotter.plot(display=True, truth=best_fit_94)
-# elif quenching == 'halo':
-#     fig1 = c.plotter.plot(display=True, truth=best_fit_101)
+if quenching == 'hybrid':
+    fig1 = c.plotter.plot(display=True)#, truth=best_fit_94)
+elif quenching == 'halo':
+    fig1 = c.plotter.plot(display=True)#, truth=best_fit_101)
 
 if quenching == 'hybrid':
+    # fig1 = c.plotter.plot(filename='/Users/asadm2/Desktop/pca_figures/contours_{0}.pdf'.format(quenching))
+
     fig1 = c.plotter.plot(filename='/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/contours_{0}.pdf'.format(quenching))
 elif quenching == 'halo':
     fig1 = c.plotter.plot(filename='/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/contours_{0}.pdf'.format(quenching), 
