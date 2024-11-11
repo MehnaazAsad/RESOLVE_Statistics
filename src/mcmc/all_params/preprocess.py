@@ -350,8 +350,12 @@ class Preprocess():
 
         # globals.gal_group_df_subset = gal_group[names_arr]
 
-        file = open(settings.path_to_proc + \
-            "gal_group_run{0}.pickle".format(settings.run), 'rb')
+        if settings.pca:
+            # file = open(settings.path_to_proc + \
+            file = open("/Users/asadm2/Downloads/gal_group_run{0}_pca.pickle".format(settings.run), 'rb')
+        else:
+            file = open(settings.path_to_proc + \
+                "gal_group_run{0}.pickle".format(settings.run), 'rb')
         # file = open("/Users/asadm2/Downloads/gal_group_run{0}.pickle".format(settings.run), 'rb')
 
         globals.gal_group_df_subset = pickle.load(file) 
@@ -377,6 +381,6 @@ class Preprocess():
             'mstar_q', 'mh_q', 'mu', 'nu']
         #* Change this if testing with different cz limit
         self.mcmc_table_pctl_subset = pd.read_csv(settings.path_to_proc + 
-            'run{0}_params_subset.txt'.format(settings.run), 
+            'run{0}_params_subset_pca.txt'.format(settings.run), 
             delim_whitespace=True, names=colnames)\
             .iloc[1:,:].reset_index(drop=True)
