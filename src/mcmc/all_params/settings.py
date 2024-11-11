@@ -39,12 +39,12 @@ class Settings():
             self.halo_catalog = path_to_raw + 'vishnu_rockstar_test.hdf5'
 
         if self.quenching == 'halo':
-            self.run = 95
+            self.run = 110
         elif self.quenching == 'hybrid':
             if self.mf_type == 'smf':
-                self.run = 98
+                self.run = 108
             elif self.mf_type == 'bmf':
-                self.run = 100
+                self.run = 109
 
         if self.run >= 37:
             if self.mf_type == 'smf':
