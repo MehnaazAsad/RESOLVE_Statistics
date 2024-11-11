@@ -2315,7 +2315,7 @@ for i in range(100):
         
         final_df = final_df.append(combined_df, ignore_index=True)
 
-corr_mat_average = calc_corr_mat(cov_mat_average)
+# corr_mat_average = calc_corr_mat(cov_mat_average) <- not sure what I was testing here
 #Flip the rows so that the diagonal matches the diagonal in the plot
 corr_mat_average = corr_mat_average.iloc[::-1]
 
@@ -2595,7 +2595,7 @@ plt.annotate("", xy=(0.645, 0.055), xytext=(0.68, 0.055),
     xycoords="figure fraction", textcoords="figure fraction", 
     arrowprops=dict(arrowstyle="<-", facecolor='k', linewidth=2))
 
-plt.annotate(r"$\boldsymbol{\overline{{\sigma}_{red}}}$", (0.72, 0.05), 
+plt.annotate(r"$\boldsymbol{{\sigma}_{red}}$", (0.72, 0.05), 
     xycoords='figure fraction', fontsize=20, annotation_clip=False)
 plt.annotate("", xy=(0.68, 0.055), xytext=(0.72, 0.055), 
     xycoords="figure fraction", textcoords="figure fraction", 
@@ -2604,7 +2604,7 @@ plt.annotate("", xy=(0.76, 0.055), xytext=(0.79, 0.055),
     xycoords="figure fraction", textcoords="figure fraction", 
     arrowprops=dict(arrowstyle="<-", facecolor='k', linewidth=2))
 
-plt.annotate(r"$\boldsymbol{\overline{{\sigma}_{blue}}}$", (0.83, 0.05), 
+plt.annotate(r"$\boldsymbol{{\sigma}_{blue}}$", (0.83, 0.05), 
     xycoords='figure fraction', fontsize=20, annotation_clip=False)
 plt.annotate("", xy=(0.79, 0.055), xytext=(0.83, 0.055), 
     xycoords="figure fraction", textcoords="figure fraction", 
@@ -2660,7 +2660,7 @@ plt.annotate("", xy=(0.07, 0.625), xytext=(0.07, 0.66),
     xycoords="figure fraction", textcoords="figure fraction", 
     arrowprops=dict(arrowstyle="<-", facecolor='k', linewidth=2))
 
-plt.annotate(r"$\boldsymbol{\overline{{\sigma}_{red}}}$", (0.06, 0.70), 
+plt.annotate(r"$\boldsymbol{{\sigma}_{red}}$", (0.06, 0.70), 
     xycoords='figure fraction', fontsize=20, annotation_clip=False, rotation=90)
 plt.annotate("", xy=(0.07, 0.66), xytext=(0.07, 0.69), 
     xycoords="figure fraction", textcoords="figure fraction", 
@@ -2669,7 +2669,7 @@ plt.annotate("", xy=(0.07, 0.74), xytext=(0.07, 0.77),
     xycoords="figure fraction", textcoords="figure fraction", 
     arrowprops=dict(arrowstyle="<-", facecolor='k', linewidth=2))
 
-plt.annotate(r"$\boldsymbol{\overline{{\sigma}_{blue}}}$", (0.06, 0.80), 
+plt.annotate(r"$\boldsymbol{{\sigma}_{blue}}$", (0.06, 0.80), 
     xycoords='figure fraction', fontsize=20, annotation_clip=False, rotation=90)
 plt.annotate("", xy=(0.07, 0.77), xytext=(0.07, 0.795), 
     xycoords="figure fraction", textcoords="figure fraction", 
