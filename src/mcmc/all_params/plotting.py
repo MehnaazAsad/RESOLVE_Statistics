@@ -3606,7 +3606,7 @@ class Plotting_Panels():
         ax[1].minorticks_on()
         # ax[2].minorticks_on()
 
-        plt.show()
+        # plt.show()
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/mf_total_emcee_{0}.pdf'.format(settings.quenching), 
             bbox_inches="tight", dpi=1200)
 
@@ -3945,7 +3945,7 @@ class Plotting_Panels():
                             title='Satellites',
                             title_fontsize=28)
 
-        plt.show()
+        # plt.show()
 
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fblue_censat_emcee_{0}.pdf'.format(settings.quenching), 
             bbox_inches="tight", dpi=1200)
@@ -4201,7 +4201,7 @@ class Plotting_Panels():
         # ax[2].set_xlabel(r'\boldmath$\log \sigma \left[\mathrm{km/s} \right]$', labelpad=10, fontsize=40)
         # ax[2].set_ylabel(r'\boldmath$\langle\log M_{*,group\ cen}\rangle \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
 
-        plt.show()
+        # plt.show()
 
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/sigma_grpcen_emcee_{0}.pdf'.format(settings.quenching), 
             bbox_inches="tight", dpi=1200)
@@ -4427,7 +4427,7 @@ class Plotting_Panels():
 
         # ax[2].set_xlabel(r'\boldmath$\log M_{* , group\ cen} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=10, fontsize=40)
 
-        plt.show()
+        # plt.show()
 
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/grpcen_sigma_emcee_{0}.pdf'.format(settings.quenching), 
             bbox_inches="tight", dpi=1200)
@@ -4640,7 +4640,7 @@ class Plotting_Panels():
         ax[1].set_xlim(9.0, 12)
         ax[1].set_xticks(np.linspace(9.2, 12, 5))  
 
-        plt.show()
+        # plt.show()
 
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fred_cen_emcee_{0}.pdf'.format(settings.quenching), 
             bbox_inches="tight", dpi=1200)
@@ -4865,7 +4865,7 @@ class Plotting_Panels():
         ax[0].legend(loc='lower right', prop={'size':30})
 
         plt.tight_layout()
-        plt.show()
+        # plt.show()
 
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/fred_sat_emcee_{0}.pdf'.format(settings.quenching), 
             bbox_inches="tight", dpi=1200)        
@@ -5037,7 +5037,7 @@ class Plotting_Panels():
         halo_models_max = np.amax(halo_logmh_behroozi10_models, axis=0)
         halo_models_min = np.amin(halo_logmh_behroozi10_models, axis=0)
 
-        with open('/Users/asadm2/Desktop/data_for_shmr_comparison_plot/behroozi2018_girelli2020_commonshmrs.json', 'r') as f:
+        with open('data/data_for_shmr_comparison_plot/behroozi2018_girelli2020_commonshmrs.json', 'r') as f:
             data = json.load(f)
 
         data.keys()
@@ -5060,7 +5060,7 @@ class Plotting_Panels():
             stellar_data.append(stellar_arr)
             halo_data.append(halo_arr)
 
-        fig, ax = plt.subplots(1, 3, figsize=(24,13.5), sharex=False, sharey=False, 
+        fig, ax = plt.subplots(1, 2, figsize=(24,13.5), sharex=False, sharey=False, 
             gridspec_kw={'wspace':0.30})
 
         sm = ax[0].fill_betweenx(y=H70_to_H100(logmstar_arr, -2), x1=stellar_models_max, 
@@ -5076,11 +5076,12 @@ class Plotting_Panels():
             H70_to_H100(logmbary_arr, -2), color='k', lw=4, 
             zorder=10)
         
-        hm = ax[2].fill_betweenx(y=H70_to_H100(logmstar_arr, -2), x1=halo_models_max, 
-            x2=halo_models_min, color='lightgray',alpha=0.4)
+        #* HALO MODEL
+        # hm = ax[2].fill_betweenx(y=H70_to_H100(logmstar_arr, -2), x1=halo_models_max, 
+        #     x2=halo_models_min, color='lightgray',alpha=0.4)
 
-        hbf, = ax[2].plot(H70_to_H100(halo_logmh_behroozi10_bf, -1), 
-            H70_to_H100(logmstar_arr, -2), color='k', lw=4, zorder=10)
+        # hbf, = ax[2].plot(H70_to_H100(halo_logmh_behroozi10_bf, -1), 
+        #     H70_to_H100(logmstar_arr, -2), color='k', lw=4, zorder=10)
 
 
 
@@ -5103,12 +5104,12 @@ class Plotting_Panels():
                     ls=ls_arr[ls_idx], lw=4, c=palette[plot_idx], label=names[plot_idx])
                 ls_idx+=1
 
-        ls_idx = 0
-        for plot_idx in range(num_shmrs):
-            if plot_idx in [4, 5, 8]:
-                ax[2].plot(halo_data[plot_idx], stellar_data[plot_idx], 
-                    ls=ls_arr[ls_idx], lw=4, c=palette[plot_idx], label=names[plot_idx])
-                ls_idx+=1
+        # ls_idx = 0
+        # for plot_idx in range(num_shmrs):
+        #     if plot_idx in [4, 5, 8]:
+        #         ax[2].plot(halo_data[plot_idx], stellar_data[plot_idx], 
+        #             ls=ls_arr[ls_idx], lw=4, c=palette[plot_idx], label=names[plot_idx])
+        #         ls_idx+=1
 
         ax[0].set_xlim(10,14.5)
         ax[0].set_xlabel(r'\boldmath$\log M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$',labelpad=10, fontsize=40)
@@ -5116,8 +5117,8 @@ class Plotting_Panels():
         ax[1].set_xlim(10,14.5)
         ax[1].set_xlabel(r'\boldmath$\log M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', labelpad=10, fontsize=40)
 
-        ax[2].set_xlim(10,14.5)
-        ax[2].set_xlabel(r'\boldmath$\log M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', labelpad=10, fontsize=40)
+        # ax[2].set_xlim(10,14.5)
+        # ax[2].set_xlabel(r'\boldmath$\log M_{h} \left[\mathrm{M_\odot}\, \mathrm{h}^{-1} \right]$', labelpad=10, fontsize=40)
 
         ax[0].set_ylim(np.log10((10**8.9)/2.041),11.5)
         ax[0].set_ylabel(r'\boldmath$\log M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
@@ -5125,8 +5126,8 @@ class Plotting_Panels():
         ax[1].set_ylim(np.log10((10**9.3)/2.041),11.5)
         ax[1].set_ylabel(r'\boldmath$\log M_{b} \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
 
-        ax[2].set_ylim(np.log10((10**8.9)/2.041),11.5)
-        ax[2].set_ylabel(r'\boldmath$\log M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
+        # ax[2].set_ylim(np.log10((10**8.9)/2.041),11.5)
+        # ax[2].set_ylabel(r'\boldmath$\log M_\star \left[\mathrm{M_\odot}\, \mathrm{h}^{-2} \right]$', labelpad=20, fontsize=40)
 
         ax[0].fill([13.5, ax[0].get_xlim()[1], ax[0].get_xlim()[1], 13.5], 
             [ax[0].get_ylim()[0], ax[0].get_ylim()[0], 
@@ -5138,15 +5139,11 @@ class Plotting_Panels():
             ax[1].get_ylim()[1], ax[1].get_ylim()[1]], fill=False, 
             hatch='\\')
 
-        ax[2].fill([13.5, ax[2].get_xlim()[1], ax[2].get_xlim()[1], 13.5], 
-            [ax[2].get_ylim()[0], ax[2].get_ylim()[0], 
-            ax[2].get_ylim()[1], ax[2].get_ylim()[1]], fill=False, 
-            hatch='\\')
+        # ax[2].fill([13.5, ax[2].get_xlim()[1], ax[2].get_xlim()[1], 13.5], 
+        #     [ax[2].get_ylim()[0], ax[2].get_ylim()[0], 
+        #     ax[2].get_ylim()[1], ax[2].get_ylim()[1]], fill=False, 
+        #     hatch='\\')
 
-        # sat = AnchoredText("Stellar",
-        #                 prop=dict(size=30), frameon=False, loc='center left')
-        # # at.patch.set_boxstyle("round,pad=0.,rounding_size=0.2")
-        # ax[0].add_artist(sat)
 
         ax[0].annotate('Stellar', xy = (12.5, 11.3), xycoords='data',
                        xytext=(12.5, 11.3), textcoords='data')
@@ -5155,17 +5152,17 @@ class Plotting_Panels():
                         prop=dict(size=30), frameon=False, loc='upper left')
         ax[1].add_artist(bat)
 
-        sat = AnchoredText("Halo",
-                        prop=dict(size=30), frameon=False, loc='upper left')
-        ax[2].add_artist(sat)
+        # sat = AnchoredText("Halo",
+        #                 prop=dict(size=30), frameon=False, loc='upper left')
+        # ax[2].add_artist(sat)
 
 
         ax[0].legend(loc='best', prop={'size':22})
         ax[0].minorticks_on()
         ax[1].minorticks_on()
-        ax[2].minorticks_on()
+        # ax[2].minorticks_on()
 
-        plt.show()
+        # plt.show()
 
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/shmr_total_emcee_{0}.pdf'.format(settings.quenching), 
             bbox_inches="tight", dpi=1200)
@@ -5436,7 +5433,7 @@ class Plotting_Panels():
         ax[1].minorticks_on()
         # ax[2].minorticks_on()
         
-        plt.show()
+        # plt.show()
 
         plt.savefig('/Users/asadm2/Documents/Grad_School/Research/Papers/RESOLVE_Statistics_paper/Figures/shmr_colour_emcee_{0}.pdf'.format(settings.quenching), 
             bbox_inches="tight", dpi=1200)
