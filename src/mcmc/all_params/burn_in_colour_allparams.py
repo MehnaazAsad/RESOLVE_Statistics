@@ -52,10 +52,10 @@ path_to_interim = dict_of_paths['int_dir']
 path_to_figures = dict_of_paths['plot_dir']
 
 survey = 'eco'
-mf_type = 'bmf'
+mf_type = 'smf'
 quenching = 'halo'
 nwalkers = 500
-run = 101
+run = 111
 
 if mf_type == 'smf':
     path_to_proc = path_to_proc + 'smhm_colour_run{0}/'.format(run)
@@ -64,7 +64,7 @@ else:
 
 if run >= 37:
     reader = emcee.backends.HDFBackend(
-        path_to_proc + "chain.h5".format(quenching), read_only=True)
+        path_to_proc + "chain.h5", read_only=True)
     # reader = emcee.backends.HDFBackend(
     #     "/Users/asadm2/Desktop/chain_{0}_pca.h5".format(quenching), read_only=True)
     flatchain = reader.get_chain(flat=True)
@@ -195,6 +195,8 @@ if quenching == 'hybrid':
     nu = [np.zeros(len(grp_keys)),np.zeros(len(grp_keys))]
     chi2 = [np.zeros(len(grp_keys)),np.zeros(len(grp_keys))]
 
+    bf_params_per_iteration = []
+
     for idx,key in enumerate(grp_keys):
         group = grps.get_group(key)
         Mhalo_c_mean = np.mean(group.Mhalo_c.values)
@@ -239,7 +241,10 @@ if quenching == 'hybrid':
         chi2_std = np.std(group.chi2.values)
         chi2[0][idx] = chi2_mean
         chi2[1][idx] = chi2_std
-    
+
+        bf_params_per_iteration.append(group.loc[group.chi2 == min(group.chi2)].values[0][:10])
+    bf_params_per_iteration = np.array(bf_params_per_iteration)
+
     Mhalo_c_fid = 12.35
     Mstar_c_fid = 10.72
     mlow_slope_fid = 0.44
@@ -248,10 +253,11 @@ if quenching == 'hybrid':
     behroozi10_param_vals = [Mhalo_c_fid, Mstar_c_fid, mlow_slope_fid, \
         mhigh_slope_fid, scatter_fid]
 
-    Mstar_q_fid = 10.5 # Msun/h
-    Mh_q_fid = 13.76 # Msun/h
+    #* Hybrid
+    Mstar_q_fid = 10.49 # Msun/h
+    Mh_q_fid = 14.03 # Msun/h
     mu_fid = 0.69
-    nu_fid = 0.15
+    nu_fid = 0.148
     zumandelbaum_param_vals = [Mstar_q_fid, Mh_q_fid, mu_fid, nu_fid]
     
     grp_keys = list(grp_keys)
@@ -278,6 +284,18 @@ if quenching == 'hybrid':
     ax9.plot(grp_keys, nu[0], c='#941266',ls='--', marker='o')
     ax9.axhline(zumandelbaum_param_vals[3],color='lightgray')
     ax10.plot(grp_keys, chi2[0], c='#941266',ls='--', marker='o')
+
+    ax1.plot(grp_keys, bf_params_per_iteration.T[0], c='k', marker='*')
+    ax2.plot(grp_keys, bf_params_per_iteration.T[1], c='k',marker='*')
+    ax3.plot(grp_keys, bf_params_per_iteration.T[2], c='k',marker='*')
+    ax4.plot(grp_keys, bf_params_per_iteration.T[3], c='k',marker='*')
+    ax5.plot(grp_keys, bf_params_per_iteration.T[4], c='k',marker='*')
+
+    ax6.plot(grp_keys, bf_params_per_iteration.T[5], c='k', marker='*')
+    ax7.plot(grp_keys, bf_params_per_iteration.T[6], c='k', marker='*')
+    ax8.plot(grp_keys, bf_params_per_iteration.T[7], c='k', marker='*')
+    ax9.plot(grp_keys, bf_params_per_iteration.T[8], c='k', marker='*')
+    ax10.plot(grp_keys, bf_params_per_iteration.T[9], c='k', marker='*')
 
     ax1.fill_between(grp_keys, Mhalo_c[0]-Mhalo_c[1], Mhalo_c[0]+Mhalo_c[1], 
         alpha=0.3, color='#941266')
@@ -355,6 +373,8 @@ elif quenching == 'halo':
     mu_s = [np.zeros(len(grp_keys)),np.zeros(len(grp_keys))]
     chi2 = [np.zeros(len(grp_keys)),np.zeros(len(grp_keys))]
 
+    bf_params_per_iteration = []
+
     for idx,key in enumerate(grp_keys):
         group = grps.get_group(key)
         Mhalo_c_mean = np.mean(group.Mhalo_c.values)
@@ -400,6 +420,9 @@ elif quenching == 'halo':
         chi2[0][idx] = chi2_mean
         chi2[1][idx] = chi2_std
 
+        bf_params_per_iteration.append(group.loc[group.chi2 == min(group.chi2)].values[0][:10])
+    bf_params_per_iteration = np.array(bf_params_per_iteration)
+
     Mhalo_c_fid = 12.35
     Mstar_c_fid = 10.72
     mlow_slope_fid = 0.44
@@ -408,10 +431,12 @@ elif quenching == 'halo':
     behroozi10_param_vals = [Mhalo_c_fid, Mstar_c_fid, mlow_slope_fid, \
         mhigh_slope_fid, scatter_fid]
 
-    Mh_qc_fid = 12.2 # Msun/h
-    Mh_qs_fid = 12.17 # Msun/h
-    mu_c_fid = 0.38
-    mu_s_fid = 0.15
+    #* Halo 
+
+    Mh_qc_fid = 12.61 # Msun/h
+    Mh_qs_fid = 13.5 # Msun/h
+    mu_c_fid = 0.40
+    mu_s_fid = 0.148
     zumandelbaum_param_vals = [Mh_qc_fid, Mh_qs_fid, mu_c_fid, mu_s_fid]
     grp_keys = list(grp_keys)
 
@@ -437,6 +462,18 @@ elif quenching == 'halo':
     ax9.plot(grp_keys, mu_s[0], c='#941266',ls='--', marker='o')
     ax9.axhline(zumandelbaum_param_vals[3],color='lightgray')
     ax10.plot(grp_keys, chi2[0], c='#941266',ls='--', marker='o')
+
+    ax1.plot(grp_keys, bf_params_per_iteration.T[0], c='k', marker='*')
+    ax2.plot(grp_keys, bf_params_per_iteration.T[1], c='k',marker='*')
+    ax3.plot(grp_keys, bf_params_per_iteration.T[2], c='k',marker='*')
+    ax4.plot(grp_keys, bf_params_per_iteration.T[3], c='k',marker='*')
+    ax5.plot(grp_keys, bf_params_per_iteration.T[4], c='k',marker='*')
+
+    ax6.plot(grp_keys, bf_params_per_iteration.T[5], c='k', marker='*')
+    ax7.plot(grp_keys, bf_params_per_iteration.T[6], c='k', marker='*')
+    ax8.plot(grp_keys, bf_params_per_iteration.T[7], c='k', marker='*')
+    ax9.plot(grp_keys, bf_params_per_iteration.T[8], c='k', marker='*')
+    ax10.plot(grp_keys, bf_params_per_iteration.T[9], c='k', marker='*')
 
     ax1.fill_between(grp_keys, Mhalo_c[0]-Mhalo_c[1], Mhalo_c[0]+Mhalo_c[1], 
         alpha=0.3, color='#941266')
