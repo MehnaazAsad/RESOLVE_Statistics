@@ -3495,7 +3495,7 @@ class Plotting_Panels():
             hybrid_stellar_model_min = np.nanmin(mod_arr, axis=0)
             hybrid_stellar_bf_y = np.nanmedian(mod_arr, axis=0)
 
-            np.savez('mf_stellar.npz', 
+            np.savez('data/mf_stellar.npz', 
                      x_stellar=x_stellar, 
                      stellar_data_y=stellar_data_y, \
                      stellar_error=stellar_error,\
@@ -3512,7 +3512,7 @@ class Plotting_Panels():
             hybrid_baryonic_model_min = np.nanmin(mod_arr, axis=0)
             hybrid_baryonic_bf_y = np.nanmedian(mod_arr, axis=0)
 
-            np.savez('mf_baryonic.npz', 
+            np.savez('data/mf_baryonic.npz', 
                      x_baryonic=x_baryonic, 
                      baryonic_data_y=baryonic_data_y, \
                      baryonic_error=baryonic_error,\
@@ -3525,8 +3525,8 @@ class Plotting_Panels():
         
         settings = self.settings
 
-        stellar_data = np.load("mf_stellar.npz")
-        baryonic_data = np.load("mf_baryonic.npz")
+        stellar_data = np.load("data/mf_stellar.npz")
+        baryonic_data = np.load("data/mf_baryonic.npz")
 
         x_stellar=stellar_data["x_stellar"]
         stellar_data_y=stellar_data["stellar_data_y"]
@@ -3752,7 +3752,7 @@ class Plotting_Panels():
             hybrid_stellar_bf_cen_y = np.nanmedian(cen_mod_arr, axis=0)
             hybrid_stellar_bf_sat_y = np.nanmedian(sat_mod_arr, axis=0)
 
-            np.savez('fblue_stellar.npz', 
+            np.savez('data/fblue_stellar.npz', 
                      x_stellar=x_stellar, 
                      stellar_data_cen_y=stellar_data_cen_y, \
                      stellar_data_sat_y=stellar_data_sat_y, \
@@ -3779,7 +3779,7 @@ class Plotting_Panels():
             hybrid_baryonic_bf_cen_y = np.nanmedian(cen_mod_arr, axis=0)
             hybrid_baryonic_bf_sat_y = np.nanmedian(sat_mod_arr, axis=0)
 
-            np.savez('fblue_baryonic.npz', 
+            np.savez('data/fblue_baryonic.npz', 
                      x_baryonic=x_baryonic, 
                      baryonic_data_cen_y=baryonic_data_cen_y, \
                      baryonic_data_sat_y=baryonic_data_sat_y, \
@@ -3796,8 +3796,8 @@ class Plotting_Panels():
         
         settings = self.settings
 
-        stellar_data = np.load("fblue_stellar.npz")
-        baryonic_data = np.load("fblue_baryonic.npz")
+        stellar_data = np.load("data/fblue_stellar.npz")
+        baryonic_data = np.load("data/fblue_baryonic.npz")
 
         x_stellar=stellar_data["x_stellar"]
         stellar_data_cen_y=stellar_data["stellar_data_cen_y"]
@@ -4041,7 +4041,7 @@ class Plotting_Panels():
             hybrid_stellar_red_bf_y = np.nanmedian(mean_grp_red_cen_gals_arr, axis=0)
             hybrid_stellar_blue_bf_y = np.nanmedian(mean_grp_blue_cen_gals_arr, axis=0)
 
-            np.savez('sigma_grpcen_stellar.npz', 
+            np.savez('data/sigma_grpcen_stellar.npz', 
                      x_stellar_red=x_stellar_red, 
                      x_stellar_blue=x_stellar_blue,
                      stellar_red_data_y=stellar_red_data_y,
@@ -4070,7 +4070,7 @@ class Plotting_Panels():
             hybrid_baryonic_red_bf_y = np.nanmedian(mean_grp_red_cen_gals_arr, axis=0)
             hybrid_baryonic_blue_bf_y = np.nanmedian(mean_grp_blue_cen_gals_arr, axis=0)
 
-            np.savez('sigma_grpcen_baryonic.npz', 
+            np.savez('data/sigma_grpcen_baryonic.npz', 
                      x_baryonic_red=x_baryonic_red, 
                      x_baryonic_blue=x_baryonic_blue,
                      baryonic_red_data_y=baryonic_red_data_y,
@@ -4089,8 +4089,8 @@ class Plotting_Panels():
 
         settings = self.settings
 
-        stellar_data = np.load("sigma_grpcen_stellar.npz")
-        baryonic_data = np.load("sigma_grpcen_baryonic.npz")
+        stellar_data = np.load("data/sigma_grpcen_stellar.npz")
+        baryonic_data = np.load("data/sigma_grpcen_baryonic.npz")
 
         x_stellar_red=stellar_data["x_stellar_red"]
         x_stellar_blue=stellar_data["x_stellar_blue"]
@@ -4269,7 +4269,7 @@ class Plotting_Panels():
             hybrid_stellar_red_bf_y = np.nanmedian(mean_red_sigma_arr, axis=0)
             hybrid_stellar_blue_bf_y = np.nanmedian(mean_blue_sigma_arr, axis=0)
 
-            np.savez('grpcen_sigma_stellar.npz', 
+            np.savez('data/grpcen_sigma_stellar.npz', 
                 x_stellar_red=x_stellar_red, 
                 x_stellar_blue=x_stellar_blue,
                 stellar_red_data_y=stellar_red_data_y,
@@ -4298,7 +4298,7 @@ class Plotting_Panels():
             hybrid_baryonic_red_bf_y = np.nanmedian(mean_red_sigma_arr, axis=0)
             hybrid_baryonic_blue_bf_y = np.nanmedian(mean_blue_sigma_arr, axis=0)
 
-            np.savez('grpcen_sigma_baryonic.npz', 
+            np.savez('data/grpcen_sigma_baryonic.npz', 
                 x_baryonic_red=x_baryonic_red, 
                 x_baryonic_blue=x_baryonic_blue,
                 baryonic_red_data_y=baryonic_red_data_y,
@@ -4317,8 +4317,8 @@ class Plotting_Panels():
         
         settings = self.settings
 
-        stellar_data = np.load("grpcen_sigma_stellar.npz")
-        baryonic_data = np.load("grpcen_sigma_baryonic.npz")
+        stellar_data = np.load("data/grpcen_sigma_stellar.npz")
+        baryonic_data = np.load("data/grpcen_sigma_baryonic.npz")
 
         x_stellar_red=stellar_data["x_stellar_red"]
         x_stellar_blue=stellar_data["x_stellar_blue"]
@@ -4502,24 +4502,24 @@ class Plotting_Panels():
         df = pd.concat([df1, df2])
 
         if settings.mf_type == "smf":
-            df.to_csv("hybrid_stellar_fred_cen_models_pca.csv")
+            df.to_csv("data/hybrid_stellar_fred_cen_models_pca.csv")
 
         elif settings.mf_type == "bmf":
-            df.to_csv("baryonic_fred_cen_models_pca.csv")
+            df.to_csv("data/hybrid_baryonic_fred_cen_models_pca.csv")
 
         elif settings.quenching == "halo":
             df1 = pd.DataFrame(cen_halos_arr)
             df2 = pd.DataFrame(fred_arr)
             df = pd.concat([df1, df2])
 
-            df.to_csv("halo_stellar_fred_cen_models_pca.csv")
+            df.to_csv("data/halo_stellar_fred_cen_models_pca.csv")
 
     def plot_red_fraction_cen(self):
         
         settings = self.settings
 
-        hybrid_stellar_models_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/hybrid_stellar_fred_cen_models_pca.csv") 
-        hybrid_baryonic_models_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/baryonic_fred_cen_models_pca.csv") 
+        hybrid_stellar_models_df = pd.read_csv("data/hybrid_stellar_fred_cen_models_pca.csv") 
+        hybrid_baryonic_models_df = pd.read_csv("data/hybrid_baryonic_fred_cen_models_pca.csv") 
 
         #* halo model
         # halo_stellar_models_df = pd.read_csv("halo_stellar_fred_cen_models_pca.csv") 
@@ -4717,25 +4717,25 @@ class Plotting_Panels():
 
         if settings.mf_type == "smf":
 
-            df.to_csv("hybrid_stellar_fred_sat_models_pca.csv")
+            df.to_csv("data/hybrid_stellar_fred_sat_models_pca.csv")
 
         elif settings.mf_type == "bmf":
 
-            df.to_csv("/Users/asadm2/Desktop/baryonic_fred_sat_models_pca.csv")
+            df.to_csv("data/hybrid_baryonic_fred_sat_models_pca.csv")
 
         elif settings.quenching == "halo":
             df1 = pd.DataFrame(sat_halos_arr)
             df2 = pd.DataFrame(fred_arr)
             df = pd.concat([df1, df2])
 
-            df.to_csv("/Users/asadm2/Desktop/halo_stellar_fred_sat_models_pca.csv")
+            df.to_csv("data/halo_stellar_fred_sat_models_pca.csv")
         
     def plot_red_fraction_sat(self):
 
         settings = self.settings
 
-        hybrid_stellar_models_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/hybrid_stellar_fred_sat_models_pca.csv") 
-        baryonic_models_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/baryonic_fred_sat_models_pca.csv") 
+        hybrid_stellar_models_df = pd.read_csv("data/hybrid_stellar_fred_sat_models_pca.csv") 
+        baryonic_models_df = pd.read_csv("data/hybrid_baryonic_fred_sat_models_pca.csv") 
 
         #* HALO MODEL
         # halo_stellar_models_df = pd.read_csv("/Users/asadm2/Desktop/data_for_fred_plots/pca/halo_stellar_fred_sat_models_pca.csv") 
@@ -5292,7 +5292,7 @@ class Plotting_Panels():
             hybrid_stellar_red_bf_y = np.nanmedian(red_mod_y_arr, axis=0)
             hybrid_stellar_blue_bf_y = np.nanmedian(blue_mod_y_arr, axis=0)
 
-            np.savez('xmhm_colour_stellar.npz', 
+            np.savez('data/xmhm_colour_stellar.npz', 
                      x_stellar=x_stellar, 
                      hybrid_stellar_red_model_max=hybrid_stellar_red_model_max,\
                      hybrid_stellar_red_model_min=hybrid_stellar_red_model_min,\
@@ -5311,7 +5311,7 @@ class Plotting_Panels():
             hybrid_baryonic_red_bf_y = np.nanmedian(red_mod_y_arr, axis=0)
             hybrid_baryonic_blue_bf_y = np.nanmedian(blue_mod_y_arr, axis=0)
 
-            np.savez('xmhm_colour_baryonic.npz', 
+            np.savez('data/xmhm_colour_baryonic.npz', 
                      x_baryonic=x_baryonic, 
                      hybrid_baryonic_red_model_max=hybrid_baryonic_red_model_max,\
                      hybrid_baryonic_red_model_min=hybrid_baryonic_red_model_min,\
@@ -5325,8 +5325,8 @@ class Plotting_Panels():
 
         settings = self.settings
 
-        stellar_data = np.load("xmhm_colour_stellar.npz")
-        baryonic_data = np.load("xmhm_colour_baryonic.npz")
+        stellar_data = np.load("data/xmhm_colour_stellar.npz")
+        baryonic_data = np.load("data/xmhm_colour_baryonic.npz")
 
         x_stellar=stellar_data["x_stellar"]
         hybrid_stellar_red_model_max=stellar_data["hybrid_stellar_red_model_max"]
