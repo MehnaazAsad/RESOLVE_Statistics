@@ -26,7 +26,7 @@ def main():
     models, best_fit, gals_df = analysis.Mocks_And_Models(experiments)
 
     plotting = Plotting_Panels(preprocess)
-    plotting.Extract_Core(models, data)
+    # plotting.Extract_Core(models, data)
     plotting.Plot_Core()
 
 
