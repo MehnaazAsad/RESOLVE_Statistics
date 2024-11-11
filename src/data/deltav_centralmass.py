@@ -248,7 +248,7 @@ count_stats_red_data = bs(red_cen_mstar_data, deltav_red_data,
 count_stats_blue_data = bs(blue_cen_mstar_data, deltav_blue_data,
     statistic='count', bins=np.linspace(8.9,11.5,5))
 
-bins=np.linspace(8.9,11.5co,5)
+bins=np.linspace(8.9,11.5,5)
 bins = 0.5 * (bins[1:] + bins[:-1])
 
 poiss_err_red = std_stats_red_data[0]/np.sqrt(count_stats_red_data[0])
