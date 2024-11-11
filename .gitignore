@@ -84,6 +84,7 @@ src/tutorials
 src/single_use/figures
 .vscode
 src/fof
+src/mcmc/all_params/data/
 
 # File extensions
 *.DS_Store
