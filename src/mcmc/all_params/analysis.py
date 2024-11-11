@@ -32,6 +32,8 @@ class Analysis():
         self.dof = None
         self.error_data = None
         self.mocks_stdevs = None
+        self.eigenvecs = None
+        self.eigenvals = None
         self.result = None
         self.preprocess = preprocess
         self.settings = preprocess.settings
@@ -1178,7 +1180,7 @@ class Analysis():
                 'error':error, 'bins':bins,
                 'counts':counts}
 
-        best_fit_results["smf_total"] = {'max_total':total_model[0],
+        best_fit_results["mf_total"] = {'max_total':total_model[0],
                                         'phi_total':total_model[1]}
         
         best_fit_results["f_blue"] = {'max_fblue':f_blue[0],
@@ -1912,13 +1914,13 @@ class Analysis():
 
             if i == 0:
                 # Correlation matrix of phi and deltav colour measurements combined
-                corr_mat_global = combined_df.corr()
+                # corr_mat_global = combined_df.corr()
                 cov_mat_global = combined_df.cov()
 
-                corr_mat_average = corr_mat_global
+                # corr_mat_average = corr_mat_global
                 cov_mat_average = cov_mat_global
             else:
-                corr_mat_average = pd.concat([corr_mat_average, combined_df.corr()]).groupby(level=0, sort=False).mean()
+                # corr_mat_average = pd.concat([corr_mat_average, combined_df.corr()]).groupby(level=0, sort=False).mean()
                 cov_mat_average = pd.concat([cov_mat_average, combined_df.cov()]).groupby(level=0, sort=False).mean()
                 
 
@@ -1984,11 +1986,12 @@ class Analysis():
             # T = corr_mat_colour.dot(VT.T)
             # print(T)
 
-            err_colour_pca = sigma_average.dot(VT.T)
-            eigenvectors = VT.T
+            # err_colour_pca = sigma_average.dot(VT.T) #* Incorrect
+            eigenvectors = VT #* Scipy svd returns V already transposed
+            eigenvalues = np.diag(sigma_mat)
 
         if settings.pca:
-            return err_colour_pca, eigenvectors
+            return eigenvectors, eigenvalues, sigma_average
         else:
             return sigma_average, corr_mat_inv_colour_average
 
@@ -2065,7 +2068,7 @@ class Analysis():
 
         print('Reloaded')
 
-        main_keys = ["smf_total","f_blue","phi_colour","centrals","satellites",\
+        main_keys = ["mf_total","f_blue","phi_colour","centrals","satellites",\
             "f_red"]
         sub_keys = [{"max_total":[],"phi_total":[]},{"max_fblue":[],"fblue_total":[],\
             "fblue_cen":[],"fblue_sat":[]},\
@@ -2278,8 +2281,8 @@ class Analysis():
                 model_experimentals["vdf"]["phi_red"].append(phi_vdf[0])
                 model_experimentals["vdf"]["phi_blue"].append(phi_vdf[1])
 
-            model_results["smf_total"]["max_total"].append(total_model[0])
-            model_results["smf_total"]["phi_total"].append(total_model[1])
+            model_results["mf_total"]["max_total"].append(total_model[0])
+            model_results["mf_total"]["phi_total"].append(total_model[1])
 
             model_results["f_blue"]["max_fblue"].append(f_blue[0])
             model_results["f_blue"]["fblue_total"].append(f_blue[1])
@@ -2428,7 +2431,11 @@ class Analysis():
         self.model_init = self.halocat_init(settings.halo_catalog, preprocess.z_median)
 
         print('Measuring error in data from mocks')
-        self.error_data, self.mocks_stdevs = self.get_err_data(settings.path_to_proc)
+        if settings.pca:
+            self.eigenvecs, self.eigenvals, self.error_data = self.get_err_data(settings.path_to_proc)
+
+        else:
+            self.error_data, self.mocks_stdevs = self.get_err_data(settings.path_to_proc)
         self.dof = len(self.error_data) - len(preprocess.bf_params)
 
         # return [self.total_data, self.f_blue, self.mean_mstar_red_data, self.mean_mstar_blue_data, self.phi_red_data, self.phi_blue_data, self.error_data, self.mocks_stdevs, self.dof]
